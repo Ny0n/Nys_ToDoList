@@ -19,13 +19,23 @@ init.commands = {
   end,
 
 	["help"] = function(...)
+		config:Print("Type |cff00cc66/tdl command|r to see all the slash commands");
+		config:Print("When adding a new category, the name of the first item is required (there can't be an empty category)");
+		config:Print("To add a new item, type its name in the editbox next to the category name you want to add your item in!");
+		config:Print("You can click on the category names to expand or shrink their content, for more visibility");
+	end,
+
+	["command"] = function(...)
 		config:Print("List of slash commands:")
 		config:Print("|cff00cc66/tdl|r - shows items frame");
 		config:Print("|cff00cc66/tdl button|r - shows or hides the toggle button");
 		config:Print("|cff00cc66/tdl help|r - shows help info");
-		config:Print("|cff00cc66/tdl clear|r - clears the entire list");
-		config:Print("-When adding a new category, the name of the first item is required");
-		config:Print("-To add a new item, type its name in the editbox next to the category name you want to add you item in!");
+		config:Print("|cff00cc66/tdl uc|r - unchecks every item");
+		config:Print("|cff00cc66/tdl clear|r - clears the entire list (be careful with that!)");
+	end,
+
+	["uc"] = function(...)
+		itemsFrame:ResetBtns("All");
 	end,
 
 	["clear"] = function(...)
@@ -80,20 +90,30 @@ function init:Load(self, name)
 		return;
 	end
 
-	config:Print("ToDoList loaded! type |cff00cc66/tdl help|r for information.");
-
   -- Register new Slash Command!
 	SLASH_ToDoList1 = "/tdl";
 	SlashCmdList.ToDoList = HandleSlashCommands;
 
-	-- Initializing the saved variables
-	ToDoListSV_checkedButtons = ToDoListSV_checkedButtons or {};
-	ToDoListSV_itemsList = ToDoListSV_itemsList or { ["Daily"] = {}, ["Weekly"] = {} };
-	ToDoListSV_autoReset = ToDoListSV_autoReset or { ["Daily"] = config:GetSecondsToReset().daily, ["Weekly"] = config:GetSecondsToReset().weekly }
-	ToDoListSV_lastLoadedTab = ToDoListSV_lastLoadedTab or "ToDoListUIFrameTab1";
+	-- Initializing the saved variable
+	-- since last update, there were a lot more saved variables, and in this one now
+	-- i got rid of all of them and just placed everything in one brand new and alone saved variable,
+	-- this means that to keep everything that was saved, we have to transfer the old variables in the new one,
+	-- the first time and only the first time that we load the addon after the update (this is temporary)
+	if (not ToDoListSV) then
+		ToDoListSV = {
+			checkedButtons = ToDoListSV_checkedButtons or {},
+			itemsList = ToDoListSV_itemsList or { ["Daily"] = {}, ["Weekly"] = {} },
+			autoReset = ToDoListSV_autoReset or { ["Daily"] = config:GetSecondsToReset().daily, ["Weekly"] = config:GetSecondsToReset().weekly },
+			lastLoadedTab = ToDoListSV_lastLoadedTab or "ToDoListUIFrameTab1",
+			closedCategories = {},
+			newCatClosed = true,
+		}
+	end
 
   -- We load the frame
   config:CreateItemsFrame();
+
+	config:Print("ToDoList loaded! type |cff00cc66/tdl help|r for information.");
 end
 
 --Creating the virtual frame to handle the event
