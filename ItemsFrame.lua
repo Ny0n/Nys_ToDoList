@@ -10,17 +10,21 @@ local itemsFrame = tdlTable.itemsFrame;
 -- Variables declaration:--
 local itemsFrameUI, toggleBtn;
 local AllTab, DailyTab, WeeklyTab;
+local remainingCheckAll, remainingCheckDaily, remainingCheckWeekly = 0,0,0;
 
 local checkBtn = {};
-local minusBtn = {};
+local removeBtn = {};
 local addBtn = {};
 local label = {};
 local editBox = {};
+local labelHover = {};
+local labelNewCatHover;
 
-local All = {}
+local All = {};
 
 local ItemsFrame_Update;
 local ItemsFrame_UpdateTime;
+local Tab_OnClick;
 local refreshRate = 1;
 
 --------------------------------------
@@ -54,7 +58,7 @@ local function ScrollFrame_OnMouseWheel(self, delta)
 	self:SetVerticalScroll(newValue);
 end
 
-local function resetBtns(tabName)
+function itemsFrame:ResetBtns(tabName)
 	local uncheckedSomething = false;
 
 	for i=1,#All do
@@ -66,7 +70,7 @@ local function resetBtns(tabName)
 
 				checkBtn[All[i]]:SetChecked(false);
 			end
-		elseif (config:HasItem(ToDoListSV_itemsList[tabName], checkBtn[All[i]]:GetName())) then
+		elseif (config:HasItem(ToDoListSV.itemsList[tabName], checkBtn[All[i]]:GetName())) then
 			if (checkBtn[All[i]]:GetChecked()) then
 				uncheckedSomething = true;
 			end
@@ -75,28 +79,23 @@ local function resetBtns(tabName)
 		end
 	end
 	ItemsFrame_Update();
+
 	if (uncheckedSomething) then -- so that we print this message only if there was checked items before the uncheck
-		config:Print("Unchecked "..tabName.." succesfully!")
+		if (tabName == "All") then
+			config:Print("Unchecked "..tabName.."!");
+		else
+			config:Print("Unchecked "..tabName.." tab!");
+		end
 	end
 end
 
-local function UpdateNextDailyReset()
-	timeUntil = config:GetTimeUntilReset();
-	AllTab.nextDailyReset:SetText("Next daily reset: "..timeUntil.hour.."h "..timeUntil.min.."m "..timeUntil.sec.."s")
-end
-
-local function UpdateNextWeeklyReset()
-	timeUntil = config:GetTimeUntilReset();
-	AllTab.nextWeeklyReset:SetText("Next weekly reset: "..timeUntil.days.."d "..timeUntil.hour.."h "..timeUntil.min.."m "..timeUntil.sec.."s")
-end
-
 local function inChatIsDone(all,daily,weekly)
-	if (all == 0 and AllTab.remainingNumber ~= 0 and next(All) ~= nil) then
-		config:Print("You've finished everything! (yay :D)");
-	elseif (daily == 0 and DailyTab.remainingNumber ~= 0 and next(ToDoListSV_itemsList["Daily"]) ~= nil) then
-		config:Print("You've finished everything for today!");
-	elseif (weekly == 0 and WeeklyTab.remainingNumber ~= 0 and next(ToDoListSV_itemsList["Weekly"]) ~= nil) then
-		config:Print("You've finished everything for this week!");
+	if (all == 0 and remainingCheckAll ~= 0 and next(All) ~= nil) then
+		config:Print("You've done everything! (yay :D)");
+	elseif (daily == 0 and remainingCheckDaily ~= 0 and next(ToDoListSV.itemsList["Daily"]) ~= nil) then
+		config:Print("Everything's done for today!");
+	elseif (weekly == 0 and remainingCheckWeekly ~= 0 and next(ToDoListSV.itemsList["Weekly"]) ~= nil) then
+		config:Print("Everything's done for this week!");
 	end
 end
 
@@ -104,30 +103,29 @@ local function UpdateRemainingNumber()
 	local numberAll,numberDaily,numberWeekly = 0,0,0;
 	for i=1,#All do
 		if (not checkBtn[All[i]]:GetChecked()) then
-			if (config:HasItem(ToDoListSV_itemsList["Daily"],checkBtn[All[i]]:GetName())) then
+			if (config:HasItem(ToDoListSV.itemsList["Daily"],checkBtn[All[i]]:GetName())) then
 				numberDaily = numberDaily + 1;
 			end
-			if (config:HasItem(ToDoListSV_itemsList["Weekly"],checkBtn[All[i]]:GetName())) then
+			if (config:HasItem(ToDoListSV.itemsList["Weekly"],checkBtn[All[i]]:GetName())) then
 				numberWeekly = numberWeekly + 1;
 			end
 			numberAll = numberAll + 1;
 		end
 	end
 
-	inChatIsDone(numberAll, numberDaily, numberWeekly)
+	inChatIsDone(numberAll, numberDaily, numberWeekly);
 
-	AllTab.remaining:SetText("Remaining: ".."|cff00ffb3"..numberAll.."|r")
-	AllTab.remainingNumber = numberAll;
-
-	DailyTab.remaining:SetText("Remaining: ".."|cff00ffb3"..numberDaily.."|r")
-	DailyTab.remainingNumber = numberDaily;
-
-	WeeklyTab.remaining:SetText("Remaining: ".."|cff00ffb3"..numberWeekly.."|r")
-	WeeklyTab.remainingNumber = numberWeekly;
-end
-
-function config:GetRemainingNumber()
-	return AllTab.remainingNumber, DailyTab.remainingNumber, WeeklyTab.remainingNumber;
+	local tab = itemsFrameUI.remaining:GetParent();
+	if (tab == AllTab) then
+		itemsFrameUI.remaining:SetText("Remaining: ".."|cff00ffb3"..numberAll.."|r");
+		remainingCheckAll = numberAll;
+	elseif (tab == DailyTab) then
+		itemsFrameUI.remaining:SetText("Remaining: ".."|cff00ffb3"..numberDaily.."|r");
+		remainingCheckDaily = numberDaily;
+	elseif (tab == WeeklyTab) then
+		itemsFrameUI.remaining:SetText("Remaining: ".."|cff00ffb3"..numberWeekly.."|r");
+		remainingCheckWeekly = numberWeekly;
+	end
 end
 
 local function UpdateCheckButtons()
@@ -140,39 +138,39 @@ local function UpdateCheckButtons()
 	end
 end
 
--- Saved variables functions:
+-- Saved variable functions:
 
-local function loadSavedVariables()
+local function loadSavedVariable()
 	for i=1,#All do
-		if (config:HasItem(ToDoListSV_checkedButtons, checkBtn[All[i]]:GetName())) then
+		if (config:HasItem(ToDoListSV.checkedButtons, checkBtn[All[i]]:GetName())) then
 			checkBtn[All[i]]:SetChecked(true);
 		end
 	end
 end
 
-local function SaveSavedVariables()
+local function SaveSavedVariable()
 	for i=1,#All do
-    local isPresent, pos = config:HasItem(ToDoListSV_checkedButtons, checkBtn[All[i]]:GetName());
+    local isPresent, pos = config:HasItem(ToDoListSV.checkedButtons, checkBtn[All[i]]:GetName());
 
 		if (checkBtn[All[i]]:GetChecked() and not isPresent) then
-      table.insert(ToDoListSV_checkedButtons, checkBtn[All[i]]:GetName());
+      table.insert(ToDoListSV.checkedButtons, checkBtn[All[i]]:GetName());
 		end
 
 		if (not checkBtn[All[i]]:GetChecked() and isPresent) then
-			table.remove(ToDoListSV_checkedButtons, pos);
+			table.remove(ToDoListSV.checkedButtons, pos);
 		end
 	end
 end
 
 local function autoReset()
-	if time() > ToDoListSV_autoReset["Weekly"] then
-		ToDoListSV_autoReset["Daily"] = config:GetSecondsToReset().daily;
-		ToDoListSV_autoReset["Weekly"] = config:GetSecondsToReset().weekly;
-		resetBtns("Daily");
-		resetBtns("Weekly");
-	elseif time() > ToDoListSV_autoReset["Daily"] then
-		ToDoListSV_autoReset["Daily"] = config:GetSecondsToReset().daily;
-		resetBtns("Daily");
+	if time() > ToDoListSV.autoReset["Weekly"] then
+		ToDoListSV.autoReset["Daily"] = config:GetSecondsToReset().daily;
+		ToDoListSV.autoReset["Weekly"] = config:GetSecondsToReset().weekly;
+		itemsFrame:ResetBtns("Daily");
+		itemsFrame:ResetBtns("Weekly");
+	elseif time() > ToDoListSV.autoReset["Daily"] then
+		ToDoListSV.autoReset["Daily"] = config:GetSecondsToReset().daily;
+		itemsFrame:ResetBtns("Daily");
 	end
 end
 
@@ -180,13 +178,14 @@ end
 function UpdateAllTable()
 	All = {}
 	-- Completing the All table
-	for k,val in pairs(ToDoListSV_itemsList) do
+	for k,val in pairs(ToDoListSV.itemsList) do
 		if (k ~= "Daily" and k ~= "Weekly") then
 			for _,v in pairs(val) do
 				table.insert(All, v);
 			end
 		end
 	end
+	table.sort(All); -- so that every item will be sorted alphabetically in the list
 end
 
 local function addItem(self, db)
@@ -223,14 +222,14 @@ local function addItem(self, db)
 		isPresent1 = (select(1, config:HasItem(All, name))); -- does it already exists in All?
 
 
-		hasKey = config:HasKey(ToDoListSV_itemsList, cat);
-		if (not hasKey) then ToDoListSV_itemsList[cat] = {}; new = true; end -- that means we'll be adding something to a new category, so we create the table to hold all theses shiny new items
+		hasKey = config:HasKey(ToDoListSV.itemsList, cat);
+		if (not hasKey) then ToDoListSV.itemsList[cat] = {}; new = true; end -- that means we'll be adding something to a new category, so we create the table to hold all theses shiny new items
 
 		if (case == nil) then
-			isPresent0 = (select(1, config:HasItem(ToDoListSV_itemsList[cat], name)));-- does it already exists in the typed category?
+			isPresent0 = (select(1, config:HasItem(ToDoListSV.itemsList[cat], name)));-- does it already exists in the typed category?
 		else
-			isPresent0 = (select(1, config:HasItem(ToDoListSV_itemsList[case], name)));-- does it already exists in Daily/Weekly?
-			isPresent3 = (select(1, config:HasItem(ToDoListSV_itemsList[cat], name)));-- does it already exists in the typed category?
+			isPresent0 = (select(1, config:HasItem(ToDoListSV.itemsList[case], name)));-- does it already exists in Daily/Weekly?
+			isPresent3 = (select(1, config:HasItem(ToDoListSV.itemsList[cat], name)));-- does it already exists in the typed category?
 			if (isPresent1 and not isPresent3) then -- if it already exists but not in this category
 				config:Print("This item name already exists!");
 				stop = true;
@@ -240,13 +239,13 @@ local function addItem(self, db)
 		if (not stop) then
 			if (not isPresent0) then
 				if (case == "Daily") then
-					isPresent2 = (select(1, config:HasItem(ToDoListSV_itemsList["Weekly"], name)));
+					isPresent2 = (select(1, config:HasItem(ToDoListSV.itemsList["Weekly"], name)));
 				elseif (case == "Weekly") then
-					isPresent2 = (select(1, config:HasItem(ToDoListSV_itemsList["Daily"], name)));
+					isPresent2 = (select(1, config:HasItem(ToDoListSV.itemsList["Daily"], name)));
 				else
 					stop = true;
 					if (not isPresent1) then
-						table.insert(ToDoListSV_itemsList[cat], name);
+						table.insert(ToDoListSV.itemsList[cat], name);
 						config:Print("\""..name.."\" added to "..cat.."!");
 						modif = true;
 					else
@@ -255,12 +254,12 @@ local function addItem(self, db)
 				end
 				if (not stop) then
 					if (not isPresent1) then
-						table.insert(ToDoListSV_itemsList[cat], name);
-						table.insert(ToDoListSV_itemsList[case], name);
+						table.insert(ToDoListSV.itemsList[cat], name);
+						table.insert(ToDoListSV.itemsList[case], name);
 						config:Print("\""..name.."\" added to "..case.."!");
 						modif = true;
 					elseif (not isPresent2) then
-						table.insert(ToDoListSV_itemsList[case], name);
+						table.insert(ToDoListSV.itemsList[case], name);
 						config:Print("\""..name.."\" added to "..case.."!");
 						modif = true;
 					else
@@ -276,7 +275,7 @@ local function addItem(self, db)
 	end
 
 	if (new and not modif) then -- if we didn't add anything and it was supposed to create a new category, we cancel our move and nil this false new empty category
-		ToDoListSV_itemsList[cat] = nil;
+		ToDoListSV.itemsList[cat] = nil;
 	end
 
 	itemsFrame:RefreshTab(cat, name, "Add", modif);
@@ -287,40 +286,28 @@ local function removeItem(self)
 	local isPresent, pos;
 
 	name = self:GetParent():GetName(); -- we get the name of the tied check button
-	case = self:GetParent():GetParent():GetName(); -- we get the tab we're on
 	cat = (select(2,self:GetParent():GetPoint())):GetName(); -- we get the category we're in
 
-	if case == "All" then
-		case = nil;
+	-- All part
+	table.remove(ToDoListSV.itemsList[cat], (select(2,config:HasItem(ToDoListSV.itemsList[cat], name))));
+	-- Daily part
+	isPresent, pos = config:HasItem(ToDoListSV.itemsList["Daily"], name);
+	if (isPresent) then
+		table.remove(ToDoListSV.itemsList["Daily"], pos);
 	end
-
-	if (case ~= nil) then -- if we're not in the All tab
-		table.remove(ToDoListSV_itemsList[case], (select(2,config:HasItem(ToDoListSV_itemsList[case], name))));
-		config:Print("\""..name.."\" removed from "..case.."!");
-		modif = true;
-	else
-		-- All part
-		table.remove(ToDoListSV_itemsList[cat], (select(2,config:HasItem(ToDoListSV_itemsList[cat], name))));
-		-- Daily part
-		isPresent, pos = config:HasItem(ToDoListSV_itemsList["Daily"], name);
-		if (isPresent) then
-			table.remove(ToDoListSV_itemsList["Daily"], pos);
-		end
-		-- Weekly part
-		isPresent, pos = config:HasItem(ToDoListSV_itemsList["Weekly"], name);
-		if (isPresent) then
-			table.remove(ToDoListSV_itemsList["Weekly"], pos);
-		end
-		config:Print("\""..name.."\" removed!");
-		modif = true;
+	-- Weekly part
+	isPresent, pos = config:HasItem(ToDoListSV.itemsList["Weekly"], name);
+	if (isPresent) then
+		table.remove(ToDoListSV.itemsList["Weekly"], pos);
 	end
+	config:Print("\""..name.."\" removed!");
+	modif = true;
 
 	itemsFrame:RefreshTab(case, name, "Remove", modif);
 end
 
 local function addCategory()
 	local db = {}
-
 
 	db.cat = itemsFrameUI.categoryEditBox:GetText();
 	if (db.cat == "") then
@@ -349,7 +336,7 @@ local function addCategory()
 		return;
 	end
 
-	db.case = itemsFrameUI.label1:GetParent():GetName();
+	db.case = itemsFrameUI.labelAddACategory:GetParent():GetName();
 
 	itemsFrameUI.categoryEditBox:SetText("");
 	itemsFrameUI.nameEditBox:SetText("");
@@ -361,18 +348,62 @@ ItemsFrame_Update = function(...)
 	UpdateAllTable();
 	UpdateRemainingNumber();
 	UpdateCheckButtons();
-	SaveSavedVariables();
+	SaveSavedVariable();
 end
 
 ItemsFrame_UpdateTime = function()
 	autoReset();
-	UpdateNextDailyReset();
-	UpdateNextWeeklyReset();
+end
+
+local function ItemsFrame_OnMouseUp() -- we click on a label
+	if (labelNewCatHover) then -- if it's the add a new category label
+		ToDoListSV.newCatClosed = not ToDoListSV.newCatClosed;
+	elseif (next(labelHover)) then -- if we are mouse hovering one of the category labels
+		local isPresent, pos = config:HasItem(ToDoListSV.closedCategories,unpack(labelHover));
+		if (isPresent) then
+			table.remove(ToDoListSV.closedCategories,pos); -- if it was closed, we open it
+		else
+			table.insert(ToDoListSV.closedCategories,tostringall(unpack(labelHover))); -- vice versa
+		end
+	end
+	Tab_OnClick(_G[ToDoListSV.lastLoadedTab]); -- we reload the frame to display the changes
 end
 
 local function ItemsFrame_OnUpdate(self, elapsed) -- Updating the itemsFrame every 1 second
 	self.timeSinceLastUpdate = self.timeSinceLastUpdate + elapsed;
-	while (self.timeSinceLastUpdate > refreshRate) do
+
+	-- update for the labels: (every frame)
+	for k,i in pairs(ToDoListSV.itemsList) do
+		if (k ~= "Daily" and k ~= "Weekly") then
+			if (label[k]:IsMouseOver()) then -- for every label in the current tab, if our mouse is over one of them,
+				label[k]:SetTextColor(0,0.8,1,1); -- we change its visual
+				local isPresent, pos = config:HasItem(labelHover,k);
+				if (not isPresent) then
+					table.insert(labelHover,k); -- we add its category name in a table variable
+				end
+			else
+				local isPresent, pos = config:HasItem(labelHover,k);
+				if (isPresent) then
+					table.remove(labelHover,pos); -- if we're not hovering it, we delete it from that table
+				end
+				label[k]:SetTextColor(1,1,1,1); -- back to the default color
+			end
+		end
+	end
+
+	if (itemsFrameUI.labelAddACategory:IsMouseOver()) then -- for every label in the current tab, if our mouse is over one of them,
+		itemsFrameUI.labelAddACategory:SetTextColor(0,0.8,1,1); -- we change its visual
+		if (not labelNewCatHover) then
+			labelNewCatHover = true;
+		end
+	else
+		itemsFrameUI.labelAddACategory:SetTextColor(1,1,1,1); -- back to the default color
+		if (labelNewCatHover) then
+			labelNewCatHover = false;
+		end
+	end
+
+	while (self.timeSinceLastUpdate > refreshRate) do -- every one second
 		ItemsFrame_UpdateTime();
 		self.timeSinceLastUpdate = self.timeSinceLastUpdate - refreshRate;
 	end
@@ -390,86 +421,6 @@ end
 -- frame creation and functions
 --------------------------------------
 
-local function loadCategories(tab,category,categorylabel,totalLength,constraint,catName)
-	if (totalLength == 0) then -- doing that only one time
-		for i=1,#All do
-			checkBtn[All[i]]:Hide();
-			minusBtn[All[i]]:Hide();
-		end
-	end
-
-	if (constraint ~= nil) then
-		local cat = {}
-		for i=1,#category do
-			if (select(1,config:HasItem(constraint,category[i]))) then
-				table.insert(cat,category[i]);
-			end
-		end
-		category = cat;
-	end
-
-	if (config:HasAtLeastOneItem(All,category)) then
-		-- category label
-		categorylabel:SetParent(tab);
-		categorylabel:SetPoint("TOPLEFT", tab.dummyLabel, "TOPLEFT", 0, -totalLength*23);
-		categorylabel:Show();
-
-		-- edit box
-		editBox[categorylabel:GetName()]:SetParent(tab);
-		editBox[categorylabel:GetName()]:SetPoint("LEFT", categorylabel, "RIGHT", 10, 0);
-
-		local x = (categorylabel:GetWidth());
-		if (x+120>270) then
-			editBox[categorylabel:GetName()]:SetWidth(270-x);
-		else
-			editBox[categorylabel:GetName()]:SetPoint("LEFT", categorylabel, "LEFT", 160, 0);
-		end
-
-		editBox[categorylabel:GetName()]:Show();
-		totalLength = totalLength + 1;
-
-		-- checkboxes
-		local buttonsLength = 1;
-		for i=1,#All do
-			if ((select(1,config:HasItem(category,checkBtn[All[i]]:GetName())))) then
-				checkBtn[All[i]]:SetParent(tab);
-				checkBtn[All[i]]:SetPoint("TOPLEFT", categorylabel, "TOPLEFT", 30, -22*buttonsLength+5);
-				totalLength = totalLength + 1;
-				buttonsLength = buttonsLength + 1;
-
-				checkBtn[All[i]]:Show();
-				minusBtn[All[i]]:Show();
-			end
-		end
-	else
-		categorylabel:Hide();
-		editBox[categorylabel:GetName()]:Hide();
-
-		if (constraint == nil) then -- if there is no more item in a category, we delete the corresponding label and table
-			ToDoListSV_itemsList[catName] = nil;
-			addBtn[categorylabel:GetName()] = nil;
-			editBox[categorylabel:GetName()] = nil;
-			label[categorylabel:GetName()] = nil;
-		end
-	end
-	return totalLength;
-end
-
-local function loadAddACategory(tab, length)
-	itemsFrameUI.label1:SetParent(tab);
-	itemsFrameUI.label1:SetPoint("TOPLEFT", tab.dummyLabel, "TOPLEFT", 60, -length*23 - 40);
-
-	itemsFrameUI.label2:SetParent(tab);
-	itemsFrameUI.label2:SetPoint("TOPLEFT", itemsFrameUI.label1, "TOPLEFT", -55, -25);
-	itemsFrameUI.categoryEditBox:SetParent(tab);
-	itemsFrameUI.categoryEditBox:SetPoint("RIGHT", itemsFrameUI.label2, "RIGHT", 150, 0);
-
-	itemsFrameUI.label3:SetParent(tab);
-	itemsFrameUI.label3:SetPoint("TOPLEFT", itemsFrameUI.label1, "TOPLEFT", -55, -50);
-	itemsFrameUI.nameEditBox:SetParent(tab);
-	itemsFrameUI.nameEditBox:SetPoint("RIGHT", itemsFrameUI.label3, "RIGHT", 150, 0);
-end
-
 local function loadMovable()
 	-- All items transformed as checkboxes
 	for i=1,#All,1 do
@@ -478,12 +429,12 @@ local function loadMovable()
 		checkBtn[All[i]].text:SetFontObject("GameFontNormalLarge");
 		checkBtn[All[i]]:SetScript("OnClick", ItemsFrame_Update);
 
-		minusBtn[All[i]] = config:CreateMinusButton(checkBtn[All[i]]);
-		minusBtn[All[i]]:SetScript("OnClick", removeItem);
+		removeBtn[All[i]] = config:CreateRemoveButton(checkBtn[All[i]]);
+		removeBtn[All[i]]:SetScript("OnClick", removeItem);
 	end
 
 	-- Category labels
-	for k,i in pairs(ToDoListSV_itemsList) do
+	for k,i in pairs(ToDoListSV.itemsList) do
 		if (k ~= "Daily" and k ~= "Weekly") then
 			label[k] = config:CreateNoPointsLabel(itemsFrameUI,k,tostring(k.." :"));
 			editBox[k] = config:CreateNoPointsLabelEditBox(k);
@@ -494,140 +445,200 @@ local function loadMovable()
 	end
 end
 
+local function loadCategories(tab,category,categoryLabel,constraint,catName,lastData)
+	if (lastData == nil) then -- doing that only one time
+		lastData = nil;
+		for i=1,#All do
+			checkBtn[All[i]]:Hide();
+			removeBtn[All[i]]:Hide();
+		end
+	end
+	categoryLabel:Hide();
+	editBox[categoryLabel:GetName()]:Hide();
+
+	-- if we are not in the all tab, we modify the category variable
+	-- (which is a table containig every item in this tab)
+	-- so that there will only be the items respective to the category
+	if (constraint ~= nil) then
+		local cat = {}
+		for i=1,#category do
+			if (select(1,config:HasItem(constraint,category[i]))) then
+				table.insert(cat,category[i]);
+			end
+		end
+		category = cat;
+	end
+
+	if (config:HasAtLeastOneItem(All,category)) then -- litterally
+		-- category label
+		if (lastData == nil) then
+			lastLabel = itemsFrameUI.dummyLabel;
+			l = 0;
+		else
+			lastLabel = lastData["categoryLabel"];
+			if ((select(1,config:HasItem(ToDoListSV.closedCategories, lastData["catName"])))) then
+				l = 1;
+			else
+				l = #lastData["category"] + 1;
+			end
+		end
+
+		if (l == 0) then m = 0; else m = 1; end -- just for a proper clean height
+		categoryLabel:SetParent(tab);
+		categoryLabel:SetPoint("TOPLEFT", lastLabel, "TOPLEFT", 0, (-l*22)-(m*5)); -- here
+		categoryLabel:Show();
+
+		if (not (select(1,config:HasItem(ToDoListSV.closedCategories, catName)))) then -- if the category is opened, we display all of its items
+			-- edit box
+			editBox[categoryLabel:GetName()]:SetParent(tab);
+			editBox[categoryLabel:GetName()]:SetPoint("LEFT", categoryLabel, "RIGHT", 10, 0);
+
+			local x = (categoryLabel:GetWidth());
+			if (x+120>270) then
+				editBox[categoryLabel:GetName()]:SetWidth(270-x);
+			else
+				editBox[categoryLabel:GetName()]:SetPoint("LEFT", categoryLabel, "LEFT", 160, 0);
+			end
+
+			editBox[categoryLabel:GetName()]:Show();
+
+			-- checkboxes
+			local buttonsLength = 0;
+			for i=1,#All do
+				if ((select(1,config:HasItem(category,checkBtn[All[i]]:GetName())))) then
+					buttonsLength = buttonsLength + 1;
+
+					checkBtn[All[i]]:SetParent(tab);
+					checkBtn[All[i]]:SetPoint("TOPLEFT", categoryLabel, "TOPLEFT", 30, -22*buttonsLength+5);
+
+					checkBtn[All[i]]:Show();
+					removeBtn[All[i]]:Show();
+				end
+			end
+		else -- even though we don't display them, we still need to move them to the right tab
+			-- edit box
+			editBox[categoryLabel:GetName()]:SetParent(tab);
+			editBox[categoryLabel:GetName()]:SetPoint("LEFT", categoryLabel, "RIGHT", 10, 0);
+			-- checkboxes
+			local buttonsLength = 0;
+			for i=1,#All do
+				if ((select(1,config:HasItem(category,checkBtn[All[i]]:GetName())))) then
+					buttonsLength = buttonsLength + 1;
+
+					checkBtn[All[i]]:SetParent(tab);
+					checkBtn[All[i]]:SetPoint("TOPLEFT", categoryLabel, "TOPLEFT", 30, -22*buttonsLength+5);
+				end
+			end
+		end
+
+	else
+		if (not next(ToDoListSV.itemsList[catName])) then -- if there is no more item in a category, we delete the corresponding elements
+			ToDoListSV.itemsList[catName] = nil;
+			addBtn[categoryLabel:GetName()] = nil;
+			editBox[categoryLabel:GetName()] = nil;
+			label[categoryLabel:GetName()] = nil;
+			isPresent, pos = config:HasItem(ToDoListSV.closedCategories,catName); -- we verify if it was a closed category (can happen with the /tdl clear command)
+			if (isPresent) then
+				table.remove(ToDoListSV.closedCategories,pos);
+			end
+		end
+		categoryLabel:SetParent(tab);
+		categoryLabel:SetPoint("TOPLEFT", itemsFrameUI, "TOPLEFT", 0, 50); -- we place that invisible-but-still-here label out of our way
+		return lastData; -- if we are here, lastData shall not be changed or there will be consequences! (so we end the function prematurely)
+	end
+
+	lastData = {
+		["tab"] = tab,
+		["category"] = category,
+		["categoryLabel"] = categoryLabel,
+		["constraint"] = constraint,
+		["catName"] = catName,
+	}
+	return lastData;
+end
+
+local function loadAddACategory(tab)
+	itemsFrameUI.labelAddACategory:SetParent(tab);
+	itemsFrameUI.labelAddACategory:SetPoint("TOPLEFT", itemsFrameUI.lineTop, "TOPLEFT", 30, -35);
+
+	itemsFrameUI.labelCategoryName:SetParent(tab);
+	itemsFrameUI.labelCategoryName:SetPoint("TOPLEFT", itemsFrameUI.labelAddACategory, "TOPLEFT", -55, -30);
+	itemsFrameUI.categoryEditBox:SetParent(tab);
+	itemsFrameUI.categoryEditBox:SetPoint("RIGHT", itemsFrameUI.labelCategoryName, "RIGHT", 150, 0);
+
+	itemsFrameUI.labelFirstItemName:SetParent(tab);
+	itemsFrameUI.labelFirstItemName:SetPoint("TOPLEFT", itemsFrameUI.labelAddACategory, "TOPLEFT", -55, -55);
+	itemsFrameUI.nameEditBox:SetParent(tab);
+	itemsFrameUI.nameEditBox:SetPoint("RIGHT", itemsFrameUI.labelFirstItemName, "RIGHT", 150, 0);
+
+	itemsFrameUI.lineBottom:SetParent(tab);
+	if (ToDoListSV.newCatClosed) then -- if the creation of new categories is closed
+		-- we hide and adapt the height of every component
+		itemsFrameUI.labelCategoryName:Hide();
+		itemsFrameUI.categoryEditBox:Hide();
+		itemsFrameUI.labelFirstItemName:Hide();
+		itemsFrameUI.nameEditBox:Hide();
+
+		itemsFrameUI.lineBottom:SetPoint("TOPLEFT",itemsFrameUI.labelAddACategory,"TOPLEFT",-30,-25);
+	else
+		-- or else we show and adapt the height of every component again
+		itemsFrameUI.labelCategoryName:Show();
+		itemsFrameUI.categoryEditBox:Show();
+		itemsFrameUI.labelFirstItemName:Show();
+		itemsFrameUI.nameEditBox:Show();
+
+		itemsFrameUI.lineBottom:SetPoint("TOPLEFT",itemsFrameUI.labelAddACategory,"TOPLEFT",-30,-80);
+	end
+end
+
 -------------------------------------------------------------------------------------------
 -- Contenting:<3 --------------------------------------------------------------------------
 -------------------------------------------------------------------------------------------
 
+-- generating the content
 local function generateTab(tab,case)
 	-- We sort all of the categories in alphabetical order
 	local tempTable = {}
-	for t in pairs(ToDoListSV_itemsList) do table.insert(tempTable, t) end
+	for t in pairs(ToDoListSV.itemsList) do table.insert(tempTable, t) end
 	table.sort(tempTable);
 
 	-- we load everything
-	local length = 0;
-
+	local lastData = nil;
 	for _,n in pairs(tempTable) do
 		if (n ~= "Daily" and n ~= "Weekly") then
-			length = loadCategories(tab,ToDoListSV_itemsList[n],label[n],length, case, n);
+			lastData = loadCategories(tab,ToDoListSV.itemsList[n],label[n], case, n, lastData);
 		end
 	end
-
-	return length;
 end
 
-----------------------------------
--- All tab content
-----------------------------------
-local function AllTabContent()
-	-- Reset button
-	AllTab.uncheckAllBtn = config:CreateButton("CENTER", AllTab, "TOP", 0, -40, "Uncheck All");
-	AllTab.uncheckAllBtn:SetScript("OnClick", function(self) resetBtns(self:GetParent():GetName()) end);
+-- loading the content (top to bottom)
+local function loadTab(tab,case)
+	itemsFrameUI.remaining:SetParent(tab);
+	itemsFrameUI.remaining:SetPoint("TOPLEFT", tab, "TOPLEFT", 100, -20);
+	itemsFrameUI.lineTop:SetParent(tab);
+	itemsFrameUI.lineTop:SetPoint("TOPLEFT", tab, "TOPLEFT", 40, -40);
 
-	-- Position dummy
-	AllTab.dummyLabel = config:CreateDummy(AllTab,5,-140);
-
-	-- Labels
-	AllTab.nextDailyReset = config:CreateLabel("TOPLEFT",AllTab,"TOPLEFT",50,-80,"Next daily reset:");
-	AllTab.nextWeeklyReset = config:CreateLabel("TOPLEFT",AllTab,"TOPLEFT",25,-105,"Next weekly reset:");
-	AllTab.remaining = config:CreateLabel("TOPLEFT",AllTab,"TOPLEFT",100,-135,"Remaining:");
-	AllTab.lineTop = config:CreateLabel("TOPLEFT",AllTab,"TOPLEFT",40,-155,"|cff00ccff___________________________|r");
-	AllTab.nothingLabel = config:CreateNothingLabel(AllTab);
-	AllTab.lineBottom = config:CreateLabel("TOPLEFT",AllTab,"TOPLEFT",0,0,"|cff00ccff___________________________|r");
-end
-
-local function loadAllTab()
-	local length = generateTab(AllTab,nil);
-
-	-- Bottom line:
-	AllTab.lineBottom:SetPoint("TOPLEFT",AllTab.dummyLabel,"TOPLEFT",34,-length*23 - 10);
+	-- loading the "add a new category" menu
+	loadAddACategory(tab);
 
 	-- Nothing label:
-	if (next(All) ~= nil) then -- if there is something to show
-		AllTab.nothingLabel:Hide();
+	itemsFrameUI.nothingLabel:SetParent(tab);
+	if (next(case) ~= nil) then -- if there is something to show in the tab we're in
+		itemsFrameUI.nothingLabel:Hide();
 	else
-		AllTab.nothingLabel:SetPoint("CENTER", AllTab.lineTop, "CENTER", 0, -33); -- to correctly center this text on diffent screen sizes
-		AllTab.nothingLabel:Show();
+		itemsFrameUI.nothingLabel:SetPoint("CENTER", itemsFrameUI.lineBottom, "CENTER", 0, -33); -- to correctly center this text on diffent screen sizes
+		itemsFrameUI.nothingLabel:Show();
 	end
 
-	---- Add a category: --------------------------
-	loadAddACategory(AllTab, length);
+	itemsFrameUI.dummyLabel:SetParent(tab);
+	itemsFrameUI.dummyLabel:SetPoint("TOPLEFT", itemsFrameUI.lineBottom, "TOPLEFT", -35, -35);
+
+	-- generating all of the content (items, checkboxes, editboxes, category labels...)
+	generateTab(tab,case);
 end
 
 ----------------------------------
--- Daily tab content
-----------------------------------
-local function DailyTabContent()
-	-- Reset button
-	DailyTab.uncheckDailyBtn = config:CreateButton("CENTER", DailyTab, "TOP", 0, -40, "Uncheck Daily");
-	DailyTab.uncheckDailyBtn:SetScript("OnClick", function(self) resetBtns(self:GetParent():GetName()) end);
-
-	-- Position dummy
-	DailyTab.dummyLabel = config:CreateDummy(DailyTab,5,-100);
-
-	-- Labels
-	DailyTab.remaining = config:CreateLabel("TOPLEFT",DailyTab,"TOPLEFT",100,-80,"Remaining:");
-	DailyTab.lineTop = config:CreateLabel("TOPLEFT",DailyTab,"TOPLEFT",40,-100,"|cff00ccff___________________________|r");
-	DailyTab.nothingLabel = config:CreateNothingLabel(DailyTab);
-	DailyTab.lineBottom = config:CreateLabel("TOPLEFT",DailyTab,"TOPLEFT",0,0,"|cff00ccff___________________________|r");
-end
-
-local function loadDailyTab()
-	local length = generateTab(DailyTab,ToDoListSV_itemsList["Daily"]);
-
-	-- Bottom line:
-	DailyTab.lineBottom:SetPoint("TOPLEFT",DailyTab.dummyLabel,"TOPLEFT",34,-length*23 - 10);
-
-	-- Nothing label:
-	if (next(ToDoListSV_itemsList["Daily"]) ~= nil) then -- if there is something to show
-		DailyTab.nothingLabel:Hide();
-	else
-		DailyTab.nothingLabel:SetPoint("CENTER", DailyTab.lineTop, "CENTER", 0, -33); -- to correctly center this text on diffent screen sizes
-		DailyTab.nothingLabel:Show();
-	end
-
-	---- Add a category: --------------------------
-	loadAddACategory(DailyTab, length);
-end
-
-----------------------------------
--- Weekly tab content
-----------------------------------
-local function WeeklyTabContent()
-	-- Reset button
-	WeeklyTab.uncheckWeeklyBtn = config:CreateButton("CENTER", WeeklyTab, "TOP", 0, -40, "Uncheck Weekly");
-	WeeklyTab.uncheckWeeklyBtn:SetScript("OnClick", function(self) resetBtns(self:GetParent():GetName()) end);
-
-	-- Position dummy
-	WeeklyTab.dummyLabel = config:CreateDummy(WeeklyTab,5,-100);
-
-	-- Labels
-	WeeklyTab.remaining = config:CreateLabel("TOPLEFT",WeeklyTab,"TOPLEFT",100,-80,"Remaining:");
-	WeeklyTab.lineTop = config:CreateLabel("TOPLEFT",WeeklyTab,"TOPLEFT",40,-100,"|cff00ccff___________________________|r");
-	WeeklyTab.nothingLabel = config:CreateNothingLabel(WeeklyTab);
-	WeeklyTab.lineBottom = config:CreateLabel("TOPLEFT",WeeklyTab,"TOPLEFT",0,0,"|cff00ccff___________________________|r");
-end
-
-local function loadWeeklyTab()
-	local length = generateTab(WeeklyTab,ToDoListSV_itemsList["Weekly"]);
-
-	-- Bottom line:
-	WeeklyTab.lineBottom:SetPoint("TOPLEFT",WeeklyTab.dummyLabel,"TOPLEFT",34,-length*23 - 10);
-
-	-- Nothing label:
-	if (next(ToDoListSV_itemsList["Weekly"]) ~= nil) then -- if there is something to show
-		WeeklyTab.nothingLabel:Hide();
-	else
-		WeeklyTab.nothingLabel:SetPoint("CENTER", WeeklyTab.lineTop, "CENTER", 0, -33); -- to correctly center this text on diffent screen sizes
-		WeeklyTab.nothingLabel:Show();
-	end
-
-	---- Add a category: --------------------------
-	loadAddACategory(WeeklyTab, length);
-end
-
-----------------------------------
--- Creating the tabs
+-- Creating the frame and tabs
 ----------------------------------
 
 --------------------------------------------------------------------
@@ -635,7 +646,7 @@ end
 --------------------------------------------------------------------
 
 -- Selecting the tab
-local function Tab_OnClick(self)
+Tab_OnClick = function(self)
 	PanelTemplates_SetTab(self:GetParent(), self:GetID());
 
 	local scrollChild = itemsFrameUI.ScrollFrame:GetScrollChild();
@@ -649,14 +660,14 @@ local function Tab_OnClick(self)
 	ItemsFrame_Update();
 
 	-- Loading the good tab
-	if (self:GetName() == "ToDoListUIFrameTab1") then loadAllTab() end
-	if (self:GetName() == "ToDoListUIFrameTab2") then loadDailyTab() end
-	if (self:GetName() == "ToDoListUIFrameTab3") then loadWeeklyTab() end
+	if (self:GetName() == "ToDoListUIFrameTab1") then loadTab(AllTab,All) end
+	if (self:GetName() == "ToDoListUIFrameTab2") then loadTab(DailyTab,ToDoListSV.itemsList["Daily"]) end
+	if (self:GetName() == "ToDoListUIFrameTab3") then loadTab(WeeklyTab,ToDoListSV.itemsList["Weekly"]) end
 
 	-- we update the frame after loading the tab to refresh the display
 	ItemsFrame_Update();
 
-	ToDoListSV_lastLoadedTab = self:GetName();
+	ToDoListSV.lastLoadedTab = self:GetName();
 
 	self.content:Show();
 end
@@ -668,17 +679,17 @@ function itemsFrame:RefreshTab(cat, name, action, modif)
 		-- Removing case
 		if (action == "Remove") then
 			if (cat == nil) then
-				local isPresent, pos = config:HasItem(ToDoListSV_checkedButtons, checkBtn[name]:GetName());
+				local isPresent, pos = config:HasItem(ToDoListSV.checkedButtons, checkBtn[name]:GetName());
 				if (checkBtn[name]:GetChecked() and isPresent) then
-		      table.remove(ToDoListSV_checkedButtons, pos);
+		      table.remove(ToDoListSV.checkedButtons, pos);
 				end
 
 				checkBtn[name]:Hide();	-- get out of my view mate
-				minusBtn[name] = nil;
+				removeBtn[name] = nil;
 				checkBtn[name] = nil;
 			end
 
-			Tab_OnClick(_G[ToDoListSV_lastLoadedTab]); -- we reload the tab to instantly display the changes
+			Tab_OnClick(_G[ToDoListSV.lastLoadedTab]); -- we reload the tab to instantly display the changes
 		end
 
 		-- Adding case
@@ -690,8 +701,8 @@ function itemsFrame:RefreshTab(cat, name, action, modif)
 				checkBtn[name].text:SetFontObject("GameFontNormalLarge");
 				checkBtn[name]:SetScript("OnClick", ItemsFrame_Update);
 
-				minusBtn[name] = config:CreateMinusButton(checkBtn[name]);
-				minusBtn[name]:SetScript("OnClick", removeItem);
+				removeBtn[name] = config:CreateRemoveButton(checkBtn[name]);
+				removeBtn[name]:SetScript("OnClick", removeItem);
 			end
 			-- we create the corresponding label (if it is a new one)
 			if (label[cat] == nil) then
@@ -702,7 +713,7 @@ function itemsFrame:RefreshTab(cat, name, action, modif)
 				addBtn[cat]:SetScript("OnClick", addItem);
 			end
 
-			Tab_OnClick(_G[ToDoListSV_lastLoadedTab]); -- we reload the tab to instantly display the changes
+			Tab_OnClick(_G[ToDoListSV.lastLoadedTab]); -- we reload the tab to instantly display the changes
 		end
 	end
 end
@@ -748,13 +759,16 @@ function config:CreateItemsFrame()
 	itemsFrameUI.Title:SetPoint("LEFT", ToDoListUIFrameTitleBG, "LEFT", (itemsFrameUI:GetWidth()/2)-50, 1);
 	itemsFrameUI.Title:SetText("To do list");
 
-	itemsFrameUI.label1 = itemsFrameUI:CreateFontString(nil); -- info label 1
-	itemsFrameUI.label1:SetFontObject("GameFontHighlightLarge");
-	itemsFrameUI.label1:SetText("Add a new category:");
+	itemsFrameUI.remaining = config:CreateNoPointsLabel(itemsFrameUI,nil,"Remaining:");
+	itemsFrameUI.lineTop = config:CreateNoPointsLabel(itemsFrameUI,nil,"|cff00ccff___________________________|r");
 
-	itemsFrameUI.label2 = itemsFrameUI:CreateFontString(nil); -- info label 2
-	itemsFrameUI.label2:SetFontObject("GameFontHighlightLarge");
-	itemsFrameUI.label2:SetText("Category name:");
+	itemsFrameUI.labelAddACategory = itemsFrameUI:CreateFontString(nil); -- info label 1
+	itemsFrameUI.labelAddACategory:SetFontObject("GameFontHighlightLarge");
+	itemsFrameUI.labelAddACategory:SetText("Add a new category");
+
+	itemsFrameUI.labelCategoryName = itemsFrameUI:CreateFontString(nil); -- info label 2
+	itemsFrameUI.labelCategoryName:SetFontObject("GameFontHighlightLarge");
+	itemsFrameUI.labelCategoryName:SetText("Category name:");
 
 	itemsFrameUI.categoryEditBox = CreateFrame("EditBox", nil, itemsFrameUI, "InputBoxTemplate"); -- edit box to put the new category name
 	itemsFrameUI.categoryEditBox:SetSize(130, 30);
@@ -762,9 +776,9 @@ function config:CreateItemsFrame()
 	itemsFrameUI.categoryEditBox:SetScript("OnKeyDown", function(self, key) if (key == "TAB") then itemsFrameUI.nameEditBox:SetFocus() end end) -- to switch easily between the two edit boxes
 	itemsFrameUI.categoryEditBox:SetScript("OnEnterPressed", addCategory); -- if we press enter, it's like we clicked on the add button
 
-	itemsFrameUI.label3 = itemsFrameUI:CreateFontString(nil); -- info label 3
-	itemsFrameUI.label3:SetFontObject("GameFontHighlightLarge");
-	itemsFrameUI.label3:SetText("Item name:");
+	itemsFrameUI.labelFirstItemName = itemsFrameUI:CreateFontString(nil); -- info label 3
+	itemsFrameUI.labelFirstItemName:SetFontObject("GameFontHighlightLarge");
+	itemsFrameUI.labelFirstItemName:SetText("1st item name:");
 
 	itemsFrameUI.nameEditBox = CreateFrame("EditBox", nil, itemsFrameUI, "InputBoxTemplate"); -- edit box tp put the name of the first item
 	itemsFrameUI.nameEditBox:SetSize(130, 30);
@@ -774,6 +788,12 @@ function config:CreateItemsFrame()
 
 	itemsFrameUI.addBtn = config:CreateAddButton(itemsFrameUI.nameEditBox);
 	itemsFrameUI.addBtn:SetScript("onClick", addCategory)
+
+	itemsFrameUI.lineBottom = config:CreateLabel("TOPLEFT",itemsFrameUI,"TOPLEFT",0,0,"|cff00ccff___________________________|r");
+
+	itemsFrameUI.nothingLabel = config:CreateNothingLabel(itemsFrameUI);
+
+	itemsFrameUI.dummyLabel = config:CreateDummy(itemsFrameUI.lineBottom,0,0);
 
 	itemsFrameUI.timeSinceLastUpdate = 0;
 
@@ -789,6 +809,7 @@ function config:CreateItemsFrame()
   itemsFrameUI.ScrollFrame.ScrollBar:SetPoint("BOTTOMRIGHT", itemsFrameUI.ScrollFrame, "BOTTOMRIGHT", -7, 18);
 
 	itemsFrameUI:SetScript("OnUpdate", ItemsFrame_OnUpdate);
+	itemsFrameUI:SetScript("OnMouseUp", ItemsFrame_OnMouseUp);
 
 	itemsFrameUI:SetMovable(true);
 	itemsFrameUI:SetClampedToScreen(true);
@@ -804,18 +825,13 @@ function config:CreateItemsFrame()
 	-- Generating the core --
 	UpdateAllTable();
 	loadMovable();
-	loadSavedVariables();
-
-	-- Generating the content --
-	AllTabContent();
-	DailyTabContent();
-	WeeklyTabContent();
+	loadSavedVariable();
 
 	-- Updating everything once and hiding the UI
-	ItemsFrame_UpdateTime(); -- for the auto reset check (we could wait 1 sec, but nah we don't have the time)
+	ItemsFrame_UpdateTime(); -- for the auto reset check (we could wait 1 sec, but nah we don't have the time man)
 
 	-- We load the good tab
-	Tab_OnClick(_G[ToDoListSV_lastLoadedTab]);
+	Tab_OnClick(_G[ToDoListSV.lastLoadedTab]);
 
 	itemsFrameUI:Hide();
 
@@ -839,28 +855,30 @@ end
 
 function itemsFrame:ClearAll()
 	if (next(checkBtn) ~= nil) then
-		local last = ToDoListSV_lastLoadedTab;
+		config:Print("Starting clear...");
+
+		local last = ToDoListSV.lastLoadedTab;
 		-- we put ourselves in the All tab to load every elements
 		Tab_OnClick(_G["ToDoListUIFrameTab1"]);
 
-		for k,v in pairs(minusBtn) do
+		for k,v in pairs(removeBtn) do
 			removeItem(v);
 		end
 
 		-- we refresh and go back to the tab we were on
 		Tab_OnClick(_G[last]);
 
-		config:Print("Cleared succesfully!");
+		config:Print("Clear succesful!");
 	else
 		config:Print("Nothing to clear!");
 	end
 end
 
 -- Tests function (for me :p)
-function ToDoListTests(yes)
+function Nys_Tests(yes)
 	if (yes==1) then
-		ToDoListSV_itemsList = {}
-		ToDoListSV_itemsList = {
+		ToDoListSV.itemsList = {}
+		ToDoListSV.itemsList = {
 			["Legion"] = {
 				"Legion wq", -- [1]
 				"Class hall missions", -- [2]
@@ -934,12 +952,9 @@ function ToDoListTests(yes)
 			},
 		}
 	elseif (yes==2) then
-		ToDoListSV_itemsList = nil;
-		ToDoListSV_checkedButtons = nil;
-		ToDoListSV_autoReset = nil;
-		ToDoListSV_lastLoadedTab = nil;
+		ToDoListSV = nil;
 	elseif (yes==3) then
-		print(label["Legion"]:GetPoint())
+		ToDoListSV.lastLoadedTab = "ToDoListUIFrameTab1";
 	end
 	print(1)
 end

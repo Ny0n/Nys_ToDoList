@@ -153,7 +153,7 @@ function config:CreateButton(point, relativeFrame, relativePoint, xOffset, yOffs
 	return btn;
 end
 
-function config:CreateMinusButton(relativeCheckButton)
+function config:CreateRemoveButton(relativeCheckButton)
 	local btn = CreateFrame("Button", nil, relativeCheckButton, "UIPanelCloseButton");
 	btn:SetPoint("LEFT", relativeCheckButton, "LEFT", -25, 0);
 	btn:SetSize(25, 25);
