@@ -19,7 +19,6 @@ local editBox = {};
 
 local All = {}
 
-local lastLoadedTab;
 local ItemsFrame_Update;
 local ItemsFrame_UpdateTime;
 local refreshRate = 1;
@@ -425,6 +424,21 @@ local function loadCategories(tab,category,categorylabel,totalLength,constraint,
 	return totalLength;
 end
 
+local function loadAddACategory(tab, length)
+	itemsFrameUI.label1:SetParent(tab);
+	itemsFrameUI.label1:SetPoint("TOPLEFT", tab.dummyLabel, "TOPLEFT", 60, -length*23 - 40);
+
+	itemsFrameUI.label2:SetParent(tab);
+	itemsFrameUI.label2:SetPoint("TOPLEFT", itemsFrameUI.label1, "TOPLEFT", -55, -25);
+	itemsFrameUI.categoryEditBox:SetParent(tab);
+	itemsFrameUI.categoryEditBox:SetPoint("RIGHT", itemsFrameUI.label2, "RIGHT", 150, 0);
+
+	itemsFrameUI.label3:SetParent(tab);
+	itemsFrameUI.label3:SetPoint("TOPLEFT", itemsFrameUI.label1, "TOPLEFT", -55, -50);
+	itemsFrameUI.nameEditBox:SetParent(tab);
+	itemsFrameUI.nameEditBox:SetPoint("RIGHT", itemsFrameUI.label3, "RIGHT", 150, 0);
+end
+
 local function loadMovable()
 	-- All items transformed as checkboxes
 	for i=1,#All,1 do
@@ -442,7 +456,7 @@ local function loadMovable()
 		if (k ~= "Daily" and k ~= "Weekly") then
 			label[k] = config:CreateNoPointsLabel(itemsFrameUI,k,tostring(k.." :"));
 			editBox[k] = config:CreateNoPointsLabelEditBox(k);
-			editBox[k]:SetScript("OnEnterPressed", function(self) addItem(addBtn[self:GetName()]) end); -- if we press enter, it's blike we clicked on the add button
+			editBox[k]:SetScript("OnEnterPressed", function(self) addItem(addBtn[self:GetName()]) end); -- if we press enter, it's like we clicked on the add button
 			addBtn[k] = config:CreateAddButton(editBox[k]);
 			addBtn[k]:SetScript("OnClick", addItem);
 		end
@@ -469,7 +483,7 @@ local function AllTabContent()
 	AllTab.nextWeeklyReset = config:CreateLabel("TOPLEFT",AllTab,"TOPLEFT",25,-105,"Next weekly reset:");
 	AllTab.remaining = config:CreateLabel("TOPLEFT",AllTab,"TOPLEFT",100,-135,"Remaining:");
 	AllTab.lineTop = config:CreateLabel("TOPLEFT",AllTab,"TOPLEFT",40,-155,"|cff00ccff___________________________|r");
-	AllTab.nothingLabel = config:CreateNothingLabel(AllTab,-190);
+	AllTab.nothingLabel = config:CreateNothingLabel(AllTab);
 	AllTab.lineBottom = config:CreateLabel("TOPLEFT",AllTab,"TOPLEFT",0,0,"|cff00ccff___________________________|r");
 end
 
@@ -488,22 +502,12 @@ local function loadAllTab()
 	if (next(All) ~= nil) then -- if there is something to show
 		AllTab.nothingLabel:Hide();
 	else
+		AllTab.nothingLabel:SetPoint("CENTER", AllTab.lineTop, "CENTER", 0, -33); -- to correctly center this text on diffent screen sizes
 		AllTab.nothingLabel:Show();
 	end
 
 	---- Add a category: --------------------------
-	itemsFrameUI.label1:SetParent(AllTab);
-	itemsFrameUI.label1:SetPoint("TOPLEFT", AllTab.dummyLabel, "TOPLEFT", 60, -length*23 - 40);
-
-	itemsFrameUI.label2:SetParent(AllTab);
-	itemsFrameUI.label2:SetPoint("TOPLEFT", itemsFrameUI.label1, "TOPLEFT", -55, -25);
-	itemsFrameUI.categoryEditBox:SetParent(AllTab);
-	itemsFrameUI.categoryEditBox:SetPoint("RIGHT", itemsFrameUI.label2, "RIGHT", 150, 0);
-
-	itemsFrameUI.label3:SetParent(AllTab);
-	itemsFrameUI.label3:SetPoint("TOPLEFT", itemsFrameUI.label1, "TOPLEFT", -55, -50);
-	itemsFrameUI.nameEditBox:SetParent(AllTab);
-	itemsFrameUI.nameEditBox:SetPoint("RIGHT", itemsFrameUI.label3, "RIGHT", 150, 0);
+	loadAddACategory(AllTab, length);
 end
 
 ----------------------------------
@@ -520,7 +524,7 @@ local function DailyTabContent()
 	-- Labels
 	DailyTab.remaining = config:CreateLabel("TOPLEFT",DailyTab,"TOPLEFT",100,-80,"Remaining:");
 	DailyTab.lineTop = config:CreateLabel("TOPLEFT",DailyTab,"TOPLEFT",40,-100,"|cff00ccff___________________________|r");
-	DailyTab.nothingLabel = config:CreateNothingLabel(DailyTab,-135);
+	DailyTab.nothingLabel = config:CreateNothingLabel(DailyTab);
 	DailyTab.lineBottom = config:CreateLabel("TOPLEFT",DailyTab,"TOPLEFT",0,0,"|cff00ccff___________________________|r");
 end
 
@@ -539,22 +543,12 @@ local function loadDailyTab()
 	if (next(ToDoListSV_itemsList["Daily"]) ~= nil) then -- if there is something to show
 		DailyTab.nothingLabel:Hide();
 	else
+		DailyTab.nothingLabel:SetPoint("CENTER", DailyTab.lineTop, "CENTER", 0, -33); -- to correctly center this text on diffent screen sizes
 		DailyTab.nothingLabel:Show();
 	end
 
 	---- Add a category: --------------------------
-	itemsFrameUI.label1:SetParent(DailyTab);
-	itemsFrameUI.label1:SetPoint("TOPLEFT", DailyTab.dummyLabel, "TOPLEFT", 60, -length*23 - 40);
-
-	itemsFrameUI.label2:SetParent(DailyTab);
-	itemsFrameUI.label2:SetPoint("TOPLEFT", itemsFrameUI.label1, "TOPLEFT", -55, -25);
-	itemsFrameUI.categoryEditBox:SetParent(DailyTab);
-	itemsFrameUI.categoryEditBox:SetPoint("RIGHT", itemsFrameUI.label2, "RIGHT", 150, 0);
-
-	itemsFrameUI.label3:SetParent(DailyTab);
-	itemsFrameUI.label3:SetPoint("TOPLEFT", itemsFrameUI.label1, "TOPLEFT", -55, -50);
-	itemsFrameUI.nameEditBox:SetParent(DailyTab);
-	itemsFrameUI.nameEditBox:SetPoint("RIGHT", itemsFrameUI.label3, "RIGHT", 150, 0);
+	loadAddACategory(DailyTab, length);
 end
 
 ----------------------------------
@@ -571,7 +565,7 @@ local function WeeklyTabContent()
 	-- Labels
 	WeeklyTab.remaining = config:CreateLabel("TOPLEFT",WeeklyTab,"TOPLEFT",100,-80,"Remaining:");
 	WeeklyTab.lineTop = config:CreateLabel("TOPLEFT",WeeklyTab,"TOPLEFT",40,-100,"|cff00ccff___________________________|r");
-	WeeklyTab.nothingLabel = config:CreateNothingLabel(WeeklyTab,-135);
+	WeeklyTab.nothingLabel = config:CreateNothingLabel(WeeklyTab);
 	WeeklyTab.lineBottom = config:CreateLabel("TOPLEFT",WeeklyTab,"TOPLEFT",0,0,"|cff00ccff___________________________|r");
 end
 
@@ -590,22 +584,12 @@ local function loadWeeklyTab()
 	if (next(ToDoListSV_itemsList["Weekly"]) ~= nil) then -- if there is something to show
 		WeeklyTab.nothingLabel:Hide();
 	else
+		WeeklyTab.nothingLabel:SetPoint("CENTER", WeeklyTab.lineTop, "CENTER", 0, -33); -- to correctly center this text on diffent screen sizes
 		WeeklyTab.nothingLabel:Show();
 	end
 
 	---- Add a category: --------------------------
-	itemsFrameUI.label1:SetParent(WeeklyTab);
-	itemsFrameUI.label1:SetPoint("TOPLEFT", WeeklyTab.dummyLabel, "TOPLEFT", 60, -length*23 - 40);
-
-	itemsFrameUI.label2:SetParent(WeeklyTab);
-	itemsFrameUI.label2:SetPoint("TOPLEFT", itemsFrameUI.label1, "TOPLEFT", -55, -25);
-	itemsFrameUI.categoryEditBox:SetParent(WeeklyTab);
-	itemsFrameUI.categoryEditBox:SetPoint("RIGHT", itemsFrameUI.label2, "RIGHT", 150, 0);
-
-	itemsFrameUI.label3:SetParent(WeeklyTab);
-	itemsFrameUI.label3:SetPoint("TOPLEFT", itemsFrameUI.label1, "TOPLEFT", -55, -50);
-	itemsFrameUI.nameEditBox:SetParent(WeeklyTab);
-	itemsFrameUI.nameEditBox:SetPoint("RIGHT", itemsFrameUI.label3, "RIGHT", 150, 0);
+	loadAddACategory(WeeklyTab, length);
 end
 
 ----------------------------------
@@ -638,7 +622,7 @@ local function Tab_OnClick(self)
 	-- we update the frame after loading the tab to refresh the display
 	ItemsFrame_Update();
 
-	lastLoadedTab = self;
+	ToDoListSV_lastLoadedTab = self:GetName();
 
 	self.content:Show();
 end
@@ -660,7 +644,7 @@ function itemsFrame:RefreshTab(cat, name, action, modif)
 				checkBtn[name] = nil;
 			end
 
-			Tab_OnClick(lastLoadedTab); -- we reload the tab to instantly display the changes
+			Tab_OnClick(_G[ToDoListSV_lastLoadedTab]); -- we reload the tab to instantly display the changes
 		end
 
 		-- Adding case
@@ -684,7 +668,7 @@ function itemsFrame:RefreshTab(cat, name, action, modif)
 				addBtn[cat]:SetScript("OnClick", addItem);
 			end
 
-			Tab_OnClick(lastLoadedTab); -- we reload the tab to instantly display the changes
+			Tab_OnClick(_G[ToDoListSV_lastLoadedTab]); -- we reload the tab to instantly display the changes
 		end
 	end
 end
@@ -796,8 +780,10 @@ function config:CreateItemsFrame()
 	-- Updating everything once and hiding the UI
 	ItemsFrame_UpdateTime(); -- for the auto reset check (we could wait 1 sec, but nah we don't have the time)
 
-	-- Selecting the first tab (All)
-	Tab_OnClick(_G["ToDoListUIFrameTab1"]);
+	-- Selecting either the last tab we were on, or if it's the first time, the All tab
+	ToDoListSV_lastLoadedTab = ToDoListSV_lastLoadedTab or "ToDoListUIFrameTab1";
+	-- We load that tab
+	Tab_OnClick(_G[ToDoListSV_lastLoadedTab]);
 
 	itemsFrameUI:Hide();
 
@@ -821,6 +807,7 @@ end
 
 function itemsFrame:ClearAll()
 	if (next(checkBtn) ~= nil) then
+		local last = ToDoListSV_lastLoadedTab;
 		-- we put ourselves in the All tab to load every elements
 		Tab_OnClick(_G["ToDoListUIFrameTab1"]);
 
@@ -828,8 +815,8 @@ function itemsFrame:ClearAll()
 			removeItem(v);
 		end
 
-		-- we refresh the tab, just like if we created it
-		Tab_OnClick(_G["ToDoListUIFrameTab1"]);
+		-- we refresh and go back to the tab we were on
+		Tab_OnClick(_G[last]);
 
 		config:Print("Cleared succesfully!");
 	else
@@ -837,19 +824,14 @@ function itemsFrame:ClearAll()
 	end
 end
 
--- Tests function
+-- Tests function (for me :p)
 function ToDoListTests(yes)
 	if (yes) then
 		ToDoListSV_itemsList = {}
 		ToDoListSV_itemsList = {
-			["Mount farm"] = {
-				"Rukhmar", -- [1]
-				"Archimonde (myth)", -- [2]
-				"Black hand (myth)", -- [3]
-				"Sha of fear", -- [4]
-				"Mogu'shan Vaults", -- [5]
-				"Garrosh Hellscream", -- [6]
-				"Ragnaros + Alysrazor", -- [7]
+			["Legion"] = {
+				"Legion wq", -- [1]
+				"Class hall missions", -- [2]
 			},
 			["BFA"] = {
 				"BFA wq", -- [1]
@@ -860,9 +842,32 @@ function ToDoListTests(yes)
 				"Molten front assault daily", -- [1]
 				"Timeless isle", -- [2]
 				"Fishing contest", -- [3]
-				"Icecrown (Nýor)", -- [4]
 				"Hexweave Cloth (Nyøny)", -- [4]
 				"Korda Torros (Rare)", -- [5]
+				"Argent tournament dailies", -- [6]
+			},
+			["Raids transmog"] = {
+				"Blackrock foundry (heroic)", -- [1]
+				"Terrace (lfr+normal)", -- [2]
+				"Throne of thunder (heroic+lfr)", -- [3]
+				"Siege of Orgrimmar (myth)", -- [4]
+				"Throne of thunder (heroic)", -- [5]
+			},
+			["Draenor"] = {
+				"Garrison missions", -- [1]
+				"Reactivate follower", -- [2]
+				"Harrison Jones", -- [3]
+				"Recruit garrison follower", -- [4]
+				"Garrison invasion", -- [5]
+			},
+			["Mount farm"] = {
+				"Rukhmar", -- [1]
+				"Archimonde (myth)", -- [2]
+				"Black hand (myth)", -- [3]
+				"Sha of fear", -- [4]
+				"Mogu'shan Vaults", -- [5]
+				"Garrosh Hellscream", -- [6]
+				"Ragnaros + Alysrazor", -- [7]
 			},
 			["Weekly"] = {
 				"Recruit garrison follower", -- [1]
@@ -878,17 +883,9 @@ function ToDoListTests(yes)
 				"Ragnaros + Alysrazor", -- [11]
 				"Blackrock foundry (heroic)", -- [12]
 				"Terrace (lfr+normal)", -- [13]
-				"Throne of thunder (heroic+lfr)", -- [14]
-				"Siege of Orgrimmar (myth)", -- [15]
-				"Icecrown (Nýor)", -- [16]
-				"Hexweave Cloth (Nyøny)", -- [17]
-			},
-			["Draenor"] = {
-				"Garrison missions", -- [1]
-				"Reactivate follower", -- [2]
-				"Harrison Jones", -- [3]
-				"Recruit garrison follower", -- [4]
-				"Garrison invasion", -- [5]
+				"Siege of Orgrimmar (myth)", -- [14]
+				"Hexweave Cloth (Nyøny)", -- [15]
+				"Throne of thunder (heroic)", -- [16]
 			},
 			["Daily"] = {
 				"Garrison missions", -- [1]
@@ -901,21 +898,12 @@ function ToDoListTests(yes)
 				"BFA missions", -- [8]
 				"Molten front assault daily", -- [9]
 				"Korda Torros (Rare)", -- [10]
-			},
-			["Raids transmog"] = {
-				"Blackrock foundry (heroic)", -- [1]
-				"Terrace (lfr+normal)", -- [2]
-				"Throne of thunder (heroic+lfr)", -- [3]
-				"Siege of Orgrimmar (myth)", -- [4]
-			},
-			["Legion"] = {
-				"Legion wq", -- [1]
-				"Class hall missions", -- [2]
+				"Argent tournament dailies", -- [11]
 			},
 		}
 	else
 		ToDoListSV_itemsList = nil;
 		ToDoListSV_checkedButtons = nil;
 	end
-	print("1");
+	print(1)
 end
