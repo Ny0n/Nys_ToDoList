@@ -1,2 +1,4 @@
-build/Nys_ToDoList
-*.zip
+build/*
+!build/build.sh
+!build/buildignore.txt
+!build/CHANGELOG.txt

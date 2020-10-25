@@ -1,1 +1,1 @@
-build|curseforge|README.md
+build|curseforge|CHANGELOG.txt|README.md

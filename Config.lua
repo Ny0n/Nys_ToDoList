@@ -194,6 +194,15 @@ function config:CreateNoPointsLabel(relativeFrame, name, text)
 	return label;
 end
 
+function config:CreateNothingLabel(relativeFrame, yOffset)
+	local label = relativeFrame:CreateFontString(nil);
+	label:SetPoint("TOPLEFT", relativeFrame, "TOPLEFT", 75, yOffset);
+	label:SetFontObject("GameFontHighlightLarge");
+	label:SetText("There are no items!");
+	label:SetTextColor(0.5,0.5,0.5,0.5);
+	return label;
+end
+
 function config:CreateDummy(relativeFrame, xOffset, yOffset)
 	local dummy = CreateFrame("Frame", nil, ItemsFrameUI, nil);
 	dummy:SetPoint("TOPLEFT", relativeFrame, "TOPLEFT", xOffset, yOffset);
