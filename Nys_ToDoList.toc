@@ -1,7 +1,8 @@
 ## Interface: 80100
+## Version: 1.1
 ## Title: |cff00ccffNy's ToDoList|r
 ## Notes: A useful AddOn to remember everything!
-## Author: Ñy-Archimonde
+## Author: Ñy-Archimonde - Nyony on Twitch
 ## DefaultState: enabled
 ## SavedVariablesPerCharacter: ToDoListSV_itemsList, ToDoListSV_checkedButtons, ToDoListSV_autoReset
 

@@ -1,1 +1,5 @@
-First version, provide feedback!^^
+V1.1
+-optimized a few things
+-added colours and a bit of new content
+
+(if there are bugs, don't forget to comment! thanks)

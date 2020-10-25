@@ -23,8 +23,14 @@ init.commands = {
 		config:Print("|cff00cc66/tdl|r - shows items frame");
 		config:Print("|cff00cc66/tdl button|r - shows or hides the toggle button");
 		config:Print("|cff00cc66/tdl help|r - shows help info");
-		config:Print("(When adding a new category, the name of the first item is required)");
+		config:Print("|cff00cc66/tdl clear|r - clears the entire list");
+		config:Print("-When adding a new category, the name of the first item is required");
+		config:Print("-To add a new item, type its name in the editbox next to the category name you want to add you item in!");
 	end,
+
+	["clear"] = function(...)
+    itemsFrame:ClearAll();
+  end,
 }
 
 -- Command catcher:
