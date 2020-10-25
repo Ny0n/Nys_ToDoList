@@ -4,7 +4,7 @@
 ## Notes: A useful AddOn to remember everything!
 ## Author: Ñy-Archimonde - Nyony on Twitch
 ## DefaultState: enabled
-## SavedVariablesPerCharacter: ToDoListSV_itemsList, ToDoListSV_checkedButtons, ToDoListSV_autoReset
+## SavedVariablesPerCharacter: ToDoListSV_itemsList, ToDoListSV_checkedButtons, ToDoListSV_autoReset, ToDoListSV_lastLoadedTab
 
 Config.lua
 ItemsFrame.lua
