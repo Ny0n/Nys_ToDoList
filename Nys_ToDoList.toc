@@ -1,0 +1,10 @@
+## Interface: 80100
+## Title: |cff00ccffNy's ToDoList|r
+## Notes: A useful AddOn to remember everything!
+## Author: Ñy-Archimonde
+## DefaultState: enabled
+## SavedVariablesPerCharacter: ToDoListSV_itemsList, ToDoListSV_checkedButtons, ToDoListSV_autoReset
+
+Config.lua
+ItemsFrame.lua
+Init.lua
