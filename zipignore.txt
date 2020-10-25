@@ -1,1 +1,0 @@
-Nys_ToDoList|zipcreate.sh|zipignore.txt|README.md|CHANGELOG.txt|curseforge
