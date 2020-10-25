@@ -146,7 +146,7 @@ end
 function config:CreateButton(point, relativeFrame, relativePoint, xOffset, yOffset, text)
 	local btn = CreateFrame("Button", nil, relativeFrame, "UIPanelButtonTemplate");
 	btn:SetPoint(point, relativeFrame, relativePoint, xOffset, yOffset);
-	btn:SetSize(140, 40);
+	btn:SetSize(150, 40);
 	btn:SetText(text);
 	btn:SetNormalFontObject("GameFontNormalLarge");
 	btn:SetHighlightFontObject("GameFontHighlightLarge");
@@ -174,7 +174,7 @@ end
 
 function config:CreateNoPointsLabelEditBox(name)
 	local edb = CreateFrame("EditBox", name, nil, "InputBoxTemplate");
-	edb:SetSize(130, 30);
+	edb:SetSize(120, 30);
 	edb:SetAutoFocus(false);
 	return edb;
 end

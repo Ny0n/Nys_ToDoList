@@ -55,28 +55,28 @@ local function ScrollFrame_OnMouseWheel(self, delta)
 end
 
 local function resetBtns(tabName)
-	local ressetedSomething = false;
+	local uncheckedSomething = false;
 
 	for i=1,#All do
 		if (tabName == "All") then
 			if (config:HasItem(All, checkBtn[All[i]]:GetName())) then -- the All table isn't in the saved variable
 				if (checkBtn[All[i]]:GetChecked()) then
-					ressetedSomething = true;
+					uncheckedSomething = true;
 				end
 
 				checkBtn[All[i]]:SetChecked(false);
 			end
 		elseif (config:HasItem(ToDoListSV_itemsList[tabName], checkBtn[All[i]]:GetName())) then
 			if (checkBtn[All[i]]:GetChecked()) then
-				ressetedSomething = true;
+				uncheckedSomething = true;
 			end
 
 			checkBtn[All[i]]:SetChecked(false);
 		end
 	end
 	ItemsFrame_Update();
-	if (ressetedSomething) then -- so that we print this message only if there was checked items before the reset
-		config:Print("Resseted "..tabName.." succesfully!")
+	if (uncheckedSomething) then -- so that we print this message only if there was checked items before the uncheck
+		config:Print("Unchecked "..tabName.." succesfully!")
 	end
 end
 
@@ -197,9 +197,16 @@ local function addItem(self, db)
 
 	if (type(db) ~= "table") then
 		name = self:GetParent():GetText(); -- we get the name the player entered
-		self:GetParent():SetText("");
 		case = self:GetParent():GetParent():GetName(); -- we get the tab we're on
 		cat = self:GetParent():GetName(); -- we get the category we're adding the item in
+
+		local l = config:CreateNoPointsLabel(itemsFrameUI, nil, name);
+		if (l:GetWidth()>240) then -- is it too big?
+			config:Print("This item name is too big!")
+			return;
+		end
+
+		self:GetParent():SetText(""); -- we clear the editbox
 	else
 		name = db.name;
 		case = db.case;
@@ -314,6 +321,7 @@ end
 local function addCategory()
 	local db = {}
 
+
 	db.cat = itemsFrameUI.categoryEditBox:GetText();
 	if (db.cat == "") then
 		config:Print("Please enter a category name!")
@@ -323,9 +331,21 @@ local function addCategory()
 		return;
 	end
 
+	local l = config:CreateNoPointsLabel(itemsFrameUI, nil, db.cat);
+	if (l:GetWidth()>220) then
+		config:Print("This categoty name is too big!")
+		return;
+	end
+
 	db.name = itemsFrameUI.nameEditBox:GetText();
 	if (db.name == "") then
 		config:Print("Please enter the name of the item!")
+		return;
+	end
+
+	local l = config:CreateNoPointsLabel(itemsFrameUI, nil, db.name);
+	if (l:GetWidth()>230) then
+		config:Print("This item name is too big!")
 		return;
 	end
 
@@ -370,7 +390,7 @@ end
 -- frame creation and functions
 --------------------------------------
 
-local function loadCategories(tab,category,categorylabel,totalLength,constraint, catName)
+local function loadCategories(tab,category,categorylabel,totalLength,constraint,catName)
 	if (totalLength == 0) then -- doing that only one time
 		for i=1,#All do
 			checkBtn[All[i]]:Hide();
@@ -389,15 +409,26 @@ local function loadCategories(tab,category,categorylabel,totalLength,constraint,
 	end
 
 	if (config:HasAtLeastOneItem(All,category)) then
+		-- category label
 		categorylabel:SetParent(tab);
 		categorylabel:SetPoint("TOPLEFT", tab.dummyLabel, "TOPLEFT", 0, -totalLength*23);
 		categorylabel:Show();
 
+		-- edit box
 		editBox[categorylabel:GetName()]:SetParent(tab);
-		editBox[categorylabel:GetName()]:SetPoint("LEFT", categorylabel, "LEFT", 150, 0);
+		editBox[categorylabel:GetName()]:SetPoint("LEFT", categorylabel, "RIGHT", 10, 0);
+
+		local x = (categorylabel:GetWidth());
+		if (x+120>270) then
+			editBox[categorylabel:GetName()]:SetWidth(270-x);
+		else
+			editBox[categorylabel:GetName()]:SetPoint("LEFT", categorylabel, "LEFT", 160, 0);
+		end
+
 		editBox[categorylabel:GetName()]:Show();
 		totalLength = totalLength + 1;
 
+		-- checkboxes
 		local buttonsLength = 1;
 		for i=1,#All do
 			if ((select(1,config:HasItem(category,checkBtn[All[i]]:GetName())))) then
@@ -467,13 +498,31 @@ end
 -- Contenting:<3 --------------------------------------------------------------------------
 -------------------------------------------------------------------------------------------
 
+local function generateTab(tab,case)
+	-- We sort all of the categories in alphabetical order
+	local tempTable = {}
+	for t in pairs(ToDoListSV_itemsList) do table.insert(tempTable, t) end
+	table.sort(tempTable);
+
+	-- we load everything
+	local length = 0;
+
+	for _,n in pairs(tempTable) do
+		if (n ~= "Daily" and n ~= "Weekly") then
+			length = loadCategories(tab,ToDoListSV_itemsList[n],label[n],length, case, n);
+		end
+	end
+
+	return length;
+end
+
 ----------------------------------
 -- All tab content
 ----------------------------------
 local function AllTabContent()
 	-- Reset button
-	AllTab.resetAllBtn = config:CreateButton("CENTER", AllTab, "TOP", 0, -40, "Reset All");
-	AllTab.resetAllBtn:SetScript("OnClick", function(self) resetBtns(self:GetParent():GetName()) end);
+	AllTab.uncheckAllBtn = config:CreateButton("CENTER", AllTab, "TOP", 0, -40, "Uncheck All");
+	AllTab.uncheckAllBtn:SetScript("OnClick", function(self) resetBtns(self:GetParent():GetName()) end);
 
 	-- Position dummy
 	AllTab.dummyLabel = config:CreateDummy(AllTab,5,-140);
@@ -488,12 +537,7 @@ local function AllTabContent()
 end
 
 local function loadAllTab()
-	local length = 0;
-	for k,i in pairs(ToDoListSV_itemsList) do
-		if (k ~= "Daily" and k ~= "Weekly") then
-			length = loadCategories(AllTab,i,label[k],length, nil, k);
-		end
-	end
+	local length = generateTab(AllTab,nil);
 
 	-- Bottom line:
 	AllTab.lineBottom:SetPoint("TOPLEFT",AllTab.dummyLabel,"TOPLEFT",34,-length*23 - 10);
@@ -515,8 +559,8 @@ end
 ----------------------------------
 local function DailyTabContent()
 	-- Reset button
-	DailyTab.resetDailyBtn = config:CreateButton("CENTER", DailyTab, "TOP", 0, -40, "Reset Daily");
-	DailyTab.resetDailyBtn:SetScript("OnClick", function(self) resetBtns(self:GetParent():GetName()) end);
+	DailyTab.uncheckDailyBtn = config:CreateButton("CENTER", DailyTab, "TOP", 0, -40, "Uncheck Daily");
+	DailyTab.uncheckDailyBtn:SetScript("OnClick", function(self) resetBtns(self:GetParent():GetName()) end);
 
 	-- Position dummy
 	DailyTab.dummyLabel = config:CreateDummy(DailyTab,5,-100);
@@ -529,12 +573,7 @@ local function DailyTabContent()
 end
 
 local function loadDailyTab()
-	local length = 0;
-	for k,i in pairs(ToDoListSV_itemsList) do
-		if (k ~= "Daily" and k ~= "Weekly") then
-			length = loadCategories(DailyTab,i,label[k],length,ToDoListSV_itemsList["Daily"], k);
-		end
-	end
+	local length = generateTab(DailyTab,ToDoListSV_itemsList["Daily"]);
 
 	-- Bottom line:
 	DailyTab.lineBottom:SetPoint("TOPLEFT",DailyTab.dummyLabel,"TOPLEFT",34,-length*23 - 10);
@@ -556,8 +595,8 @@ end
 ----------------------------------
 local function WeeklyTabContent()
 	-- Reset button
-	WeeklyTab.resetWeeklyBtn = config:CreateButton("CENTER", WeeklyTab, "TOP", 0, -40, "Reset Weekly");
-	WeeklyTab.resetWeeklyBtn:SetScript("OnClick", function(self) resetBtns(self:GetParent():GetName()) end);
+	WeeklyTab.uncheckWeeklyBtn = config:CreateButton("CENTER", WeeklyTab, "TOP", 0, -40, "Uncheck Weekly");
+	WeeklyTab.uncheckWeeklyBtn:SetScript("OnClick", function(self) resetBtns(self:GetParent():GetName()) end);
 
 	-- Position dummy
 	WeeklyTab.dummyLabel = config:CreateDummy(WeeklyTab,5,-100);
@@ -570,12 +609,7 @@ local function WeeklyTabContent()
 end
 
 local function loadWeeklyTab()
-	local length = 0;
-	for k,i in pairs(ToDoListSV_itemsList) do
-		if (k ~= "Daily" and k ~= "Weekly") then
-			length = loadCategories(WeeklyTab,i,label[k],length,ToDoListSV_itemsList["Weekly"], k);
-		end
-	end
+	local length = generateTab(WeeklyTab,ToDoListSV_itemsList["Weekly"]);
 
 	-- Bottom line:
 	WeeklyTab.lineBottom:SetPoint("TOPLEFT",WeeklyTab.dummyLabel,"TOPLEFT",34,-length*23 - 10);
@@ -780,9 +814,7 @@ function config:CreateItemsFrame()
 	-- Updating everything once and hiding the UI
 	ItemsFrame_UpdateTime(); -- for the auto reset check (we could wait 1 sec, but nah we don't have the time)
 
-	-- Selecting either the last tab we were on, or if it's the first time, the All tab
-	ToDoListSV_lastLoadedTab = ToDoListSV_lastLoadedTab or "ToDoListUIFrameTab1";
-	-- We load that tab
+	-- We load the good tab
 	Tab_OnClick(_G[ToDoListSV_lastLoadedTab]);
 
 	itemsFrameUI:Hide();
@@ -826,7 +858,7 @@ end
 
 -- Tests function (for me :p)
 function ToDoListTests(yes)
-	if (yes) then
+	if (yes==1) then
 		ToDoListSV_itemsList = {}
 		ToDoListSV_itemsList = {
 			["Legion"] = {
@@ -901,9 +933,13 @@ function ToDoListTests(yes)
 				"Argent tournament dailies", -- [11]
 			},
 		}
-	else
+	elseif (yes==2) then
 		ToDoListSV_itemsList = nil;
 		ToDoListSV_checkedButtons = nil;
+		ToDoListSV_autoReset = nil;
+		ToDoListSV_lastLoadedTab = nil;
+	elseif (yes==3) then
+		print(label["Legion"]:GetPoint())
 	end
 	print(1)
 end

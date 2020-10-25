@@ -1,2 +1,9 @@
+V1.3
+-now sorting the categories in alphabetical order, it's no longer random every time the interface is reloaded
+-fixed a max length for every category name or item name, so that it don't goes off the screen, and made it clearer
+-miscellaneous improvements
+
 V1.2
--Miscellaneous improvements.
+-now remembers the last tab we were on, even after reloading the interface or logging out
+-fixed the position of a certain element in the frame
+-miscellaneous improvements

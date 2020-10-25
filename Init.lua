@@ -87,19 +87,10 @@ function init:Load(self, name)
 	SlashCmdList.ToDoList = HandleSlashCommands;
 
 	-- Initializing the saved variables
-	if (ToDoListSV_checkedButtons == nil) then ToDoListSV_checkedButtons = {} end
-	if (ToDoListSV_itemsList == nil) then
-		ToDoListSV_itemsList = {
-			["Daily"] = {},
-			["Weekly"] = {},
-		}
-	end
-	if (ToDoListSV_autoReset == nil) then
-		ToDoListSV_autoReset = {
-			["Daily"] = config:GetSecondsToReset().daily,
-			["Weekly"] = config:GetSecondsToReset().weekly,
-		}
-	end
+	ToDoListSV_checkedButtons = ToDoListSV_checkedButtons or {};
+	ToDoListSV_itemsList = ToDoListSV_itemsList or { ["Daily"] = {}, ["Weekly"] = {} };
+	ToDoListSV_autoReset = ToDoListSV_autoReset or { ["Daily"] = config:GetSecondsToReset().daily, ["Weekly"] = config:GetSecondsToReset().weekly }
+	ToDoListSV_lastLoadedTab = ToDoListSV_lastLoadedTab or "ToDoListUIFrameTab1";
 
   -- We load the frame
   config:CreateItemsFrame();
