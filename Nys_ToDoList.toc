@@ -1,11 +1,10 @@
-## Interface: 80200
-## Version: 2.0
+## Interface: 80300 # _retail_
+
+## Version: 3.0
 ## Title: Ny's ToDoList
-## Notes: A useful AddOn to remember everything!
-## Author: Nyony on Twitch
+## Notes: A useful AddOn to never forget anything!
+## Author: Nyony (on Twitch)
 ## DefaultState: enabled
 ## SavedVariablesPerCharacter: ToDoListSV
 
-Config.lua
-ItemsFrame.lua
-Init.lua
+Nys_ToDoList.xml

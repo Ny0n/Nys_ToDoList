@@ -1,0 +1,144 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
+..\FrameXML\UI.xsd">
+
+  <!-- nice icon button template -->
+  <Button name="Nys_ToDoListIconButtonTemplate" virtual="true">
+    <NormalTexture file="Interface\Buttons\UI-SquareButton-Up" desaturated="true">
+      <Color r="0.75" g="0.75" b="0.75"/>
+    </NormalTexture>
+    <PushedTexture file="Interface\Buttons\UI-SquareButton-Down" desaturated="true">
+      <Color r="0.75" g="0.75" b="0.75"/>
+    </PushedTexture>
+    <HighlightTexture file="Interface\Buttons\UI-Common-MouseHilight" alphaMode="ADD" alpha="0.75">
+      <Anchors>
+        <Anchor point="TOPLEFT" x="2" y="-2"/>
+        <Anchor point="BOTTOMRIGHT" x="-2" y="2"/>
+      </Anchors>
+    </HighlightTexture>
+  </Button>
+
+  <Frame name="IconButtonPositionScripts" virtual="true">
+    <!-- icon position adaptation scripts -->
+    <Scripts>
+      <OnMouseDown>
+        <!-- nudge and dim the icon down a little -->
+        self.Icon:SetPoint("CENTER", self.name == "UndoButton" and -2 or -1, self.name == "UndoButton" and -3 or -2) self.Icon:SetAlpha(0.5)
+      </OnMouseDown>
+      <OnMouseUp>
+        <!-- reset the icon's position and opacity -->
+        self.Icon:SetPoint("CENTER", self.name == "UndoButton" and -1 or 0, self.name == "UndoButton" and -1 or 0) self.Icon:SetAlpha(1)
+      </OnMouseUp>
+      <OnShow>
+        <!-- reset the icon's position and opacity -->
+        self.Icon:SetPoint("CENTER", self.name == "UndoButton" and -1 or 0, self.name == "UndoButton" and -1 or 0) self.Icon:SetAlpha(1)
+      </OnShow>
+    </Scripts>
+  </Frame>
+
+  <Frame name="IconButtonTooltipScripts" virtual="true">
+    <Frames>
+      <!-- small tooltip frame to describe use of the buttons -->
+      <Frame parentKey="MiniTooltip" frameStrata="TOOLTIP" hidden="true">
+        <Size x="0" y="26"/>
+        <Backdrop bgFile="Interface\ChatFrame\ChatFrameBackground" edgeFile="Interface\Tooltips\UI-Tooltip-Border" tile="true">
+          <TileSize val="16"/>
+          <EdgeSize val="16"/>
+          <BackgroundInsets>
+            <AbsInset left="2" right="2" top="2" bottom="2"/>
+          </BackgroundInsets>
+          <Color r="0.05" g="0.05" b="0.05"/>
+          <BorderColor r="0.5" g="0.5" b="0.5"/>
+        </Backdrop>
+        <Layers>
+          <Layer level="ARTWORK">
+            <FontString parentKey="Text" inherits="GameFontNormalSmall"/>
+          </Layer>
+        </Layers>
+      </Frame>
+    </Frames>
+
+    <!-- Tooltip associated scripts -->
+    <Scripts>
+      <OnEnter>
+        <!-- Show the tooltip -->
+        self.MiniTooltip:SetPoint("BOTTOM",self,"TOP",0,-4) self.MiniTooltip.Text:SetText(self.tooltip) self.MiniTooltip:SetWidth(self.MiniTooltip.Text:GetStringWidth()+16) self.MiniTooltip:Show()
+      </OnEnter>
+      <OnLeave>
+        <!-- Hide the tooltip -->
+        self.MiniTooltip:Hide()
+      </OnLeave>
+    </Scripts>
+  </Frame>
+
+  <!-- Undo button -->
+  <Button name="UndoButton" inherits="Nys_ToDoListIconButtonTemplate, IconButtonTooltipScripts, IconButtonPositionScripts" virtual="true">
+    <Size x="32" y="32"/>
+    <KeyValues>
+      <KeyValue key="tooltip" value="Undo"/>
+    </KeyValues>
+    <Layers>
+      <Layer level="OVERLAY">
+        <Texture parentKey="Icon" file="Interface\Buttons\UI-RefreshButton">
+          <Size x="14" y="14"/>
+          <Anchors>
+            <Anchor point="CENTER"/>
+          </Anchors>
+        </Texture>
+      </Layer>
+    </Layers>
+  </Button>
+
+  <!-- Options button -->
+  <Button name="OptionsButton" inherits="Nys_ToDoListIconButtonTemplate, IconButtonTooltipScripts, IconButtonPositionScripts" virtual="true">
+    <Size x="32" y="32"/>
+    <KeyValues>
+      <KeyValue key="tooltip" value="Options"/>
+    </KeyValues>
+    <Layers>
+      <Layer level="OVERLAY">
+        <Texture parentKey="Icon" file="Interface\Buttons\UI-OptionsButton">
+          <Size x="14" y="14"/>
+          <Anchors>
+            <Anchor point="CENTER"/>
+          </Anchors>
+        </Texture>
+      </Layer>
+    </Layers>
+  </Button>
+
+  <!-- Remove button -->
+  <Button name="RemoveButton" inherits="InlineHyperlinkFrameTemplate, IconButtonPositionScripts" virtual="true">
+    <Size x="13" y="13"/>
+    <Layers>
+      <Layer level="OVERLAY">
+        <Texture parentKey="Icon" file="Interface\Buttons\UI-StopButton">
+          <Size x="14" y="14"/>
+          <Anchors>
+            <Anchor point="CENTER"/>
+          </Anchors>
+        </Texture>
+      </Layer>
+    </Layers>
+  </Button>
+
+  <!-- Add button -->
+  <Button name="AddButton" inherits="InlineHyperlinkFrameTemplate, IconButtonPositionScripts" virtual="true">
+    <Size x="12" y="12"/>
+    <Layers>
+      <Layer>
+        <FontString parentKey="Icon" font="Fonts\FRIZQT__.TTF" inherits="GameFontNormalLarge" text="+">
+          <FontHeight val="22"/>
+          <Anchors>
+            <Anchor point="CENTER"/>
+          </Anchors>
+        </FontString>
+      </Layer>
+    </Layers>
+  </Button>
+
+  <!-- Script files -->
+  <Script file="Config.lua"/>
+  <Script file="ItemsFrame.lua"/>
+  <Script file="Init.lua"/>
+
+</Ui>
