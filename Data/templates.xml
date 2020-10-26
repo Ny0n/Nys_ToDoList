@@ -63,17 +63,8 @@
       <!-- small tooltip frame to describe use of the buttons -->
       <Frame parentKey="MiniTooltip" frameStrata="TOOLTIP" hidden="true">
         <Size x="0" y="26"/>
-        <Backdrop bgFile="Interface\ChatFrame\ChatFrameBackground" edgeFile="Interface\Tooltips\UI-Tooltip-Border" tile="true">
-          <TileSize val="16"/>
-          <EdgeSize val="16"/>
-          <BackgroundInsets>
-            <AbsInset left="2" right="2" top="2" bottom="2"/>
-          </BackgroundInsets>
-          <Color r="0.05" g="0.05" b="0.05"/>
-          <BorderColor r="0.5" g="0.5" b="0.5"/>
-        </Backdrop>
         <Layers>
-          <Layer level="ARTWORK">
+          <Layer>
             <FontString parentKey="Text" inherits="GameFontNormalSmall"/>
           </Layer>
         </Layers>
@@ -82,6 +73,38 @@
 
     <!-- Tooltip associated scripts -->
     <Scripts>
+      <OnLoad>
+        if BackdropTemplateMixin then -- SL / 9.0
+            self.MiniTooltip.Backdrop = CreateFrame("Frame", nil, self.MiniTooltip, "BackdropTemplate")
+            self.MiniTooltip.Backdrop:SetAllPoints()
+            self.MiniTooltip.Backdrop.backdropInfo = {
+            	bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
+            	edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+            	tile = true,
+            	tileSize = 16,
+            	edgeSize = 16,
+            	insets = { left = 2, right = 2, top = 2, bottom = 2, },
+            }
+            self.MiniTooltip.Backdrop:ApplyBackdrop()
+            self.MiniTooltip.Backdrop:SetBackdropColor(0.05, 0.05, 0.05, 1)
+            self.MiniTooltip.Backdrop:SetBackdropBorderColor(0.5, 0.5, 0.5, 1)
+            self.MiniTooltip.Backdrop:SetFrameStrata("DIALOG") -- lower strata than the text, so that is acts as a background (but over the other elements of the frame)
+        else -- BFA
+            self.MiniTooltip.Backdrop = CreateFrame("Frame", nil, self.MiniTooltip)
+            self.MiniTooltip.Backdrop:SetAllPoints()
+            self.MiniTooltip.Backdrop:SetBackdrop({
+              bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
+              edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+              tile = true,
+              tileSize = 16,
+              edgeSize = 16,
+              insets = { left = 2, right = 2, top = 2, bottom = 2, },
+            })
+            self.MiniTooltip.Backdrop:SetBackdropColor(0.05, 0.05, 0.05, 1)
+            self.MiniTooltip.Backdrop:SetBackdropBorderColor(0.5, 0.5, 0.5, 1)
+            self.MiniTooltip.Backdrop:SetFrameStrata("DIALOG") -- lower strata than the text, so that is acts as a background (but over the other elements of the frame)
+        end
+      </OnLoad>
       <OnEnter>
         <!-- Show and reposition the tooltip -->
         self.MiniTooltip.Text:SetText(self.tooltip)
@@ -402,5 +425,82 @@
 			</OnMouseUp>
 		</Scripts>
 	</Button>
+
+  <Frame name="NysTDL_HelpPlateTooltip" inherits="GlowBoxTemplate" frameStrata="FULLSCREEN_DIALOG" frameLevel="2" virtual="true">
+		<Layers>
+			<Layer level="OVERLAY">
+				<FontString parentKey="Text" inherits="GameFontHighlightLeft">
+					<Size x="200" y="0"/>
+					<Anchors>
+						<Anchor point="TOPLEFT" x="15" y="-15"/>
+					</Anchors>
+				</FontString>
+			</Layer>
+			<Layer level="ARTWORK">
+				<Texture parentKey="ArrowUP" inherits="HelpPlateArrowDOWN" hidden="true">
+					<Size x="53" y="21"/>
+					<Anchors>
+						<Anchor point="TOP" relativePoint="BOTTOM" x="0" y="3"/>
+					</Anchors>
+				</Texture>
+				<Texture parentKey="ArrowDOWN" inherits="HelpPlateArrowUP" hidden="true">
+					<Size x="53" y="21"/>
+					<Anchors>
+						<Anchor point="BOTTOM" relativePoint="TOP" x="0" y="-3"/>
+					</Anchors>
+				</Texture>
+				<Texture parentKey="ArrowRIGHT" inherits="HelpPlateArrowDOWN" hidden="true">
+					<Size x="44" y="21"/>
+					<Anchors>
+						<Anchor point="RIGHT" relativePoint="LEFT" x="3" y="0"/>
+					</Anchors>
+				</Texture>
+				<Texture parentKey="ArrowLEFT" inherits="HelpPlateArrowDOWN" hidden="true">
+					<Size x="44" y="21"/>
+					<Anchors>
+						<Anchor point="LEFT" relativePoint="RIGHT" x="-3" y="0"/>
+					</Anchors>
+				</Texture>
+			</Layer>
+			<Layer level="BORDER">
+				<Texture parentKey="ArrowGlowUP" inherits="HelpPlateArrow-GlowDOWN" hidden="true" alphaMode="ADD" alpha="0.5">
+					<Size x="53" y="21"/>
+					<Anchors>
+						<Anchor point="TOP" relativePoint="BOTTOM" x="0" y="3"/>
+					</Anchors>
+				</Texture>
+				<Texture parentKey="ArrowGlowDOWN" inherits="HelpPlateArrow-GlowUP" hidden="true" alphaMode="ADD" alpha="0.5">
+					<Size x="53" y="21"/>
+					<Anchors>
+						<Anchor point="BOTTOM" relativePoint="TOP" x="0" y="-3"/>
+					</Anchors>
+				</Texture>
+				<Texture parentKey="ArrowGlowRIGHT" inherits="HelpPlateArrow-GlowDOWN" hidden="true" alphaMode="ADD" alpha="0.5">
+					<Size x="53" y="21"/>
+					<Anchors>
+						<Anchor point="RIGHT" relativePoint="LEFT" x="3" y="0"/>
+					</Anchors>
+				</Texture>
+				<Texture parentKey="ArrowGlowLEFT" inherits="HelpPlateArrow-GlowDOWN" hidden="true" alphaMode="ADD" alpha="0.5">
+					<Size x="53" y="21"/>
+					<Anchors>
+						<Anchor point="LEFT" relativePoint="RIGHT" x="-3" y="0"/>
+					</Anchors>
+				</Texture>
+			</Layer>
+		</Layers>
+		<Scripts>
+			<OnLoad>
+				self.Text:SetSpacing(4);
+				SetClampedTextureRotation(self.ArrowLEFT, 270);
+				SetClampedTextureRotation(self.ArrowRIGHT, 90);
+				SetClampedTextureRotation(self.ArrowGlowLEFT, 270);
+				SetClampedTextureRotation(self.ArrowGlowRIGHT, 90);
+			</OnLoad>
+			<OnShow>
+				self:SetHeight(self.Text:GetHeight()+30);
+			</OnShow>
+		</Scripts>
+	</Frame>
 
 </Ui>

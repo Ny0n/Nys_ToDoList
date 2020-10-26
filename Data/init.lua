@@ -177,8 +177,8 @@ end
 -- we need to put them here so they have acces to every function in every file of the addon
 
 function NysTDL:PLAYER_LOGIN()
-  if (NysTDL.db.profile.UI_reloading) then -- just to be sure that it wasn't a reload, but a genuine player log in
-    NysTDL.db.profile.UI_reloading = false
+  if (NysTDL.db.global.UI_reloading) then -- just to be sure that it wasn't a reload, but a genuine player log in
+    NysTDL.db.global.UI_reloading = false
     return;
   end
 
@@ -227,27 +227,21 @@ end
 
 -- Commands:
 init.commands = {
-  [L["help"]] = function()
-    local hex = config:RGBToHex(config.database.theme2)
-    config:PrintForced(string.format("|cff%s%s|r", hex, L["/tdl"])..' - '..L["show/hide the list"])
-    config:PrintForced(string.format("|cff%s%s|r", hex, L["/tdl"]..' '..L["info"])..' - '..L["shows more information"])
-  end,
-
   [""] = function()
     itemsFrame:Toggle()
   end,
 
   [L["info"]] = function()
     local hex = config:RGBToHex(config.database.theme2)
-    config:PrintForced(L["Here are a few commands to help you understand some systems in the list:"].." - "..string.format("|cff%s%s|r", hex, L["/tdl"]..' '..L["toggleways"]).." - "..string.format("|cff%s%s|r", hex, L["/tdl"]..' '..L["additems"]).." - "..string.format("|cff%s%s|r", hex, L["/tdl"]..' '..L["favorites"]).." - "..string.format("|cff%s%s|r", hex, L["/tdl"]..' '..L["descriptions"]).." - "..string.format("|cff%s%s|r", hex, L["/tdl"]..' '..L["hiddenbuttons"]))
+    config:PrintForced(L["Here are a few commands to help you:"].."\n"..string.format("|cff%s%s|r", hex, L["/tdl"]..' '..L["toggleways"]).." -- "..string.format("|cff%s%s|r", hex, L["/tdl"]..' '..L["categories"]).." -- "..string.format("|cff%s%s|r", hex, L["/tdl"]..' '..L["favorites"]).." -- "..string.format("|cff%s%s|r", hex, L["/tdl"]..' '..L["descriptions"]).." -- "..string.format("|cff%s%s|r", hex, L["/tdl"]..' '..L["hiddenbuttons"]).." -- "..string.format("|cff%s%s|r", hex, L["/tdl"]..' '..L["tutorial"]))
   end,
 
   [L["toggleways"]] = function()
-    config:PrintForced(L["To toggle the list, you have several ways:"]..'\n- '..L["minimap button (the default)"]..'\n- '..L["a normal TDL button"]..'\n- '..L["databroker plugin (eg. titan panel)"]..'\n- '..L["the '/tdl' command"]..'\n- '..L["key binding"]..'\n'..L["Go to the addon options in the Blizzard interface panel to customize this."])
+    config:PrintForced(L["To toggle the list, you have several ways:"]..'\n- '..L["minimap button (the default)"]..'\n- '..L["a normal TDL button"]..'\n- '..L["databroker plugin (eg. titan panel)"]..'\n- '..L["the '/tdl' command"]..'\n- '..L["key binding"]..'\n'..L["You can go to the addon options in the game's interface settings to customize this."])
   end,
 
-  [L["additems"]] = function()
-    config:PrintForced("- "..L["To add a new item to a category, just right click the category name!"]..'\n- '..L["You can also left click on the category names to expand or shrink their content."])
+  [L["categories"]] = function()
+    config:PrintForced(L["Information on categories:"].."\n- "..L["The same category can be present in multiple tabs, as long as there are items for each of those tabs."].."\n- "..L["A category cannot be empty, if it is, it will just get deleted from the tab."].."\n- "..L["Left-click on the category names to expand or shrink their content."].."\n- "..L["Right-click on the category names to add new items."])
   end,
 
   [L["favorites"]] = function()
@@ -260,6 +254,11 @@ init.commands = {
 
   [L["hiddenbuttons"]] = function()
     config:PrintForced(L["There are some hidden buttons on the list."].."\n"..L["To show them, hold the ALT key when the list is opened!"])
+  end,
+
+  [L["tutorial"]] = function()
+    itemsFrame:RedoTutorial()
+    config:Print(L["The tutorial has been reset!"])
   end,
 }
 
@@ -296,7 +295,7 @@ local function HandleSlashCommands(str)
       end
     else
       -- does not exist!
-      init.commands[L["help"]]();
+      init.commands[L["info"]]();
       return;
     end
   end
@@ -484,7 +483,7 @@ function NysTDL:OnInitialize()
 
     -- events registration
     self:RegisterEvent("PLAYER_LOGIN")
-    hooksecurefunc("ReloadUI", function() NysTDL.db.profile.UI_reloading = true end) -- this is for knowing when the addon is loading, if it was a UI reload or the player logging in
+    hooksecurefunc("ReloadUI", function() NysTDL.db.global.UI_reloading = true end) -- this is for knowing when the addon is loading, if it was a UI reload or the player logging in
 
     -- / Blizzard interface options / --
 
@@ -537,6 +536,6 @@ function NysTDL:OnInitialize()
 
     -- addon fully loaded!
     local hex = config:RGBToHex(config.database.theme2);
-    config:Print(L["addon loaded!"]..' ('..string.format("|cff%s%s|r", hex, L["/tdl"]..' '..L["help"])..')');
+    config:Print(L["addon loaded!"]..' ('..string.format("|cff%s%s|r", hex, L["/tdl"]..' '..L["info"])..')');
     addonLoaded = true;
 end

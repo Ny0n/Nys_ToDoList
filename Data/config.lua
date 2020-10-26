@@ -251,6 +251,10 @@ config.database = {
 
     -- AceDB defaults table
     defaults = {
+        global = {
+            tuto_progression = 0,
+            UI_reloading = false,
+        },
         profile = {
             minimap = { hide = false, minimapPos = 241, lock = false, tooltip = true }, -- for LibDBIcon
             tdlButton = { show = false, points = { point = "CENTER", relativeTo = UIParent, relativePoint = "CENTER", xOffset = 0, yOffset = 0 } },
@@ -268,16 +272,15 @@ config.database = {
             showChatMessages = true,
             showFavoritesWarning = true,
             rememberUndo = true,
-            frameAlpha = 75,
+            frameAlpha = 65,
             frameContentAlpha = 100,
             affectDesc = true,
-            descFrameAlpha = 75,
+            descFrameAlpha = 65,
             descFrameContentAlpha = 100,
-            lastLoadedTab = "ToDoListUIFrameTab1",
+            lastLoadedTab = "ToDoListUIFrameTab2",
             checkedButtons = {},
             closedCategories = {},
             undoTable = {},
-            UI_reloading = false,
         }, -- profile
     }, -- defaults
 }
@@ -391,6 +394,13 @@ function config:HasAtLeastOneItem(tabSource, tabDest)
     end
   end
   return false;
+end
+
+function config:getKeyFromValue(tabSource, value)
+  for k, v in pairs(tabSource) do
+    if (v == value) then return k end
+  end
+  return nil
 end
 
 local function getHoursUntilReset()
