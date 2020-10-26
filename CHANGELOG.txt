@@ -1,3 +1,9 @@
+V5.2 - updated the addon to support Shadowlands!
+     - added a tutorial, explaining the basic systems of the list
+     - other miscellaneous improvements
+
+-------------------------
+
 V5.1 - you can now resize the list! learn how to do it in the frame options
 V5.0.1 - minor code corrections
 
@@ -5,8 +11,6 @@ V5.0
 
 Big update! -- this is the second part to a 2 parts mega update,
 this one now includes major new systems, favorites and descriptions on items!
-
-------------------------
 
 Full changelog:
 
@@ -21,7 +25,5 @@ Full changelog:
 - closed categories are now tab-specific, for more control (forgot to mention that last update)
 
 - miscellaneous improvements
-
-----------------------
 
 - as always, please do not hesitate to post comments if there are any bugs, or if you want to provide feedback!
