@@ -3,18 +3,17 @@
 # X-WoW-Version: 'retail' or 'classic', to auto adapt the AddOn
 ## X-WoW-Version: retail
 
-## Version: 5.2.1
+## Version: 5.3
 ## Author: Nyony (on Twitch)
 ## Title: Ny's To-Do List
 ## Notes: A simple interface to remember everything you need to do!
-## Notes-frFR: Une interface simple pour se souvenir de tout ce que tu as à faire!
 
 ## DefaultState: enabled
 ## SavedVariables: NysToDoListDB
 # this one is outdated, just keeping it to transfert its values to the new DB on the first load
 ## SavedVariablesPerCharacter: ToDoListSV
 
-## OptionalDeps: Ace3, LibDataBroker-1.1, LibDBIcon-1.0, LibStrataFix
-## X-Embeds: Ace3, LibDataBroker-1.1, LibDBIcon-1.0, LibStrataFix
+## OptionalDeps: Ace3, LibDataBroker-1.1, LibDBIcon-1.0
+## X-Embeds: Ace3, LibDataBroker-1.1, LibDBIcon-1.0
 
 Main.xml
