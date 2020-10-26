@@ -9,7 +9,6 @@ if not L then return end
 L["\"%s\" added to %s! (%s item)"] = "\"%s\" ajouté à %s! (Objet %s)"
 L["\"%s\" added to %s! ('All' tab item)"] = "\"%s\" ajouté à %s! (Objet de l'onglet 'Tout')"
 L["\"%s\" removed!"] = "\"%s\" retiré!"
-L["/tdl"] = true
 L["A category cannot be empty, if it is, it will just get deleted from the tab."] = "Une catégorie ne peut être vide, si elle l'est, elle sera simplement supprimée de l'onglet."
 L["a normal TDL button"] = "un bouton TDL normal"
 L["additems"] = "ajouter"
