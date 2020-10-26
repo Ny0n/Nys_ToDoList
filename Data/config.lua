@@ -6,7 +6,7 @@ local config = tdlTable.config;
 
 --/*******************/ ADDON LIBS AND DATA HANDLER /*************************/--
 -- libs
-NysTDL = LibStub("AceAddon-3.0"):NewAddon(addonName, "AceTimer-3.0")
+NysTDL = LibStub("AceAddon-3.0"):NewAddon(addonName, "AceTimer-3.0", "AceEvent-3.0")
 config.AceGUI = LibStub("AceGUI-3.0")
 config.L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 config.LDB = LibStub("LibDataBroker-1.1")
@@ -86,10 +86,34 @@ config.database = {
                   order = 3.1,
                   type = "toggle",
                   name = L["Show chat messages"],
-                  desc = L["Activate or desactivate the chat messages"],
+                  desc = L["Enable or disable the chat messages"],
                   get = "showChatMessagesGET",
                   set = "showChatMessagesSET",
               }, -- showChatMessages
+              showFavoritesWarning = {
+                  order = 3.2,
+                  type = "toggle",
+                  name = L["Show favorites warning"],
+                  desc = L["Enable or disable the chat warning/reminder for favorite items"],
+                  get = "showFavoritesWarningGET",
+                  set = "showFavoritesWarningSET",
+              }, -- showFavoritesWarning
+              rememberUndo = {
+                  order = 3.3,
+                  type = "toggle",
+                  name = L["Remember undos"],
+                  desc = L["Save undos between sessions"],
+                  get = "rememberUndoGET",
+                  set = "rememberUndoSET",
+              }, -- rememberUndo
+              favoritesColor = {
+                  order = 3.4,
+                  type = "color",
+                  name = L["Favorites color"],
+                  desc = L["Change the color for the favorite items"],
+                  get = "favoritesColorGET",
+                  set = "favoritesColorSET",
+              }, -- favoritesColor
               tdlButtonShow = {
                   order = 2.3,
                   type = "toggle",
@@ -115,14 +139,6 @@ config.database = {
                   get = "minimapButtonTooltipGET",
                   set = "minimapButtonTooltipSET",
               }, -- minimapButtonTooltip
-              rememberUndo = {
-                  order = 3.2,
-                  type = "toggle",
-                  name = L["Remember undos"],
-                  desc = L["Save undos between sessions"],
-                  get = "rememberUndoGET",
-                  set = "rememberUndoSET",
-              }, -- rememberUndo
               keyBind = {
                   type = "keybinding",
                   name = L["Show/Hide the list"],
@@ -131,20 +147,6 @@ config.database = {
                   get = "keyBindGET",
                   set = "keyBindSET",
               }, -- keyBind
-              -- timerWeekly = {
-          		-- 	order = 4.01,
-          		-- 	type = "description",
-          		-- 	name = "timerWeekly",
-          		-- 	fontSize = "small",
-          		-- 	width = "full",
-          		-- }, -- timerWeekly
-              -- timerDaily = {
-          		-- 	order = 4.11,
-          		-- 	type = "description",
-          		-- 	name = "timerDaily",
-          		-- 	fontSize = "small",
-          		-- 	width = "full",
-          		-- }, -- timerDaily
 
               -- / layout widgets / --
 
@@ -188,7 +190,7 @@ config.database = {
               spacer311 = {
           			order = 3.11,
           			type = "description",
-          			width = "full",
+          			width = "half",
           			name = "",
           		}, -- spacer311
               spacer321 = {
@@ -197,6 +199,18 @@ config.database = {
           			width = "full",
           			name = "",
           		}, -- spacer321
+              spacer331 = {
+          			order = 3.31,
+          			type = "description",
+          			width = "half",
+          			name = "",
+          		}, -- spacer331
+              spacer341 = {
+          			order = 3.41,
+          			type = "description",
+          			width = "full",
+          			name = "",
+          		}, -- spacer331
               spacer399 = {
           			order = 3.99,
           			type = "description",
@@ -242,18 +256,28 @@ config.database = {
             minimap = { hide = false, minimapPos = 241, lock = false, tooltip = true }, -- for LibDBIcon
             tdlButton = { show = false, points = { point = "CENTER", relativeTo = UIParent, relativePoint = "CENTER", xOffset = 0, yOffset = 0 } },
             framePos = { point = "CENTER", relativeTo = UIParent, relativePoint = "CENTER", xOffset = 0, yOffset = 0 },
-            itemsList = { ["Daily"] = {}, ["Weekly"] = {} },
+            itemsList = nil,
+            itemsDaily = nil,
+            itemsWeekly = nil,
+            itemsFavorite = {},
+            itemsDesc = {},
+            favoritesColor = { 1, 0.5, 0.6 },
             weeklyDay = 4,
             dailyHour = 9,
             autoReset = nil,
             showChatMessages = true,
+            showFavoritesWarning = true,
             rememberUndo = true,
             frameAlpha = 75,
             frameContentAlpha = 100,
+            affectDesc = true,
+            descFrameAlpha = 75,
+            descFrameContentAlpha = 100,
             lastLoadedTab = "ToDoListUIFrameTab1",
             checkedButtons = {},
             closedCategories = {},
             undoTable = {},
+            UI_reloading = false,
         }, -- profile
     }, -- defaults
 }
@@ -441,14 +465,6 @@ function config:GetSecondsToReset()
 end
 
 -- Widget creation functions:--
-function config:CreateLabel(point, relativeFrame, relativePoint, xOffset, yOffset, text)
-  local label = relativeFrame:CreateFontString(nil);
-  --label:SetPoint(point, relativeFrame, relativePoint, xOffset, yOffset);
-  label:SetFontObject("GameFontHighlightLarge");
-  label:SetText(text);
-  return label;
-end
-
 function config:CreateNoPointsLabel(relativeFrame, name, text)
   local label = relativeFrame:CreateFontString(name);
   label:SetFontObject("GameFontHighlightLarge");
@@ -464,54 +480,173 @@ function config:CreateNothingLabel(relativeFrame)
   return label;
 end
 
-function config:CreateButton(name, relativeFrame, ySize, text)
-  local btn = CreateFrame("Button", name, relativeFrame, "UIMenuButtonStretchTemplate");
-  local l = config:CreateNoPointsLabel(relativeFrame, nil, text);
-  btn:SetHeight(ySize);
-  btn:SetWidth(l:GetWidth() + 20);
+function config:CreateButton(name, relativeFrame, text, iconPath, fc)
+  fc = fc or false
+  iconPath = (type(iconPath) == "string") and iconPath or nil
+  local btn = CreateFrame("Button", name, relativeFrame, "NysTDL_NormalButton");
+  local w = config:CreateNoPointsLabel(relativeFrame, nil, text):GetWidth();
   btn:SetText(text);
   btn:SetNormalFontObject("GameFontNormalLarge");
-  btn:SetHighlightFontObject("GameFontHighlightLarge");
+  if (fc == true) then btn:SetHighlightFontObject("GameFontHighlightLarge"); end
+  if (iconPath ~= nil) then
+    w = w + 23;
+    btn.Icon = btn:CreateTexture(nil, "ARTWORK")
+    btn.Icon:SetPoint("LEFT", btn, "LEFT", 10, 0)
+    btn.Icon:SetTexture(iconPath)
+    btn.Icon:SetSize(17, 17)
+    btn:GetFontString():SetPoint("LEFT", btn, "LEFT", 33, 0)
+    btn:HookScript("OnMouseDown", function(self) btn.Icon:SetPoint("LEFT", btn, "LEFT", 12, -2) end)
+    btn:HookScript("OnMouseUp", function(self) btn.Icon:SetPoint("LEFT", btn, "LEFT", 10, 0) end)
+  end
+  btn:SetWidth(w + 20);
   return btn;
 end
 
-function config:CreateTransparentButton(name, relativeFrame, ySize, text)
-  local btn = CreateFrame("Button", name, relativeFrame, "UIMenuButtonStretchTemplate");
-  local l = config:CreateNoPointsLabel(relativeFrame, nil, text);
-  btn:SetHeight(ySize);
-  btn:SetWidth(l:GetWidth() + 20);
-  btn:SetText(text);
-  btn:SetHighlightTexture("");
-  btn:SetNormalFontObject("GameFontNormalLarge");
-  btn:SetHighlightFontObject("GameFontHighlightLarge");
+function config:CreateHelpButton(relativeFrame)
+  local btn = CreateFrame("Button", nil, relativeFrame, "NysTDL_HelpButton");
+  btn.tooltip = L["Information"];
+
+  -- these are for changing the color depending on the mouse actions (since they are custom xml)
+  btn:HookScript("OnEnter", function(self)
+    self:SetAlpha(1)
+  end);
+  btn:HookScript("OnLeave", function(self)
+    self:SetAlpha(0.7)
+  end);
+  btn:HookScript("OnShow", function(self)
+    self:SetAlpha(0.7)
+  end);
   return btn;
 end
 
 function config:CreateRemoveButton(relativeCheckButton)
-  local btn = CreateFrame("Button", nil, relativeCheckButton, "RemoveButton");
+  local btn = CreateFrame("Button", nil, relativeCheckButton, "NysTDL_RemoveButton");
   btn:SetPoint("LEFT", relativeCheckButton, "LEFT", - 20, 0);
-  btn:HookScript("OnMouseUp", function(self)
-    if (self.name == "RemoveButton") then self.Icon:SetVertexColor(unpack(config:ThemeDownTo01(config.database.theme_yellow))) end
-  end);
-  btn.Icon:SetDesaturated(1);
 
   -- these are for changing the color depending on the mouse actions (since they are custom xml)
   btn:HookScript("OnEnter", function(self)
-    self.Icon:SetVertexColor(1, 0, 0)
+    self.Icon:SetVertexColor(0.8, 0.2, 0.2)
   end);
   btn:HookScript("OnLeave", function(self)
     if (tonumber(string.format("%.1f", self.Icon:GetAlpha())) ~= 0.5) then
-      self.Icon:SetVertexColor(unpack(config:ThemeDownTo01(config.database.theme_yellow)))
+      self.Icon:SetVertexColor(1, 1, 1)
+    end
+  end);
+  btn:HookScript("OnMouseUp", function(self)
+    if (self.name == "RemoveButton") then
+      self.Icon:SetVertexColor(1, 1, 1)
     end
   end);
   btn:HookScript("OnShow", function(self)
-    self.Icon:SetVertexColor(unpack(config:ThemeDownTo01(config.database.theme_yellow)))
+    self.Icon:SetVertexColor(1, 1, 1)
+  end);
+  return btn;
+end
+
+function config:CreateFavoriteButton(relativeCheckButton)
+  local btn = CreateFrame("Button", nil, relativeCheckButton, "NysTDL_FavoriteButton");
+  btn:SetPoint("LEFT", relativeCheckButton, "LEFT", - 20, -2);
+
+  -- these are for changing the color depending on the mouse actions (since they are custom xml)
+  -- and yea, this one's a bit complicated because I wanted its look to be really precise...
+  btn:HookScript("OnEnter", function(self)
+    if (not config:HasItem(NysTDL.db.profile.itemsFavorite, self:GetParent():GetName())) then
+      self.Icon:SetDesaturated(nil)
+      self.Icon:SetVertexColor(1, 1, 1)
+    else
+      self:SetAlpha(0.6)
+    end
+  end);
+  btn:HookScript("OnLeave", function(self)
+    if (not config:HasItem(NysTDL.db.profile.itemsFavorite, self:GetParent():GetName())) then
+      if (tonumber(string.format("%.1f", self.Icon:GetAlpha())) ~= 0.5) then -- if we are currently clicking on the button
+        self.Icon:SetDesaturated(1)
+        self.Icon:SetVertexColor(0.4, 0.4, 0.4)
+      end
+    else
+      self:SetAlpha(1)
+    end
+   end);
+   btn:HookScript("OnMouseUp", function(self)
+     if (self.name == "FavoriteButton") then
+       self:SetAlpha(1)
+       if (not config:HasItem(NysTDL.db.profile.itemsFavorite, self:GetParent():GetName())) then
+         self.Icon:SetDesaturated(1)
+         self.Icon:SetVertexColor(0.4, 0.4, 0.4)
+       end
+     end
+   end);
+   btn:HookScript("PostClick", function(self)
+     if (self.name == "FavoriteButton") then
+       self:GetScript("OnShow")(self)
+     end
+   end);
+  btn:HookScript("OnShow", function(self)
+    self:SetAlpha(1)
+    if (not config:HasItem(NysTDL.db.profile.itemsFavorite, self:GetParent():GetName())) then
+      self.Icon:SetDesaturated(1)
+      self.Icon:SetVertexColor(0.4, 0.4, 0.4)
+    else
+      self.Icon:SetDesaturated(nil)
+      self.Icon:SetVertexColor(1, 1, 1)
+    end
+  end);
+  return btn;
+end
+
+function config:CreateDescButton(relativeCheckButton)
+  local btn = CreateFrame("Button", nil, relativeCheckButton, "NysTDL_DescButton");
+  btn:SetPoint("LEFT", relativeCheckButton, "LEFT", - 20, 0);
+
+  -- these are for changing the color depending on the mouse actions (since they are custom xml)
+  -- and yea, this one's a bit complicated too because it works in very specific ways
+  btn:HookScript("OnEnter", function(self)
+    if (not config:HasKey(NysTDL.db.profile.itemsDesc, self:GetParent():GetName())) then
+      self.Icon:SetDesaturated(nil)
+      self.Icon:SetVertexColor(1, 1, 1)
+    else
+      self:SetAlpha(0.6)
+    end
+  end);
+  btn:HookScript("OnLeave", function(self)
+    if (not config:HasKey(NysTDL.db.profile.itemsDesc, self:GetParent():GetName())) then
+      if (tonumber(string.format("%.1f", self.Icon:GetAlpha())) ~= 0.5) then -- if we are currently clicking on the button
+        self.Icon:SetDesaturated(1)
+        self.Icon:SetVertexColor(0.4, 0.4, 0.4)
+      end
+    else
+      self:SetAlpha(1)
+    end
+   end);
+   btn:HookScript("OnMouseUp", function(self)
+     if (self.name == "DescButton") then
+       self:SetAlpha(1)
+       if (not config:HasKey(NysTDL.db.profile.itemsDesc, self:GetParent():GetName())) then
+         self.Icon:SetDesaturated(1)
+         self.Icon:SetVertexColor(0.4, 0.4, 0.4)
+       end
+     end
+   end);
+   btn:HookScript("PostClick", function(self)
+     if (self.name == "DescButton") then
+       self:GetScript("OnShow")(self)
+     end
+   end);
+  btn:HookScript("OnShow", function(self)
+    self:SetAlpha(1)
+    if (not config:HasKey(NysTDL.db.profile.itemsDesc, self:GetParent():GetName())) then
+      self.Icon:SetDesaturated(1)
+      self.Icon:SetVertexColor(0.4, 0.4, 0.4)
+    else
+      self.Icon:SetDesaturated(nil)
+      self.Icon:SetVertexColor(1, 1, 1)
+    end
   end);
   return btn;
 end
 
 function config:CreateAddButton(relativeEditBox)
-  local btn = CreateFrame("Button", nil, relativeEditBox, "AddButton");
+  local btn = CreateFrame("Button", nil, relativeEditBox, "NysTDL_AddButton");
   btn.tooltip = L["Press enter or click to add the item"];
   btn:SetPoint("RIGHT", relativeEditBox, "RIGHT", 16, - 1.2);
 
@@ -524,23 +659,6 @@ function config:CreateAddButton(relativeEditBox)
   end);
   btn:HookScript("OnShow", function(self)
     self.Icon:SetTextColor(1, 1, 1);
-  end);
-  return btn;
-end
-
-function config:CreateNoPointsShowBoxButton(name)
-  local btn = CreateFrame("Button", name, nil, "ShowBoxButton");
-  btn.Icon:SetDesaturated(1)
-
-  -- these are for changing the color depending on the mouse actions (since they are custom xml)
-  btn:HookScript("OnEnter", function(self)
-    self:SetAlpha(0.6);
-  end);
-  btn:HookScript("OnLeave", function(self)
-     self:SetAlpha(1);
-   end);
-  btn:HookScript("OnShow", function(self)
-    self:SetAlpha(1);
   end);
   return btn;
 end

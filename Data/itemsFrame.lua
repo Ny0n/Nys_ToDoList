@@ -19,24 +19,30 @@ local clearing, undoing = false, { ["clear"] = false, ["clearnb"] = 0, ["single"
 local dontHideMePls = {};
 local checkBtn = {};
 local removeBtn = {};
+local favoriteBtn = {};
+local descBtn = {};
+local descFrames = {};
 local addBtn = {};
 local label = {};
 local editBox = {};
-local sbBtn = {};
 local labelHover = {};
+local categoryLabelFavsRemaining = {};
 local addACategoryClosed = true;
+local tabActionsClosed = true;
 local optionsClosed = true;
+local autoResetedThisSession = false;
 
 -- these are for code comfort (sort of)
 local addACategoryItems = {}
-local optionsItems = {}
+local tabActionsItems = {}
+local frameOptionsItems = {}
 local currentDBItemsList;
 local categoryNameWidthMax = 220;
 local itemNameWidthMax = 240;
 local editBoxAddItemWidth = 270;
-local sbBtnDistFromLabel = 1;
 local centerXOffset = 165;
 local lineOffset = 120;
+local descFrameLevelDiff = 20;
 
 local All = {};
 
@@ -75,20 +81,76 @@ local function ScrollFrame_OnMouseWheel(self, delta)
 end
 
 local function FrameAlphaSlider_OnValueChanged(self, value)
+  -- itemsList frame part
   NysTDL.db.profile.frameAlpha = value;
   itemsFrameUI.frameAlphaSliderValue:SetText(value);
   itemsFrameUI:SetBackdropColor(0, 0, 0, value/100);
+  itemsFrameUI:SetBackdropBorderColor(1, 1, 1, value/100);
+  for i = 1, 3 do
+    _G["ToDoListUIFrameTab"..i.."Left"]:SetAlpha((value)/100);
+    _G["ToDoListUIFrameTab"..i.."LeftDisabled"]:SetAlpha((value)/100);
+    _G["ToDoListUIFrameTab"..i.."Middle"]:SetAlpha((value)/100);
+    _G["ToDoListUIFrameTab"..i.."MiddleDisabled"]:SetAlpha((value)/100);
+    _G["ToDoListUIFrameTab"..i.."Right"]:SetAlpha((value)/100);
+    _G["ToDoListUIFrameTab"..i.."RightDisabled"]:SetAlpha((value)/100);
+    _G["ToDoListUIFrameTab"..i.."HighlightTexture"]:SetAlpha((value)/100);
+  end
+
+  -- description frames part
+  if (NysTDL.db.profile.affectDesc) then
+    NysTDL.db.profile.descFrameAlpha = value;
+  end
+
+  value = NysTDL.db.profile.descFrameAlpha;
+
+  for _, v in pairs(descFrames) do
+    v:SetBackdropColor(0, 0, 0, value/100);
+    v:SetBackdropBorderColor(1, 1, 1, value/100);
+    for k, x in pairs(v.descriptionEditBox) do
+      if (type(k) == "string") then
+        if (string.sub(k, k:len()-2, k:len()) == "Tex") then
+          x:SetAlpha(value/100)
+        end
+      end
+    end
+  end
 end
 
 local function FrameContentAlphaSlider_OnValueChanged(self, value)
+  -- itemsList frame part
   NysTDL.db.profile.frameContentAlpha = value;
   itemsFrameUI.frameContentAlphaSliderValue:SetText(value);
   itemsFrameUI.ScrollFrame:SetAlpha((value)/100);
   itemsFrameUI.closeButton:SetAlpha((value)/100);
   for i = 1, 3 do
-      _G["ToDoListUIFrameTab"..i]:SetAlpha((value-(100-value)*0.8)/100);
-      _G["ToDoListUIFrameTab"..i].content:SetAlpha((value)/100);
+    _G["ToDoListUIFrameTab"..i.."Text"]:SetAlpha((value)/100);
+    _G["ToDoListUIFrameTab"..i].content:SetAlpha((value)/100);
   end
+
+  -- description frames part
+  if (NysTDL.db.profile.affectDesc) then
+    NysTDL.db.profile.descFrameContentAlpha = value;
+  end
+
+  value = NysTDL.db.profile.descFrameContentAlpha;
+
+  for _, v in pairs(descFrames) do
+    v.closeButton:SetAlpha(value/100);
+    -- the title is already being cared for in the update of the desc frame
+    v.descriptionEditBox.EditBox:SetAlpha(value/100);
+    v.descriptionEditBox.ScrollBar:SetAlpha(value/100);
+    v.resizeButton:SetAlpha(value/100);
+  end
+end
+
+local function TabItemsTable(tabName)
+  -- returns the saved variable corresponding to the items for 'tabName'
+  if (tabName == "Daily") then
+    return NysTDL.db.profile.itemsDaily;
+  elseif (tabName == "Weekly") then
+    return NysTDL.db.profile.itemsWeekly;
+  end
+  return All;
 end
 
 -- frame functions
@@ -106,7 +168,7 @@ function itemsFrame:ResetBtns(tabName, auto)
 
         checkBtn[All[i]]:SetChecked(false);
       end
-    elseif (config:HasItem(NysTDL.db.profile.itemsList[tabName], checkBtn[All[i]]:GetName())) then
+    elseif (config:HasItem(TabItemsTable(tabName), checkBtn[All[i]]:GetName())) then
       if (checkBtn[All[i]]:GetChecked()) then
         uncheckedSomething = true;
       end
@@ -127,29 +189,78 @@ function itemsFrame:ResetBtns(tabName, auto)
   end
 end
 
+function itemsFrame:CheckBtns(tabName)
+  -- this function's goal is to check every item in the selected tab
+  local checkedSomething = false;
+
+  for i = 1, #All do
+    if (tabName == "All") then
+      if (config:HasItem(All, checkBtn[All[i]]:GetName())) then -- the All table isn't in the saved variable
+        if (not checkBtn[All[i]]:GetChecked()) then
+          checkedSomething = true;
+        end
+
+        checkBtn[All[i]]:SetChecked(true);
+      end
+    elseif (config:HasItem(TabItemsTable(tabName), checkBtn[All[i]]:GetName())) then
+      if (not checkBtn[All[i]]:GetChecked()) then
+        checkedSomething = true;
+      end
+
+      checkBtn[All[i]]:SetChecked(true);
+    end
+  end
+  ItemsFrame_Update();
+
+  if (checkedSomething) then -- so that we print this message only if there was checked items before the uncheck
+    if (tabName == "All") then
+      config:Print(L["Checked everything!"]);
+    else
+      config:Print(L["Checked %s tab!"]:format(L[tabName]));
+    end
+  elseif (not auto) then -- we print this message only if it was the user's action that triggered this function (not the auto reset)
+    config:Print(L["Nothing to check here!"]);
+  end
+end
+
 local function inChatIsDone(all, daily, weekly)
   -- we tell the player if he's the best c:
   if (all == 0 and remainingCheckAll ~= 0 and next(All) ~= nil) then
-    config:Print(L["Nice job, you did everything on the list for this week!"]);
-  elseif (daily == 0 and remainingCheckDaily ~= 0 and next(NysTDL.db.profile.itemsList["Daily"]) ~= nil) then
+    config:Print(L["Nice job, you did everything on the list!"]);
+  elseif (daily == 0 and remainingCheckDaily ~= 0 and next(NysTDL.db.profile.itemsDaily) ~= nil) then
     config:Print(L["Everything's done for today!"]);
-  elseif (weekly == 0 and remainingCheckWeekly ~= 0 and next(NysTDL.db.profile.itemsList["Weekly"]) ~= nil) then
+  elseif (weekly == 0 and remainingCheckWeekly ~= 0 and next(NysTDL.db.profile.itemsWeekly) ~= nil) then
     config:Print(L["Everything's done for this week!"]);
   end
 end
 
-local function updateRemainingNumber()
+function itemsFrame:updateRemainingNumber()
   -- we get how many things there is left to do in every tab
   local numberAll, numberDaily, numberWeekly = 0, 0, 0;
+  local numberFavAll, numberFavDaily, numberFavWeekly = 0, 0, 0;
   for i = 1, #All do
-    if (not checkBtn[All[i]]:GetChecked()) then
-      if (config:HasItem(NysTDL.db.profile.itemsList["Daily"], checkBtn[All[i]]:GetName())) then
+    local name = checkBtn[All[i]]:GetName();
+    local isDaily = config:HasItem(NysTDL.db.profile.itemsDaily, name);
+    local isWeekly = config:HasItem(NysTDL.db.profile.itemsWeekly, name);
+    local isFav = config:HasItem(NysTDL.db.profile.itemsFavorite, name);
+
+    if (not checkBtn[All[i]]:GetChecked()) then -- if the current button is not checked
+      if (isDaily) then
         numberDaily = numberDaily + 1;
+        if (isFav) then
+          numberFavDaily = numberFavDaily + 1;
+        end
       end
-      if (config:HasItem(NysTDL.db.profile.itemsList["Weekly"], checkBtn[All[i]]:GetName())) then
+      if (isWeekly) then
         numberWeekly = numberWeekly + 1;
+        if (isFav) then
+          numberFavWeekly = numberFavWeekly + 1;
+        end
       end
       numberAll = numberAll + 1;
+      if (isFav) then
+        numberFavAll = numberFavAll + 1;
+      end
     end
   end
 
@@ -159,27 +270,49 @@ local function updateRemainingNumber()
 
   -- we update the number of remaining things to do for the current tab
   local tab = itemsFrameUI.remainingNumber:GetParent();
+  local hex = config:RGBToHex({ NysTDL.db.profile.favoritesColor[1]*255, NysTDL.db.profile.favoritesColor[2]*255, NysTDL.db.profile.favoritesColor[3]*255} );
   if (tab == AllTab) then
-    itemsFrameUI.remainingNumber:SetText("|cffffffff"..numberAll.."|r");
+    itemsFrameUI.remainingNumber:SetText(((numberAll > 0) and "|cffffffff" or "|cff00ff00")..numberAll.."|r "..((numberFavAll > 0) and string.format("|cff%s%s|r", hex, "("..numberFavAll..")") or ""));
   elseif (tab == DailyTab) then
-    itemsFrameUI.remainingNumber:SetText("|cffffffff"..numberDaily.."|r");
+    itemsFrameUI.remainingNumber:SetText(((numberDaily > 0) and "|cffffffff" or "|cff00ff00")..numberDaily.."|r "..((numberFavDaily > 0) and string.format("|cff%s%s|r", hex, "("..numberFavDaily..")") or ""));
   elseif (tab == WeeklyTab) then
-    itemsFrameUI.remainingNumber:SetText("|cffffffff"..numberWeekly.."|r");
+    itemsFrameUI.remainingNumber:SetText(((numberWeekly > 0) and "|cffffffff" or "|cff00ff00")..numberWeekly.."|r "..((numberFavWeekly > 0) and string.format("|cff%s%s|r", hex, "("..numberFavWeekly..")") or ""));
+  end
+  -- same for the category label ones
+  for c, l in pairs(label) do -- for every catrgory label
+    local nbFavCat = 0
+    for _, x in pairs(NysTDL.db.profile.itemsList[c]) do -- and for every items in them
+      if (config:HasItem(TabItemsTable(tab:GetName()), x)) then -- if the current loop item is in the tab we're on
+        if (config:HasItem(NysTDL.db.profile.itemsFavorite, x)) then -- and it's a favorite
+          if (not checkBtn[x]:GetChecked()) then -- and it's not checked
+            nbFavCat = nbFavCat + 1 -- then it's one more remaining favorite hidden in the closed category
+          end
+        end
+      end
+    end
+    categoryLabelFavsRemaining[c]:SetText((nbFavCat > 0) and "("..nbFavCat..")" or "")
+    categoryLabelFavsRemaining[c]:SetTextColor(unpack(NysTDL.db.profile.favoritesColor))
   end
 
   -- and update the "last" remainings for EACH tab (for the inChatIsDone function)
   remainingCheckAll = numberAll;
   remainingCheckDaily = numberDaily;
   remainingCheckWeekly = numberWeekly;
+
+  return numberAll, numberDaily, numberWeekly, numberFavAll, numberFavDaily, numberFavWeekly; -- and we return them, so that we can access it eg. in the favorites warning function
 end
 
-local function updateCheckButtons()
+function itemsFrame:updateCheckButtons()
   -- we color the items wether they're checked or not
   for i = 1, #All do
     if (checkBtn[All[i]]:GetChecked()) then
       checkBtn[All[i]].text:SetTextColor(0, 1, 0);
     else
-      checkBtn[All[i]].text:SetTextColor(unpack(config:ThemeDownTo01(config.database.theme_yellow)));
+      if (config:HasItem(NysTDL.db.profile.itemsFavorite, checkBtn[All[i]]:GetName())) then
+        checkBtn[All[i]].text:SetTextColor(unpack(NysTDL.db.profile.favoritesColor));
+      else
+        checkBtn[All[i]].text:SetTextColor(unpack(config:ThemeDownTo01(config.database.theme_yellow)));
+      end
     end
   end
 end
@@ -216,25 +349,46 @@ function itemsFrame:autoReset()
     NysTDL.db.profile.autoReset["Weekly"] = config:GetSecondsToReset().weekly;
     itemsFrame:ResetBtns("Daily", true);
     itemsFrame:ResetBtns("Weekly", true);
+    autoResetedThisSession = true;
   elseif time() > NysTDL.db.profile.autoReset["Daily"] then
     NysTDL.db.profile.autoReset["Daily"] = config:GetSecondsToReset().daily;
     itemsFrame:ResetBtns("Daily", true);
+    autoResetedThisSession = true;
   end
+end
+
+function itemsFrame:autoResetedThisSessionGET()
+  return autoResetedThisSession;
 end
 
 -- Items modifications
 
 local function updateAllTable()
   All = {}
+  local fav = {}
+  local others = {}
+
   -- Completing the All table
   for k, val in pairs(NysTDL.db.profile.itemsList) do
-    if (k ~= "Daily" and k ~= "Weekly") then
-      for _, v in pairs(val) do
-        table.insert(All, v);
+    for _, v in pairs(val) do
+      if (config:HasItem(NysTDL.db.profile.itemsFavorite, v)) then
+        table.insert(fav, v)
+      else
+        table.insert(others, v)
       end
     end
   end
-  table.sort(All); -- so that every item will be sorted alphabetically in the list
+
+  -- then we sort them, so that every item will be sorted alphabetically in the list,
+  -- with the favorites in first of every categories
+  table.sort(fav)
+  table.sort(others)
+  for _, v in pairs(fav) do
+    table.insert(All, v)
+  end
+  for _, v in pairs(others) do
+    table.insert(All, v)
+  end
 end
 
 local function refreshTab(cat, name, action, modif, checked)
@@ -250,8 +404,10 @@ local function refreshTab(cat, name, action, modif, checked)
           table.remove(NysTDL.db.profile.checkedButtons, pos);
         end
 
-        checkBtn[name]:Hide(); -- get out of my view mate
         removeBtn[name] = nil;
+        favoriteBtn[name] = nil;
+        descBtn[name] = nil;
+        checkBtn[name]:Hide(); -- get out of my view mate
         checkBtn[name] = nil;
       end
 
@@ -270,28 +426,25 @@ local function refreshTab(cat, name, action, modif, checked)
 
         removeBtn[name] = config:CreateRemoveButton(checkBtn[name]);
         removeBtn[name]:SetScript("OnClick", function(self) itemsFrame:RemoveItem(self) end);
+
+        favoriteBtn[name] = config:CreateFavoriteButton(checkBtn[name]);
+        favoriteBtn[name]:SetScript("OnClick", function(self) itemsFrame:FavoriteClick(self) end);
+        favoriteBtn[name]:Hide();
+
+        descBtn[name] = config:CreateDescButton(checkBtn[name]);
+        descBtn[name]:SetScript("OnClick", function(self) itemsFrame:DescriptionClick(self) end);
+        descBtn[name]:Hide();
       end
       -- we create the corresponding label (if it is a new one)
       if (label[cat] == nil) then
         -- category label
         label[cat] = config:CreateNoPointsLabel(itemsFrameUI, cat, tostring(cat));
+        categoryLabelFavsRemaining[cat] = config:CreateNoPointsLabel(itemsFrameUI, cat.."_FavsRemaining", "");
         -- associated edit box and add button
         editBox[cat] = config:CreateNoPointsLabelEditBox(cat);
         editBox[cat]:SetScript("OnEnterPressed", function(self) itemsFrame:AddItem(addBtn[self:GetName()]) end); -- if we press enter, it's like we clicked on the add button
         addBtn[cat] = config:CreateAddButton(editBox[cat]);
         addBtn[cat]:SetScript("OnClick", function(self) itemsFrame:AddItem(self) end);
-        -- associated show box button
-        sbBtn[cat] = config:CreateNoPointsShowBoxButton('sbBtn'..cat);
-        sbBtn[cat]:SetScript("OnClick", function(self)
-          editBox[cat]:SetShown(not editBox[cat]:IsShown());
-          self.Icon:SetRotation(-(select(1,self.Icon:GetRotation())));
-          local point, relativeFrame, relativePoint = self:GetPoint(); -- and we change just a bit his position so that is looks better, depending on the way he is facing
-          if (editBox[cat]:IsShown()) then
-            self:SetPoint(point, relativeFrame, relativePoint, sbBtnDistFromLabel + 5, 0);
-          else
-            self:SetPoint(point, relativeFrame, relativePoint, sbBtnDistFromLabel, 0);
-          end
-        end)
       end
 
       Tab_OnClick(_G[NysTDL.db.profile.lastLoadedTab]); -- we reload the tab to instantly display the changes
@@ -305,12 +458,8 @@ local function addCategory()
   local db = {}
   db.cat = itemsFrameUI.categoryEditBox:GetText();
 
-  local check = db.cat:lower()
-  if (check == "") then
+  if (db.cat == "") then
     config:Print(L["Please enter a category name!"])
-    return;
-  elseif (check == "weekly" or check == "daily") then
-    config:Print(L["The category name cannot be '%s' or '%s', sorry! (there are tabs for that!)"]:format("daily", "weekly"))
     return;
   end
 
@@ -380,22 +529,23 @@ function itemsFrame:AddItem(self, db)
     if (not hasKey) then NysTDL.db.profile.itemsList[cat] = {}; new = true; end -- that means we'll be adding something to a new category, so we create the table to hold all theses shiny new items
 
     if (case == nil) then
-      isPresent0 = (select(1, config:HasItem(NysTDL.db.profile.itemsList[cat], name)));-- does it already exists in the typed category?
+      isPresent0 = (select(1, config:HasItem(NysTDL.db.profile.itemsList[cat], name))); -- does it already exists in the typed category?
     else
-      isPresent0 = (select(1, config:HasItem(NysTDL.db.profile.itemsList[case], name)));-- does it already exists in Daily/Weekly?
-      isPresent3 = (select(1, config:HasItem(NysTDL.db.profile.itemsList[cat], name)));-- does it already exists in the typed category?
-      if (isPresent1 and not isPresent3) then -- if it already exists but not in this category
+      isPresent3 = (select(1, config:HasItem(NysTDL.db.profile.itemsList[cat], name))); -- does it already exists in the typed category?
+      if (isPresent1 and not isPresent3) then -- if it already exists somewhere but not in this category
         addResult = {L["This item name already exists!"], false};
         stop = true;
+      else -- if it is present IN THIS category (maybe on an other tab) !OR! if it doesn't exists at all
+        isPresent0 = (select(1, config:HasItem(TabItemsTable(case), name))); -- does it already exists in the current tab? (Daily or Weekly)
       end
     end
 
     if (not stop) then
       if (not isPresent0) then
         if (case == "Daily") then
-          isPresent2 = (select(1, config:HasItem(NysTDL.db.profile.itemsList["Weekly"], name)));
+          isPresent2 = (select(1, config:HasItem(NysTDL.db.profile.itemsWeekly, name)));
         elseif (case == "Weekly") then
-          isPresent2 = (select(1, config:HasItem(NysTDL.db.profile.itemsList["Daily"], name)));
+          isPresent2 = (select(1, config:HasItem(NysTDL.db.profile.itemsDaily, name)));
         else
           stop = true;
           if (not isPresent1) then
@@ -408,10 +558,10 @@ function itemsFrame:AddItem(self, db)
         if (not stop) then
           if (not isPresent1) then
             table.insert(NysTDL.db.profile.itemsList[cat], name);
-            table.insert(NysTDL.db.profile.itemsList[case], name);
+            table.insert(TabItemsTable(case), name);
             addResult = {L["\"%s\" added to %s! (%s item)"]:format(name, cat, L[case]), true};
-          elseif (not isPresent2) then
-            table.insert(NysTDL.db.profile.itemsList[case], name);
+          elseif (not isPresent2) then -- if it doesn't exists in the current tab, but it does in that category only in the 'All' tab
+            table.insert(TabItemsTable(case), name); -- we transform that item into a 'case' item for this category
             addResult = {L["\"%s\" added to %s! (%s item)"]:format(name, cat, L[case]), true};
           else
             addResult = {L["No item can be daily and weekly!"], false};
@@ -448,13 +598,17 @@ function itemsFrame:AddItem(self, db)
 end
 
 function itemsFrame:RemoveItem(self)
-  -- the big big function to remove items
+  -- the really important function to delete items
 
   local modif = false;
   local isPresent, pos;
 
   name = self:GetParent():GetName(); -- we get the name of the tied check button
   cat = (select(2, self:GetParent():GetPoint())):GetName(); -- we get the category we're in
+
+  -- since the item will get removed, we check if his description frame was opened (can happen if there was no description on the item)
+  -- and if so, we hide and destroy it
+  itemsFrame:descriptionFrameHide(name.."_descFrame")
 
   -- undo part
   local db = {
@@ -467,16 +621,16 @@ function itemsFrame:RemoveItem(self)
   -- All part
   table.remove(NysTDL.db.profile.itemsList[cat], (select(2, config:HasItem(NysTDL.db.profile.itemsList[cat], name))));
   -- Daily part
-  isPresent, pos = config:HasItem(NysTDL.db.profile.itemsList["Daily"], name);
+  isPresent, pos = config:HasItem(NysTDL.db.profile.itemsDaily, name);
   if (isPresent) then
     db.case = "Daily";
-    table.remove(NysTDL.db.profile.itemsList["Daily"], pos);
+    table.remove(NysTDL.db.profile.itemsDaily, pos);
   end
   -- Weekly part
-  isPresent, pos = config:HasItem(NysTDL.db.profile.itemsList["Weekly"], name);
+  isPresent, pos = config:HasItem(NysTDL.db.profile.itemsWeekly, name);
   if (isPresent) then
     db.case = "Weekly";
-    table.remove(NysTDL.db.profile.itemsList["Weekly"], pos);
+    table.remove(NysTDL.db.profile.itemsWeekly, pos);
   end
 
   if (not clearing) then
@@ -490,33 +644,197 @@ function itemsFrame:RemoveItem(self)
   refreshTab(case, name, "Remove", modif, db.checked);
 end
 
+function itemsFrame:FavoriteClick(self)
+  -- the function to favorite items
+
+  name = self:GetParent():GetName(); -- we get the name of the tied check button
+  cat = (select(2, self:GetParent():GetPoint())):GetName(); -- we get the category we're in so that we don't hide the add edit box at the next refresh
+  dontHideMePls[cat] = true;
+
+  local isPresent, pos = config:HasItem(NysTDL.db.profile.itemsFavorite, name)
+  if (not isPresent) then
+    table.insert(NysTDL.db.profile.itemsFavorite, name)
+  else
+    table.remove(NysTDL.db.profile.itemsFavorite, pos)
+  end
+
+  Tab_OnClick(_G[NysTDL.db.profile.lastLoadedTab]); -- we reload the tab to instantly display the changes
+end
+
+function itemsFrame:descriptionFrameHide(name)
+  -- here, if the name matches one of the opened description frames, we hide that frame, delete it from memory and reupdate the levels of every other active ones
+  for pos, v in pairs(descFrames) do
+    if (v:GetName() == name) then
+      v:Hide()
+      table.remove(descFrames, pos)
+      for pos2, v2 in pairs(descFrames) do -- we reupdate the frame levels
+        v2:SetFrameLevel(300 + (pos2-1)*descFrameLevelDiff)
+      end
+      return true;
+    end
+  end
+  return false;
+end
+
+function itemsFrame:DescriptionClick(self)
+  -- the big function to create the description frame for each items
+
+  name = self:GetParent():GetName(); -- we get the name of the tied check button
+  cat = (select(2, self:GetParent():GetPoint())):GetName(); -- we get the category we're in so that we don't hide the add edit box at the next refresh
+  dontHideMePls[cat] = true;
+
+  if (itemsFrame:descriptionFrameHide(name.."_descFrame")) then return; end
+
+  -- we create the mini frame holding the name of the item and his description in an edit box
+  local descFrame = CreateFrame("Frame", name.."_descFrame", UIParent);
+  local w = config:CreateNoPointsLabel(UIParent, nil, name):GetWidth();
+  descFrame:SetSize((w < 190) and 190+35 or w+35, 110);
+
+  -- background
+  descFrame:SetBackdrop({bgFile = "Interface\\Tooltips\\UI-Tooltip-Background", edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", tile = false, tileSize = 1, edgeSize = 10, insets = { left = 1, right = 1, top = 1, bottom = 1 }});
+  descFrame:SetBackdropColor(0, 0, 0, 1);
+
+  -- properties
+  descFrame:SetResizable(true);
+  descFrame:SetMinResize(descFrame:GetWidth(), descFrame:GetHeight());
+  descFrame:SetFrameLevel(300 + #descFrames*descFrameLevelDiff);
+  descFrame:SetMovable(true);
+  descFrame:SetClampedToScreen(true);
+  descFrame:EnableMouse(true);
+
+  -- to move the frame
+  descFrame:SetScript("OnMouseDown", function(self, button)
+      if (button == "LeftButton") then
+          self:StartMoving()
+      end
+  end)
+  descFrame:SetScript("OnMouseUp", descFrame.StopMovingOrSizing)
+
+  descFrame:SetScript("OnUpdate", function(self)
+    -- we update non-stop the color of the title
+    local name = self.title:GetText();
+    local currentAlpha = NysTDL.db.profile.descFrameContentAlpha/100;
+    if (checkBtn[name]:GetChecked()) then
+      self.title:SetTextColor(0, 1, 0, currentAlpha);
+    else
+      if (config:HasItem(NysTDL.db.profile.itemsFavorite, checkBtn[name]:GetName())) then
+        local r, g, b = unpack(NysTDL.db.profile.favoritesColor);
+        self.title:SetTextColor(r, g, b, currentAlpha);
+      else
+        local r, g, b = unpack(config:ThemeDownTo01(config.database.theme_yellow));
+        self.title:SetTextColor(r, g, b, currentAlpha);
+      end
+    end
+
+    -- and we also update non-stop the width of the description edit box to match that of the frame if we resize it, and when the scrollbar kicks in. (this is the secret to make it work)
+    self.descriptionEditBox.EditBox:SetWidth(self.descriptionEditBox:GetWidth() - (self.descriptionEditBox.ScrollBar:IsShown() and 15 or 0))
+  end)
+
+  -- position
+  descFrame:ClearAllPoints();
+  descFrame:SetParent(UIParent);
+  descFrame:SetPoint("BOTTOMRIGHT", self, "TOPLEFT", 0, 0);
+  descFrame:StartMoving(); -- to unlink it from the itemsframe
+  descFrame:StopMovingOrSizing();
+
+  -- / content of the frame / --
+
+  -- resize button
+  descFrame.resizeButton = CreateFrame("Button", nil, descFrame)
+  descFrame.resizeButton:SetSize(16, 16)
+  descFrame.resizeButton:SetPoint("BOTTOMRIGHT")
+  descFrame.resizeButton:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
+  descFrame.resizeButton:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
+  descFrame.resizeButton:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
+  descFrame.resizeButton:SetScript("OnMouseDown", function(self, button)
+    if (button == "LeftButton") then
+      descFrame:StartSizing("BOTTOMRIGHT")
+      self:GetHighlightTexture():Hide() -- more noticeable
+    end
+  end)
+  descFrame.resizeButton:SetScript("OnMouseUp", function(self, button)
+    descFrame:StopMovingOrSizing()
+    self:GetHighlightTexture():Show()
+  end)
+
+  -- close button
+  descFrame.closeButton = CreateFrame("Button", "closeButton", descFrame, "NysTDL_CloseButton");
+  descFrame.closeButton:SetPoint("TOPRIGHT", descFrame, "TOPRIGHT", -1, -1);
+  descFrame.closeButton:SetScript("onClick", function(self)
+      itemsFrame:descriptionFrameHide(self:GetParent():GetName())
+  end);
+
+  -- item label
+  descFrame.title = descFrame:CreateFontString(name.."_descFrameTitle")
+  descFrame.title:SetFontObject("GameFontNormalLarge")
+  descFrame.title:SetPoint("TOPLEFT", descFrame, "TOPLEFT", 6, -5)
+  descFrame.title:SetText(name)
+
+  -- description edit box
+  descFrame.descriptionEditBox = CreateFrame("ScrollFrame", name.."_descFrameEditBox", descFrame, "InputScrollFrameTemplate");
+  descFrame.descriptionEditBox.EditBox:SetFontObject("ChatFontNormal")
+  descFrame.descriptionEditBox.EditBox:SetAutoFocus(false)
+  descFrame.descriptionEditBox.EditBox:SetMaxLetters(0)
+  descFrame.descriptionEditBox.CharCount:Hide()
+  descFrame.descriptionEditBox.EditBox.Instructions:SetFontObject("GameFontNormal")
+  descFrame.descriptionEditBox.EditBox.Instructions:SetText(L["Add a description..."].."\n"..L["(automatically saved)"])
+  descFrame.descriptionEditBox:SetPoint("TOPLEFT", descFrame, "TOPLEFT", 10, -30);
+  descFrame.descriptionEditBox:SetPoint("BOTTOMRIGHT", descFrame, "BOTTOMRIGHT", -10, 10);
+  if (config:HasKey(NysTDL.db.profile.itemsDesc, name)) then -- if there is already a description for this item, we write it on frame creation
+    descFrame.descriptionEditBox.EditBox:SetText(NysTDL.db.profile.itemsDesc[name])
+  end
+  descFrame.descriptionEditBox.EditBox:SetScript("OnKeyUp", function(self, key)
+    -- and here we save the description everytime we lift a finger (best auto-save possible I think)
+    local itemName = self:GetParent():GetParent().title:GetText()
+    NysTDL.db.profile.itemsDesc[itemName] = (self:GetText() ~= "") and self:GetText() or nil
+  end)
+
+
+  table.insert(descFrames, descFrame) -- we save it for level, hide, and alpha purposes
+
+  -- we update the alpha if it needs to be
+  FrameAlphaSlider_OnValueChanged(nil, NysTDL.db.profile.frameAlpha);
+  FrameContentAlphaSlider_OnValueChanged(nil, NysTDL.db.profile.frameContentAlpha);
+
+  Tab_OnClick(_G[NysTDL.db.profile.lastLoadedTab]); -- we reload the tab to instantly display the changes
+end
+
 function itemsFrame:ClearTab(tabName)
   if (tabName == nil) then tabName = "All"; end
 
   local items = {};
   if (tabName == "All") then items = All; end
-  if (tabName == "Daily") then items = NysTDL.db.profile.itemsList["Daily"]; end
-  if (tabName == "Weekly") then items = NysTDL.db.profile.itemsList["Weekly"]; end
+  if (tabName == "Daily") then items = NysTDL.db.profile.itemsDaily; end
+  if (tabName == "Weekly") then items = NysTDL.db.profile.itemsWeekly; end
 
-  if (next(items) ~= nil) then
+  -- first we get how many items are favorites and how many have descriptions in this tab (they are protected, we won't clear them)
+  local nbProtected = 0;
+  for _, v in pairs(items) do
+    if (config:HasItem(NysTDL.db.profile.itemsFavorite, v) or config:HasKey(NysTDL.db.profile.itemsDesc, v)) then
+      nbProtected = nbProtected + 1;
+    end
+  end
+
+  if (#items > nbProtected) then -- if there is at least one item that can be cleared in this tab
     -- we start the clear
     clearing = true;
 
     -- we keep in mind what tab we were on when we started the clear (just so that we come back to it after the job is done)
     local last = NysTDL.db.profile.lastLoadedTab;
 
-    -- we now go throught each of the tabs (weekly / daily / all) successively to remove every item there are, and in their correct tabs
-    local nb = #items; -- but before (if we want to undo it) we keep in mind how many items there were
+    local nb = #items - nbProtected; -- but before (if we want to undo it) we keep in mind how many items there were to be cleared
 
     Tab_OnClick(_G["ToDoListUIFrameTab1"]); -- we put ourselves in the All tab so that evey item is loaded
 
     for k, v in pairs(removeBtn) do
       if (config:HasItem(items, v:GetParent():GetName())) then -- if the item is in the tab we want to clear
-        itemsFrame:RemoveItem(v);
+        if (not config:HasItem(NysTDL.db.profile.itemsFavorite, v:GetParent():GetName()) and not config:HasKey(NysTDL.db.profile.itemsDesc, v:GetParent():GetName())) then -- if it's not a favorite nor it has a description
+          itemsFrame:RemoveItem(v); -- then we remove it
+        end
       end
     end
 
-    table.insert(NysTDL.db.profile.undoTable, nb);
+    table.insert(NysTDL.db.profile.undoTable, nb); -- and then we save how many items were actually removed
 
     -- we refresh and go back to the tab we were on
     Tab_OnClick(_G[last]);
@@ -524,7 +842,7 @@ function itemsFrame:ClearTab(tabName)
     clearing = false;
     config:Print(L["Clear succesful! (%s tab, %i items)"]:format(L[tabName], nb));
   else
-    config:Print(L["Nothing to clear here!"]);
+    config:Print(L["Nothing can be cleared here!"]);
   end
 end
 
@@ -561,8 +879,8 @@ end
 ItemsFrame_Update = function(...)
   -- updates everything about the frame once everytime we call this function
   updateAllTable();
-  updateRemainingNumber();
-  updateCheckButtons();
+  itemsFrame:updateRemainingNumber();
+  itemsFrame:updateCheckButtons();
   saveSavedVariable();
 end
 
@@ -574,48 +892,59 @@ end
 local function ItemsFrame_CheckLabels()
   -- update for the labels:
   for k, i in pairs(NysTDL.db.profile.itemsList) do
-    if (k ~= "Daily" and k ~= "Weekly") then
-      if (label[k]:IsMouseOver()) then -- for every label in the current tab, if our mouse is over one of them,
-        label[k]:SetTextColor(0, 0.8, 1, 1); -- we change its visual
-        local isPresent, pos = config:HasItem(labelHover, k);
-        if (not isPresent) then
-          table.insert(labelHover, k); -- we add its category name in a table variable
-        end
-      else
-        local isPresent, pos = config:HasItem(labelHover, k);
-        if (isPresent) then
-          table.remove(labelHover, pos); -- if we're not hovering it, we delete it from that table
-        end
-        label[k]:SetTextColor(1, 1, 1, 1); -- back to the default color
+    if (label[k]:IsMouseOver()) then -- for every label in the current tab, if our mouse is over one of them,
+      label[k]:SetTextColor(0, 0.8, 1, 1); -- we change its visual
+      local isPresent, pos = config:HasItem(labelHover, k);
+      if (not isPresent) then
+        table.insert(labelHover, k); -- we add its category name in a table variable
       end
+    else
+      local isPresent, pos = config:HasItem(labelHover, k);
+      if (isPresent) then
+        table.remove(labelHover, pos); -- if we're not hovering it, we delete it from that table
+      end
+      label[k]:SetTextColor(1, 1, 1, 1); -- back to the default color
     end
   end
 end
 
-local function ItemsFrame_OnMouseUp()
-  -- if we're here, it means we've clicked somewhere on the frame
-  if (next(labelHover)) then -- if we are mouse hovering one of the category labels
-    local name = tostringall(unpack(labelHover)); -- we get the name of that label
-    if (config:HasKey(NysTDL.db.profile.closedCategories, name) and NysTDL.db.profile.closedCategories[name] ~= nil) then -- if this is a category that is closed in certain tabs
-      local isPresent, pos = config:HasItem(NysTDL.db.profile.closedCategories[name], CurrentTab:GetName()); -- we get if it is closed in the current tab
-      if (isPresent) then -- if it is
-        table.remove(NysTDL.db.profile.closedCategories[name], pos); -- then we remove it from the saved variable
-        if (#NysTDL.db.profile.closedCategories[name] == 0) then -- and btw check if it was the only tab remaining where it was closed
-          NysTDL.db.profile.closedCategories[name] = nil; -- in which case we nil the table variable for that category
+local function ItemsFrame_OnMouseUp(self, button)
+  local name = tostringall(unpack(labelHover)); -- we get the name of the label we clicked on (if we clicked on a label)
+  if (name ~= "" and name ~= nil) then -- we test that here
+    if (button == "LeftButton") then
+      -- if we're here, it means we've clicked somewhere on the frame
+      if (next(labelHover)) then -- if we are mouse hovering one of the category labels
+        if (config:HasKey(NysTDL.db.profile.closedCategories, name) and NysTDL.db.profile.closedCategories[name] ~= nil) then -- if this is a category that is closed in certain tabs
+          local isPresent, pos = config:HasItem(NysTDL.db.profile.closedCategories[name], CurrentTab:GetName()); -- we get if it is closed in the current tab
+          if (isPresent) then -- if it is
+            table.remove(NysTDL.db.profile.closedCategories[name], pos); -- then we remove it from the saved variable
+            if (#NysTDL.db.profile.closedCategories[name] == 0) then -- and btw check if it was the only tab remaining where it was closed
+              NysTDL.db.profile.closedCategories[name] = nil; -- in which case we nil the table variable for that category
+            end
+          else  -- if it is opened in the current tab
+            table.insert(NysTDL.db.profile.closedCategories[name], CurrentTab:GetName()); -- then we close it by adding it to the saved variable
+          end
+        else -- if this category was closed nowhere
+          NysTDL.db.profile.closedCategories[name] = {CurrentTab:GetName()}; -- then we create its table variable and initialize it with the current tab (we close the category in the current tab)
         end
-      else  -- if it is opened in the current tab
-        table.insert(NysTDL.db.profile.closedCategories[name], CurrentTab:GetName()); -- then we close it by adding it to the saved variable
+        Tab_OnClick(_G[NysTDL.db.profile.lastLoadedTab]); -- we reload the frame to display the changes
       end
-    else -- if this category was closed nowhere
-      NysTDL.db.profile.closedCategories[name] = {CurrentTab:GetName()}; -- then we create its table variable and initialize it with the current tab (we close the category in the current tab)
+    elseif (button == "RightButton") then
+      -- if the label we right clicked on is NOT a closed category
+      if (not (select(1, config:HasKey(NysTDL.db.profile.closedCategories, name))) or not (select(1, config:HasItem(NysTDL.db.profile.closedCategories[name], CurrentTab:GetName())))) then
+        -- then we toggle its edit box
+        editBox[name]:SetShown(not editBox[name]:IsShown());
+        dontHideMePls[name] = true;
+        Tab_OnClick(_G[NysTDL.db.profile.lastLoadedTab]); -- and we reload the frame to hide any other edit boxes, we only want one shown at a time
+      end
     end
-    Tab_OnClick(_G[NysTDL.db.profile.lastLoadedTab]); -- we reload the frame to display the changes
   end
 end
 
 local function ItemsFrame_OnVisibilityUpdate()
   -- things to do when we hide/show the list
   addACategoryClosed = true;
+  tabActionsClosed = true;
   optionsClosed = true;
   Tab_OnClick(_G[NysTDL.db.profile.lastLoadedTab]);
 end
@@ -624,6 +953,75 @@ local function ItemsFrame_OnUpdate(self, elapsed)
   -- called every frame
   self.timeSinceLastUpdate = self.timeSinceLastUpdate + elapsed;
   self.timeSinceLastRefresh = self.timeSinceLastRefresh + elapsed;
+
+  -- if (self:IsMouseOver()) then
+  --   itemsFrameUI.ScrollFrame.ScrollBar:Show()
+  -- else
+  --   itemsFrameUI.ScrollFrame.ScrollBar:Hide()
+  -- end
+
+  -- testing and showing the right button next to each items
+  if (IsShiftKeyDown()) then
+    for i = 1, #All, 1 do
+      -- we show every star icons
+      removeBtn[All[i]]:Hide()
+      descBtn[All[i]]:Hide();
+      favoriteBtn[All[i]]:Show();
+    end
+  elseif(IsControlKeyDown()) then
+    for i = 1, #All, 1 do
+      -- we show every paper icons
+      removeBtn[All[i]]:Hide()
+      favoriteBtn[All[i]]:Hide();
+      descBtn[All[i]]:Show();
+    end
+  else
+      for i = 1, #All, 1 do
+        local isFavorite = config:HasItem(NysTDL.db.profile.itemsFavorite, favoriteBtn[All[i]]:GetParent():GetName());
+        local hasDesc = config:HasKey(NysTDL.db.profile.itemsDesc, descBtn[All[i]]:GetParent():GetName());
+        if (hasDesc) then
+          -- if current item has a description, the paper icon takes the lead
+          favoriteBtn[All[i]]:Hide();
+          removeBtn[All[i]]:Hide()
+          descBtn[All[i]]:Show();
+        elseif (isFavorite) then
+          -- or else if current item is a favorite
+          descBtn[All[i]]:Hide();
+          removeBtn[All[i]]:Hide()
+          favoriteBtn[All[i]]:Show();
+        else
+          -- default
+          favoriteBtn[All[i]]:Hide();
+          descBtn[All[i]]:Hide();
+          removeBtn[All[i]]:Show()
+        end
+      end
+  end
+
+  if (IsAltKeyDown()) then
+    -- we switch the category and frame options buttons for the undo and frame action ones and vice versa
+    itemsFrameUI.categoryButton:Hide()
+    itemsFrameUI.undoButton:Show()
+    itemsFrameUI.frameOptionsButton:Hide()
+    itemsFrameUI.tabActionsButton:Show()
+  else
+    itemsFrameUI.undoButton:Hide()
+    itemsFrameUI.categoryButton:Show()
+    itemsFrameUI.tabActionsButton:Hide()
+    itemsFrameUI.frameOptionsButton:Show()
+  end
+
+  -- we also update their color, if one of the button menus is opened
+  itemsFrameUI.categoryButton.Icon:SetTextColor(unpack(config:ThemeDownTo01(config.database.theme_yellow))) -- for this one, it's text, not an icon!
+  itemsFrameUI.frameOptionsButton.Icon:SetDesaturated(nil) itemsFrameUI.frameOptionsButton.Icon:SetVertexColor(1, 1, 1)
+  itemsFrameUI.tabActionsButton.Icon:SetDesaturated(nil) itemsFrameUI.tabActionsButton.Icon:SetVertexColor(1, 1, 1)
+  if (not addACategoryClosed) then
+  itemsFrameUI.categoryButton.Icon:SetTextColor(0.8, 0.8, 0.8)
+  elseif (not optionsClosed) then
+    itemsFrameUI.frameOptionsButton.Icon:SetDesaturated(1) itemsFrameUI.frameOptionsButton.Icon:SetVertexColor(1, 1, 1)
+  elseif (not tabActionsClosed) then
+    itemsFrameUI.tabActionsButton.Icon:SetDesaturated(1) itemsFrameUI.tabActionsButton.Icon:SetVertexColor(1, 1, 1)
+  end
 
   while (self.timeSinceLastUpdate > updateRate) do -- every 0.05 sec (instead of every frame which is every 1/144 (0.007) sec for a 144hz display... optimization :D)
     ItemsFrame_CheckLabels();
@@ -654,31 +1052,26 @@ local function loadMovable()
 
     removeBtn[All[i]] = config:CreateRemoveButton(checkBtn[All[i]]);
     removeBtn[All[i]]:SetScript("OnClick", function(self) itemsFrame:RemoveItem(self) end);
+
+    favoriteBtn[All[i]] = config:CreateFavoriteButton(checkBtn[All[i]]);
+    favoriteBtn[All[i]]:SetScript("OnClick", function(self) itemsFrame:FavoriteClick(self) end);
+    favoriteBtn[All[i]]:Hide();
+
+    descBtn[All[i]] = config:CreateDescButton(checkBtn[All[i]]);
+    descBtn[All[i]]:SetScript("OnClick", function(self) itemsFrame:DescriptionClick(self) end);
+    descBtn[All[i]]:Hide();
   end
 
   -- Category labels
   for k, i in pairs(NysTDL.db.profile.itemsList) do
-    if (k ~= "Daily" and k ~= "Weekly") then
-      -- category label
-      label[k] = config:CreateNoPointsLabel(itemsFrameUI, k, tostring(k));
-      -- associated edit box and add button
-      editBox[k] = config:CreateNoPointsLabelEditBox(k);
-      editBox[k]:SetScript("OnEnterPressed", function(self) itemsFrame:AddItem(addBtn[self:GetName()]) end); -- if we press enter, it's like we clicked on the add button
-      addBtn[k] = config:CreateAddButton(editBox[k]);
-      addBtn[k]:SetScript("OnClick", function(self) itemsFrame:AddItem(self) end);
-      -- associated show box button
-      sbBtn[k] = config:CreateNoPointsShowBoxButton('sbBtn'..k);
-      sbBtn[k]:SetScript("OnClick", function(self)
-        editBox[k]:SetShown(not editBox[k]:IsShown()); -- we change the visibily of the corresponding edit box
-        self.Icon:SetRotation(-(select(1,self.Icon:GetRotation()))); -- we change its rotation so that he is looking the other way
-        local point, relativeFrame, relativePoint = self:GetPoint(); -- and we change just a bit his position so that is looks better, depending on the way he is facing
-        if (editBox[k]:IsShown()) then
-          self:SetPoint(point, relativeFrame, relativePoint, sbBtnDistFromLabel + 5, 0);
-        else
-          self:SetPoint(point, relativeFrame, relativePoint, sbBtnDistFromLabel, 0);
-        end
-      end)
-    end
+    -- category label
+    label[k] = config:CreateNoPointsLabel(itemsFrameUI, k, tostring(k));
+    categoryLabelFavsRemaining[k] = config:CreateNoPointsLabel(itemsFrameUI, k.."_FavsRemaining", "");
+    -- associated edit box and add button
+    editBox[k] = config:CreateNoPointsLabelEditBox(k);
+    editBox[k]:SetScript("OnEnterPressed", function(self) itemsFrame:AddItem(addBtn[self:GetName()]) end); -- if we press enter, it's like we clicked on the add button
+    addBtn[k] = config:CreateAddButton(editBox[k]);
+    addBtn[k]:SetScript("OnClick", function(self) itemsFrame:AddItem(self) end);
   end
 end
 
@@ -730,28 +1123,27 @@ local function loadCategories(tab, category, categoryLabel, constraint, catName,
     editBox[categoryLabel:GetName()]:SetParent(tab);
     -- edit box width (adapt to the category label's length)
     local labelWidth = tonumber(string.format("%i", categoryLabel:GetWidth()));
-    labelWidth = labelWidth + 20; -- 20 is approximatively the width of the showEditBox button to the right of the label)
     local distanceFromLabelWhenOk = 160;
     if (labelWidth + 120 > editBoxAddItemWidth) then
-    editBox[categoryLabel:GetName()]:SetPoint("LEFT", categoryLabel, "RIGHT", 10 + 20, 0);
+      editBox[categoryLabel:GetName()]:SetPoint("LEFT", categoryLabel, "RIGHT", 10, 0);
       editBox[categoryLabel:GetName()]:SetWidth(editBoxAddItemWidth - labelWidth);
     else
       editBox[categoryLabel:GetName()]:SetPoint("LEFT", categoryLabel, "LEFT", distanceFromLabelWhenOk, 0);
     end
 
-    -- show edit box button
-    sbBtn[categoryLabel:GetName()]:SetParent(tab);
-    sbBtn[categoryLabel:GetName()]:Show();
-
     -- we keep the edit box for this category shown if we just added an item with it
     if (not dontHideMePls[categoryLabel:GetName()]) then
-      sbBtn[categoryLabel:GetName()].Icon:SetRotation(-1.5); -- radians (-90°, facing right, by default)
-      sbBtn[categoryLabel:GetName()]:SetPoint("LEFT", categoryLabel, "RIGHT", sbBtnDistFromLabel, 0);
       editBox[categoryLabel:GetName()]:Hide();
     else
       dontHideMePls[categoryLabel:GetName()] = nil;
       -- we do not change its points, he's still here and anchored to the label (which may have moved, but will update the button as well on its own)
     end
+
+    -- label showing how much favs is left in a closed category
+    -- if the category label is shown in this tab, we move that cat fav label here too, correctly anchored
+    categoryLabelFavsRemaining[catName]:SetParent(tab);
+    categoryLabelFavsRemaining[catName]:ClearAllPoints();
+    categoryLabelFavsRemaining[catName]:SetPoint("LEFT", categoryLabel, "RIGHT", 6, 0);
 
     if (not (select(1, config:HasKey(NysTDL.db.profile.closedCategories, catName))) or not (select(1, config:HasItem(NysTDL.db.profile.closedCategories[catName], CurrentTab:GetName())))) then -- if the category is opened in this tab, we display all of its items
       -- checkboxes
@@ -765,6 +1157,7 @@ local function loadCategories(tab, category, categoryLabel, constraint, catName,
           checkBtn[All[i]]:Show();
         end
       end
+      categoryLabelFavsRemaining[catName]:Hide(); -- the only thing is that we hide it if the category is opened
     else
       -- if not, we still need to put them at their right place, anchors and parents (but we keep them hidden)
       -- especially for when we load the All tab, for the clearing
@@ -774,6 +1167,7 @@ local function loadCategories(tab, category, categoryLabel, constraint, catName,
           checkBtn[All[i]]:SetPoint("TOPLEFT", categoryLabel, "TOPLEFT");
         end
       end
+      categoryLabelFavsRemaining[catName]:Show(); -- bc we only see him when the cat is closed
     end
   else
     -- if the current label has no reason to be visible in this tab, we hide it (and for the checkboxes, they have already been hidden in the first call to this func).
@@ -782,13 +1176,13 @@ local function loadCategories(tab, category, categoryLabel, constraint, catName,
     -- ClearAllPoints is pretty magical here since a hidden label CAN be clicked on and still manages to fire OnEnter and everything else, so :Hide() is not enough,
     -- so with this API we clear their points so that they have nowhere to go and they don't fire events anymore.
     label[catName]:Hide();
-    sbBtn[catName]:Hide();
-    editBox[catName]:Hide();
     label[catName]:SetParent(tab);
-    sbBtn[catName]:SetParent(tab);
-    editBox[catName]:SetParent(tab);
     label[catName]:ClearAllPoints();
-    sbBtn[catName]:ClearAllPoints();
+    categoryLabelFavsRemaining[catName]:Hide();
+    categoryLabelFavsRemaining[catName]:SetParent(tab);
+    categoryLabelFavsRemaining[catName]:ClearAllPoints();
+    editBox[catName]:Hide();
+    editBox[catName]:SetParent(tab);
     editBox[catName]:ClearAllPoints();
     dontHideMePls[catName] = nil;
 
@@ -796,8 +1190,8 @@ local function loadCategories(tab, category, categoryLabel, constraint, catName,
       -- we destroy them
       addBtn[catName] = nil;
       editBox[catName] = nil;
-      sbBtn[catName] = nil;
       label[catName] = nil;
+      categoryLabelFavsRemaining[catName] = nil;
 
       -- and we nil them in the saved variable
       NysTDL.db.profile.itemsList[catName] = nil;
@@ -843,9 +1237,7 @@ local function generateTab(tab, case)
   -- we load everything
   local lastData, once = nil, true;
   for _, n in pairs(tempTable) do
-    if (n ~= "Daily" and n ~= "Weekly") then
-      lastData, once = loadCategories(tab, NysTDL.db.profile.itemsList[n], label[n], case, n, lastData, once);
-    end
+    lastData, once = loadCategories(tab, NysTDL.db.profile.itemsList[n], label[n], case, n, lastData, once);
   end
 end
 
@@ -853,7 +1245,7 @@ end
 
 local function loadAddACategory(tab)
   itemsFrameUI.categoryButton:SetParent(tab);
-  itemsFrameUI.categoryButton:SetPoint("RIGHT", itemsFrameUI.optionsButton, "LEFT", 2, 0);
+  itemsFrameUI.categoryButton:SetPoint("RIGHT", itemsFrameUI.frameOptionsButton, "LEFT", 2, 0);
 
   itemsFrameUI.categoryTitle:SetParent(tab);
   itemsFrameUI.categoryTitle:SetPoint("TOP", itemsFrameUI.title, "TOP", 0, - 59);
@@ -872,33 +1264,44 @@ local function loadAddACategory(tab)
   itemsFrameUI.addBtn:SetPoint("TOP", itemsFrameUI.labelFirstItemName, "TOPLEFT", 140, - 30);
 end
 
+local function loadTabActions(tab)
+  itemsFrameUI.tabActionsButton:SetParent(tab);
+  itemsFrameUI.tabActionsButton:SetPoint("RIGHT", itemsFrameUI.undoButton, "LEFT", 2, 0);
+
+  --/************************************************/--
+
+  itemsFrameUI.tabActionsTitle:SetParent(tab);
+  itemsFrameUI.tabActionsTitle:SetPoint("TOP", itemsFrameUI.title, "TOP", 0, - 59);
+  itemsFrameUI.tabActionsTitle:SetText(string.format("|cff%s%s|r", config:RGBToHex(config.database.theme), "/ "..L["Tab actions"].." ("..L[tab:GetName()]..") \\"));
+
+  --/************************************************/--
+
+  local w = itemsFrameUI.btnCheck:GetWidth() + itemsFrameUI.btnUncheck:GetWidth() + 10; -- this is to better center the buttons
+  itemsFrameUI.btnCheck:SetParent(tab);
+  itemsFrameUI.btnCheck:SetPoint("TOPLEFT", itemsFrameUI.tabActionsTitle, "TOP", -(w/2), - 35);
+
+  itemsFrameUI.btnUncheck:SetParent(tab);
+  itemsFrameUI.btnUncheck:SetPoint("TOPLEFT", itemsFrameUI.btnCheck, "TOPRIGHT", 10, 0);
+
+  --/************************************************/--
+
+  itemsFrameUI.btnClear:SetParent(tab);
+  itemsFrameUI.btnClear:SetPoint("TOP", itemsFrameUI.btnCheck, "TOPLEFT", (w/2), -45);
+end
+
 local function loadOptions(tab)
-  itemsFrameUI.optionsButton:SetParent(tab);
-  itemsFrameUI.optionsButton:SetPoint("TOPRIGHT", itemsFrameUI.title, "TOP", 140, - 22);
+  itemsFrameUI.frameOptionsButton:SetParent(tab);
+  itemsFrameUI.frameOptionsButton:SetPoint("RIGHT", itemsFrameUI.helpButton, "LEFT", 2, 0);
 
   --/************************************************/--
 
   itemsFrameUI.optionsTitle:SetParent(tab);
   itemsFrameUI.optionsTitle:SetPoint("TOP", itemsFrameUI.title, "TOP", 0, - 59);
 
-  local l = itemsFrameUI.optionsTitle:GetWidth();
-  itemsFrameUI.menuTitleLineLeft:SetStartPoint("TOPLEFT", centerXOffset-lineOffset, -78)
-  itemsFrameUI.menuTitleLineLeft:SetEndPoint("TOPLEFT", centerXOffset-l/2 - 10, -78)
-  itemsFrameUI.menuTitleLineRight:SetStartPoint("TOPLEFT", centerXOffset+l/2 + 10, -82)
-  itemsFrameUI.menuTitleLineRight:SetEndPoint("TOPLEFT", centerXOffset+lineOffset + 4, -82)
-
-  --/************************************************/--
-
-  itemsFrameUI.btnUncheck:SetParent(tab);
-  itemsFrameUI.btnUncheck:SetPoint("TOP", itemsFrameUI.optionsTitle, "TOP", 0, - 35);
-
-  itemsFrameUI.btnClear:SetParent(tab);
-  itemsFrameUI.btnClear:SetPoint("TOP", itemsFrameUI.btnUncheck, "TOP", 0, -45);
-
   --/************************************************/--
 
   itemsFrameUI.frameAlphaSlider:SetParent(tab);
-  itemsFrameUI.frameAlphaSlider:SetPoint("TOP", itemsFrameUI.btnClear, "TOP", 0, -60);
+  itemsFrameUI.frameAlphaSlider:SetPoint("TOP", itemsFrameUI.optionsTitle, "TOP", 0, -45);
 
   itemsFrameUI.frameAlphaSliderValue:SetParent(tab);
   itemsFrameUI.frameAlphaSliderValue:SetPoint("TOP", itemsFrameUI.frameAlphaSlider, "BOTTOM", 0, 0);
@@ -913,8 +1316,13 @@ local function loadOptions(tab)
 
   --/************************************************/--
 
+  itemsFrameUI.affectDesc:SetParent(tab);
+  itemsFrameUI.affectDesc:SetPoint("TOP", itemsFrameUI.frameContentAlphaSlider, "TOP", 0, -40);
+
+  --/************************************************/--
+
   itemsFrameUI.btnAddonOptions:SetParent(tab);
-  itemsFrameUI.btnAddonOptions:SetPoint("TOP", itemsFrameUI.frameContentAlphaSlider, "TOP", 0, - 45);
+  itemsFrameUI.btnAddonOptions:SetPoint("TOP", itemsFrameUI.affectDesc, "TOP", 0, - 55);
 end
 
 -- loading the content (top to bottom)
@@ -935,13 +1343,19 @@ local function loadTab(tab, case)
   itemsFrameUI.remainingNumber:SetParent(tab);
   itemsFrameUI.remainingNumber:SetPoint("LEFT", itemsFrameUI.remaining, "RIGHT", 6, 0);
 
+  itemsFrameUI.helpButton:SetParent(tab);
+  itemsFrameUI.helpButton:SetPoint("TOPRIGHT", itemsFrameUI.title, "TOP", 140, - 23);
+
   itemsFrameUI.undoButton:SetParent(tab);
-  itemsFrameUI.undoButton:SetPoint("RIGHT", itemsFrameUI.categoryButton, "LEFT", 2, 0);
+  itemsFrameUI.undoButton:SetPoint("RIGHT", itemsFrameUI.helpButton, "LEFT", 2, 0);
 
   -- loading the "add a new category" menu
   loadAddACategory(tab);
 
-  -- loading the "options" menu
+  -- loading the "tab actions" menu
+  loadTabActions(tab);
+
+  -- loading the "frame options" menu
   loadOptions(tab);
 
   -- loading the bottom line at the correct place (a bit special)
@@ -950,12 +1364,14 @@ local function loadTab(tab, case)
   -- and the menu title lines (a bit complicated too)
   itemsFrameUI.menuTitleLineLeft:SetParent(tab)
   itemsFrameUI.menuTitleLineRight:SetParent(tab)
-  if (addACategoryClosed and optionsClosed) then
+  if (addACategoryClosed and tabActionsClosed and optionsClosed) then
     itemsFrameUI.menuTitleLineLeft:Hide()
     itemsFrameUI.menuTitleLineRight:Hide()
   else
     if (not addACategoryClosed) then
       l = itemsFrameUI.categoryTitle:GetWidth()
+    elseif (not tabActionsClosed) then
+      l = itemsFrameUI.tabActionsTitle:GetWidth()
     elseif (not optionsClosed) then
       l = itemsFrameUI.optionsTitle:GetWidth()
     end
@@ -980,23 +1396,43 @@ local function loadTab(tab, case)
     end
   end
 
+  if (tabActionsClosed) then -- if the tab actions menu is closed
+    -- then we hide every component of the "tab actions"
+    for _, v in pairs(tabActionsItems) do
+      v:Hide();
+    end
+  end
+
   if (optionsClosed) then -- if the options menu is closed
     -- then we hide every component of the "options"
-    for _, v in pairs(optionsItems) do
+    for _, v in pairs(frameOptionsItems) do
       v:Hide();
     end
   end
 
   -- then we decide where to place the bottom line
   if (addACategoryClosed) then -- if the creation of new categories is closed
-    if (optionsClosed) then -- if the options menu is closed too
-       -- we place the line just below the buttons
-      itemsFrameUI.lineBottom:SetStartPoint("TOPLEFT", centerXOffset-lineOffset, -78)
-      itemsFrameUI.lineBottom:SetEndPoint("TOPLEFT", centerXOffset+lineOffset, -78)
+    if (tabActionsClosed) then -- if the options menu is closed
+      if (optionsClosed) then -- and if the tab actions menu is closed too
+        -- we place the line just below the buttons
+        itemsFrameUI.lineBottom:SetStartPoint("TOPLEFT", centerXOffset-lineOffset, -78)
+        itemsFrameUI.lineBottom:SetEndPoint("TOPLEFT", centerXOffset+lineOffset, -78)
+      else
+        -- or else we show and adapt the height of every component of the "options"
+        local height = 0;
+        for _, v in pairs(frameOptionsItems) do
+          v:Show();
+          height = height + (select(5, v:GetPoint()));
+        end
+
+        -- and show the line below them
+        itemsFrameUI.lineBottom:SetStartPoint("TOPLEFT", centerXOffset-lineOffset, height - 62)
+        itemsFrameUI.lineBottom:SetEndPoint("TOPLEFT", centerXOffset+lineOffset, height - 62)
+      end
     else
-      -- or else we show and adapt the height of every component of the "options"
+      -- or else we show and adapt the height of every component of the "tab actions"
       local height = 0;
-      for _, v in pairs(optionsItems) do
+      for _, v in pairs(tabActionsItems) do
         v:Show();
         height = height + (select(5, v:GetPoint()));
       end
@@ -1037,9 +1473,10 @@ end
 ----------------------------
 
 local function generateAddACategory()
-  itemsFrameUI.categoryButton = CreateFrame("Button", "categoryButton", itemsFrameUI, "CategoryButton");
+  itemsFrameUI.categoryButton = CreateFrame("Button", "categoryButton", itemsFrameUI, "NysTDL_CategoryButton");
   itemsFrameUI.categoryButton.tooltip = L["Add a new category"];
-  itemsFrameUI.categoryButton:SetScript("onClick", function(self)
+  itemsFrameUI.categoryButton:SetScript("OnClick", function(self)
+    tabActionsClosed = true;
     optionsClosed = true;
     addACategoryClosed = not addACategoryClosed;
     Tab_OnClick(_G[NysTDL.db.profile.lastLoadedTab]); -- we reload the frame to display the changes
@@ -1078,16 +1515,59 @@ local function generateAddACategory()
   itemsFrameUI.nameEditBox:SetScript("OnEnterPressed", addCategory); -- if we press enter, it's like we clicked on the add button
   table.insert(addACategoryItems, itemsFrameUI.nameEditBox);
 
-  itemsFrameUI.addBtn = config:CreateTransparentButton("addButton", itemsFrameUI, 35, L["Add category"]);
+  itemsFrameUI.addBtn = config:CreateButton("addButton", itemsFrameUI, L["Add category"]);
   itemsFrameUI.addBtn:SetScript("onClick", addCategory);
   table.insert(addACategoryItems, itemsFrameUI.addBtn);
 end
 
-local function generateOptions()
-  itemsFrameUI.optionsButton = CreateFrame("Button", "optionsButton", itemsFrameUI, "OptionsButton");
-  itemsFrameUI.optionsButton.tooltip = L["Frame options"];
-  itemsFrameUI.optionsButton:SetScript("onClick", function(...)
+local function generateTabActions()
+  itemsFrameUI.tabActionsButton = CreateFrame("Button", "categoryButton", itemsFrameUI, "NysTDL_TabActionsButton");
+  itemsFrameUI.tabActionsButton.tooltip = L["Tab actions"];
+  itemsFrameUI.tabActionsButton:SetScript("OnClick", function(self)
     addACategoryClosed = true;
+    optionsClosed = true;
+    tabActionsClosed = not tabActionsClosed;
+    Tab_OnClick(_G[NysTDL.db.profile.lastLoadedTab]); -- we reload the frame to display the changes
+  end);
+  itemsFrameUI.tabActionsButton:Hide();
+
+  --/************************************************/--
+
+  itemsFrameUI.tabActionsTitle = config:CreateNoPointsLabel(itemsFrameUI, nil, string.format("|cff%s%s|r", config:RGBToHex(config.database.theme), "/ "..L["Tab actions"].." \\"));
+  table.insert(tabActionsItems, itemsFrameUI.tabActionsTitle);
+
+  --/************************************************/--
+
+  itemsFrameUI.btnCheck = config:CreateButton("btnCheck_itemsFrameUI", itemsFrameUI, L["Check"], "Interface\\BUTTONS\\UI-CheckBox-Check");
+  itemsFrameUI.btnCheck:SetScript("OnClick", function(self)
+    local tabName = self:GetParent():GetName();
+    itemsFrame:CheckBtns(tabName);
+  end);
+  table.insert(tabActionsItems, itemsFrameUI.btnCheck);
+
+  itemsFrameUI.btnUncheck = config:CreateButton("btnUncheck_itemsFrameUI", itemsFrameUI, L["Uncheck"], "Interface\\BUTTONS\\UI-CheckBox-Check-Disabled");
+  itemsFrameUI.btnUncheck:SetScript("OnClick", function(self)
+    local tabName = self:GetParent():GetName();
+    itemsFrame:ResetBtns(tabName);
+  end);
+  table.insert(tabActionsItems, itemsFrameUI.btnUncheck);
+
+  --/************************************************/--
+
+  itemsFrameUI.btnClear = config:CreateButton("clearButton", itemsFrameUI, L["Clear"], "Interface\\GLUES\\LOGIN\\Glues-CheckBox-Check");
+  itemsFrameUI.btnClear:SetScript("onClick", function(self)
+    local tabName = self:GetParent():GetName();
+    itemsFrame:ClearTab(tabName);
+  end);
+  table.insert(tabActionsItems, itemsFrameUI.btnClear);
+end
+
+local function generateOptions()
+  itemsFrameUI.frameOptionsButton = CreateFrame("Button", "frameOptionsButton_itemsFrameUI", itemsFrameUI, "NysTDL_FrameOptionsButton");
+  itemsFrameUI.frameOptionsButton.tooltip = L["Frame options"];
+  itemsFrameUI.frameOptionsButton:SetScript("OnClick", function(...)
+    addACategoryClosed = true;
+    tabActionsClosed = true;
     optionsClosed = not optionsClosed;
     Tab_OnClick(_G[NysTDL.db.profile.lastLoadedTab]); -- we reload the frame to display the changes
   end);
@@ -1095,23 +1575,7 @@ local function generateOptions()
   --/************************************************/--
 
   itemsFrameUI.optionsTitle = config:CreateNoPointsLabel(itemsFrameUI, nil, string.format("|cff%s%s|r", config:RGBToHex(config.database.theme), "/ "..L["Frame options"].." \\"));
-  table.insert(optionsItems, itemsFrameUI.optionsTitle);
-
-  --/************************************************/--
-
-  itemsFrameUI.btnUncheck = config:CreateTransparentButton("uncheckButton", itemsFrameUI, 35, L["Uncheck tab"]);
-  itemsFrameUI.btnUncheck:SetScript("onClick", function(self)
-    local tabName = self:GetParent():GetName();
-    itemsFrame:ResetBtns(tabName);
-  end);
-  table.insert(optionsItems, itemsFrameUI.btnUncheck);
-
-  itemsFrameUI.btnClear = config:CreateTransparentButton("clearButton", itemsFrameUI, 35, L["Clear tab"]);
-  itemsFrameUI.btnClear:SetScript("onClick", function(self)
-    local tabName = self:GetParent():GetName();
-    itemsFrame:ClearTab(tabName);
-  end);
-  table.insert(optionsItems, itemsFrameUI.btnClear);
+  table.insert(frameOptionsItems, itemsFrameUI.optionsTitle);
 
   --/************************************************/--
 
@@ -1130,12 +1594,12 @@ local function generateOptions()
   _G[itemsFrameUI.frameAlphaSlider:GetName() .. 'High']:SetText((select(2,itemsFrameUI.frameAlphaSlider:GetMinMaxValues()))..'%'); --Sets the right-side slider text (default is "High").
   _G[itemsFrameUI.frameAlphaSlider:GetName() .. 'Text']:SetText(L["Frame opacity"]); --Sets the "title" text (top-centre of slider).
   itemsFrameUI.frameAlphaSlider:SetScript("OnValueChanged", FrameAlphaSlider_OnValueChanged);
-  table.insert(optionsItems, itemsFrameUI.frameAlphaSlider);
+  table.insert(frameOptionsItems, itemsFrameUI.frameAlphaSlider);
 
   itemsFrameUI.frameAlphaSliderValue = itemsFrameUI.frameAlphaSlider:CreateFontString("frameAlphaSliderValue"); -- the font string to see the current value
   itemsFrameUI.frameAlphaSliderValue:SetFontObject("GameFontNormalSmall");
   itemsFrameUI.frameAlphaSliderValue:SetText(itemsFrameUI.frameAlphaSlider:GetValue());
-  table.insert(optionsItems, itemsFrameUI.frameAlphaSliderValue);
+  table.insert(frameOptionsItems, itemsFrameUI.frameAlphaSliderValue);
 
   --/************************************************/--
 
@@ -1154,18 +1618,35 @@ local function generateOptions()
   _G[itemsFrameUI.frameContentAlphaSlider:GetName() .. 'High']:SetText((select(2,itemsFrameUI.frameContentAlphaSlider:GetMinMaxValues()))..'%'); --Sets the right-side slider text (default is "High").
   _G[itemsFrameUI.frameContentAlphaSlider:GetName() .. 'Text']:SetText(L["Frame content opacity"]); --Sets the "title" text (top-centre of slider).
   itemsFrameUI.frameContentAlphaSlider:SetScript("OnValueChanged", FrameContentAlphaSlider_OnValueChanged);
-  table.insert(optionsItems, itemsFrameUI.frameContentAlphaSlider);
+  table.insert(frameOptionsItems, itemsFrameUI.frameContentAlphaSlider);
 
   itemsFrameUI.frameContentAlphaSliderValue = itemsFrameUI.frameContentAlphaSlider:CreateFontString("frameContentAlphaSliderValue"); -- the font string to see the current value
   itemsFrameUI.frameContentAlphaSliderValue:SetFontObject("GameFontNormalSmall");
   itemsFrameUI.frameContentAlphaSliderValue:SetText(itemsFrameUI.frameContentAlphaSlider:GetValue());
-  table.insert(optionsItems, itemsFrameUI.frameContentAlphaSliderValue);
+  table.insert(frameOptionsItems, itemsFrameUI.frameContentAlphaSliderValue);
 
   --/************************************************/--
 
-  itemsFrameUI.btnAddonOptions = config:CreateTransparentButton("addonOptionsButton", itemsFrameUI, 35, L["Open addon options"]);
+  itemsFrameUI.affectDesc = CreateFrame("CheckButton", "NysTDL_affectDesc", itemsFrameUI, "ChatConfigCheckButtonTemplate");
+  itemsFrameUI.affectDesc.tooltip = L["Share the opacity options of this frame onto the description frames (only when checked)"]
+  itemsFrameUI.affectDesc.Text:SetText(L["Affect description frames"]);
+  itemsFrameUI.affectDesc.Text:SetFontObject("GameFontHighlight");
+  itemsFrameUI.affectDesc.Text:ClearAllPoints()
+  itemsFrameUI.affectDesc.Text:SetPoint("TOP", itemsFrameUI.affectDesc, "BOTTOM");
+  itemsFrameUI.affectDesc:SetHitRectInsets(0, 0, 0, 0);
+  itemsFrameUI.affectDesc:SetScript("OnClick", function(self)
+    NysTDL.db.profile.affectDesc = self:GetChecked()
+    FrameAlphaSlider_OnValueChanged(nil, NysTDL.db.profile.frameAlpha);
+    FrameContentAlphaSlider_OnValueChanged(nil, NysTDL.db.profile.frameContentAlpha);
+  end);
+  itemsFrameUI.affectDesc:SetChecked(NysTDL.db.profile.affectDesc);
+  table.insert(frameOptionsItems, itemsFrameUI.affectDesc);
+
+  --/************************************************/--
+
+  itemsFrameUI.btnAddonOptions = config:CreateButton("addonOptionsButton", itemsFrameUI, L["Open addon options"], "Interface\\Buttons\\UI-OptionsButton");
   itemsFrameUI.btnAddonOptions:SetScript("OnClick", function() if (not NysTDL:ToggleOptions(true)) then itemsFrameUI:Hide(); end end);
-  table.insert(optionsItems, itemsFrameUI.btnAddonOptions);
+  table.insert(frameOptionsItems, itemsFrameUI.btnAddonOptions);
 end
 
 -- generating the content (top to bottom)
@@ -1180,13 +1661,21 @@ local function generateFrameContent()
   itemsFrameUI.remainingNumber = config:CreateNoPointsLabel(itemsFrameUI, nil, "...");
   itemsFrameUI.remainingNumber:SetFontObject("GameFontNormalLarge");
 
+  -- help button
+  itemsFrameUI.helpButton = config:CreateHelpButton(itemsFrameUI);
+  itemsFrameUI.helpButton:SetScript("OnClick", function() SlashCmdList["NysToDoList"](L["info"]) end);
+
   -- undo button
-  itemsFrameUI.undoButton = CreateFrame("Button", "undoButton", itemsFrameUI, "UndoButton");
-  itemsFrameUI.undoButton.tooltip = L["Undo"];
-  itemsFrameUI.undoButton:SetScript("onClick", itemsFrame.UndoRemove);
+  itemsFrameUI.undoButton = CreateFrame("Button", "undoButton_itemsFrameUI", itemsFrameUI, "NysTDL_UndoButton");
+  itemsFrameUI.undoButton.tooltip = L["Undo last remove/clear"];
+  itemsFrameUI.undoButton:SetScript("OnClick", itemsFrame.UndoRemove);
+  itemsFrameUI.undoButton:Hide();
 
   -- add a new category button
   generateAddACategory();
+
+  -- tab actions button
+  generateTabActions();
 
   -- options button
   generateOptions();
@@ -1224,8 +1713,8 @@ Tab_OnClick = function(self)
 
   -- Loading the good tab
   if (self:GetName() == "ToDoListUIFrameTab1") then loadTab(AllTab, All) end
-  if (self:GetName() == "ToDoListUIFrameTab2") then loadTab(DailyTab, NysTDL.db.profile.itemsList["Daily"]) end
-  if (self:GetName() == "ToDoListUIFrameTab3") then loadTab(WeeklyTab, NysTDL.db.profile.itemsList["Weekly"]) end
+  if (self:GetName() == "ToDoListUIFrameTab2") then loadTab(DailyTab, NysTDL.db.profile.itemsDaily) end
+  if (self:GetName() == "ToDoListUIFrameTab3") then loadTab(WeeklyTab, NysTDL.db.profile.itemsWeekly) end
 
   -- we update the frame after loading the tab to refresh the display
   ItemsFrame_Update();
@@ -1248,6 +1737,13 @@ local function SetTabs(frame, numTabs, ...)
     tab:SetID(i);
     tab:SetText(select(i, ...));
     tab:SetScript("OnClick", Tab_OnClick);
+    if (i == 1) then -- OnUpdate hook
+      tab:HookScript("OnUpdate", function()
+        for i = 1, 3 do
+          _G["ToDoListUIFrameTab"..i.."Text"]:SetAlpha((NysTDL.db.profile.frameContentAlpha)/100);
+        end
+      end);
+    end
 
     local name = ""
     if (tab:GetName() == "ToDoListUIFrameTab1") then name = "All"
@@ -1280,11 +1776,13 @@ function itemsFrame:ResetContent()
   end
 
   for k, i in pairs(currentDBItemsList) do
-    if (k ~= "Daily" and k ~= "Weekly") then
-      label[k]:Hide()
-      editBox[k]:Hide()
-      sbBtn[k]:Hide()
-    end
+    label[k]:Hide()
+    categoryLabelFavsRemaining[k]:Hide()
+    editBox[k]:Hide()
+  end
+
+  for _, v in pairs(descFrames) do
+    v:Hide()
   end
 
   -- 2 - reset every content variable to their default value
@@ -1294,13 +1792,18 @@ function itemsFrame:ResetContent()
   dontHideMePls = {};
   checkBtn = {};
   removeBtn = {};
+  favoriteBtn = {};
+  descBtn = {};
+  descFrames = {};
   addBtn = {};
   label = {};
   editBox = {};
-  sbBtn = {};
   labelHover = {};
+  categoryLabelFavsRemaining = {};
   addACategoryClosed = true;
+  tabActionsClosed = true;
   optionsClosed = true;
+  autoResetedThisSession = false;
 end
 
 --Frame init
@@ -1314,6 +1817,7 @@ function itemsFrame:Init()
   itemsFrameUI:ClearAllPoints();
   itemsFrameUI:SetPoint(points.point, points.relativeTo, points.relativePoint, points.xOffset, points.yOffset);
   -- and update its elements opacity to match the saved variable
+  FrameAlphaSlider_OnValueChanged(nil, NysTDL.db.profile.frameAlpha);
   FrameContentAlphaSlider_OnValueChanged(nil, NysTDL.db.profile.frameContentAlpha);
 
   -- Generating the core --
@@ -1330,22 +1834,20 @@ function itemsFrame:Init()
   -- and we reload the saved variables needing an update
   itemsFrameUI.frameAlphaSlider:SetValue(NysTDL.db.profile.frameAlpha);
   itemsFrameUI.frameContentAlphaSlider:SetValue(NysTDL.db.profile.frameContentAlpha);
+  itemsFrameUI.affectDesc:SetChecked(NysTDL.db.profile.affectDesc);
 end
 
 ---Creating the main window---
 function itemsFrame:CreateItemsFrame()
 
   itemsFrameUI = CreateFrame("Frame", "ToDoListUIFrame", UIParent);
-  -- itemsFrameUI = CreateFrame("Frame", "ToDoListUIFrame", UIParent, "UIPanelDialogTemplate");
   itemsFrameUI:SetSize(340, 400);
 
   -- background
   itemsFrameUI:SetBackdrop({bgFile = "Interface\\Tooltips\\UI-Tooltip-Background", edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", tile = false, tileSize = 1, edgeSize = 10, insets = { left = 1, right = 1, top = 1, bottom = 1 }});
-  itemsFrameUI:SetBackdropColor(0, 0, 0, NysTDL.db.profile.frameAlpha/100);
 
   -- properties
-  -- itemsFrameUI:SetResizable(true);
-  -- itemsFrameUI:SetMinResize(215, 200);
+  itemsFrameUI:SetFrameLevel(200);
   itemsFrameUI:SetMovable(true);
   itemsFrameUI:SetClampedToScreen(true);
   itemsFrameUI:EnableMouse(true);
@@ -1368,18 +1870,6 @@ function itemsFrame:CreateItemsFrame()
 
   -- // CONTENT OF THE FRAME // --
 
-  -- itemsFrameUI.descriptionEditBox = CreateFrame("ScrollFrame", nil, itemsFrameUI, "InputScrollFrameTemplate");
-  -- itemsFrameUI.descriptionEditBox:SetSize(270, 80);
-  -- itemsFrameUI.descriptionEditBox.EditBox:SetWidth(250);
-  -- itemsFrameUI.descriptionEditBox.EditBox:SetFontObject("ChatFontNormal")
-  -- itemsFrameUI.descriptionEditBox.CharCount:Hide()
-  -- itemsFrameUI.descriptionEditBox.EditBox:SetText("slt")
-  -- itemsFrameUI.descriptionEditBox.EditBox:SetScript("OnKeyDown", function(self, key) if (key == "TAB") then itemsFrameUI.categoryEditBox:SetFocus() end end)
-  -- itemsFrameUI.descriptionEditBox.EditBox:SetScript("OnEnterPressed", function(self) print('ola') end); -- if we press enter, it's like we clicked on the add button
-  -- -- itemsFrameUI.descriptionEditBox.ScrollBar:SetPoint("TOPLEFT", editboxParent, "TOPRIGHT", 0, 0);
-  -- itemsFrameUI.descriptionEditBox:SetPoint("TOPLEFT", itemsFrameUI, "TOPLEFT", -400, 0);
-  -- local editboxParent = itemsFrameUI.descriptionEditBox.EditBox:GetParent();
-
   -- generating the fixed content shared between the 3 tabs
   generateFrameContent();
 
@@ -1396,11 +1886,11 @@ function itemsFrame:CreateItemsFrame()
   itemsFrameUI.ScrollFrame.ScrollBar:SetPoint("BOTTOMRIGHT", itemsFrameUI.ScrollFrame, "BOTTOMRIGHT", - 7, 17);
 
   -- close button
-  itemsFrameUI.closeButton = CreateFrame("Button", "closeButton", itemsFrameUI, "CloseButton");
+  itemsFrameUI.closeButton = CreateFrame("Button", "closeButton", itemsFrameUI, "NysTDL_CloseButton");
   itemsFrameUI.closeButton:SetPoint("TOPRIGHT", itemsFrameUI, "TOPRIGHT", -1, -1);
-  itemsFrameUI.closeButton:SetScript("onClick", function(self) itemsFrameUI:Hide(); end);
+  itemsFrameUI.closeButton:SetScript("onClick", function(self) self:GetParent():Hide(); end);
 
-  -- Generating the tabs:--
+  -- Generating the tabs --
   AllTab, DailyTab, WeeklyTab = SetTabs(itemsFrameUI, 3, L["All"], L["Daily"], L["Weekly"]);
 
   -- Initializing the frame with the current data
