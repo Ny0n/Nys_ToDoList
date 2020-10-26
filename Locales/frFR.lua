@@ -29,7 +29,7 @@ L["have an auto chat warning/reminder system!"] = "ont un système d'avertisseme
 L["have their own more visible remaining numbers"] = "ont leur propres nombre restant plus visibles"
 L["help"] = "aide"
 L["Here are a few commands to help you understand some systems in the list:"] = "Voici quelques commandes pour t'aider à comprendre certains systèmes dans la liste:"
-L["hiddenbuttons"] = "boutonscachés"
+L["hiddenbuttons"] = "boutonscaches"
 L["if an item has a description, he cannot be deleted (empty the description if you want to do so)"] = "si un objet a une description, il ne peut pas être supprimé (vide sa description si tu veux le faire)"
 L["info"] = true
 L["key binding"] = "raccourci"
@@ -121,6 +121,9 @@ L["unlock minimap button"] = "déverrouiller le bouton de la minimap"
 L["Wednesday"] = "Mercredi"
 
 -- To-Do List frame
+L["Hold ALT to see the resize button"] = "Maintiens la touche ALT pour voir le bouton de redimensionnement"
+L["Left click - resize"] = "Clic gauche - redimensionner"
+L["Right click - reset"] = "Clic droit - réinitialiser"
 L["(automatically saved)"] = "(sauvegardée automatiquement)"
 L["1st item name:"] = "Nom du 1er objet:"
 L["Add a description..."] = "Ajouter une description..."

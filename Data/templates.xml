@@ -86,8 +86,16 @@
         <!-- Show and reposition the tooltip -->
         self.MiniTooltip.Text:SetText(self.tooltip)
         self.MiniTooltip:SetWidth(self.MiniTooltip.Text:GetStringWidth()+16)
+        local _, n = string.gsub(self.tooltip, "\n", "")
+        if (n > 0) then
+          self.MiniTooltip:SetHeight(26 + n*10)
+        else
+          self.MiniTooltip:SetHeight(26)
+        end
         if (self.name == "AddButton") then
           self.MiniTooltip:SetPoint("BOTTOMRIGHT", self, "TOPLEFT", -3, 7)
+        elseif (self.name == "TooltipResizeButton") then
+          self.MiniTooltip:SetPoint("BOTTOMRIGHT", self, "BOTTOMLEFT", -5, 0)
         else
           self.MiniTooltip:SetPoint("RIGHT", self, "LEFT", 0, 0)
         end
@@ -284,6 +292,26 @@
         </FontString>
       </Layer>
     </Layers>
+  </Button>
+
+  <!-- resize button -->
+  <Button name="NysTDL_ResizeButton" virtual="true">
+    <Size x="16" y="16"/> <!-- Size of interactable zone -->
+    <NormalTexture file="Interface\ChatFrame\UI-ChatIM-SizeGrabber-Up"/>
+    <PushedTexture file="Interface\ChatFrame\UI-ChatIM-SizeGrabber-Down"/>
+    <HighlightTexture file="Interface\ChatFrame\UI-ChatIM-SizeGrabber-Highlight" alphaMode="ADD"/>
+  </Button>
+
+  <!-- resize button with tooltip -->
+  <Button name="NysTDL_TooltipResizeButton" inherits="NysTDL_IconButtonTooltipScripts" virtual="true">
+    <Size x="16" y="16"/> <!-- Size of interactable zone -->
+    <KeyValues>
+      <KeyValue key="tooltip" value="locale"/>
+      <KeyValue key="name" value="TooltipResizeButton"/>
+    </KeyValues>
+    <NormalTexture file="Interface\ChatFrame\UI-ChatIM-SizeGrabber-Up"/>
+    <PushedTexture file="Interface\ChatFrame\UI-ChatIM-SizeGrabber-Down"/>
+    <HighlightTexture file="Interface\ChatFrame\UI-ChatIM-SizeGrabber-Highlight" alphaMode="ADD"/>
   </Button>
 
   <!-- Normal button with nice highlight -->
