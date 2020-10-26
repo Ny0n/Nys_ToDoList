@@ -12,6 +12,7 @@
   <Include file="Data\templates.xml"/>
   <Script file="Data\config.lua"/>
   <Script file="Data\itemsFrame.lua"/>
+  <Script file="Data\optionsManager.lua"/>
   <Script file="Data\init.lua"/>
 
 </Ui>

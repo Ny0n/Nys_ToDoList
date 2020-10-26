@@ -119,6 +119,8 @@
           self.MiniTooltip:SetPoint("BOTTOMRIGHT", self, "TOPLEFT", -3, 7)
         elseif (self.name == "TooltipResizeButton") then
           self.MiniTooltip:SetPoint("BOTTOMRIGHT", self, "BOTTOMLEFT", -5, 0)
+        elseif (self.name == "ClearButton") then
+          self.MiniTooltip:SetPoint("BOTTOM", self, "TOP", 0, 0)
         else
           self.MiniTooltip:SetPoint("RIGHT", self, "LEFT", 0, 0)
         end
@@ -236,6 +238,25 @@
       <Layer level="OVERLAY">
         <Texture parentKey="Icon" file="Interface\Buttons\UI-StopButton">
           <Size x="14" y="14"/>
+          <Anchors>
+            <Anchor point="CENTER"/>
+          </Anchors>
+        </Texture>
+      </Layer>
+    </Layers>
+  </Button>
+
+  <!-- Clear button -->
+  <Button name="NysTDL_ClearButton" inherits="NysTDL_IconButtonTemplate, NysTDL_IconButtonPositionScripts, NysTDL_IconButtonTooltipScripts" virtual="true">
+    <Size x="25" y="25"/>
+    <KeyValues>
+      <KeyValue key="tooltip" value="locale"/>
+      <KeyValue key="name" value="ClearButton"/>
+    </KeyValues>
+    <Layers>
+      <Layer level="OVERLAY">
+        <Texture parentKey="Icon" file="Interface\FriendsFrame\StatusIcon-DnD">
+          <Size x="17" y="17"/>
           <Anchors>
             <Anchor point="CENTER"/>
           </Anchors>

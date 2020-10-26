@@ -7,6 +7,7 @@ local itemsFrame = tdlTable.itemsFrame;
 
 -- Variables declaration --
 local L = config.L;
+itemsFrame.tdlButton = 0; -- so we can access it here, even though we create it in init.lua
 
 local itemsFrameUI;
 local AllTab, DailyTab, WeeklyTab, CurrentTab;
@@ -32,6 +33,7 @@ local optionsClosed = true;
 local autoResetedThisSession = false;
 
 -- these are for code comfort (sort of)
+local hyperlinkEditBoxes = {};
 local tutorialFrames = {}
 local tuto_order = { "addNewCat", "addCat", "addItem", "accessOptions", "getMoreInfo" }
 local tutorialFramesTarget = {}
@@ -45,6 +47,7 @@ local editBoxAddItemWidth = 270;
 local centerXOffset = 165;
 local lineOffset = 120;
 local descFrameLevelDiff = 20;
+local tutoFrameRightDist = 40;
 local cursorX, cursorY, cursorDist = 0, 0, 10; -- for my special drag
 
 local All = {};
@@ -67,6 +70,18 @@ function itemsFrame:Toggle()
     ItemsFrame_Update();
   end
   itemsFrameUI:SetShown(not itemsFrameUI:IsShown());
+end
+
+function NysTDL:EditBoxInsertLink(text)
+  -- when we shift-click on things, we hook the link from the chat function,
+  -- and add it to the one of my edit boxes who has the focus (if there is one)
+  -- basically, it's what allow hyperlinks in my addon edit boxes
+  for _, v in pairs(hyperlinkEditBoxes) do
+		if v and v:IsVisible() and v:HasFocus() then
+			v:Insert(text)
+			return true
+		end
+	end
 end
 
 -- actions
@@ -140,6 +155,7 @@ local function FrameContentAlphaSlider_OnValueChanged(_, value)
 
   for _, v in pairs(descFrames) do
     v.closeButton:SetAlpha(value/100);
+    v.clearButton:SetAlpha(value/100);
     -- the title is already being cared for in the update of the desc frame
     v.descriptionEditBox.EditBox:SetAlpha(value/100);
     v.descriptionEditBox.ScrollBar:SetAlpha(value/100);
@@ -298,6 +314,33 @@ function itemsFrame:updateRemainingNumber()
     categoryLabelFavsRemaining[c]:SetTextColor(unpack(NysTDL.db.profile.favoritesColor))
   end
 
+  if (NysTDL.db.profile.tdlButton.red) then -- we check here if we need to color the TDL button
+    local red = false
+    -- we first check if there are daily remaining items
+    if (numberDaily > 0) then
+      if ((NysTDL.db.profile.autoReset["Daily"] - time()) < 86400) then -- pretty much all the time
+        red = true
+      end
+    end
+
+    -- then we check if there are weekly remaining items
+    if (numberWeekly > 0) then
+      if ((NysTDL.db.profile.autoReset["Weekly"] - time()) < 86400) then -- if there is less than one day left before the weekly reset
+        red = true
+      end
+    end
+
+    if (red) then
+      local font = itemsFrame.tdlButton:GetNormalFontObject()
+      if (font) then
+        font:SetTextColor(1, 0, 0, 1) -- red
+        itemsFrame.tdlButton:SetNormalFontObject(font)
+      end
+    else
+      itemsFrame.tdlButton:SetNormalFontObject("GameFontNormalLarge"); -- yellow
+    end
+  end
+
   -- and update the "last" remainings for EACH tab (for the inChatIsDone function)
   remainingCheckAll = numberAll;
   remainingCheckDaily = numberDaily;
@@ -425,8 +468,18 @@ local function refreshTab(cat, name, action, modif, checked)
         checkBtn[name] = CreateFrame("CheckButton", name, itemsFrameUI, "UICheckButtonTemplate");
         checkBtn[name].text:SetText(name);
         checkBtn[name].text:SetFontObject("GameFontNormalLarge");
+        if (config:HasHyperlink(name)) then -- this is for making more space for items that have hyperlinks in them
+          local l = config:CreateNoPointsLabel(itemsFrameUI, nil, name);
+          if (l:GetWidth() > itemNameWidthMax) then
+            checkBtn[name].text:SetFontObject("GameFontNormal");
+          end
+        end
         checkBtn[name]:SetChecked(checked);
         checkBtn[name]:SetScript("OnClick", ItemsFrame_Update);
+        checkBtn[name]:SetHyperlinksEnabled(true); -- to enable OnHyperlinkClick
+        checkBtn[name]:SetScript("OnHyperlinkClick", function(_, linkData, link, button)
+          ChatFrame_OnHyperlinkShow(ChatFrame1, linkData, link, button)
+        end);
 
         removeBtn[name] = config:CreateRemoveButton(checkBtn[name]);
         removeBtn[name]:SetScript("OnClick", function(self) itemsFrame:RemoveItem(self) end);
@@ -447,6 +500,7 @@ local function refreshTab(cat, name, action, modif, checked)
         -- associated edit box and add button
         editBox[cat] = config:CreateNoPointsLabelEditBox(cat);
         editBox[cat]:SetScript("OnEnterPressed", function(self) itemsFrame:AddItem(addBtn[self:GetName()]) self:SetFocus() end); -- if we press enter, it's like we clicked on the add button
+        table.insert(hyperlinkEditBoxes, editBox[cat]);
         addBtn[cat] = config:CreateAddButton(editBox[cat]);
         addBtn[cat]:SetScript("OnClick", function(self) itemsFrame:AddItem(self) self:GetParent():SetFocus() end);
       end
@@ -483,10 +537,19 @@ local function addCategory()
   end
 
   local l = config:CreateNoPointsLabel(itemsFrameUI, nil, db.name);
-  if (l:GetWidth() > itemNameWidthMax) then
-    config:Print(L["This item name is too big!"])
-    itemsFrameUI.nameEditBox:SetFocus()
-    return;
+  if (l:GetWidth() > itemNameWidthMax) then -- is it too big?
+    if (config:HasHyperlink(db.name)) then
+      l:SetFontObject("GameFontNormal")
+      if (l:GetWidth() > itemNameWidthMax) then -- even for a hyperlink?
+        config:Print(L["This item name is too big!"])
+        itemsFrameUI.nameEditBox:SetFocus()
+        return;
+      end
+    else
+      config:Print(L["This item name is too big!"])
+      itemsFrameUI.nameEditBox:SetFocus()
+      return;
+    end
   end
 
   db.case = itemsFrameUI.categoryButton:GetParent():GetName();
@@ -521,8 +584,16 @@ function itemsFrame:AddItem(self, db)
 
     local l = config:CreateNoPointsLabel(itemsFrameUI, nil, name);
     if (l:GetWidth() > itemNameWidthMax) then -- is it too big?
-      config:Print(L["This item name is too big!"])
-      return;
+      if (config:HasHyperlink(name)) then
+        l:SetFontObject("GameFontNormal")
+        if (l:GetWidth() > itemNameWidthMax) then -- even for a hyperlink?
+          config:Print(L["This item name is too big!"])
+          return;
+        end
+      else
+        config:Print(L["This item name is too big!"])
+        return;
+      end
     end
   else
     name = db.name;
@@ -603,7 +674,7 @@ function itemsFrame:AddItem(self, db)
     if (type(db) ~= "table") then -- if we come from the edit box to add an item next to the category name label
       dontHideMePls[cat] = true; -- then the ending refresh must not hide the edit box
       self:GetParent():SetText(""); -- but we clear it since our query was succesful
-    elseif (type(db) == "table" and db.form) then -- if we come from the Add a new category form
+    elseif (type(db) == "table" and db.form) then -- if we come from the Add a category form
       itemsFrameUI.categoryEditBox:SetText("");
       itemsFrameUI.nameEditBox:SetText("");
 
@@ -679,11 +750,62 @@ function itemsFrame:FavoriteClick(self)
   Tab_OnClick(_G[NysTDL.db.profile.lastLoadedTab]); -- we reload the tab to instantly display the changes
 end
 
+function itemsFrame:ApplyNewRainbowColor(i)
+  i = i or 1
+  -- when called, takes the current favs color, goes to the next one i times, then updates the visual
+  local r, g, b = unpack(NysTDL.db.profile.favoritesColor)
+  local Cmax = math.max(r, g, b)
+  local Cmin = math.min(r, g, b)
+  local delta = Cmax - Cmin
+
+  local Hue;
+  if (delta == 0) then
+    Hue = 0;
+  elseif(Cmax == r) then
+    Hue = 60 * (((g-b)/delta)%6)
+  elseif(Cmax == g) then
+    Hue = 60 * (((b-r)/delta)+2)
+  elseif(Cmax == b) then
+    Hue = 60 * (((r-g)/delta)+4)
+  end
+
+  if (Hue >= 359) then
+    Hue = 0
+  else
+    Hue = Hue + i
+    if (Hue >= 359) then
+      Hue = Hue - 359
+    end
+  end
+
+  local X = 1-math.abs((Hue/60)%2-1)
+
+  if (Hue < 60) then
+    r, g, b = 1, X, 0
+  elseif(Hue < 120) then
+    r, g, b = X, 1, 0
+  elseif(Hue < 180) then
+    r, g, b = 0, 1, X
+  elseif(Hue < 240) then
+    r, g, b = 0, X, 1
+  elseif(Hue < 300) then
+    r, g, b = X, 0, 1
+  elseif(Hue < 360) then
+    r, g, b = 1, 0, X
+  end
+
+  -- we apply the new color
+  NysTDL.db.profile.favoritesColor = { r, g, b }
+  itemsFrame:updateCheckButtons()
+  itemsFrame:updateRemainingNumber()
+end
+
 function itemsFrame:descriptionFrameHide(name)
   -- here, if the name matches one of the opened description frames, we hide that frame, delete it from memory and reupdate the levels of every other active ones
   for pos, v in pairs(descFrames) do
     if (v:GetName() == name) then
       v:Hide()
+      table.remove(hyperlinkEditBoxes, select(2, config:HasItem(hyperlinkEditBoxes, v.descriptionEditBox.EditBox))) -- removing the ref of the hyperlink edit box
       table.remove(descFrames, pos)
       for pos2, v2 in pairs(descFrames) do -- we reupdate the frame levels
         v2:SetFrameLevel(300 + (pos2-1)*descFrameLevelDiff)
@@ -706,7 +828,7 @@ function itemsFrame:DescriptionClick(self)
   -- we create the mini frame holding the name of the item and his description in an edit box
   local descFrame = CreateFrame("Frame", name.."_descFrame", UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil); -- importing the backdrop in the desc frames, as of wow 9.0
   local w = config:CreateNoPointsLabel(UIParent, nil, name):GetWidth();
-  descFrame:SetSize((w < 190) and 190+35 or w+35, 110);
+  descFrame:SetSize((w < 180) and 180+75 or w+75, 110); -- 75 is large enough to place the closebutton, clearbutton, and a little bit of space at the right of the name
 
   -- background
   descFrame:SetBackdrop({bgFile = "Interface\\Tooltips\\UI-Tooltip-Background", edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", tile = false, tileSize = 1, edgeSize = 10, insets = { left = 1, right = 1, top = 1, bottom = 1 }});
@@ -719,6 +841,8 @@ function itemsFrame:DescriptionClick(self)
   descFrame:SetMovable(true);
   descFrame:SetClampedToScreen(true);
   descFrame:EnableMouse(true);
+  descFrame.timeSinceLastUpdate = 0; -- for the updating of the title's color and alpha
+  descFrame.opening = 0; -- for the scrolling up on opening
 
   -- to move the frame
   descFrame:SetScript("OnMouseDown", function(self, button)
@@ -728,24 +852,44 @@ function itemsFrame:DescriptionClick(self)
   end)
   descFrame:SetScript("OnMouseUp", descFrame.StopMovingOrSizing)
 
-  descFrame:SetScript("OnUpdate", function(self)
-    -- we update non-stop the color of the title
-    local name = self.title:GetText();
-    local currentAlpha = NysTDL.db.profile.descFrameContentAlpha/100;
-    if (checkBtn[name]:GetChecked()) then
-      self.title:SetTextColor(0, 1, 0, currentAlpha);
-    else
-      if (config:HasItem(NysTDL.db.profile.itemsFavorite, checkBtn[name]:GetName())) then
-        local r, g, b = unpack(NysTDL.db.profile.favoritesColor);
-        self.title:SetTextColor(r, g, b, currentAlpha);
+  -- other scripts
+  descFrame:SetScript("OnUpdate", function(self, elapsed)
+    self.timeSinceLastUpdate = self.timeSinceLastUpdate + elapsed;
+
+    while (self.timeSinceLastUpdate > updateRate) do -- every 0.05 sec (instead of every frame which is every 1/144 (0.007) sec for a 144hz display... optimization :D)
+      -- we update non-stop the color of the title
+      local name = self.title:GetText();
+      local currentAlpha = NysTDL.db.profile.descFrameContentAlpha/100;
+      if (checkBtn[name]:GetChecked()) then
+        self.title:SetTextColor(0, 1, 0, currentAlpha);
       else
-        local r, g, b = unpack(config:ThemeDownTo01(config.database.theme_yellow));
-        self.title:SetTextColor(r, g, b, currentAlpha);
+        if (config:HasItem(NysTDL.db.profile.itemsFavorite, checkBtn[name]:GetName())) then
+          local r, g, b = unpack(NysTDL.db.profile.favoritesColor);
+          self.title:SetTextColor(r, g, b, currentAlpha);
+        else
+          local r, g, b = unpack(config:ThemeDownTo01(config.database.theme_yellow));
+          self.title:SetTextColor(r, g, b, currentAlpha);
+        end
       end
+
+      -- if the desc frame is the oldest (the first opened on screen, or subsequently the one who has the lowest frame level)
+      -- we use that one to cycle the rainbow colors if the list gets closed
+      if (not itemsFrameUI:IsShown()) then
+        if (self:GetFrameLevel() == 300) then
+          if (NysTDL.db.profile.rainbow) then itemsFrame:ApplyNewRainbowColor(NysTDL.db.profile.rainbowSpeed) end
+        end
+      end
+
+      self.timeSinceLastUpdate = self.timeSinceLastUpdate - updateRate;
     end
 
     -- and we also update non-stop the width of the description edit box to match that of the frame if we resize it, and when the scrollbar kicks in. (this is the secret to make it work)
     self.descriptionEditBox.EditBox:SetWidth(self.descriptionEditBox:GetWidth() - (self.descriptionEditBox.ScrollBar:IsShown() and 15 or 0))
+
+    if (self.opening < 5) then -- doing this only on the 5 first updates after creating the frame, i won't go into the details but updating the vertical scroll of this template is a real fucker :D
+      self.descriptionEditBox:SetVerticalScroll(0)
+      self.opening = self.opening + 1
+    end
   end)
 
   -- position
@@ -773,9 +917,20 @@ function itemsFrame:DescriptionClick(self)
 
   -- close button
   descFrame.closeButton = CreateFrame("Button", "closeButton", descFrame, "NysTDL_CloseButton");
-  descFrame.closeButton:SetPoint("TOPRIGHT", descFrame, "TOPRIGHT", -1, -1);
-  descFrame.closeButton:SetScript("onClick", function(self)
+  descFrame.closeButton:SetPoint("TOPRIGHT", descFrame, "TOPRIGHT", -2, -2);
+  descFrame.closeButton:SetScript("OnClick", function(self)
       itemsFrame:descriptionFrameHide(self:GetParent():GetName())
+  end);
+
+  -- clear button
+  descFrame.clearButton = CreateFrame("Button", "clearButton", descFrame, "NysTDL_ClearButton");
+  descFrame.clearButton.tooltip = L["Clear"].."\n("..L["Right-click"]..')'
+  descFrame.clearButton:SetPoint("TOPRIGHT", descFrame, "TOPRIGHT", -24, -2);
+  descFrame.clearButton:RegisterForClicks("RightButtonUp")
+  descFrame.clearButton:SetScript("OnClick", function(self)
+      local eb = self:GetParent().descriptionEditBox.EditBox
+      eb:SetText("")
+      eb:GetScript("OnKeyUp")(eb)
   end);
 
   -- item label
@@ -783,6 +938,10 @@ function itemsFrame:DescriptionClick(self)
   descFrame.title:SetFontObject("GameFontNormalLarge")
   descFrame.title:SetPoint("TOPLEFT", descFrame, "TOPLEFT", 6, -5)
   descFrame.title:SetText(name)
+  descFrame:SetHyperlinksEnabled(true); -- to enable OnHyperlinkClick
+  descFrame:SetScript("OnHyperlinkClick", function(_, linkData, link, button)
+    ChatFrame_OnHyperlinkShow(ChatFrame1, linkData, link, button)
+  end);
 
   -- description edit box
   descFrame.descriptionEditBox = CreateFrame("ScrollFrame", name.."_descFrameEditBox", descFrame, "InputScrollFrameTemplate");
@@ -801,8 +960,15 @@ function itemsFrame:DescriptionClick(self)
     -- and here we save the description everytime we lift a finger (best auto-save possible I think)
     local itemName = self:GetParent():GetParent().title:GetText()
     NysTDL.db.profile.itemsDesc[itemName] = (self:GetText() ~= "") and self:GetText() or nil
+    if (IsControlKeyDown()) then -- just in case we are ctrling-v, to color the icon
+      descBtn[name]:GetScript("OnShow")(descBtn[name])
+    end
   end)
-
+  descFrame.descriptionEditBox.EditBox:SetHyperlinksEnabled(true); -- to enable OnHyperlinkClick
+  descFrame.descriptionEditBox.EditBox:SetScript("OnHyperlinkClick", function(_, linkData, link, button)
+    ChatFrame_OnHyperlinkShow(ChatFrame1, linkData, link, button)
+  end);
+  table.insert(hyperlinkEditBoxes, descFrame.descriptionEditBox.EditBox)
 
   table.insert(descFrames, descFrame) -- we save it for level, hide, and alpha purposes
 
@@ -1087,6 +1253,7 @@ local function ItemsFrame_OnUpdate(self, elapsed)
   end
 
   while (self.timeSinceLastUpdate > updateRate) do -- every 0.05 sec (instead of every frame which is every 1/144 (0.007) sec for a 144hz display... optimization :D)
+    if (NysTDL.db.profile.rainbow) then itemsFrame:ApplyNewRainbowColor(NysTDL.db.profile.rainbowSpeed) end
     ItemsFrame_CheckLabels();
     self.timeSinceLastUpdate = self.timeSinceLastUpdate - updateRate;
   end
@@ -1111,7 +1278,17 @@ local function loadMovable()
     checkBtn[All[i]] = CreateFrame("CheckButton", All[i], itemsFrameUI, "UICheckButtonTemplate");
     checkBtn[All[i]].text:SetText(All[i]);
     checkBtn[All[i]].text:SetFontObject("GameFontNormalLarge");
+    if (config:HasHyperlink(All[i])) then -- this is for making more space for items that have hyperlinks in them
+      local l = config:CreateNoPointsLabel(itemsFrameUI, nil, All[i]);
+      if (l:GetWidth() > itemNameWidthMax) then
+        checkBtn[All[i]].text:SetFontObject("GameFontNormal");
+      end
+    end
     checkBtn[All[i]]:SetScript("OnClick", ItemsFrame_Update);
+    checkBtn[All[i]]:SetHyperlinksEnabled(true); -- to enable OnHyperlinkClick
+    checkBtn[All[i]]:SetScript("OnHyperlinkClick", function(_, linkData, link, button)
+      ChatFrame_OnHyperlinkShow(ChatFrame1, linkData, link, button)
+    end);
 
     removeBtn[All[i]] = config:CreateRemoveButton(checkBtn[All[i]]);
     removeBtn[All[i]]:SetScript("OnClick", function(self) itemsFrame:RemoveItem(self) end);
@@ -1133,6 +1310,7 @@ local function loadMovable()
     -- associated edit box and add button
     editBox[k] = config:CreateNoPointsLabelEditBox(k);
     editBox[k]:SetScript("OnEnterPressed", function(self) itemsFrame:AddItem(addBtn[self:GetName()]) self:SetFocus() end); -- if we press enter, it's like we clicked on the add button
+    table.insert(hyperlinkEditBoxes, editBox[k]);
     addBtn[k] = config:CreateAddButton(editBox[k]);
     addBtn[k]:SetScript("OnClick", function(self) itemsFrame:AddItem(self) self:GetParent():SetFocus() end);
   end
@@ -1257,6 +1435,7 @@ local function loadCategories(tab, category, categoryLabel, constraint, catName,
     if (not next(NysTDL.db.profile.itemsList[catName])) then -- if there is no more item in a category, we delete the corresponding elements
       -- we destroy them
       addBtn[catName] = nil;
+      table.remove(hyperlinkEditBoxes, select(2, config:HasItem(hyperlinkEditBoxes, editBox[catName])))
       editBox[catName] = nil;
       label[catName] = nil;
       categoryLabelFavsRemaining[catName] = nil;
@@ -1423,7 +1602,7 @@ local function loadTab(tab, case)
   itemsFrameUI.undoButton:SetParent(tab);
   itemsFrameUI.undoButton:SetPoint("RIGHT", itemsFrameUI.helpButton, "LEFT", 2, 0);
 
-  -- loading the "add a new category" menu
+  -- loading the "add a category" menu
   loadAddACategory(tab);
 
   -- loading the "tab actions" menu
@@ -1464,7 +1643,7 @@ local function loadTab(tab, case)
 
   -- first we check which one of the buttons is pressed (if there is one) for pre-processing something
   if (addACategoryClosed) then -- if the creation of new categories is closed
-    -- we hide every component of the "add a new category"
+    -- we hide every component of the "add a category"
     for _, v in pairs(addACategoryItems) do
       v:Hide();
     end
@@ -1523,7 +1702,7 @@ local function loadTab(tab, case)
       height = height + (select(5, v:GetPoint()));
     end
 
-    -- and show the line below the elements of the "add a new category"
+    -- and show the line below the elements of the "add a category"
     itemsFrameUI.lineBottom:SetStartPoint("TOPLEFT", centerXOffset-lineOffset, height - 62)
     itemsFrameUI.lineBottom:SetEndPoint("TOPLEFT", centerXOffset+lineOffset, height - 62)
   end
@@ -1592,6 +1771,7 @@ local function generateAddACategory()
   itemsFrameUI.nameEditBox:SetScript("OnKeyDown", function(_, key) if (key == "TAB") then itemsFrameUI.categoryEditBox:SetFocus() end end)
   itemsFrameUI.nameEditBox:SetScript("OnEnterPressed", addCategory); -- if we press enter, it's like we clicked on the add button
   table.insert(addACategoryItems, itemsFrameUI.nameEditBox);
+  table.insert(hyperlinkEditBoxes, itemsFrameUI.nameEditBox);
 
   itemsFrameUI.addBtn = config:CreateButton("addButton", itemsFrameUI, L["Add category"]);
   itemsFrameUI.addBtn:SetScript("onClick", addCategory);
@@ -1762,7 +1942,7 @@ local function generateFrameContent()
   itemsFrameUI.undoButton:SetScript("OnClick", itemsFrame.UndoRemove);
   itemsFrameUI.undoButton:Hide();
 
-  -- add a new category button
+  -- add a category button
   generateAddACategory();
 
   -- tab actions button
@@ -1788,7 +1968,7 @@ local function generateTutorialFrames()
     local TF_addNewCat = CreateFrame("Frame", "NysTDL_TF_addNewCat", itemsFrameUI, "NysTDL_HelpPlateTooltip")
     TF_addNewCat:SetSize(190, 50)
     TF_addNewCat.ArrowRIGHT:Show()
-    TF_addNewCat.Text:SetWidth(TF_addNewCat:GetWidth() - 35)
+    TF_addNewCat.Text:SetWidth(TF_addNewCat:GetWidth() - tutoFrameRightDist)
     TF_addNewCat.Text:SetText(L["Start by adding a new category!"]);
     TF_addNewCat.closeButton = CreateFrame("Button", "closeButton", TF_addNewCat, "UIPanelCloseButton");
     TF_addNewCat.closeButton:SetPoint("TOPRIGHT", TF_addNewCat, "TOPRIGHT", 6, 6);
@@ -1805,7 +1985,7 @@ local function generateTutorialFrames()
     local TF_addCat = CreateFrame("Frame", "NysTDL_TF_addCat", itemsFrameUI, "NysTDL_HelpPlateTooltip")
     TF_addCat:SetSize(240, 50)
     TF_addCat.ArrowDOWN:Show()
-    TF_addCat.Text:SetWidth(TF_addCat:GetWidth() - 35)
+    TF_addCat.Text:SetWidth(TF_addCat:GetWidth() - tutoFrameRightDist)
     TF_addCat.Text:SetText(L["This will add your category and item to the current tab"]);
     TF_addCat.closeButton = CreateFrame("Button", "closeButton", TF_addCat, "UIPanelCloseButton");
     TF_addCat.closeButton:SetPoint("TOPRIGHT", TF_addCat, "TOPRIGHT", 6, 6);
@@ -1822,7 +2002,7 @@ local function generateTutorialFrames()
     local TF_addItem = CreateFrame("Frame", "NysTDL_TF_addItem", itemsFrameUI, "NysTDL_HelpPlateTooltip")
     TF_addItem:SetSize(220, 50)
     TF_addItem.ArrowLEFT:Show()
-    TF_addItem.Text:SetWidth(TF_addItem:GetWidth() - 35)
+    TF_addItem.Text:SetWidth(TF_addItem:GetWidth() - tutoFrameRightDist)
     TF_addItem.Text:SetText(L["To add new items to existing categories, just right-click the category names!"]);
     TF_addItem.closeButton = CreateFrame("Button", "closeButton", TF_addItem, "UIPanelCloseButton");
     TF_addItem.closeButton:SetPoint("TOPRIGHT", TF_addItem, "TOPRIGHT", 6, 6);
@@ -1836,9 +2016,9 @@ local function generateTutorialFrames()
   -- TUTO : getting more information ("getMoreInfo")
     -- frame
     local TF_getMoreInfo = CreateFrame("Frame", "NysTDL_TF_getMoreInfo", itemsFrameUI, "NysTDL_HelpPlateTooltip")
-    TF_getMoreInfo:SetSize(270, 50)
+    TF_getMoreInfo:SetSize(275, 50)
     TF_getMoreInfo.ArrowRIGHT:Show()
-    TF_getMoreInfo.Text:SetWidth(TF_getMoreInfo:GetWidth() - 35)
+    TF_getMoreInfo.Text:SetWidth(TF_getMoreInfo:GetWidth() - tutoFrameRightDist)
     TF_getMoreInfo.Text:SetText(L["If you're having any problems, or you want more information on systems like favorites or descriptions, you can always click here to print help in the chat!"]);
     TF_getMoreInfo.closeButton = CreateFrame("Button", "closeButton", TF_getMoreInfo, "UIPanelCloseButton");
     TF_getMoreInfo.closeButton:SetPoint("TOPRIGHT", TF_getMoreInfo, "TOPRIGHT", 6, 6);
@@ -1855,7 +2035,7 @@ local function generateTutorialFrames()
     local TF_accessOptions = CreateFrame("Frame", "NysTDL_TF_accessOptions", itemsFrameUI, "NysTDL_HelpPlateTooltip")
     TF_accessOptions:SetSize(220, 50)
     TF_accessOptions.ArrowUP:Show()
-    TF_accessOptions.Text:SetWidth(TF_accessOptions:GetWidth() - 35)
+    TF_accessOptions.Text:SetWidth(TF_accessOptions:GetWidth() - tutoFrameRightDist)
     TF_accessOptions.Text:SetText(L["You can access the options from here"]);
     TF_accessOptions.closeButton = CreateFrame("Button", "closeButton", TF_accessOptions, "UIPanelCloseButton");
     TF_accessOptions.closeButton:SetPoint("TOPRIGHT", TF_accessOptions, "TOPRIGHT", 6, 6);
@@ -1881,6 +2061,7 @@ end
 function itemsFrame:RedoTutorial()
   NysTDL.db.global.tuto_progression = 0;
   ItemsFrame_OnVisibilityUpdate()
+  itemsFrameUI.ScrollFrame:SetVerticalScroll(0);
 end
 
 ----------------------------------
@@ -1971,10 +2152,12 @@ function itemsFrame:ResetContent()
     label[k]:Hide()
     categoryLabelFavsRemaining[k]:Hide()
     editBox[k]:Hide()
+    table.remove(hyperlinkEditBoxes, select(2, config:HasItem(hyperlinkEditBoxes, editBox[k])))
   end
 
   for _, v in pairs(descFrames) do
     v:Hide()
+    table.remove(hyperlinkEditBoxes, select(2, config:HasItem(hyperlinkEditBoxes, v.descriptionEditBox.EditBox)))
   end
 
   -- 2 - reset every content variable to their default value
@@ -2020,6 +2203,15 @@ function itemsFrame:Init()
   loadSavedVariable();
 
   -- Updating everything once and hiding the UI
+  -- -- and after generating every one of the fixed elements, we go throught every edit box marked as hyperlink, and add them the handlers here:
+  -- for _, v in pairs(hyperlinkEditBoxes) do
+  --   if (not v:GetHyperlinksEnabled()) then -- just to be sure they are new ones (eg: not redo this for the first item name edit box of the add a category menu)
+  --     v:SetHyperlinksEnabled(true); -- to enable OnHyperlinkClick
+  --     v:SetScript("OnHyperlinkClick", function(self, linkData, link, button)
+  --       ChatFrame_OnHyperlinkShow(ChatFrame1, linkData, link, button)
+  --     end);
+  --   end
+  -- end
   ItemsFrame_UpdateTime(); -- for the auto reset check (we could wait 1 sec, but nah we don't have the time man)
 
   -- We load the good tab

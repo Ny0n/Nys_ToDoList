@@ -85,20 +85,56 @@ config.database = {
                   order = 3.1,
                   type = "toggle",
                   name = L["Show chat messages"],
-                  desc = L["Enable or disable the chat messages"],
+                  desc = L["Enable or disable the chat messages"]..'\n'..L["(warnings override this option)"],
                   get = "showChatMessagesGET",
                   set = "showChatMessagesSET",
               }, -- showChatMessages
-              showFavoritesWarning = {
+              showWarnings = {
                   order = 3.2,
                   type = "toggle",
-                  name = L["Show favorites warning"],
-                  desc = L["Enable or disable the chat warning/reminder for favorite items"],
-                  get = "showFavoritesWarningGET",
-                  set = "showFavoritesWarningSET",
-              }, -- showFavoritesWarning
-              rememberUndo = {
+                  name = L["Show warnings"],
+                  desc = L["Enable or disable the chat warning/reminder system"]..'\n'..L["(chat message when logging in)"],
+                  get = "showWarningsGET",
+                  set = "showWarningsSET",
+              }, -- showWarnings
+              groupWarnings = {
                   order = 3.3,
+                  type = "group",
+                  name = L["Warnings:"],
+                  inline = true,
+                  hidden = function() return not NysTDL.db.profile.showWarnings end,
+                  args = {
+                    favoritesWarning = {
+                        order = 1.1,
+                        type = "toggle",
+                        name = L["Favorites warning"],
+                        desc = L["Enable warnings for favorite items"],
+                        get = "favoritesWarningGET",
+                        set = "favoritesWarningSET",
+                    }, -- favoritesWarning
+                    normalWarning = {
+                        order = 1.2,
+                        type = "toggle",
+                        name = L["Normal warning"],
+                        desc = L["Enable warnings for non-favorite items"],
+                        get = "normalWarningGET",
+                        set = "normalWarningSET",
+                    }, -- normalWarning
+                    hourlyReminder = {
+                        order = 1.3,
+                        type = "toggle",
+                        name = L["Hourly reminder"],
+                        desc = L["Show warnings every 60 min following your log-in time"],
+                        get = "hourlyReminderGET",
+                        set = "hourlyReminderSET",
+                        disabled = function()
+                          return not (NysTDL.db.profile.favoritesWarning or NysTDL.db.profile.normalWarning)
+                        end,
+                    }, -- hourlyReminder
+                  }
+              }, -- groupWarnings
+              rememberUndo = {
+                  order = 3.7,
                   type = "toggle",
                   name = L["Remember undos"],
                   desc = L["Save undos between sessions"],
@@ -112,7 +148,28 @@ config.database = {
                   desc = L["Change the color for the favorite items"],
                   get = "favoritesColorGET",
                   set = "favoritesColorSET",
+                  disabled = function() return NysTDL.db.profile.rainbow end,
               }, -- favoritesColor
+              rainbow = {
+                  order = 3.5,
+                  type = "toggle",
+                  name = L["Rainbow"],
+                  desc = L["Too.. Many.. Colors..."],
+                  get = "rainbowGET",
+                  set = "rainbowSET",
+              }, -- rainbow
+              rainbowSpeed = {
+                  order = 3.6,
+                  type = "range",
+                  name = L["Rainbow speed"],
+                  desc = L["Because why not?"],
+                  min = 1,
+                  max = 6,
+                  step = 1,
+                  get = "rainbowSpeedGET",
+                  set = "rainbowSpeedSET",
+                  hidden = function() return not NysTDL.db.profile.rainbow end
+              }, -- rainbowSpeed
               tdlButtonShow = {
                   order = 2.3,
                   type = "toggle",
@@ -120,6 +177,15 @@ config.database = {
                   desc = L["Toggles the display of the 'To-Do List' button"],
                   get = "tdlButtonShowGET",
                   set = "tdlButtonShowSET",
+              }, -- tdlButtonShow
+              tdlButtonRed = {
+                  order = 2.4,
+                  type = "toggle",
+                  name = L["Red"],
+                  desc = L["Changes the color of the TDL button if there are items left to do before tomorrow"],
+                  get = "tdlButtonRedGET",
+                  set = "tdlButtonRedSET",
+                  hidden = function() return not NysTDL.db.profile.tdlButton.show end
               }, -- tdlButtonShow
               minimapButtonHide = {
                   order = 2.1,
@@ -162,36 +228,18 @@ config.database = {
           			width = "full",
           			name = "\n",
           		}, -- spacer199
-              spacer211 = {
-          			order = 2.11,
-          			type = "description",
-          			width = "full",
-          			name = "",
-          		}, -- spacer211
               spacer221 = {
           			order = 2.21,
           			type = "description",
           			width = "full",
           			name = "",
           		}, -- spacer221
-              spacer231 = {
-          			order = 2.31,
-          			type = "description",
-          			width = "full",
-          			name = "",
-          		}, -- spacer231
               spacer299 = {
           			order = 2.99,
           			type = "description",
           			width = "full",
           			name = "\n",
           		}, -- spacer299
-              spacer311 = {
-          			order = 3.11,
-          			type = "description",
-          			width = "half",
-          			name = "",
-          		}, -- spacer311
               spacer321 = {
           			order = 3.21,
           			type = "description",
@@ -201,27 +249,27 @@ config.database = {
               spacer331 = {
           			order = 3.31,
           			type = "description",
-          			width = "half",
-          			name = "",
-          		}, -- spacer331
-              spacer341 = {
-          			order = 3.41,
-          			type = "description",
           			width = "full",
           			name = "",
           		}, -- spacer331
+              spacer361 = {
+          			order = 3.61,
+          			type = "description",
+          			width = "full",
+          			name = "",
+          		}, -- spacer361
               spacer399 = {
           			order = 3.99,
           			type = "description",
           			width = "full",
           			name = "\n",
           		}, -- spacer399
-              spacer411 = {
-          			order = 4.11,
-          			type = "description",
-          			width = "full",
-          			name = "",
-          		}, -- spacer411
+              -- spacer411 = {
+          		-- 	order = 4.11,
+          		-- 	type = "description",
+          		-- 	width = "full",
+          		-- 	name = "",
+          		-- }, -- spacer411
 
               -- headers
               header1 = {
@@ -254,10 +302,11 @@ config.database = {
         global = {
             tuto_progression = 0,
             UI_reloading = false,
+            warnTimerRemaining = 0,
         },
         profile = {
             minimap = { hide = false, minimapPos = 241, lock = false, tooltip = true }, -- for LibDBIcon
-            tdlButton = { show = false, points = { point = "CENTER", relativeTo = UIParent, relativePoint = "CENTER", xOffset = 0, yOffset = 0 } },
+            tdlButton = { show = false, red = false, points = { point = "CENTER", relativeTo = UIParent, relativePoint = "CENTER", xOffset = 0, yOffset = 0 } },
             framePos = { point = "CENTER", relativeTo = UIParent, relativePoint = "CENTER", xOffset = 0, yOffset = 0 },
             frameSize = { width = 340, height = 400 },
             itemsList = nil,
@@ -266,11 +315,16 @@ config.database = {
             itemsFavorite = {},
             itemsDesc = {},
             favoritesColor = { 1, 0.5, 0.6 },
+            rainbow = false,
+            rainbowSpeed = 2,
             weeklyDay = 4,
             dailyHour = 9,
             autoReset = nil,
             showChatMessages = true,
-            showFavoritesWarning = true,
+            showWarnings = false,
+            favoritesWarning = true,
+            normalWarning = false,
+            hourlyReminder = false,
             rememberUndo = true,
             frameAlpha = 65,
             frameContentAlpha = 100,
@@ -363,6 +417,13 @@ function config:Deepcopy(orig)
         copy = orig
     end
     return copy
+end
+
+function config:HasHyperlink(s)
+  if (s ~= nil and string.find(s, "|H") ~= nil) then
+    return true
+  end
+  return false
 end
 
 function config:HasItem(table, item)

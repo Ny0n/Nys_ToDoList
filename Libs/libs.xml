@@ -16,8 +16,4 @@
   <Script file="LibDataBroker-1.1\LibDataBroker-1.1.lua"/>
   <Include file="LibDBIcon-1.0\lib.xml"/>
 
-  <!--@no-lib-strip@-->
-  <Include file="LibStrataFix\lib.xml"/>
-  <!--@end-no-lib-strip@-->
-
 </Ui>

@@ -6,6 +6,10 @@ local L = LibStub("AceLocale-3.0"):NewLocale(addonName, "enUS", true)
 -- ============================================ --
 
 -- Chat messages
+L["Total number of items left to do before tomorrow:"] = true
+L["You can add hyperlinks in the list!"] = true
+L["It works the same way as when you link items or other things in the chat, just shift-click!"] = true
+L["hyperlinks"] = true
 L["The same category can be present in multiple tabs, as long as there are items for each of those tabs."] = true
 L["A category cannot be empty, if it is, it will just get deleted from the tab."] = true
 L["Information on categories:"] = true
@@ -69,8 +73,23 @@ L["Left-click on the category names to expand or shrink their content."] = true
 L["Nice job, you did everything on the list!"] = true
 
 -- Options frame
-L["Show favorites warning"] = true
-L["Enable or disable the chat warning/reminder for favorite items"] = true
+L["Show warnings every 60 min following your log-in time"] = true
+L["Hourly reminder"] = true
+L["(chat message when logging in)"] = true
+L["Enable warnings for non-favorite items"] = true
+L["Normal warning"] = true
+L["Warnings:"] = true
+L["Show warnings"] = true
+L["Enable or disable the chat warning/reminder system"] = true
+L["(warnings override this option)"] = true
+L["Changes the color of the TDL button if there are items left to do before tomorrow"] = true
+L["Red"] = true
+L["Rainbow speed"] = true
+L["Because why not?"] = true
+L["Rainbow"] = true
+L["Too.. Many.. Colors..."] = true
+L["Favorites warning"] = true
+L["Enable warnings for favorite items"] = true
 L["Favorites color"] = true
 L["Change the color for the favorite items"] = true
 L["Key Binding"] = true
@@ -122,6 +141,7 @@ L["unlock minimap button"] = true
 L["Wednesday"] = true
 
 -- To-Do List frame
+L["Right-click"] = true
 L["This will add your category and item to the current tab"] = true
 L["If you're having any problems, or you want more information on systems like favorites or descriptions, you can always click here to print help in the chat!"] = true
 L["To add new items to existing categories, just right-click the category names!"] = true

@@ -1,15 +1,19 @@
+V5.3 - Implemented Hyperlinks! (same thing as when you shift-click on items/achievements/quests/etc and it creates a link to them in the chat, but now it works the same way in the list too!)
+     - Upgraded the reminder/warning system
+     - Added new options for you to discover
+     - other miscellaneous improvements and corrections
+
+-------------------------
+
 V5.2.1 - added localization for Korean (koKR)
 V5.2 - updated the addon to support Shadowlands!
      - added a tutorial, explaining the basic systems of the list
      - other miscellaneous improvements
 
--------------------------
-
 V5.1 - you can now resize the list! learn how to do it in the frame options
+
 V5.0.1 - minor code corrections
-
 V5.0
-
 Big update! -- this is the second part to a 2 parts mega update,
 this one now includes major new systems, favorites and descriptions on items!
 
