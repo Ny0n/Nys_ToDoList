@@ -255,6 +255,7 @@ config.database = {
             minimap = { hide = false, minimapPos = 241, lock = false, tooltip = true }, -- for LibDBIcon
             tdlButton = { show = false, points = { point = "CENTER", relativeTo = UIParent, relativePoint = "CENTER", xOffset = 0, yOffset = 0 } },
             framePos = { point = "CENTER", relativeTo = UIParent, relativePoint = "CENTER", xOffset = 0, yOffset = 0 },
+            frameSize = { width = 340, height = 400 },
             itemsList = nil,
             itemsDaily = nil,
             itemsWeekly = nil,

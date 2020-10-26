@@ -42,6 +42,7 @@ local editBoxAddItemWidth = 270;
 local centerXOffset = 165;
 local lineOffset = 120;
 local descFrameLevelDiff = 20;
+local cursorX, cursorY, cursorDist = 0, 0, 10; -- for my special drag
 
 local All = {};
 
@@ -119,8 +120,9 @@ local function FrameContentAlphaSlider_OnValueChanged(_, value)
   -- itemsList frame part
   NysTDL.db.profile.frameContentAlpha = value;
   itemsFrameUI.frameContentAlphaSliderValue:SetText(value);
-  itemsFrameUI.ScrollFrame:SetAlpha((value)/100);
+  itemsFrameUI.ScrollFrame.ScrollBar:SetAlpha((value)/100);
   itemsFrameUI.closeButton:SetAlpha((value)/100);
+  itemsFrameUI.resizeButton:SetAlpha((value)/100);
   for i = 1, 3 do
     _G["ToDoListUIFrameTab"..i.."Text"]:SetAlpha((value)/100);
     _G["ToDoListUIFrameTab"..i].content:SetAlpha((value)/100);
@@ -739,12 +741,8 @@ function itemsFrame:DescriptionClick(self)
   -- / content of the frame / --
 
   -- resize button
-  descFrame.resizeButton = CreateFrame("Button", nil, descFrame)
-  descFrame.resizeButton:SetSize(16, 16)
+  descFrame.resizeButton = CreateFrame("Button", nil, descFrame, "NysTDL_ResizeButton")
   descFrame.resizeButton:SetPoint("BOTTOMRIGHT")
-  descFrame.resizeButton:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
-  descFrame.resizeButton:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
-  descFrame.resizeButton:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
   descFrame.resizeButton:SetScript("OnMouseDown", function(self, button)
     if (button == "LeftButton") then
       descFrame:StartSizing("BOTTOMRIGHT")
@@ -948,6 +946,17 @@ local function ItemsFrame_OnVisibilityUpdate()
   Tab_OnClick(_G[NysTDL.db.profile.lastLoadedTab]);
 end
 
+local function ItemsFrame_Scale()
+  local scale = itemsFrameUI:GetWidth()/340;
+  itemsFrameUI.ScrollFrame.ScrollBar:SetScale(scale)
+  itemsFrameUI.closeButton:SetScale(scale)
+  itemsFrameUI.resizeButton:SetScale(scale)
+  for i = 1, 3 do
+    _G["ToDoListUIFrameTab"..i].content:SetScale(scale)
+    _G["ToDoListUIFrameTab"..i]:SetScale(scale)
+  end
+end
+
 local function ItemsFrame_OnUpdate(self, elapsed)
   -- called every frame
   self.timeSinceLastUpdate = self.timeSinceLastUpdate + elapsed;
@@ -959,6 +968,14 @@ local function ItemsFrame_OnUpdate(self, elapsed)
   --   itemsFrameUI.ScrollFrame.ScrollBar:Hide()
   -- end
 
+  if (self.isMouseDown and not self.hasMoved) then
+    local x, y = GetCursorPosition()
+    if ((x > cursorX + cursorDist) or (x < cursorX - cursorDist) or (y > cursorY + cursorDist) or (y < cursorY - cursorDist)) then  -- we start dragging the frame
+      self:StartMoving()
+      self.hasMoved = true
+    end
+  end
+
   -- testing and showing the right button next to each items
   if (IsShiftKeyDown()) then
     for i = 1, #All, 1 do
@@ -967,7 +984,7 @@ local function ItemsFrame_OnUpdate(self, elapsed)
       descBtn[All[i]]:Hide();
       favoriteBtn[All[i]]:Show();
     end
-  elseif(IsControlKeyDown()) then
+  elseif (IsControlKeyDown()) then
     for i = 1, #All, 1 do
       -- we show every paper icons
       removeBtn[All[i]]:Hide()
@@ -1003,11 +1020,17 @@ local function ItemsFrame_OnUpdate(self, elapsed)
     itemsFrameUI.undoButton:Show()
     itemsFrameUI.frameOptionsButton:Hide()
     itemsFrameUI.tabActionsButton:Show()
+    -- resize button
+    itemsFrameUI.ScrollFrame.ScrollBar:SetPoint("BOTTOMRIGHT", itemsFrameUI.ScrollFrame, "BOTTOMRIGHT", - 7, 32);
+    itemsFrameUI.resizeButton:Show()
   else
     itemsFrameUI.undoButton:Hide()
     itemsFrameUI.categoryButton:Show()
     itemsFrameUI.tabActionsButton:Hide()
     itemsFrameUI.frameOptionsButton:Show()
+    -- resize button
+    itemsFrameUI.ScrollFrame.ScrollBar:SetPoint("BOTTOMRIGHT", itemsFrameUI.ScrollFrame, "BOTTOMRIGHT", - 7, 17);
+    itemsFrameUI.resizeButton:Hide()
   end
 
   -- we also update their color, if one of the button menus is opened
@@ -1300,8 +1323,14 @@ local function loadOptions(tab)
 
   --/************************************************/--
 
+  itemsFrameUI.resizeTitle:SetParent(tab);
+  itemsFrameUI.resizeTitle:SetPoint("TOP", itemsFrameUI.optionsTitle, "TOP", 0, -32);
+  local h = itemsFrameUI.resizeTitle:GetHeight() -- if the locale text is too long, we adapt the points of the next element to match the height of this string
+
+  --/************************************************/--
+
   itemsFrameUI.frameAlphaSlider:SetParent(tab);
-  itemsFrameUI.frameAlphaSlider:SetPoint("TOP", itemsFrameUI.optionsTitle, "TOP", 0, -45);
+  itemsFrameUI.frameAlphaSlider:SetPoint("TOP", itemsFrameUI.resizeTitle, "TOP", 0, -28 - h); -- here
 
   itemsFrameUI.frameAlphaSliderValue:SetParent(tab);
   itemsFrameUI.frameAlphaSliderValue:SetPoint("TOP", itemsFrameUI.frameAlphaSlider, "BOTTOM", 0, 0);
@@ -1579,6 +1608,13 @@ local function generateOptions()
 
   --/************************************************/--
 
+  itemsFrameUI.resizeTitle = config:CreateNoPointsLabel(itemsFrameUI, nil, string.format("|cffffffff%s|r", L["Hold ALT to see the resize button"]));
+  itemsFrameUI.resizeTitle:SetFontObject("GameFontHighlight");
+  itemsFrameUI.resizeTitle:SetWidth(230)
+  table.insert(frameOptionsItems, itemsFrameUI.resizeTitle);
+
+  --/************************************************/--
+
   itemsFrameUI.frameAlphaSlider = CreateFrame("Slider", "frameAlphaSlider", itemsFrameUI, "OptionsSliderTemplate");
   itemsFrameUI.frameAlphaSlider:SetWidth(200);
   -- itemsFrameUI.frameAlphaSlider:SetHeight(17);
@@ -1812,6 +1848,8 @@ function itemsFrame:Init()
   -- so that we can hide everything when we change profiles
   currentDBItemsList = NysTDL.db.profile.itemsList;
 
+  -- we resize and scale the frame to match the saved variable
+  itemsFrameUI:SetSize(NysTDL.db.profile.frameSize.width, NysTDL.db.profile.frameSize.height);
   -- we reposition the frame to match the saved variable
   local points = NysTDL.db.profile.framePos;
   itemsFrameUI:ClearAllPoints();
@@ -1841,12 +1879,14 @@ end
 function itemsFrame:CreateItemsFrame()
 
   itemsFrameUI = CreateFrame("Frame", "ToDoListUIFrame", UIParent);
-  itemsFrameUI:SetSize(340, 400);
 
   -- background
   itemsFrameUI:SetBackdrop({bgFile = "Interface\\Tooltips\\UI-Tooltip-Background", edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", tile = false, tileSize = 1, edgeSize = 10, insets = { left = 1, right = 1, top = 1, bottom = 1 }});
 
   -- properties
+  itemsFrameUI:SetResizable(true);
+  itemsFrameUI:SetMinResize(240, 284);
+  itemsFrameUI:SetMaxResize(400, 600);
   itemsFrameUI:SetFrameLevel(200);
   itemsFrameUI:SetMovable(true);
   itemsFrameUI:SetClampedToScreen(true);
@@ -1856,19 +1896,38 @@ function itemsFrame:CreateItemsFrame()
   itemsFrameUI:HookScript("OnMouseUp", ItemsFrame_OnMouseUp);
   itemsFrameUI:HookScript("OnShow", ItemsFrame_OnVisibilityUpdate);
   itemsFrameUI:HookScript("OnHide", ItemsFrame_OnVisibilityUpdate);
-
-  itemsFrameUI:RegisterForDrag("LeftButton"); -- to move the frame
-  itemsFrameUI:SetScript("OnDragStart", itemsFrameUI.StartMoving);
-  itemsFrameUI:SetScript("OnDragStop", function() -- we save its position
-    itemsFrameUI:StopMovingOrSizing()
-    local points = NysTDL.db.profile.framePos
-    points.point, points.relativeTo, points.relativePoint, points.xOffset, points.yOffset = itemsFrameUI:GetPoint()
+  itemsFrameUI:HookScript("OnSizeChanged", function(self)
+    NysTDL.db.profile.frameSize.width = self:GetWidth()
+    NysTDL.db.profile.frameSize.height = self:GetHeight()
+    ItemsFrame_Scale()
   end);
 
-  itemsFrameUI.timeSinceLastUpdate = 0;
-  itemsFrameUI.timeSinceLastRefresh = 0;
+  -- to move the frame AND NOT HAVE THE PRB WITH THE RESIZE so it's custom moving
+  itemsFrameUI.isMouseDown = false
+  itemsFrameUI.hasMoved = false
+  local function StopMoving(self)
+    self.isMouseDown = false
+    if (self.hasMoved == true) then
+      self:StopMovingOrSizing()
+      self.hasMoved = false
+      local points = NysTDL.db.profile.framePos
+      points.point, points.relativeTo, points.relativePoint, points.xOffset, points.yOffset = self:GetPoint()
+    end
+  end
+  itemsFrameUI:HookScript("OnMouseDown", function(self, button)
+    if (button == "LeftButton") then
+      self.isMouseDown = true
+      cursorX, cursorY = GetCursorPosition()
+    end
+  end)
+  itemsFrameUI:HookScript("OnMouseUp", StopMoving)
+  itemsFrameUI:HookScript("OnHide", StopMoving)
 
   -- // CONTENT OF THE FRAME // --
+
+  -- random variables
+  itemsFrameUI.timeSinceLastUpdate = 0;
+  itemsFrameUI.timeSinceLastRefresh = 0;
 
   -- generating the fixed content shared between the 3 tabs
   generateFrameContent();
@@ -1882,13 +1941,39 @@ function itemsFrame:CreateItemsFrame()
   itemsFrameUI.ScrollFrame:SetScript("OnMouseWheel", ScrollFrame_OnMouseWheel);
 
   itemsFrameUI.ScrollFrame.ScrollBar:ClearAllPoints();
-  itemsFrameUI.ScrollFrame.ScrollBar:SetPoint("TOPLEFT", itemsFrameUI.ScrollFrame, "TOPRIGHT", - 12, - 38);
-  itemsFrameUI.ScrollFrame.ScrollBar:SetPoint("BOTTOMRIGHT", itemsFrameUI.ScrollFrame, "BOTTOMRIGHT", - 7, 17);
+  itemsFrameUI.ScrollFrame.ScrollBar:SetPoint("TOPLEFT", itemsFrameUI.ScrollFrame, "TOPRIGHT", - 12, - 38); -- the bottomright is updated in the OnUpdate (to manage the resize button)
 
   -- close button
   itemsFrameUI.closeButton = CreateFrame("Button", "closeButton", itemsFrameUI, "NysTDL_CloseButton");
   itemsFrameUI.closeButton:SetPoint("TOPRIGHT", itemsFrameUI, "TOPRIGHT", -1, -1);
   itemsFrameUI.closeButton:SetScript("onClick", function(self) self:GetParent():Hide(); end);
+
+  -- resize button
+  itemsFrameUI.resizeButton = CreateFrame("Button", nil, itemsFrameUI, "NysTDL_TooltipResizeButton")
+  itemsFrameUI.resizeButton.tooltip = L["Left click - resize"].."\n"..L["Right click - reset"];
+  itemsFrameUI.resizeButton:SetPoint("BOTTOMRIGHT", -3, 3)
+  itemsFrameUI.resizeButton:SetScript("OnMouseDown", function(self, button)
+    if (button == "LeftButton") then
+      itemsFrameUI:StartSizing("BOTTOMRIGHT")
+      self:GetHighlightTexture():Hide() -- more noticeable
+      self.MiniTooltip:Hide()
+    end
+  end)
+  itemsFrameUI.resizeButton:SetScript("OnMouseUp", function(self, button)
+    if (button == "LeftButton") then
+      itemsFrameUI:StopMovingOrSizing()
+      self:GetHighlightTexture():Show()
+      self.MiniTooltip:Show()
+    end
+  end)
+  itemsFrameUI.resizeButton:SetScript("OnHide", function(self)  -- same as on mouse up, just security
+    itemsFrameUI:StopMovingOrSizing()
+    self:GetHighlightTexture():Show()
+  end)
+  itemsFrameUI.resizeButton:RegisterForClicks("RightButtonUp")
+  itemsFrameUI.resizeButton:HookScript("OnClick", function() -- reset size
+    itemsFrameUI:SetSize(340, 400);
+  end)
 
   -- Generating the tabs --
   AllTab, DailyTab, WeeklyTab = SetTabs(itemsFrameUI, 3, L["All"], L["Daily"], L["Weekly"]);

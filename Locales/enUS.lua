@@ -121,6 +121,9 @@ L["unlock minimap button"] = true
 L["Wednesday"] = true
 
 -- To-Do List frame
+L["Hold ALT to see the resize button"] = true
+L["Left click - resize"] = true
+L["Right click - reset"] = true
 L["Information"] = true
 L["Check"] = true
 L["Tab actions"] = true

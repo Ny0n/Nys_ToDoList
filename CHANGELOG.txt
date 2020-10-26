@@ -1,3 +1,4 @@
+V5.1 - you can now resize the list! learn how to do it in the frame options
 V5.0.1 - minor code corrections
 
 V5.0
