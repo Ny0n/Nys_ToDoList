@@ -1,11 +1,14 @@
-# /run print((select(4, GetBuildInfo())))
+# these two are automatically set when building
 ## Interface: 80300
-# X-WoW-Version: 'retail' or 'classic', to auto adapt the AddOn
 ## X-WoW-Version: retail
 
+# /run print((select(4, GetBuildInfo())))
+## X-Interface-retail: 80300
+## X-Interface-classic: 11305
 ## Version: 5.3
+
 ## Author: Nyony (on Twitch)
-## Title: Ny's To-Do List
+## Title: Ny's To-Do List WIP
 ## Notes: A simple interface to remember everything you need to do!
 
 ## DefaultState: enabled
