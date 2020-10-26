@@ -17,7 +17,6 @@ config.toc.title = GetAddOnMetadata(addonName, "Title") -- better than "Nys_ToDo
 config.toc.wowVersion = GetAddOnMetadata(addonName, "X-WoW-Version")
 
 -- Variables
-local AceGUI = config.AceGUI
 local L = config.L
 
 -- Bindings.xml globals
@@ -315,7 +314,7 @@ end
 function config:RGBToHex(rgb)
 	local hexadecimal = ""
 
-	for key, value in pairs(rgb) do
+	for _, value in pairs(rgb) do
 		local hex = ''
 
 		while(value > 0)do
@@ -376,7 +375,7 @@ function config:HasItem(table, item)
 end
 
 function config:HasKey(table, key)
-  for k, v in pairs(table) do
+  for k, _ in pairs(table) do
     if (k == key) then
       return true;
     end
@@ -393,53 +392,57 @@ function config:HasAtLeastOneItem(tabSource, tabDest)
   return false;
 end
 
+local function getHoursUntilReset()
+  local dateValue = date("*t");
+
+  local n = 0;
+  local value = dateValue.hour;
+
+  while (value ~= NysTDL.db.profile.dailyHour) do
+    n = n + 1;
+    value = value + 1;
+    if (value == 24) then
+      value = 0;
+    end
+  end
+
+  if (n == 0) then
+    n = 24;
+  end
+
+  return n - 1; -- because it's a countdown (it's like min and sec are also displayed)
+end
+
+local function getDaysUntilReset()
+  local dateValue = date("*t");
+
+  local n = 0;
+  local value = dateValue.wday;
+
+  if (dateValue.hour >= NysTDL.db.profile.dailyHour) then
+    value = value + 1;
+    if (value == 8) then
+      value = 1;
+    end
+  end
+
+  while (value ~= NysTDL.db.profile.weeklyDay) do
+    n = n + 1;
+    value = value + 1;
+    if (value == 8) then
+      value = 1;
+    end
+  end
+
+  return n; -- same, but a bit more complicated since it depends on the daily reset hour
+end
+
 function config:GetTimeUntilReset()
   local dateValue = date("*t");
 
-  local function gethours()
-    local n = 0;
-    local value = dateValue.hour;
-
-    while (value ~= NysTDL.db.profile.dailyHour) do
-      n = n + 1;
-      value = value + 1;
-      if (value == 24) then
-        value = 0;
-      end
-    end
-
-    if (n == 0) then
-      n = 24;
-    end
-
-    return n - 1; -- because it's a countdown (it's like min and sec are also displayed)
-  end
-
-  local function getdays()
-    local n = 0;
-    local value = dateValue.wday;
-
-    if (dateValue.hour >= NysTDL.db.profile.dailyHour) then
-      value = value + 1;
-      if (value == 8) then
-        value = 1;
-      end
-    end
-
-    while (value ~= NysTDL.db.profile.weeklyDay) do
-      n = n + 1;
-      value = value + 1;
-      if (value == 8) then
-        value = 1;
-      end
-    end
-
-    return n; -- same, but a bit more complicated since it depends on the daily reset hour
-  end
-
   local timeUntil = {
-    days = getdays(),
-    hour = gethours(),
+    days = getDaysUntilReset(),
+    hour = getHoursUntilReset(),
     min = math.abs(dateValue.min - 59),
     sec = math.abs(dateValue.sec - 59),
   }
@@ -495,8 +498,8 @@ function config:CreateButton(name, relativeFrame, text, iconPath, fc)
     btn.Icon:SetTexture(iconPath)
     btn.Icon:SetSize(17, 17)
     btn:GetFontString():SetPoint("LEFT", btn, "LEFT", 33, 0)
-    btn:HookScript("OnMouseDown", function(self) btn.Icon:SetPoint("LEFT", btn, "LEFT", 12, -2) end)
-    btn:HookScript("OnMouseUp", function(self) btn.Icon:SetPoint("LEFT", btn, "LEFT", 10, 0) end)
+    btn:HookScript("OnMouseDown", function(self) self.Icon:SetPoint("LEFT", self, "LEFT", 12, -2) end)
+    btn:HookScript("OnMouseUp", function(self) self.Icon:SetPoint("LEFT", self, "LEFT", 10, 0) end)
   end
   btn:SetWidth(w + 20);
   return btn;
@@ -670,8 +673,8 @@ function config:CreateNoPointsLabelEditBox(name)
   return edb;
 end
 
-function config:CreateDummy(relativeFrame, xOffset, yOffset)
-  local dummy = CreateFrame("Frame", nil, ItemsFrameUI, nil);
+function config:CreateDummy(parentFrame, relativeFrame, xOffset, yOffset)
+  local dummy = CreateFrame("Frame", nil, parentFrame, nil);
   dummy:SetPoint("TOPLEFT", relativeFrame, "TOPLEFT", xOffset, yOffset);
   dummy:SetSize(1, 1);
   dummy:Show();

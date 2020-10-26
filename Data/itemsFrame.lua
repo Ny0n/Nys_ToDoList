@@ -1,12 +1,11 @@
 -- Namespaces
-local addonName, tdlTable = ...;
+local _, tdlTable = ...;
 tdlTable.itemsFrame = {}; -- adds itemsFrame table to addon namespace
 
 local config = tdlTable.config;
 local itemsFrame = tdlTable.itemsFrame;
 
 -- Variables declaration --
-local AceGUI = config.AceGUI;
 local L = config.L;
 
 local itemsFrameUI;
@@ -80,7 +79,7 @@ local function ScrollFrame_OnMouseWheel(self, delta)
   self:SetVerticalScroll(newValue);
 end
 
-local function FrameAlphaSlider_OnValueChanged(self, value)
+local function FrameAlphaSlider_OnValueChanged(_, value)
   -- itemsList frame part
   NysTDL.db.profile.frameAlpha = value;
   itemsFrameUI.frameAlphaSliderValue:SetText(value);
@@ -116,7 +115,7 @@ local function FrameAlphaSlider_OnValueChanged(self, value)
   end
 end
 
-local function FrameContentAlphaSlider_OnValueChanged(self, value)
+local function FrameContentAlphaSlider_OnValueChanged(_, value)
   -- itemsList frame part
   NysTDL.db.profile.frameContentAlpha = value;
   itemsFrameUI.frameContentAlphaSliderValue:SetText(value);
@@ -218,7 +217,7 @@ function itemsFrame:CheckBtns(tabName)
     else
       config:Print(L["Checked %s tab!"]:format(L[tabName]));
     end
-  elseif (not auto) then -- we print this message only if it was the user's action that triggered this function (not the auto reset)
+  else
     config:Print(L["Nothing to check here!"]);
   end
 end
@@ -279,7 +278,7 @@ function itemsFrame:updateRemainingNumber()
     itemsFrameUI.remainingNumber:SetText(((numberWeekly > 0) and "|cffffffff" or "|cff00ff00")..numberWeekly.."|r "..((numberFavWeekly > 0) and string.format("|cff%s%s|r", hex, "("..numberFavWeekly..")") or ""));
   end
   -- same for the category label ones
-  for c, l in pairs(label) do -- for every catrgory label
+  for c, _ in pairs(label) do -- for every category labels
     local nbFavCat = 0
     for _, x in pairs(NysTDL.db.profile.itemsList[c]) do -- and for every items in them
       if (config:HasItem(TabItemsTable(tab:GetName()), x)) then -- if the current loop item is in the tab we're on
@@ -369,7 +368,7 @@ local function updateAllTable()
   local others = {}
 
   -- Completing the All table
-  for k, val in pairs(NysTDL.db.profile.itemsList) do
+  for _, val in pairs(NysTDL.db.profile.itemsList) do
     for _, v in pairs(val) do
       if (config:HasItem(NysTDL.db.profile.itemsFavorite, v)) then
         table.insert(fav, v)
@@ -603,8 +602,8 @@ function itemsFrame:RemoveItem(self)
   local modif = false;
   local isPresent, pos;
 
-  name = self:GetParent():GetName(); -- we get the name of the tied check button
-  cat = (select(2, self:GetParent():GetPoint())):GetName(); -- we get the category we're in
+  local name = self:GetParent():GetName(); -- we get the name of the tied check button
+  local cat = (select(2, self:GetParent():GetPoint())):GetName(); -- we get the category we're in
 
   -- since the item will get removed, we check if his description frame was opened (can happen if there was no description on the item)
   -- and if so, we hide and destroy it
@@ -641,14 +640,14 @@ function itemsFrame:RemoveItem(self)
 
   table.insert(NysTDL.db.profile.undoTable, db);
 
-  refreshTab(case, name, "Remove", modif, db.checked);
+  refreshTab(nil, name, "Remove", modif, db.checked);
 end
 
 function itemsFrame:FavoriteClick(self)
   -- the function to favorite items
 
-  name = self:GetParent():GetName(); -- we get the name of the tied check button
-  cat = (select(2, self:GetParent():GetPoint())):GetName(); -- we get the category we're in so that we don't hide the add edit box at the next refresh
+  local name = self:GetParent():GetName(); -- we get the name of the tied check button
+  local cat = (select(2, self:GetParent():GetPoint())):GetName(); -- we get the category we're in so that we don't hide the add edit box at the next refresh
   dontHideMePls[cat] = true;
 
   local isPresent, pos = config:HasItem(NysTDL.db.profile.itemsFavorite, name)
@@ -679,8 +678,8 @@ end
 function itemsFrame:DescriptionClick(self)
   -- the big function to create the description frame for each items
 
-  name = self:GetParent():GetName(); -- we get the name of the tied check button
-  cat = (select(2, self:GetParent():GetPoint())):GetName(); -- we get the category we're in so that we don't hide the add edit box at the next refresh
+  local name = self:GetParent():GetName(); -- we get the name of the tied check button
+  local cat = (select(2, self:GetParent():GetPoint())):GetName(); -- we get the category we're in so that we don't hide the add edit box at the next refresh
   dontHideMePls[cat] = true;
 
   if (itemsFrame:descriptionFrameHide(name.."_descFrame")) then return; end
@@ -752,7 +751,7 @@ function itemsFrame:DescriptionClick(self)
       self:GetHighlightTexture():Hide() -- more noticeable
     end
   end)
-  descFrame.resizeButton:SetScript("OnMouseUp", function(self, button)
+  descFrame.resizeButton:SetScript("OnMouseUp", function(self)
     descFrame:StopMovingOrSizing()
     self:GetHighlightTexture():Show()
   end)
@@ -783,7 +782,7 @@ function itemsFrame:DescriptionClick(self)
   if (config:HasKey(NysTDL.db.profile.itemsDesc, name)) then -- if there is already a description for this item, we write it on frame creation
     descFrame.descriptionEditBox.EditBox:SetText(NysTDL.db.profile.itemsDesc[name])
   end
-  descFrame.descriptionEditBox.EditBox:SetScript("OnKeyUp", function(self, key)
+  descFrame.descriptionEditBox.EditBox:SetScript("OnKeyUp", function(self)
     -- and here we save the description everytime we lift a finger (best auto-save possible I think)
     local itemName = self:GetParent():GetParent().title:GetText()
     NysTDL.db.profile.itemsDesc[itemName] = (self:GetText() ~= "") and self:GetText() or nil
@@ -826,7 +825,7 @@ function itemsFrame:ClearTab(tabName)
 
     Tab_OnClick(_G["ToDoListUIFrameTab1"]); -- we put ourselves in the All tab so that evey item is loaded
 
-    for k, v in pairs(removeBtn) do
+    for _, v in pairs(removeBtn) do
       if (config:HasItem(items, v:GetParent():GetName())) then -- if the item is in the tab we want to clear
         if (not config:HasItem(NysTDL.db.profile.itemsFavorite, v:GetParent():GetName()) and not config:HasKey(NysTDL.db.profile.itemsDesc, v:GetParent():GetName())) then -- if it's not a favorite nor it has a description
           itemsFrame:RemoveItem(v); -- then we remove it
@@ -876,7 +875,7 @@ function itemsFrame:UndoRemove()
 end
 
 -- Frame update: --
-ItemsFrame_Update = function(...)
+ItemsFrame_Update = function()
   -- updates everything about the frame once everytime we call this function
   updateAllTable();
   itemsFrame:updateRemainingNumber();
@@ -891,11 +890,11 @@ end
 
 local function ItemsFrame_CheckLabels()
   -- update for the labels:
-  for k, i in pairs(NysTDL.db.profile.itemsList) do
+  for k, _ in pairs(NysTDL.db.profile.itemsList) do
     if (label[k]:IsMouseOver()) then -- for every label in the current tab, if our mouse is over one of them,
-      label[k]:SetTextColor(0, 0.8, 1, 1); -- we change its visual
-      local isPresent, pos = config:HasItem(labelHover, k);
-      if (not isPresent) then
+      local r, g, b = unpack(config:ThemeDownTo01(config.database.theme));
+      label[k]:SetTextColor(r, g, b, 1); -- we change its visual
+      if (not config:HasItem(labelHover, k)) then
         table.insert(labelHover, k); -- we add its category name in a table variable
       end
     else
@@ -908,7 +907,7 @@ local function ItemsFrame_CheckLabels()
   end
 end
 
-local function ItemsFrame_OnMouseUp(self, button)
+local function ItemsFrame_OnMouseUp(_, button)
   local name = tostringall(unpack(labelHover)); -- we get the name of the label we clicked on (if we clicked on a label)
   if (name ~= "" and name ~= nil) then -- we test that here
     if (button == "LeftButton") then
@@ -1063,7 +1062,7 @@ local function loadMovable()
   end
 
   -- Category labels
-  for k, i in pairs(NysTDL.db.profile.itemsList) do
+  for k, _ in pairs(NysTDL.db.profile.itemsList) do
     -- category label
     label[k] = config:CreateNoPointsLabel(itemsFrameUI, k, tostring(k));
     categoryLabelFavsRemaining[k] = config:CreateNoPointsLabel(itemsFrameUI, k.."_FavsRemaining", "");
@@ -1100,6 +1099,7 @@ local function loadCategories(tab, category, categoryLabel, constraint, catName,
     category = cat;
   end
 
+  local lastLabel, l, m;
   if (config:HasAtLeastOneItem(All, category)) then -- litterally, for this tab
     -- category label
     if (lastData == nil) then
@@ -1475,7 +1475,7 @@ end
 local function generateAddACategory()
   itemsFrameUI.categoryButton = CreateFrame("Button", "categoryButton", itemsFrameUI, "NysTDL_CategoryButton");
   itemsFrameUI.categoryButton.tooltip = L["Add a new category"];
-  itemsFrameUI.categoryButton:SetScript("OnClick", function(self)
+  itemsFrameUI.categoryButton:SetScript("OnClick", function()
     tabActionsClosed = true;
     optionsClosed = true;
     addACategoryClosed = not addACategoryClosed;
@@ -1498,7 +1498,7 @@ local function generateAddACategory()
   local l = config:CreateNoPointsLabel(itemsFrameUI, nil, itemsFrameUI.labelCategoryName:GetText());
   itemsFrameUI.categoryEditBox:SetSize(280 - l:GetWidth() - 20, 30);
   itemsFrameUI.categoryEditBox:SetAutoFocus(false);
-  itemsFrameUI.categoryEditBox:SetScript("OnKeyDown", function(self, key) if (key == "TAB") then itemsFrameUI.nameEditBox:SetFocus() end end) -- to switch easily between the two edit boxes
+  itemsFrameUI.categoryEditBox:SetScript("OnKeyDown", function(_, key) if (key == "TAB") then itemsFrameUI.nameEditBox:SetFocus() end end) -- to switch easily between the two edit boxes
   itemsFrameUI.categoryEditBox:SetScript("OnEnterPressed", addCategory); -- if we press enter, it's like we clicked on the add button
   table.insert(addACategoryItems, itemsFrameUI.categoryEditBox);
 
@@ -1511,7 +1511,7 @@ local function generateAddACategory()
   l = config:CreateNoPointsLabel(itemsFrameUI, nil, itemsFrameUI.labelFirstItemName:GetText());
   itemsFrameUI.nameEditBox:SetSize(280 - l:GetWidth() - 20, 30);
   itemsFrameUI.nameEditBox:SetAutoFocus(false);
-  itemsFrameUI.nameEditBox:SetScript("OnKeyDown", function(self, key) if (key == "TAB") then itemsFrameUI.categoryEditBox:SetFocus() end end)
+  itemsFrameUI.nameEditBox:SetScript("OnKeyDown", function(_, key) if (key == "TAB") then itemsFrameUI.categoryEditBox:SetFocus() end end)
   itemsFrameUI.nameEditBox:SetScript("OnEnterPressed", addCategory); -- if we press enter, it's like we clicked on the add button
   table.insert(addACategoryItems, itemsFrameUI.nameEditBox);
 
@@ -1523,7 +1523,7 @@ end
 local function generateTabActions()
   itemsFrameUI.tabActionsButton = CreateFrame("Button", "categoryButton", itemsFrameUI, "NysTDL_TabActionsButton");
   itemsFrameUI.tabActionsButton.tooltip = L["Tab actions"];
-  itemsFrameUI.tabActionsButton:SetScript("OnClick", function(self)
+  itemsFrameUI.tabActionsButton:SetScript("OnClick", function()
     addACategoryClosed = true;
     optionsClosed = true;
     tabActionsClosed = not tabActionsClosed;
@@ -1565,7 +1565,7 @@ end
 local function generateOptions()
   itemsFrameUI.frameOptionsButton = CreateFrame("Button", "frameOptionsButton_itemsFrameUI", itemsFrameUI, "NysTDL_FrameOptionsButton");
   itemsFrameUI.frameOptionsButton.tooltip = L["Frame options"];
-  itemsFrameUI.frameOptionsButton:SetScript("OnClick", function(...)
+  itemsFrameUI.frameOptionsButton:SetScript("OnClick", function()
     addACategoryClosed = true;
     tabActionsClosed = true;
     optionsClosed = not optionsClosed;
@@ -1688,7 +1688,7 @@ local function generateFrameContent()
 
   itemsFrameUI.nothingLabel = config:CreateNothingLabel(itemsFrameUI);
 
-  itemsFrameUI.dummyLabel = config:CreateDummy(itemsFrameUI.lineBottom, 0, 0);
+  itemsFrameUI.dummyLabel = config:CreateDummy(itemsFrameUI, itemsFrameUI.lineBottom, 0, 0);
 end
 
 ----------------------------------
@@ -1775,7 +1775,7 @@ function itemsFrame:ResetContent()
     checkBtn[All[i]]:Hide()
   end
 
-  for k, i in pairs(currentDBItemsList) do
+  for k, _ in pairs(currentDBItemsList) do
     label[k]:Hide()
     categoryLabelFavsRemaining[k]:Hide()
     editBox[k]:Hide()
