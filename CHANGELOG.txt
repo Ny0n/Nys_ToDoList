@@ -1,7 +1,37 @@
-V3.0
--classic proof
--new and cleaner looks for interface elements
--new functionalities including an undo in case you miss clicked and deleted something by mistake
--new options menu allowing to change some settings of the AddOn
--improvements on optimisation
--some other miscellaneous improvements
+V4.0
+
+Big update! -- this is the first part to a 2 parts mega update,
+this one mainly including the new libraries and introducing the new interface,
+and the next update will add major new systems with favorites, warnings, and descriptions on items.
+
+------------------------
+
+So, about this update, there is now:
+
+- an entirely redesigned interface, that allows for a way clearer and intuitive experience,
+as well as giving control over new customization options like opacity, and elements
+that are only there if you need them, so that they don't take up too much place
+in the frame for no reason.
+
+- a brand new minimap button
+
+- an entire options page in the wow's official AddOns interface panel,
+which gives many options for controlling addon elements
+
+- support for setting a key binding to toggle the frame! -> check in the addon options
+
+- added profiles managment! so you can now for example use the same profile
+as your other characters to share the same list and items
+
+- added the DataBroker plugin --> you can now (that's one example) find and add
+this addon in Titan Panel!
+
+- added support for localization!
+  -> there is currently support for enUS-enGB and frFr
+  -> you can contribute for other languages in the localizations page on CurseForge
+
+- bunch of bugs fixed (big update, so I may have created new ones, please tell me!)
+
+----------------------
+
+- as always, please do not hesitate to post comments if there are any bugs, or if you want to provide feedback!
