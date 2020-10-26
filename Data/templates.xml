@@ -4,7 +4,7 @@
   <!-- /*******************/ CUSTOM TEMPLATES /*************************/ -->
 
   <!-- nice icon button template -->
-  <Button name="Nys_ToDoListIconButtonTemplate" virtual="true">
+  <Button name="NysTDL_IconButtonTemplate" virtual="true">
     <NormalTexture file="Interface\Buttons\UI-SquareButton-Up" desaturated="true">
       <Color r="0.75" g="0.75" b="0.75"/>
     </NormalTexture>
@@ -19,7 +19,7 @@
     </HighlightTexture>
   </Button>
 
-  <Frame name="IconButtonPositionScripts" virtual="true">
+  <Frame name="NysTDL_IconButtonPositionScripts" virtual="true">
     <!-- icon position adaptation scripts -->
     <Scripts>
       <OnMouseDown>
@@ -58,7 +58,7 @@
     </Scripts>
   </Frame>
 
-  <Frame name="IconButtonTooltipScripts" virtual="true">
+  <Frame name="NysTDL_IconButtonTooltipScripts" virtual="true">
     <Frames>
       <!-- small tooltip frame to describe use of the buttons -->
       <Frame parentKey="MiniTooltip" frameStrata="TOOLTIP" hidden="true">
@@ -101,7 +101,7 @@
   </Frame>
 
   <!-- Category button -->
-  <Button name="CategoryButton" inherits="Nys_ToDoListIconButtonTemplate, IconButtonTooltipScripts, IconButtonPositionScripts" virtual="true">
+  <Button name="NysTDL_CategoryButton" inherits="NysTDL_IconButtonTemplate, NysTDL_IconButtonTooltipScripts, NysTDL_IconButtonPositionScripts" virtual="true">
     <Size x="32" y="32"/>
     <KeyValues>
       <KeyValue key="tooltip" value="locale"/>
@@ -120,7 +120,7 @@
   </Button>
 
   <!-- Undo button -->
-  <Button name="UndoButton" inherits="Nys_ToDoListIconButtonTemplate, IconButtonTooltipScripts, IconButtonPositionScripts" virtual="true">
+  <Button name="NysTDL_UndoButton" inherits="NysTDL_IconButtonTemplate, NysTDL_IconButtonTooltipScripts, NysTDL_IconButtonPositionScripts" virtual="true">
     <Size x="32" y="32"/>
     <KeyValues>
       <KeyValue key="tooltip" value="locale"/>
@@ -138,16 +138,16 @@
     </Layers>
   </Button>
 
-  <!-- Options button -->
-  <Button name="OptionsButton" inherits="Nys_ToDoListIconButtonTemplate, IconButtonTooltipScripts, IconButtonPositionScripts" virtual="true">
+  <!-- Tab Actions button -->
+  <Button name="NysTDL_TabActionsButton" inherits="NysTDL_IconButtonTemplate, NysTDL_IconButtonTooltipScripts, NysTDL_IconButtonPositionScripts" virtual="true">
     <Size x="32" y="32"/>
     <KeyValues>
       <KeyValue key="tooltip" value="locale"/>
-      <KeyValue key="name" value="OptionsButton"/>
+      <KeyValue key="name" value="TabActionsButton"/>
     </KeyValues>
     <Layers>
       <Layer level="OVERLAY">
-        <Texture parentKey="Icon" file="Interface\Buttons\UI-OptionsButton">
+        <Texture parentKey="Icon" file="Interface\BUTTONS\UI-GuildButton-MOTD-Up">
           <Size x="14" y="14"/>
           <Anchors>
             <Anchor point="CENTER"/>
@@ -157,8 +157,46 @@
     </Layers>
   </Button>
 
+  <!-- Frame Options button -->
+  <Button name="NysTDL_FrameOptionsButton" inherits="NysTDL_IconButtonTemplate, NysTDL_IconButtonTooltipScripts, NysTDL_IconButtonPositionScripts" virtual="true">
+    <Size x="32" y="32"/>
+    <KeyValues>
+      <KeyValue key="tooltip" value="locale"/>
+      <KeyValue key="name" value="FrameOptionsButton"/>
+    </KeyValues>
+    <Layers>
+      <Layer level="OVERLAY">
+        <Texture parentKey="Icon" file="Interface\BUTTONS\UI-GuildButton-OfficerNote-Up">
+          <Size x="15" y="15"/>
+          <Anchors>
+            <Anchor point="CENTER"/>
+          </Anchors>
+        </Texture>
+      </Layer>
+    </Layers>
+  </Button>
+
+  <!-- Help button -->
+  <Button name="NysTDL_HelpButton" inherits="InlineHyperlinkFrameTemplate, NysTDL_IconButtonTooltipScripts, NysTDL_IconButtonPositionScripts" virtual="true">
+    <Size x="30" y="30"/>
+    <KeyValues>
+      <KeyValue key="tooltip" value="locale"/>
+      <KeyValue key="name" value="HelpButton"/>
+    </KeyValues>
+    <Layers>
+      <Layer level="OVERLAY">
+        <Texture parentKey="Icon" file="Interface\COMMON\help-i">
+          <Size x="40" y="40"/>
+          <Anchors>
+            <Anchor point="CENTER"/>
+          </Anchors>
+        </Texture>
+      </Layer>
+    </Layers>
+  </Button>
+
   <!-- Close button -->
-  <Button name="CloseButton" inherits="Nys_ToDoListIconButtonTemplate, IconButtonPositionScripts" virtual="true">
+  <Button name="NysTDL_CloseButton" inherits="NysTDL_IconButtonTemplate, NysTDL_IconButtonPositionScripts" virtual="true">
     <Size x="25" y="25"/>
     <KeyValues>
       <KeyValue key="name" value="CloseButton"/>
@@ -176,7 +214,7 @@
   </Button>
 
   <!-- Remove button -->
-  <Button name="RemoveButton" inherits="InlineHyperlinkFrameTemplate, IconButtonPositionScripts" virtual="true">
+  <Button name="NysTDL_RemoveButton" inherits="InlineHyperlinkFrameTemplate, NysTDL_IconButtonPositionScripts" virtual="true">
     <Size x="13" y="13"/>
     <KeyValues>
       <KeyValue key="name" value="RemoveButton"/>
@@ -193,8 +231,44 @@
     </Layers>
   </Button>
 
+  <!-- Favorite button -->
+  <Button name="NysTDL_FavoriteButton" inherits="InlineHyperlinkFrameTemplate, NysTDL_IconButtonPositionScripts" virtual="true">
+    <Size x="16" y="16"/> <!-- Size of interactable zone -->
+    <KeyValues>
+      <KeyValue key="name" value="FavoriteButton"/>
+    </KeyValues>
+    <Layers>
+      <Layer level="BACKGROUND">
+        <Texture parentKey="Icon" file="Interface\COMMON\FavoritesIcon">
+          <Size x="26" y="26"/> <!-- Size of the texture -->
+          <Anchors>
+            <Anchor point="CENTER"/>
+          </Anchors>
+        </Texture>
+      </Layer>
+    </Layers>
+  </Button>
+
+  <!-- Description button -->
+  <Button name="NysTDL_DescButton" inherits="InlineHyperlinkFrameTemplate, NysTDL_IconButtonPositionScripts" virtual="true">
+    <Size x="13" y="13"/> <!-- Size of interactable zone -->
+    <KeyValues>
+      <KeyValue key="name" value="DescButton"/>
+    </KeyValues>
+    <Layers>
+      <Layer level="OVERLAY">
+        <Texture parentKey="Icon" file="Interface\BUTTONS\UI-GuildButton-PublicNote-Up">
+          <Size x="13" y="13"/> <!-- Size of the texture -->
+          <Anchors>
+            <Anchor point="CENTER"/>
+          </Anchors>
+        </Texture>
+      </Layer>
+    </Layers>
+  </Button>
+
   <!-- Add button -->
-  <Button name="AddButton" inherits="IconButtonTooltipScripts, InlineHyperlinkFrameTemplate, IconButtonPositionScripts" virtual="true">
+  <Button name="NysTDL_AddButton" inherits="NysTDL_IconButtonTooltipScripts, InlineHyperlinkFrameTemplate, NysTDL_IconButtonPositionScripts" virtual="true">
     <Size x="12" y="12"/>
     <KeyValues>
       <KeyValue key="tooltip" value="locale"/>
@@ -212,19 +286,93 @@
     </Layers>
   </Button>
 
-  <!-- Show edit box button -->
-  <Button name="ShowBoxButton" inherits="IconButtonPositionScripts" virtual="true">
-    <Size x="15" y="15"/>
-    <Layers>
-      <Layer level="OVERLAY">
-        <Texture parentKey="Icon" file="Interface\MINIMAP\SuperTrackerArrow">
-          <Size x="28" y="28"/>
-          <Anchors>
-            <Anchor point="CENTER"/>
-          </Anchors>
-        </Texture>
-      </Layer>
+  <!-- Normal button with nice highlight -->
+  <Button name="NysTDL_NormalButton" virtual="true">
+    <Size>
+      <AbsDimension x="96" y="33"/>
+  	</Size>
+		<Layers>
+			<Layer level="BACKGROUND">
+				<Texture name="$parentLeft" file="Interface\Buttons\UI-SilverButtonLG-Left-Up">
+					<Size>
+						<AbsDimension x="32" y="46"/>
+					</Size>
+					<Anchors>
+						<Anchor point="TOPLEFT" x="0" y="0"/>
+					</Anchors>
+				</Texture>
+				<Texture name="$parentRight" file="Interface\Buttons\UI-SilverButtonLG-Right-Up">
+					<Size>
+						<AbsDimension x="32" y="46"/>
+					</Size>
+					<Anchors>
+						<Anchor point="TOPRIGHT" x="0" y="0"/>
+					</Anchors>
+				</Texture>
+				<Texture name="$parentMiddle" file="Interface\Buttons\UI-SilverButtonLG-Mid-Up">
+					<Size>
+						<AbsDimension x="32" y="46"/>
+					</Size>
+					<Anchors>
+						<Anchor point="TOPLEFT" relativeTo="$parentLeft" relativePoint="TOPRIGHT" x="0" y="0"/>
+						<Anchor point="TOPRIGHT" relativeTo="$parentRight" relativePoint="TOPLEFT" x="0" y="0"/>
+					</Anchors>
+				</Texture>
+			</Layer>
+			<Layer level="HIGHLIGHT">
+				<Texture name="$parentLeft" file="Interface\Buttons\UI-SilverButtonLG-Left-Hi">
+					<Size>
+						<AbsDimension x="32" y="46"/>
+					</Size>
+					<Anchors>
+						<Anchor point="TOPLEFT" x="0" y="0"/>
+					</Anchors>
+				</Texture>
+				<Texture name="$parentRight" file="Interface\Buttons\UI-SilverButtonLG-Right-Hi">
+					<Size>
+						<AbsDimension x="32" y="46"/>
+					</Size>
+					<Anchors>
+						<Anchor point="TOPRIGHT" x="0" y="0"/>
+					</Anchors>
+				</Texture>
+				<Texture name="$parentMiddle" file="Interface\Buttons\UI-SilverButtonLG-Mid-Hi">
+					<Size>
+						<AbsDimension x="32" y="46"/>
+					</Size>
+					<Anchors>
+						<Anchor point="TOPLEFT" relativeTo="$parentLeft" relativePoint="TOPRIGHT" x="0" y="0"/>
+						<Anchor point="TOPRIGHT" relativeTo="$parentRight" relativePoint="TOPLEFT" x="0" y="0"/>
+					</Anchors>
+				</Texture>
+			</Layer>
     </Layers>
-  </Button>
+		<Scripts>
+			<OnMouseDown>
+				if ( self:IsEnabled() ) then
+					local name = self:GetName();
+					_G[name.."Left"]:SetTexture("Interface\\Buttons\\UI-SilverButtonLG-Left-Down");
+					_G[name.."Middle"]:SetTexture("Interface\\Buttons\\UI-SilverButtonLG-Mid-Down");
+					_G[name.."Right"]:SetTexture("Interface\\Buttons\\UI-SilverButtonLG-Right-Down");
+					local contentsFrame = _G[name.."ContentsFrame"];
+					if ( contentsFrame ) then
+						contentsFrame:SetPoint("TOPLEFT", -2, -1);
+					end
+				end
+			</OnMouseDown>
+			<OnMouseUp>
+				if ( self:IsEnabled() ) then
+					local name = self:GetName();
+					_G[name.."Left"]:SetTexture("Interface\\Buttons\\UI-SilverButtonLG-Left-Up");
+					_G[name.."Middle"]:SetTexture("Interface\\Buttons\\UI-SilverButtonLG-Mid-Up");
+					_G[name.."Right"]:SetTexture("Interface\\Buttons\\UI-SilverButtonLG-Right-Up");
+					local contentsFrame = _G[name.."ContentsFrame"];
+					if ( contentsFrame ) then
+						contentsFrame:SetPoint("TOPLEFT", 0, 0);
+					end
+				end
+			</OnMouseUp>
+		</Scripts>
+	</Button>
 
 </Ui>

@@ -3,7 +3,7 @@
 # X-WoW-Version: 'retail' or 'classic', to auto adapt the AddOn
 ## X-WoW-Version: retail
 
-## Version: 4.0
+## Version: 5.0
 ## Author: Nyony (on Twitch)
 ## Title: Ny's To-Do List
 ## Notes: A simple interface to remember everything you need to do!

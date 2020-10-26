@@ -12,6 +12,7 @@ local L = config.L;
 local LDB = config.LDB;
 local LDBIcon = config.LDBIcon;
 local tdlButton;
+local addonLoaded = false;
 
 --/*******************/ GENERAL FUNCTIONS /*************************/--
 
@@ -40,7 +41,8 @@ end
 
 function NysTDL:CreateTDLButton()
   -- Creating the big button to easily toggle the frame
-  tdlButton = config:CreateButton("tdlButton", UIParent, 35, string.gsub(config.toc.title, "Ny's ", ""));
+  tdlButton = config:CreateButton("tdlButton", UIParent, string.gsub(config.toc.title, "Ny's ", ""));
+  tdlButton:SetFrameLevel(100);
   tdlButton:SetMovable(true);
   tdlButton:EnableMouse(true);
   tdlButton:SetClampedToScreen(true);
@@ -137,20 +139,86 @@ function NysTDL:CreateMinimapButton()
 end
 
 function NysTDL:DBInit()
-  -- initialization of elements that need access to other files functions
+  -- initialization of elements that need access to other files functions or need to be updated correctly when the profile changes
   if (self.db.profile.autoReset == nil) then self.db.profile.autoReset = { ["Daily"] = config:GetSecondsToReset().daily, ["Weekly"] = config:GetSecondsToReset().weekly } end
   if (not self.db.profile.rememberUndo) then self.db.profile.undoTable = {} end
+  if (self.db.profile.itemsList == nil) then self.db.profile.itemsList = {} end
+  if (self.db.profile.itemsDaily == nil) then
+    if (self.db.profile.itemsList["Daily"] ~= nil) then
+      self.db.profile.itemsDaily = config:Deepcopy(self.db.profile.itemsList["Daily"])
+      self.db.profile.itemsList["Daily"] = nil
+    else
+      self.db.profile.itemsDaily = {}
+    end
+  end
+  if (self.db.profile.itemsWeekly == nil) then
+    if (self.db.profile.itemsList["Weekly"] ~= nil) then
+    self.db.profile.itemsWeekly = config:Deepcopy(self.db.profile.itemsList["Weekly"])
+    self.db.profile.itemsList["Weekly"] = nil
+    else
+      self.db.profile.itemsWeekly = {}
+    end
+  end
 end
 
 function NysTDL:ProfileChanged()
   NysTDL:DBInit(); -- in case the selected profile is empty
 
-  -- we update the changes to the options (since I now use tabs and the options are not instantly getting a refresh when changing profiles)
-  NysTDL:CallAllGETTERS();
-
   -- we update the changes for the list
   itemsFrame:ResetContent();
   itemsFrame:Init();
+
+  -- we update the changes to the options (since I now use tabs and the options are not instantly getting a refresh when changing profiles)
+  NysTDL:CallAllGETTERS();
+end
+
+--/*******************/ EVENTS /*************************/--
+-- we need to put them here so they have acces to every function in every file of the addon
+
+function NysTDL:PLAYER_LOGIN()
+  if (NysTDL.db.profile.UI_reloading) then -- just to be sure that it wasn't a reload, but a genuine player log in
+    NysTDL.db.profile.UI_reloading = false
+    return;
+  end
+
+  self:ScheduleTimer(function(self) -- 20 secs after the player logs in, we check if we need to warn him about favorite items
+    if (addonLoaded) then -- just to be sure
+      if (not itemsFrame:autoResetedThisSessionGET()) then -- we don't want to show this warning if it's the first log in of the day, only if it is the next ones
+        if (NysTDL.db.profile.showFavoritesWarning) then -- and the user allowed this functionnality
+          local _, _, _, _, daily, weekly = itemsFrame:updateRemainingNumber()
+          if ((daily + weekly) > 0) then -- and there is at least one daily or weekly favorite left to do
+            local str = ""
+
+            -- we first check if there are daily ones
+            if (daily > 0) then
+              if ((NysTDL.db.profile.autoReset["Daily"] - time()) < 86400) then -- pretty much all the time
+                str = str..daily.." ("..L["Daily"]..")"
+              end
+            end
+
+            -- then we check if there are weekly ones
+            if (weekly > 0) then
+              if ((NysTDL.db.profile.autoReset["Weekly"] - time()) < 86400) then -- if there is less than one day left before the weekly reset
+                if (str ~= "") then
+                  str = str.." + "
+                end
+                str = str..weekly.." ("..L["Weekly"]..")"
+              end
+            end
+
+            if (str ~= "") then
+              local timeUntil = config:GetTimeUntilReset()
+              local str2 = L["Time remaining: %i hours %i min"]:format(timeUntil.hour, timeUntil.min + 1)
+              local hex = config:RGBToHex({ NysTDL.db.profile.favoritesColor[1]*255, NysTDL.db.profile.favoritesColor[2]*255, NysTDL.db.profile.favoritesColor[3]*255} )
+              str = string.format("|cff%s%s|r", hex, str)
+              config:PrintForced("--------------| "..L["WARNING"].." |--------------")
+              config:PrintForced(L["You still have %s favorite item(s) to do before the next reset, don't forget them!"]:format(str).." ("..str2..")")
+            end
+          end
+        end
+      end
+    end
+  end, 20)
 end
 
 --/*******************/ CHAT COMMANDS /*************************/--
@@ -158,24 +226,40 @@ end
 
 -- Commands:
 init.commands = {
-  [""] = function(...)
-    itemsFrame:Toggle();
+  [L["help"]] = function(...)
+    local hex = config:RGBToHex(config.database.theme2)
+    config:PrintForced(string.format("|cff%s%s|r", hex, L["/tdl"])..' - '..L["show/hide the list"])
+    config:PrintForced(string.format("|cff%s%s|r", hex, L["/tdl"]..' '..L["info"])..' - '..L["shows more information"])
   end,
 
-  [L["help"]] = {
-    [""] = function(...)
-      local hex = config:RGBToHex(config.database.theme2);
-      config:PrintForced(string.format("|cff%s%s|r", hex, L["/tdl"])..' - '..L["show/hide the list"]);
-      config:PrintForced(string.format("|cff%s%s|r", hex, L["/tdl"]..' '..L["help"]..' '..L["info"])..' - '..L["shows more information"]);
-    end,
+  [""] = function(...)
+    itemsFrame:Toggle()
+  end,
 
-    [L["info"]] = function(...)
-      config:PrintForced('- '..L["To toggle the list, you have several ways:"]..' '..L["There is a minimap button (the default), a bigger TDL button, you can activate the titan panel plugin for this addon, the /tdl command, and you can also bind a key."]..' '..L["Go to the addon options in the Blizzard interface panel to customize this."]);
-      config:PrintForced('- '..L["You can click on the category names to expand or shrink their content."]);
-      config:PrintForced('- '..L["To add an item to a category, just click the arrow button next to the category name."]);
-      config:PrintForced('- '..L["There can't be an empty category."]);
-    end,
-  },
+  [L["info"]] = function(...)
+    local hex = config:RGBToHex(config.database.theme2)
+    config:PrintForced(L["Here are a few commands to help you understand some systems in the list:"].." - "..string.format("|cff%s%s|r", hex, L["/tdl"]..' '..L["toggleways"]).." - "..string.format("|cff%s%s|r", hex, L["/tdl"]..' '..L["additems"]).." - "..string.format("|cff%s%s|r", hex, L["/tdl"]..' '..L["favorites"]).." - "..string.format("|cff%s%s|r", hex, L["/tdl"]..' '..L["descriptions"]).." - "..string.format("|cff%s%s|r", hex, L["/tdl"]..' '..L["hiddenbuttons"]))
+  end,
+
+  [L["toggleways"]] = function(...)
+    config:PrintForced(L["To toggle the list, you have several ways:"]..'\n- '..L["minimap button (the default)"]..'\n- '..L["a normal TDL button"]..'\n- '..L["databroker plugin (eg. titan panel)"]..'\n- '..L["the '/tdl' command"]..'\n- '..L["key binding"]..'\n'..L["Go to the addon options in the Blizzard interface panel to customize this."])
+  end,
+
+  [L["additems"]] = function(...)
+    config:PrintForced("- "..L["To add a new item to a category, just right click the category name!"]..'\n- '..L["You can also left click on the category names to expand or shrink their content."])
+  end,
+
+  [L["favorites"]] = function(...)
+    config:PrintForced(L["You can favorite items!"].."\n"..L["To do so, hold the SHIFT key when the list is opened, then click on the star icons to favorite the items that you want!"].."\n"..L["Perks of favorite items:"].."\n- "..L["cannot be deleted"].."\n- "..L["customizable color"].."\n- "..L["sorted first in categories"].."\n- "..L["have their own more visible remaining numbers"].."\n- "..L["have an auto chat warning/reminder system!"])
+  end,
+
+  [L["descriptions"]] = function(...)
+    config:PrintForced(L["You can add descriptions on items!"].."\n"..L["To do so, hold the CTRL key when the list is opened, then click on the page icons to open a description frame!"].."\n- "..L["they are auto-saved and have no length limitations"].."\n- "..L["if an item has a description, he cannot be deleted (empty the description if you want to do so)"])
+  end,
+
+  [L["hiddenbuttons"]] = function(...)
+    config:PrintForced(L["There are some hidden buttons on the list."].."\n"..L["To show them, hold the ALT key when the list is opened!"])
+  end,
 }
 
 -- Command catcher:
@@ -211,7 +295,7 @@ local function HandleSlashCommands(str)
       end
     else
       -- does not exist!
-      init.commands[L["help"]][""]();
+      init.commands[L["help"]]();
       return;
     end
   end
@@ -270,6 +354,28 @@ end
 
 function NysTDL:showChatMessagesSET(info, newValue)
   NysTDL.db.profile.showChatMessages = newValue;
+end
+
+--showFavoritesWarning
+function NysTDL:showFavoritesWarningGET(info)
+  NysTDL:showFavoritesWarningSET(info, NysTDL.db.profile.showFavoritesWarning)
+  return NysTDL.db.profile.showFavoritesWarning;
+end
+
+function NysTDL:showFavoritesWarningSET(info, newValue)
+  NysTDL.db.profile.showFavoritesWarning = newValue;
+end
+
+--favoritesColor
+function NysTDL:favoritesColorGET(info)
+  NysTDL:favoritesColorSET(info, unpack(NysTDL.db.profile.favoritesColor))
+  return unpack(NysTDL.db.profile.favoritesColor);
+end
+
+function NysTDL:favoritesColorSET(info, ...)
+  NysTDL.db.profile.favoritesColor = { select(1, ...), select(2, ...), select(3, ...), select(4, ...) };
+  itemsFrame:updateCheckButtons()
+  itemsFrame:updateRemainingNumber()
 end
 
 -- tdlButtonShow
@@ -341,31 +447,6 @@ function NysTDL:keyBindSET(info, newKey)
   end
 end
 
--- -- timerWeekly
--- function NysTDL:timerWeeklyUPDATE()
---   local timeUntil = config:GetTimeUntilReset()
--- 	config.database.options.args.general.args.timerWeekly.name = "Next weekly reset: "..timeUntil.days.."d "..timeUntil.hour.."h "..timeUntil.min.."m "..timeUntil.sec.."s"
--- end
---
--- -- timerDaily
--- function NysTDL:timerDailyUPDATE()
---   local timeUntil = config:GetTimeUntilReset()
--- 	config.database.options.args.general.args.timerDaily.name = "Next daily reset: "..timeUntil.hour.."h "..timeUntil.min.."m "..timeUntil.sec.."s"
--- end
---
--- -- options frame
--- function NysTDL:optionsFrame_OnUpdate(elapsed)
---   -- called every frame the options tab is visible
---   NysTDL.optionsFrame.timeSinceLastUpdate = NysTDL.optionsFrame.timeSinceLastUpdate + elapsed
---
---   while (NysTDL.optionsFrame.timeSinceLastUpdate > 1) do -- every one second
---     NysTDL:timerWeeklyUPDATE()
---     NysTDL:timerDailyUPDATE()
---     itemsFrame:autoReset()
---     NysTDL.optionsFrame.timeSinceLastUpdate = NysTDL.optionsFrame.timeSinceLastUpdate - 1
---   end
--- end
-
 --/*******************/ INITIALIZATION /*************************/--
 
 function NysTDL:OnInitialize()
@@ -383,6 +464,10 @@ function NysTDL:OnInitialize()
     -- we need (on the first load after the addon update) to take our important data
     -- contained in the old saved variable back, and we place it in the new DB
     if (ToDoListSV ~= nil) then
+      self.db.profile.itemsDaily = config:Deepcopy(ToDoListSV.itemsList["Daily"])
+      ToDoListSV.itemsList["Daily"] = nil
+      self.db.profile.itemsWeekly = config:Deepcopy(ToDoListSV.itemsList["Weekly"])
+      ToDoListSV.itemsList["Weekly"] = nil
       self.db.profile.itemsList = config:Deepcopy(ToDoListSV.itemsList)
       self.db.profile.checkedButtons = config:Deepcopy(ToDoListSV.checkedButtons)
       self.db.profile.autoReset = config:Deepcopy(ToDoListSV.autoReset)
@@ -396,10 +481,14 @@ function NysTDL:OnInitialize()
     self.db.RegisterCallback(self, "OnProfileReset", "ProfileChanged")
     self.db.RegisterCallback(self, "OnDatabaseReset", "ProfileChanged")
 
+    -- events registration
+    self:RegisterEvent("PLAYER_LOGIN")
+    hooksecurefunc("ReloadUI", function() NysTDL.db.profile.UI_reloading = true end) -- this is for knowing when the addon is loading, if it was a UI reload or the player logging in
+
     -- / Blizzard interface options / --
 
     -- this is for adapting the width of the widgets to the length of their respective names (that can change with the locale)
-    local wDef = { toggle = 180, select = 275, range = 218, keybinding = 218 }
+    local wDef = { toggle = 180, select = 275, range = 218, keybinding = 218, color = 190 }
     for _,v in pairs(config.database.options.args.general.args) do
       if (v.type == "toggle") then -- for them, we adapt their width to match the one of their name
         local w = config:CreateNoPointsLabel(UIParent, nil, v.name):GetWidth();
@@ -408,6 +497,7 @@ function NysTDL:OnInitialize()
       -- elseif ((v.type == "description" and (v.name ~= "" and v.name ~= "\n" and v.name ~= nil)) and v.type ~= "header") then -- and for every other widget (except the spacers and the headers), we keep their min normal width, we change it only if their name is bigger than the default width
       elseif (v.type ~= "description" and v.type ~= "header") then -- and for every other widget (except the descriptions and the headers), we keep their min normal width, we change it only if their name is bigger than the default width
         local w = config:CreateNoPointsLabel(UIParent, nil, v.name):GetWidth();
+        -- print(v.name.."_"..w)
         w = tonumber(string.format("%.3f", w/wDef[v.type]));
         if (w > 1) then
           v.width = w;
@@ -447,4 +537,5 @@ function NysTDL:OnInitialize()
     -- addon fully loaded!
     local hex = config:RGBToHex(config.database.theme2);
     config:Print(L["addon loaded!"]..' ('..string.format("|cff%s%s|r", hex, L["/tdl"]..' '..L["help"])..')');
+    addonLoaded = true;
 end

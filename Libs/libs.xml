@@ -11,6 +11,7 @@
   <Include file="AceGUI-3.0\AceGUI-3.0.xml"/>
   <Include file="AceConfig-3.0\AceConfig-3.0.xml"/>
   <Include file="AceTimer-3.0\AceTimer-3.0.xml"/>
+  <Include file="AceEvent-3.0\AceEvent-3.0.xml"/>
 
   <Script file="LibDataBroker-1.1\LibDataBroker-1.1.lua"/>
   <Include file="LibDBIcon-1.0\lib.xml"/>
