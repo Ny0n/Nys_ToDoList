@@ -1,10 +1,19 @@
-## Interface: 80300 # _retail_
+# /run print((select(4, GetBuildInfo())))
+## Interface: 80300
+# X-WoW-Version: 'retail' or 'classic', to auto adapt the AddOn
+## X-WoW-Version: retail
 
-## Version: 3.0
-## Title: Ny's ToDoList
-## Notes: A useful AddOn to never forget anything!
+## Version: 4.0
 ## Author: Nyony (on Twitch)
+## Title: Ny's To-Do List
+## Notes: A simple interface to remember everything you need to do!
+## Notes-frFR: Une interface simple pour se souvenir de tout ce que tu as à faire!
+
 ## DefaultState: enabled
+## SavedVariables: NysToDoListDB
 ## SavedVariablesPerCharacter: ToDoListSV
 
-Nys_ToDoList.xml
+## OptionalDeps: Ace3, LibDataBroker-1.1, LibDBIcon-1.0, LibStrataFix
+## X-Embeds: Ace3, LibDataBroker-1.1, LibDBIcon-1.0, LibStrataFix
+
+Main.xml

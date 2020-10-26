@@ -1,6 +1,8 @@
 <Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
 ..\FrameXML\UI.xsd">
 
+  <!-- /*******************/ CUSTOM TEMPLATES /*************************/ -->
+
   <!-- nice icon button template -->
   <Button name="Nys_ToDoListIconButtonTemplate" virtual="true">
     <NormalTexture file="Interface\Buttons\UI-SquareButton-Up" desaturated="true">
@@ -22,15 +24,36 @@
     <Scripts>
       <OnMouseDown>
         <!-- nudge and dim the icon down a little -->
-        self.Icon:SetPoint("CENTER", self.name == "UndoButton" and -2 or -1, self.name == "UndoButton" and -3 or -2) self.Icon:SetAlpha(0.5)
+        local xOffset = -1;
+        if (self.name == "UndoButton") then xOffset = -2; end
+
+        local yOffset = -2;
+        if (self.name == "UndoButton") then yOffset = -3; end
+        if (self.name == "CategoryButton") then yOffset = -3; end
+
+        self.Icon:SetPoint("CENTER", xOffset, yOffset) self.Icon:SetAlpha(0.5)
       </OnMouseDown>
       <OnMouseUp>
         <!-- reset the icon's position and opacity -->
-        self.Icon:SetPoint("CENTER", self.name == "UndoButton" and -1 or 0, self.name == "UndoButton" and -1 or 0) self.Icon:SetAlpha(1)
+        local xOffset = 0;
+        if (self.name == "UndoButton") then xOffset = -0.5; end
+
+        local yOffset = 0;
+        if (self.name == "UndoButton") then yOffset = -0.5; end
+        if (self.name == "CategoryButton") then yOffset = -1; end
+
+        self.Icon:SetPoint("CENTER", xOffset, yOffset) self.Icon:SetAlpha(1)
       </OnMouseUp>
       <OnShow>
         <!-- reset the icon's position and opacity -->
-        self.Icon:SetPoint("CENTER", self.name == "UndoButton" and -1 or 0, self.name == "UndoButton" and -1 or 0) self.Icon:SetAlpha(1)
+        local xOffset = 0;
+        if (self.name == "UndoButton") then xOffset = -0.5; end
+
+        local yOffset = 0;
+        if (self.name == "UndoButton") then yOffset = -0.5; end
+        if (self.name == "CategoryButton") then yOffset = -1; end
+
+        self.Icon:SetPoint("CENTER", xOffset, yOffset) self.Icon:SetAlpha(1)
       </OnShow>
     </Scripts>
   </Frame>
@@ -60,8 +83,15 @@
     <!-- Tooltip associated scripts -->
     <Scripts>
       <OnEnter>
-        <!-- Show the tooltip -->
-        self.MiniTooltip:SetPoint("BOTTOM",self,"TOP",0,-4) self.MiniTooltip.Text:SetText(self.tooltip) self.MiniTooltip:SetWidth(self.MiniTooltip.Text:GetStringWidth()+16) self.MiniTooltip:Show()
+        <!-- Show and reposition the tooltip -->
+        self.MiniTooltip.Text:SetText(self.tooltip)
+        self.MiniTooltip:SetWidth(self.MiniTooltip.Text:GetStringWidth()+16)
+        if (self.name == "AddButton") then
+          self.MiniTooltip:SetPoint("BOTTOMRIGHT", self, "TOPLEFT", -3, 7)
+        else
+          self.MiniTooltip:SetPoint("RIGHT", self, "LEFT", 0, 0)
+        end
+        self.MiniTooltip:Show()
       </OnEnter>
       <OnLeave>
         <!-- Hide the tooltip -->
@@ -70,11 +100,31 @@
     </Scripts>
   </Frame>
 
+  <!-- Category button -->
+  <Button name="CategoryButton" inherits="Nys_ToDoListIconButtonTemplate, IconButtonTooltipScripts, IconButtonPositionScripts" virtual="true">
+    <Size x="32" y="32"/>
+    <KeyValues>
+      <KeyValue key="tooltip" value="locale"/>
+      <KeyValue key="name" value="CategoryButton"/>
+    </KeyValues>
+    <Layers>
+      <Layer level="OVERLAY">
+        <FontString parentKey="Icon" font="Fonts\FRIZQT__.TTF" inherits="GameFontNormalLarge" text="+">
+          <FontHeight val="22"/>
+          <Anchors>
+            <Anchor point="CENTER"/>
+          </Anchors>
+        </FontString>
+      </Layer>
+    </Layers>
+  </Button>
+
   <!-- Undo button -->
   <Button name="UndoButton" inherits="Nys_ToDoListIconButtonTemplate, IconButtonTooltipScripts, IconButtonPositionScripts" virtual="true">
     <Size x="32" y="32"/>
     <KeyValues>
-      <KeyValue key="tooltip" value="Undo"/>
+      <KeyValue key="tooltip" value="locale"/>
+      <KeyValue key="name" value="UndoButton"/>
     </KeyValues>
     <Layers>
       <Layer level="OVERLAY">
@@ -92,7 +142,8 @@
   <Button name="OptionsButton" inherits="Nys_ToDoListIconButtonTemplate, IconButtonTooltipScripts, IconButtonPositionScripts" virtual="true">
     <Size x="32" y="32"/>
     <KeyValues>
-      <KeyValue key="tooltip" value="Options"/>
+      <KeyValue key="tooltip" value="locale"/>
+      <KeyValue key="name" value="OptionsButton"/>
     </KeyValues>
     <Layers>
       <Layer level="OVERLAY">
@@ -106,9 +157,30 @@
     </Layers>
   </Button>
 
+  <!-- Close button -->
+  <Button name="CloseButton" inherits="Nys_ToDoListIconButtonTemplate, IconButtonPositionScripts" virtual="true">
+    <Size x="25" y="25"/>
+    <KeyValues>
+      <KeyValue key="name" value="CloseButton"/>
+    </KeyValues>
+    <Layers>
+      <Layer level="OVERLAY">
+        <Texture parentKey="Icon" file="Interface\Buttons\UI-StopButton">
+          <Size x="14" y="14"/>
+          <Anchors>
+            <Anchor point="CENTER"/>
+          </Anchors>
+        </Texture>
+      </Layer>
+    </Layers>
+  </Button>
+
   <!-- Remove button -->
   <Button name="RemoveButton" inherits="InlineHyperlinkFrameTemplate, IconButtonPositionScripts" virtual="true">
     <Size x="13" y="13"/>
+    <KeyValues>
+      <KeyValue key="name" value="RemoveButton"/>
+    </KeyValues>
     <Layers>
       <Layer level="OVERLAY">
         <Texture parentKey="Icon" file="Interface\Buttons\UI-StopButton">
@@ -122,8 +194,12 @@
   </Button>
 
   <!-- Add button -->
-  <Button name="AddButton" inherits="InlineHyperlinkFrameTemplate, IconButtonPositionScripts" virtual="true">
+  <Button name="AddButton" inherits="IconButtonTooltipScripts, InlineHyperlinkFrameTemplate, IconButtonPositionScripts" virtual="true">
     <Size x="12" y="12"/>
+    <KeyValues>
+      <KeyValue key="tooltip" value="locale"/>
+      <KeyValue key="name" value="AddButton"/>
+    </KeyValues>
     <Layers>
       <Layer>
         <FontString parentKey="Icon" font="Fonts\FRIZQT__.TTF" inherits="GameFontNormalLarge" text="+">
@@ -136,9 +212,19 @@
     </Layers>
   </Button>
 
-  <!-- Script files -->
-  <Script file="Config.lua"/>
-  <Script file="ItemsFrame.lua"/>
-  <Script file="Init.lua"/>
+  <!-- Show edit box button -->
+  <Button name="ShowBoxButton" inherits="IconButtonPositionScripts" virtual="true">
+    <Size x="15" y="15"/>
+    <Layers>
+      <Layer level="OVERLAY">
+        <Texture parentKey="Icon" file="Interface\MINIMAP\SuperTrackerArrow">
+          <Size x="28" y="28"/>
+          <Anchors>
+            <Anchor point="CENTER"/>
+          </Anchors>
+        </Texture>
+      </Layer>
+    </Layers>
+  </Button>
 
 </Ui>

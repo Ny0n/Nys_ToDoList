@@ -25,7 +25,10 @@ buildAddon()
   # first, we change some values inside of the toc file depending on the version we're building
   interfaceCurrentValue=$(grep -Pom1 "$interfacePrefix.*" ../*.toc)
   interfaceNumber=$(grep -Pom1 "$version \K.*" interfaceversions.txt)
-  sed -i "s/$interfaceCurrentValue/$interfacePrefix $interfaceNumber # _$version\_/" ../*.toc # interface number
+  sed -i "s/$interfaceCurrentValue/$interfacePrefix $interfaceNumber/" ../*.toc # interface number
+
+  wowVersionCurrentValue=$(grep -Pom1 "$wowVersionPrefix.*" ../*.toc)
+  sed -i "s/$wowVersionCurrentValue/$wowVersionPrefix $version/" ../*.toc # interface number
 
   # here we get the zip name that we'll create
   zipname="$name-$versionValue"
@@ -56,8 +59,9 @@ then
   echo -e "\t--classic \tbuilds the addon for classic"
 else # let's gooo
   # variables
-  interfacePrefix="## Interface:"
   versionPrefix="## Version:"
+  interfacePrefix="## Interface:"
+  wowVersionPrefix="## X-WoW-Version:"
 
   # first of all, we change the local execution to be the script's folder,
   # so that it works wherever we call it
