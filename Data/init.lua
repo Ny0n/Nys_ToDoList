@@ -64,35 +64,36 @@ function NysTDL:RefreshTDLButton()
   tdlButton:SetShown(self.db.profile.tdlButton.show);
 end
 
+local function draw_tooltip(tooltip)
+  if (not NysTDL.db.profile.minimap.tooltip) then
+    tooltip:Hide();
+    return;
+  end
+
+  if tooltip and tooltip.AddLine then
+      -- we get the color theme
+      local hex = config:RGBToHex(config.database.theme)
+
+      -- then we create each line
+      tooltip:ClearLines();
+      tooltip:AddDoubleLine(config.toc.title, 'V'..config.database.version);
+      tooltip:AddLine(string.format("|cff%s%s|r", hex, L["Click"])..' - '..string.format("|cff%s%s|r", "FFFFFF", L["toggle the list"]))
+      tooltip:AddLine(string.format("|cff%s%s|r", hex, L["Shift-Click"])..' - '..string.format("|cff%s%s|r", "FFFFFF", L["toggle addon options"]))
+      tooltip:AddLine(string.format("|cff%s%s|r", hex, L["Ctrl-Click"])..' - '..string.format("|cff%s%s|r", "FFFFFF", NysTDL.db.profile.minimap.lock and L["unlock minimap button"] or L["lock minimap button"]))
+      tooltip:Show()
+  end
+end
+
 function NysTDL:CreateMinimapButton()
   -- creating the data object to store the button infos
 
   local tooltipObject; -- we get the tooltip on the first draw_tooltip call from OnTooltipShow
-  local function draw_tooltip(tooltip)
-    if (not self.db.profile.minimap.tooltip) then
-      tooltip:Hide();
-      return;
-    end
-
-    if tooltip and tooltip.AddLine then
-        -- we get the color theme
-        local hex = config:RGBToHex(config.database.theme)
-
-        -- then we create each line
-        tooltip:ClearLines();
-        tooltip:AddDoubleLine(config.toc.title, 'V'..config.database.version);
-        tooltip:AddLine(string.format("|cff%s%s|r", hex, L["Click"])..' - '..string.format("|cff%s%s|r", "FFFFFF", L["toggle the list"]))
-        tooltip:AddLine(string.format("|cff%s%s|r", hex, L["Shift-Click"])..' - '..string.format("|cff%s%s|r", "FFFFFF", L["toggle addon options"]))
-        tooltip:AddLine(string.format("|cff%s%s|r", hex, L["Ctrl-Click"])..' - '..string.format("|cff%s%s|r", "FFFFFF", NysTDL.db.profile.minimap.lock and L["unlock minimap button"] or L["lock minimap button"]))
-        tooltip:Show()
-    end
-  end
 
   local LDB_o_minimap = LDB:NewDataObject(addonName, {
     type = "launcher",
     label = config.toc.title,
     icon = "Interface\\AddOns\\"..addonName.."\\Data\\Images\\minimap_icon",
-    OnClick = function(self, button)
+    OnClick = function()
       if (IsControlKeyDown()) then
         -- lock minimap button
         if (not NysTDL.db.profile.minimap.lock) then
@@ -181,7 +182,7 @@ function NysTDL:PLAYER_LOGIN()
     return;
   end
 
-  self:ScheduleTimer(function(self) -- 20 secs after the player logs in, we check if we need to warn him about favorite items
+  self:ScheduleTimer(function() -- 20 secs after the player logs in, we check if we need to warn him about favorite items
     if (addonLoaded) then -- just to be sure
       if (not itemsFrame:autoResetedThisSessionGET()) then -- we don't want to show this warning if it's the first log in of the day, only if it is the next ones
         if (NysTDL.db.profile.showFavoritesWarning) then -- and the user allowed this functionnality
@@ -226,38 +227,38 @@ end
 
 -- Commands:
 init.commands = {
-  [L["help"]] = function(...)
+  [L["help"]] = function()
     local hex = config:RGBToHex(config.database.theme2)
     config:PrintForced(string.format("|cff%s%s|r", hex, L["/tdl"])..' - '..L["show/hide the list"])
     config:PrintForced(string.format("|cff%s%s|r", hex, L["/tdl"]..' '..L["info"])..' - '..L["shows more information"])
   end,
 
-  [""] = function(...)
+  [""] = function()
     itemsFrame:Toggle()
   end,
 
-  [L["info"]] = function(...)
+  [L["info"]] = function()
     local hex = config:RGBToHex(config.database.theme2)
     config:PrintForced(L["Here are a few commands to help you understand some systems in the list:"].." - "..string.format("|cff%s%s|r", hex, L["/tdl"]..' '..L["toggleways"]).." - "..string.format("|cff%s%s|r", hex, L["/tdl"]..' '..L["additems"]).." - "..string.format("|cff%s%s|r", hex, L["/tdl"]..' '..L["favorites"]).." - "..string.format("|cff%s%s|r", hex, L["/tdl"]..' '..L["descriptions"]).." - "..string.format("|cff%s%s|r", hex, L["/tdl"]..' '..L["hiddenbuttons"]))
   end,
 
-  [L["toggleways"]] = function(...)
+  [L["toggleways"]] = function()
     config:PrintForced(L["To toggle the list, you have several ways:"]..'\n- '..L["minimap button (the default)"]..'\n- '..L["a normal TDL button"]..'\n- '..L["databroker plugin (eg. titan panel)"]..'\n- '..L["the '/tdl' command"]..'\n- '..L["key binding"]..'\n'..L["Go to the addon options in the Blizzard interface panel to customize this."])
   end,
 
-  [L["additems"]] = function(...)
+  [L["additems"]] = function()
     config:PrintForced("- "..L["To add a new item to a category, just right click the category name!"]..'\n- '..L["You can also left click on the category names to expand or shrink their content."])
   end,
 
-  [L["favorites"]] = function(...)
+  [L["favorites"]] = function()
     config:PrintForced(L["You can favorite items!"].."\n"..L["To do so, hold the SHIFT key when the list is opened, then click on the star icons to favorite the items that you want!"].."\n"..L["Perks of favorite items:"].."\n- "..L["cannot be deleted"].."\n- "..L["customizable color"].."\n- "..L["sorted first in categories"].."\n- "..L["have their own more visible remaining numbers"].."\n- "..L["have an auto chat warning/reminder system!"])
   end,
 
-  [L["descriptions"]] = function(...)
+  [L["descriptions"]] = function()
     config:PrintForced(L["You can add descriptions on items!"].."\n"..L["To do so, hold the CTRL key when the list is opened, then click on the page icons to open a description frame!"].."\n- "..L["they are auto-saved and have no length limitations"].."\n- "..L["if an item has a description, he cannot be deleted (empty the description if you want to do so)"])
   end,
 
-  [L["hiddenbuttons"]] = function(...)
+  [L["hiddenbuttons"]] = function()
     config:PrintForced(L["There are some hidden buttons on the list."].."\n"..L["To show them, hold the ALT key when the list is opened!"])
   end,
 }
