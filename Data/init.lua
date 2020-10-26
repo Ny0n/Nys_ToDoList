@@ -233,7 +233,7 @@ init.commands = {
 
   [L["info"]] = function()
     local hex = config:RGBToHex(config.database.theme2)
-    config:PrintForced(L["Here are a few commands to help you:"].."\n"..string.format("|cff%s%s|r", hex, L["/tdl"]..' '..L["toggleways"]).." -- "..string.format("|cff%s%s|r", hex, L["/tdl"]..' '..L["categories"]).." -- "..string.format("|cff%s%s|r", hex, L["/tdl"]..' '..L["favorites"]).." -- "..string.format("|cff%s%s|r", hex, L["/tdl"]..' '..L["descriptions"]).." -- "..string.format("|cff%s%s|r", hex, L["/tdl"]..' '..L["hiddenbuttons"]).." -- "..string.format("|cff%s%s|r", hex, L["/tdl"]..' '..L["tutorial"]))
+    config:PrintForced(L["Here are a few commands to help you:"].."\n"..string.format("|cff%s%s|r", hex, "/tdl "..L["toggleways"]).." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["categories"]).." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["favorites"]).." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["descriptions"]).." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["hiddenbuttons"]).." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["tutorial"]))
   end,
 
   [L["toggleways"]] = function()
@@ -453,7 +453,7 @@ function NysTDL:OnInitialize()
     -- Called when the addon is loaded
 
     -- Register new Slash Command
-    SLASH_NysToDoList1 = L["/tdl"];
+    SLASH_NysToDoList1 = "/tdl";
     SlashCmdList.NysToDoList = HandleSlashCommands;
 
     -- Saved variable database
@@ -488,14 +488,9 @@ function NysTDL:OnInitialize()
     -- / Blizzard interface options / --
 
     -- this is for adapting the width of the widgets to the length of their respective names (that can change with the locale)
-    local wDef = { toggle = 180, select = 275, range = 218, keybinding = 218, color = 190 }
+    local wDef = { toggle = 160, select = 265, range = 200, keybinding = 200, color = 180 }
     for _,v in pairs(config.database.options.args.general.args) do
-      if (v.type == "toggle") then -- for them, we adapt their width to match the one of their name
-        local w = config:CreateNoPointsLabel(UIParent, nil, v.name):GetWidth();
-        w = tonumber(string.format("%.3f", w/wDef[v.type]));
-        v.width = 1-((1-w)*0.82);
-      -- elseif ((v.type == "description" and (v.name ~= "" and v.name ~= "\n" and v.name ~= nil)) and v.type ~= "header") then -- and for every other widget (except the spacers and the headers), we keep their min normal width, we change it only if their name is bigger than the default width
-      elseif (v.type ~= "description" and v.type ~= "header") then -- and for every other widget (except the descriptions and the headers), we keep their min normal width, we change it only if their name is bigger than the default width
+      if (v.type ~= "description" and v.type ~= "header") then -- for every widget (except the descriptions and the headers), we keep their min normal width, we change it only if their name is bigger than the default width
         local w = config:CreateNoPointsLabel(UIParent, nil, v.name):GetWidth();
         -- print(v.name.."_"..w)
         w = tonumber(string.format("%.3f", w/wDef[v.type]));
@@ -536,6 +531,6 @@ function NysTDL:OnInitialize()
 
     -- addon fully loaded!
     local hex = config:RGBToHex(config.database.theme2);
-    config:Print(L["addon loaded!"]..' ('..string.format("|cff%s%s|r", hex, L["/tdl"]..' '..L["info"])..')');
+    config:Print(L["addon loaded!"]..' ('..string.format("|cff%s%s|r", hex, "/tdl "..L["info"])..')');
     addonLoaded = true;
 end

@@ -45,7 +45,6 @@ L["Right-click on the category names to add new items."] = true
 L["\"%s\" added to %s! (%s item)"] = true
 L["\"%s\" added to %s! ('All' tab item)"] = true
 L["\"%s\" removed!"] = true
-L["/tdl"] = true
 L["addon loaded!"] = true
 L["Clear succesful! (%s tab, %i items)"] = true
 L["Clear undo succesful! (%i items added back)"] = true

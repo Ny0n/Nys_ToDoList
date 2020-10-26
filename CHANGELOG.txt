@@ -1,3 +1,4 @@
+V5.2.1 - added localization for Korean (koKR)
 V5.2 - updated the addon to support Shadowlands!
      - added a tutorial, explaining the basic systems of the list
      - other miscellaneous improvements
