@@ -1,4 +1,4 @@
-build/*
-!build/build.sh
-!build/buildignore.txt
-!build/interfaceversions.txt
+\!build/*
+!!build/build.sh
+\!dev.txt
+\!ideas.txt

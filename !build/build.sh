@@ -24,16 +24,28 @@ buildAddon()
 
   # first, we change some values inside of the toc file depending on the version we're building
   interfaceCurrentValue=$(grep -Pom1 "$interfacePrefix.*" ../*.toc)
-  interfaceNumber=$(grep -Pom1 "## X-Interface-$version: \K.*" ../*.toc)
-  sed -i "s/$interfaceCurrentValue/$interfacePrefix $interfaceNumber/" ../*.toc # interface number
+  otherInterfaceCurrentValue=$(grep -Pom1 "$otherInterfacePrefix.*" ../*.toc)
+  if [ "$version" == "retail" ] # here we pick the good new number for the interface: the retail one or classic one
+  then
+    interfaceNumberPrefix="$interfacePrefix"
+    otherInterfaceNumberPrefix="$otherInterfacePrefix"
+    otherVersion="classic"
+  else
+    interfaceNumberPrefix="$otherInterfacePrefix"
+    otherInterfaceNumberPrefix="$interfacePrefix"
+    otherVersion="retail"
+  fi
+  interfaceNumber=$(grep -Pom1 "$interfaceNumberPrefix \K[^ ]+" ../*.toc)
+  otherInterfaceNumber=$(grep -Pom1 "$otherInterfaceNumberPrefix \K[^ ]+" ../*.toc)
+  sed -i "s/$interfaceCurrentValue/$interfacePrefix $interfaceNumber # $version (selected)/" ../*.toc # current interface number
+  sed -i "s/$otherInterfaceCurrentValue/$otherInterfacePrefix $otherInterfaceNumber # $otherVersion/" ../*.toc # other interface number
 
   wowVersionCurrentValue=$(grep -Pom1 "$wowVersionPrefix.*" ../*.toc)
-  sed -i "s/$wowVersionCurrentValue/$wowVersionPrefix $version/" ../*.toc # interface number
+  sed -i "s/$wowVersionCurrentValue/$wowVersionPrefix $version/" ../*.toc # wow version text
 
   # then we create the base folder that has the addon name, and put everyone of the addon's files in it
   mkdir $name
-  ignore=$(cat buildignore.txt)
-  cp -r "../"!($ignore) $name
+  cp -r "../"!(!*) $name # every file except the ones starting with '!'
 
   # then we zip
   zipname="$name-$versionValue"_"$version" # zip name
@@ -87,6 +99,7 @@ else # let's gooo
   # we prepare some variables
   name=$(basename ../*.toc .toc) # here we have the pure addon name
   interfacePrefix="## Interface:"
+  otherInterfacePrefix="## X-Interface:"
   wowVersionPrefix="## X-WoW-Version:"
   versionValue=$(grep -Pom1 "## Version: \K.*" ../*.toc)
 

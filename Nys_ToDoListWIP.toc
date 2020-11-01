@@ -1,11 +1,10 @@
-# these two are automatically set when building
-## Interface: 80300
-## X-WoW-Version: retail
-
 # /run print((select(4, GetBuildInfo())))
-## X-Interface-retail: 80300
-## X-Interface-classic: 11305
+## Interface: 80300 # retail (selected)
+## X-Interface: 11305 # classic
 ## Version: 5.3
+
+# X-WoW-Version: set to 'retail' or 'classic' to auto adapt the addon
+## X-WoW-Version: retail
 
 ## Author: Nyony (on Twitch)
 ## Title: Ny's To-Do List WIP
