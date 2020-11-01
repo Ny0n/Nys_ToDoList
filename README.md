@@ -10,7 +10,8 @@ You also have the possibility to favorite items, and even put descriptions on th
 If you are having any problems, tap the information button on the list to print help in the chat,
 it will surely give you the answers you are looking for.
 
-To toggle the frame, there are several ways:
+#### **How to toggle:**
+
 - minimap button (the default)
 - key binding
 - databroker plugin
