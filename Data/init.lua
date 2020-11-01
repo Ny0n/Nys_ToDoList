@@ -144,21 +144,6 @@ function NysTDL:OnInitialize()
     self.db = LibStub("AceDB-3.0"):New("NysToDoListDB", config.database.defaults)
     self:DBInit(); -- initialization for some elements of the db that need specific functions
 
-    -- since I changed the way to save variables (and am now using AceDB),
-    -- we need (on the first load after the addon update) to take our important data
-    -- contained in the old saved variable back, and we place it in the new DB
-    if (ToDoListSV ~= nil) then
-      self.db.profile.itemsDaily = config:Deepcopy(ToDoListSV.itemsList["Daily"])
-      ToDoListSV.itemsList["Daily"] = nil
-      self.db.profile.itemsWeekly = config:Deepcopy(ToDoListSV.itemsList["Weekly"])
-      ToDoListSV.itemsList["Weekly"] = nil
-      self.db.profile.itemsList = config:Deepcopy(ToDoListSV.itemsList)
-      self.db.profile.checkedButtons = config:Deepcopy(ToDoListSV.checkedButtons)
-      self.db.profile.autoReset = config:Deepcopy(ToDoListSV.autoReset)
-      self.db.profile.lastLoadedTab = config:Deepcopy(ToDoListSV.lastLoadedTab)
-      ToDoListSV = nil;
-    end
-
     -- callbacks for database changes
     self.db.RegisterCallback(self, "OnProfileChanged", "ProfileChanged")
     self.db.RegisterCallback(self, "OnProfileCopied", "ProfileChanged")

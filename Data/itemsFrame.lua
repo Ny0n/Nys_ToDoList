@@ -2334,3 +2334,275 @@ function itemsFrame:CreateItemsFrame()
 
   itemsFrameUI:Hide();
 end
+
+-- Tests function (for me :p)
+function Nys_Tests(yes)
+  if (yes == 1) then -- tests profile
+    NysTDL.db.profile.itemsList = {
+      ["Others"] = {
+        "Hexweave Cloth (Nyøny)", -- [1]
+      },
+      ["PETS"] = {
+        "garrison toys", -- [1]
+      },
+      ["Mount farm"] = {
+        "Ragnaros + Alysrazor", -- [1]
+        "Archimonde (myth)", -- [2]
+        "Garrosh Hellscream", -- [3]
+        "Sha of fear", -- [4]
+        "Rukhmar", -- [5]
+        "Ulduar", -- [6]
+        "Mogu'shan Vaults", -- [7]
+      },
+      ["Raids transmog"] = {
+        "Siege of Orgrimmar (myth)", -- [1]
+        "tomb kil'jaeden", -- [2]
+      },
+      ["Weekly event"] = {
+        "Winter squid pas oublier", -- [1]
+        "Brawl PvP", -- [2]
+      },
+      ["Mechagon"] = {
+        "Beastbot", -- [1]
+        "Reclamation rig mini packs", -- [2]
+      },
+      ["Legion"] = {
+        "missions supplies", -- [1]
+        "Dreamweavers / Kirin Tor wq", -- [2]
+      },
+      ["The Headless Horseman"] = {
+        "-Ñy", -- [1]
+        "-Nyøny", -- [2]
+        "-Nýø", -- [3]
+        "-Nýøn", -- [4]
+        "-Nýør", -- [5]
+        "-Nýøx", -- [6]
+      },
+      ["Group Achievements"] = {
+        "Who Needs Blood.. - Priest", -- [1]
+        "A void ance - 3", -- [2]
+        "the pow is yours - 3", -- [3]
+        "Share the love - 5", -- [4]
+      },
+      ["Draenor"] = {
+        "Garrison invasion", -- [1]
+        "Garrison missions", -- [2]
+      },
+      ["BFA"] = {
+        "Weekly warfront HM", -- [1]
+        "Sabertron wq", -- [2]
+        "Island expe farm + quests", -- [3]
+        "Awesomefish", -- [4]
+        "Honorbound medals wq", -- [5]
+      },
+      ["Timewalking"] = {
+        "Ñy", -- [1]
+        "Nýø", -- [2]
+        "Nýøn", -- [3]
+        "Nýøx", -- [4]
+        "Nýør", -- [5]
+        "Nyøny", -- [6]
+        "Raid", -- [7]
+      },
+      ["**VISION ODD CRYSTALS"] = {
+        "1-Cathedral Square", -- [1]
+        "1-_", -- [2]
+        "2-Dwarven District", -- [3]
+        "2-_", -- [4]
+        "3-Trade District", -- [5]
+        "3-_", -- [6]
+        "4-Old Town", -- [7]
+        "4-_", -- [8]
+        "5-Mage Quarter", -- [9]
+        "5-_", -- [10]
+        "Zarhaal", -- [11]
+        "xxxxxx", -- [12]
+        "xxxxx", -- [13]
+      },
+    }
+    NysTDL.db.profile.itemsDaily = {
+      "missions supplies", -- [1]
+      "Sabertron wq", -- [2]
+      "Dreamweavers / Kirin Tor wq", -- [3]
+      "Garrison missions", -- [4]
+      "Awesomefish", -- [5]
+      "Honorbound medals wq", -- [6]
+      "-Ñy", -- [7]
+      "-Nyøny", -- [8]
+      "-Nýø", -- [9]
+      "-Nýøn", -- [10]
+      "-Nýør", -- [11]
+      "-Nýøx", -- [12]
+    }
+    NysTDL.db.profile.itemsWeekly = {
+      "Hexweave Cloth (Nyøny)", -- [1]
+      "Ragnaros + Alysrazor", -- [2]
+      "Winter squid pas oublier", -- [3]
+      "Brawl PvP", -- [4]
+      "Siege of Orgrimmar (myth)", -- [5]
+      "Archimonde (myth)", -- [6]
+      "Garrison invasion", -- [7]
+      "tomb kil'jaeden", -- [8]
+      "Garrosh Hellscream", -- [9]
+      "Sha of fear", -- [10]
+      "Rukhmar", -- [11]
+      "Ulduar", -- [12]
+      "Mogu'shan Vaults", -- [13]
+      "Ñy", -- [14]
+      "Nýø", -- [15]
+      "Nýøn", -- [16]
+      "Nýøx", -- [17]
+      "Nýør", -- [18]
+      "Nyøny", -- [19]
+      "Raid", -- [20]
+      "Weekly warfront HM", -- [21]
+      "Island expe farm + quests", -- [22]
+      "Beastbot", -- [23]
+      "Reclamation rig mini packs", -- [24]
+    }
+    NysTDL.db.profile.itemsFavorite = {
+      "Rukhmar", -- [1]
+      "Archimonde (myth)", -- [2]
+      "Awesomefish", -- [3]
+      "Sabertron wq", -- [4]
+      "Garrison invasion", -- [5]
+      "Beastbot", -- [6]
+      "Hexweave Cloth (Nyøny)", -- [7]
+    }
+    NysTDL.db.profile.itemsDesc = {
+      ["Awesomefish"] = "wahou faut y penser un jour mec\n|cffffff00|Hachievement:9547:Player-1302-09173E57:0:0:0:-1:0:0:0:0|h[Everything Is Awesome!]|h|r",
+      ["Sabertron wq"] = "|cffffff00|Hachievement:13054:Player-1302-09173E57:0:0:0:-1:29:0:0:0|h[Sabertron Assemble]|h|r",
+      ["missions supplies"] = "Check if the command center is built and there are missions in my class hall",
+    }
+
+    NysTDL.db.profile.checkedButtons = {
+      "xxxxxx", -- [1]
+      "xxxxx", -- [2]
+      "1-Cathedral Square", -- [3]
+      "2-Dwarven District", -- [4]
+      "2-_", -- [5]
+      "3-Trade District", -- [6]
+      "3-_", -- [7]
+      "1-_", -- [8]
+      "4-Old Town", -- [9]
+      "4-_", -- [10]
+      "5-Mage Quarter", -- [11]
+      "5-_", -- [12]
+      "Zarhaal", -- [13]
+      "Rukhmar", -- [14]
+      "Archimonde (myth)", -- [15]
+      "Beastbot", -- [16]
+      "Garrison invasion", -- [17]
+    }
+    NysTDL.db.profile.closedCategories = {
+      ["PETS"] = {
+        "All", -- [1]
+      },
+      ["Mount farm"] = {
+        "All", -- [1]
+      },
+      ["Raids transmog"] = {
+        "All", -- [1]
+        "Weekly", -- [2]
+      },
+      ["Mechagon"] = {
+        "All", -- [1]
+      },
+      ["Legion"] = {
+        "All", -- [1]
+      },
+      ["BFA"] = {
+        "All", -- [1]
+      },
+      ["Group Achievements"] = {
+        "All", -- [1]
+      },
+      ["Draenor"] = {
+        "All", -- [1]
+      },
+      ["Weekly event"] = {
+        "All", -- [1]
+        "Weekly", -- [2]
+      },
+      ["Timewalking"] = {
+        "All", -- [1]
+        "Weekly", -- [2]
+      },
+      ["**VISION ODD CRYSTALS"] = {
+        "All", -- [1]
+      },
+    }
+
+    NysTDL.db.profile.minimap = { hide = false, minimapPos = 241, lock = false, tooltip = true }
+    NysTDL.db.profile.framePos = { point = "CENTER", relativeTo = UIParent, relativePoint = "CENTER", xOffset = 0, yOffset = 0 }
+    NysTDL.db.profile.frameSize = { width = 340, height = 400 }
+    NysTDL.db.profile.tdlButton = { ["show"] = true, ["points"] = { ["point"] = "BOTTOMRIGHT", ["relativePoint"] = "BOTTOMRIGHT", ["xOffset"] = -182.9999237060547, ["yOffset"] = 44.99959945678711 }
+    }
+
+    NysTDL.db.profile.lastLoadedTab = "ToDoListUIFrameTab2"
+    NysTDL.db.profile.rememberUndo = false
+    NysTDL.db.profile.autoReset = nil
+
+    NysTDL.db.profile.showChatMessages = false
+    NysTDL.db.profile.showWarnings = false
+    NysTDL.db.profile.favoritesWarning = true
+    NysTDL.db.profile.normalWarning = false
+    NysTDL.db.profile.hourlyReminder = true
+
+    NysTDL.db.profile.frameAlpha = 65
+    NysTDL.db.profile.frameContentAlpha = 100
+    NysTDL.db.profile.affectDesc = true
+    NysTDL.db.profile.descFrameAlpha = 65
+    NysTDL.db.profile.descFrameContentAlpha = 100
+
+    NysTDL.db.profile.rainbow = true
+    NysTDL.db.profile.rainbowSpeed = 1
+    NysTDL.db.profile.weeklyDay = 4
+    NysTDL.db.profile.dailyHour = 9
+    NysTDL.db.profile.favoritesColor = {
+      0.5720385674916013, -- [1]
+      0, -- [2]
+      1, -- [3]
+    }
+    NysTDL:ProfileChanged()
+  elseif (yes == 2) then
+    LibStub("AceConfigDialog-3.0"):Open("Nys_ToDoListWIP")
+  elseif (yes == 3) then
+    print(GetAddOnMetadata(addonName, "X-WoW-Version"))
+    -- print(config.database.options.args.general.args.toggleBind.obj.msgframe.msg:GetText())
+  elseif (yes == 5) then -- EXPLOSION
+    if (not NysTDL.db.profile.itemsList["EXPLOSION"]) then
+    itemsFrame:AddItem("", {
+      ["cat"] = "EXPLOSION",
+      ["name"] = "1",
+      ["case"] = "All",
+      ["checked"] = false,
+    })
+
+    for i = 1, 99 do
+      itemsFrame:AddItem("", {
+        ["cat"] = "EXPLOSION",
+        ["name"] = tostring(tonumber(NysTDL.db.profile.itemsList["EXPLOSION"][#NysTDL.db.profile.itemsList["EXPLOSION"]]) + 1),
+        ["case"] = "All",
+        ["checked"] = false,
+      })
+    end
+
+    return;
+    end
+
+    for i = 1, 100 do
+    itemsFrame:AddItem("", {
+      ["cat"] = "EXPLOSION",
+      ["name"] = tostring(tonumber(NysTDL.db.profile.itemsList["EXPLOSION"][#NysTDL.db.profile.itemsList["EXPLOSION"]]) + 1),
+      ["case"] = "All",
+      ["checked"] = false,
+    })
+    end
+  elseif (yes == 4) then
+    print("Daily:    "..tostringall(NysTDL.db.profile.autoReset["Daily"]))
+    print("Weekly: "..tostringall(NysTDL.db.profile.autoReset["Weekly"]))
+    print("Time:    "..tostringall(time()))
+  end
+  print("--Nys_Tests--")
+end
