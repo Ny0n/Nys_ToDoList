@@ -37,7 +37,7 @@ buildAddon()
   fi
   interfaceNumber=$(grep -Pom1 "$interfaceNumberPrefix \K[^ ]+" ../*.toc)
   otherInterfaceNumber=$(grep -Pom1 "$otherInterfaceNumberPrefix \K[^ ]+" ../*.toc)
-  sed -i "s/$interfaceCurrentValue/$interfacePrefix $interfaceNumber # $version (selected)/" ../*.toc # current interface number
+  sed -i "s/$interfaceCurrentValue/$interfacePrefix $interfaceNumber # $version (current)/" ../*.toc # current interface number
   sed -i "s/$otherInterfaceCurrentValue/$otherInterfacePrefix $otherInterfaceNumber # $otherVersion/" ../*.toc # other interface number
 
   wowVersionCurrentValue=$(grep -Pom1 "$wowVersionPrefix.*" ../*.toc)
