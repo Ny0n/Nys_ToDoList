@@ -162,7 +162,7 @@ function NysTDL:CreateMinimapButton()
   local LDB_o_minimap = LDB:NewDataObject(addonName, {
     type = "launcher",
     label = config.toc.title,
-    icon = "Interface\\AddOns\\"..addonName.."\\Data\\Images\\minimap_icon",
+    icon = "Interface\\AddOns\\"..addonName.."\\Data\\Textures\\minimap_icon",
     OnClick = function()
       if (IsControlKeyDown()) then
         -- lock minimap button
