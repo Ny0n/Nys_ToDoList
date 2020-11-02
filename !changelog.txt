@@ -1,6 +1,6 @@
 V5.4  - bumped interface number
       - updated Korean
-      - cleared some code/files and corrected an issue concerning profile copy
+      - cleared some code/files and setup for future releases
       - created a GitHub repository for the addon, so the issues can be dealt there
       - updated the curseforge description
       - added a README in the build
