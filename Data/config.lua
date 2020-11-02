@@ -14,6 +14,7 @@ config.LDBIcon = LibStub("LibDBIcon-1.0")
 -- data (from toc file)
 config.toc = {}
 config.toc.title = GetAddOnMetadata(addonName, "Title") -- better than "Nys_ToDoList"
+config.toc.version = GetAddOnMetadata(addonName, "Version")
 config.toc.wowVersion = GetAddOnMetadata(addonName, "X-WoW-Version")
 
 -- Variables
@@ -31,13 +32,11 @@ config.database = {
     theme2 = { 0, 204, 102 }, -- theme2
     theme_yellow = { 255, 216, 0 }, -- theme_yellow
 
-    version = GetAddOnMetadata(addonName, "Version"),
-
     -- AceConfig options table
     options = {
         handler = NysTDL,
         type = "group",
-        name = config.toc.title..' - '..L["Options"],
+        name = config.toc.title..' ('..config.toc.version..') - '..L["Options"],
         childGroups = "tab",
         args = {
           general = {
