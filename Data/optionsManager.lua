@@ -146,7 +146,7 @@ local function draw_tooltip(tooltip)
 
       -- then we create each line
       tooltip:ClearLines();
-      tooltip:AddDoubleLine(config.toc.title, 'V'..config.database.version);
+      tooltip:AddDoubleLine(config.toc.title, config.toc.version);
       tooltip:AddLine(string.format("|cff%s%s|r", hex, L["Click"])..' - '..string.format("|cff%s%s|r", "FFFFFF", L["toggle the list"]))
       tooltip:AddLine(string.format("|cff%s%s|r", hex, L["Shift-Click"])..' - '..string.format("|cff%s%s|r", "FFFFFF", L["toggle addon options"]))
       tooltip:AddLine(string.format("|cff%s%s|r", hex, L["Ctrl-Click"])..' - '..string.format("|cff%s%s|r", "FFFFFF", NysTDL.db.profile.minimap.lock and L["unlock minimap button"] or L["lock minimap button"]))
@@ -162,7 +162,7 @@ function NysTDL:CreateMinimapButton()
   local LDB_o_minimap = LDB:NewDataObject(addonName, {
     type = "launcher",
     label = config.toc.title,
-    icon = "Interface\\AddOns\\"..addonName.."\\Data\\Images\\minimap_icon",
+    icon = "Interface\\AddOns\\"..addonName.."\\Data\\Textures\\minimap_icon",
     OnClick = function()
       if (IsControlKeyDown()) then
         -- lock minimap button

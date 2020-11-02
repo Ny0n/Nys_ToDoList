@@ -1,9 +1,16 @@
+V5.4  - bumped interface number
+      - updated Korean
+      - cleared some code/files and setup for future releases
+      - created a GitHub repository for the addon, so the issues can be dealt there
+      - updated the curseforge description
+      - added a README in the build
+
+ -------------------------
+
 V5.3 - Implemented Hyperlinks! (same thing as when you shift-click on items/achievements/quests/etc and it creates a link to them in the chat, but now it works the same way in the list too!)
      - Upgraded the reminder/warning system
      - Added new options for you to discover
      - other miscellaneous improvements and corrections
-
--------------------------
 
 V5.2.1 - added localization for Korean (koKR)
 V5.2 - updated the addon to support Shadowlands!
