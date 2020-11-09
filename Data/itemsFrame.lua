@@ -552,7 +552,7 @@ local function addCategory()
     end
   end
 
-  db.case = itemsFrameUI.categoryButton:GetParent():GetName();
+  db.tabName = itemsFrameUI.categoryButton:GetParent():GetName();
   db.checked = false;
 
   -- this one is for clearing the text of both edit boxes IF the adding is a success
@@ -572,13 +572,12 @@ function itemsFrame:AddItem(self, db)
   -- the big big function to add items
 
   local stop = false; -- we can't use return; here, so we do it manually (but it's horrible yes)
-  local name, case, cat, checked;
-  local new = false;
   local addResult = {"", false}; -- message to be displayed in result of the function and wether there was an adding or not
+  local name, tabName, cat, checked;
 
   if (type(db) ~= "table") then
     name = self:GetParent():GetText(); -- we get the name the player entered
-    case = self:GetParent():GetParent():GetName(); -- we get the tab we're on
+    tabName = self:GetParent():GetParent():GetName(); -- we get the tab we're on
     cat = self:GetParent():GetName(); -- we get the category we're adding the item in
     checked = false;
 
@@ -597,41 +596,41 @@ function itemsFrame:AddItem(self, db)
     end
   else
     name = db.name;
-    case = db.case;
+    tabName = db.tabName;
     cat = db.cat;
     checked = db.checked;
   end
 
-  if case == "All" then
-    case = nil;
-  end
+  if (name == "") then
+    addResult = {L["Please enter the name of the item!"], false};
+  else -- if we typed something
+    local willCreateNewCat, isPresentInCurrentCat, isPresent1, isPresent2 = false;
 
-  if (name ~= "") then -- if we typed something
-    local isPresent0, isPresent1, isPresent2, isPresent3, hasKey;
+    isPresent1 = config:HasItem(All, name); -- does it already exists in All?
 
-    isPresent1 = (select(1, config:HasItem(All, name))); -- does it already exists in All?
+    local catAlreadyExists = config:HasKey(NysTDL.db.profile.itemsList, cat);
+    if (not catAlreadyExists) then NysTDL.db.profile.itemsList[cat] = {}; willCreateNewCat = true; end -- that means we'll be adding something to a new category, so we create the table to hold all theses shiny new items
 
-    hasKey = config:HasKey(NysTDL.db.profile.itemsList, cat);
-    if (not hasKey) then NysTDL.db.profile.itemsList[cat] = {}; new = true; end -- that means we'll be adding something to a new category, so we create the table to hold all theses shiny new items
-
-    if (case == nil) then
-      isPresent0 = (select(1, config:HasItem(NysTDL.db.profile.itemsList[cat], name))); -- does it already exists in the typed category?
+    if (tabName == "All") then
+      isPresentInCurrentCat = config:HasItem(NysTDL.db.profile.itemsList[cat], name); -- does it already exists in the typed category?
     else
-      isPresent3 = (select(1, config:HasItem(NysTDL.db.profile.itemsList[cat], name))); -- does it already exists in the typed category?
-      if (isPresent1 and not isPresent3) then -- if it already exists somewhere but not in this category
+      isPresentInCurrentCat = config:HasItem(NysTDL.db.profile.itemsList[cat], name); -- does it already exists in the typed category?
+      if (isPresent1 and not isPresentInCurrentCat) then -- if it already exists somewhere but not in this category
         addResult = {L["This item name already exists!"], false};
         stop = true;
       else -- if it is present IN THIS category (maybe on an other tab) !OR! if it doesn't exists at all
-        isPresent0 = (select(1, config:HasItem(TabItemsTable(case), name))); -- does it already exists in the current tab? (Daily or Weekly)
+        isPresentInCurrentCat = config:HasItem(TabItemsTable(tabName), name); -- does it already exists in the current tab? (Daily or Weekly)
       end
     end
 
     if (not stop) then
-      if (not isPresent0) then
-        if (case == "Daily") then
-          isPresent2 = (select(1, config:HasItem(NysTDL.db.profile.itemsWeekly, name)));
-        elseif (case == "Weekly") then
-          isPresent2 = (select(1, config:HasItem(NysTDL.db.profile.itemsDaily, name)));
+      if (isPresentInCurrentCat) then
+        addResult = {L["This item is already here in this category!"], false};
+      else
+        if (tabName == "Daily") then
+          isPresent2 = config:HasItem(NysTDL.db.profile.itemsWeekly, name);
+        elseif (tabName == "Weekly") then
+          isPresent2 = config:HasItem(NysTDL.db.profile.itemsDaily, name);
         else
           stop = true;
           if (not isPresent1) then
@@ -644,24 +643,20 @@ function itemsFrame:AddItem(self, db)
         if (not stop) then
           if (not isPresent1) then
             table.insert(NysTDL.db.profile.itemsList[cat], name);
-            table.insert(TabItemsTable(case), name);
-            addResult = {L["\"%s\" added to %s! (%s item)"]:format(name, cat, L[case]), true};
+            table.insert(TabItemsTable(tabName), name);
+            addResult = {L["\"%s\" added to %s! (%s item)"]:format(name, cat, L[tabName]), true};
           elseif (not isPresent2) then -- if it doesn't exists in the current tab, but it does in that category only in the 'All' tab
-            table.insert(TabItemsTable(case), name); -- we transform that item into a 'case' item for this category
-            addResult = {L["\"%s\" added to %s! (%s item)"]:format(name, cat, L[case]), true};
+            table.insert(TabItemsTable(tabName), name); -- we transform that item into a 'tabName' item for this category
+            addResult = {L["\"%s\" added to %s! (%s item)"]:format(name, cat, L[tabName]), true};
           else
             addResult = {L["No item can be daily and weekly!"], false};
           end
         end
-      else
-        addResult = {L["This item is already here in this category!"], false};
       end
     end
-  else
-    addResult = {L["Please enter the name of the item!"], false};
   end
 
-  if (new and not addResult[2]) then -- if we didn't add anything and it was supposed to create a new category, we cancel our move and nil this false new empty category
+  if (willCreateNewCat and not addResult[2]) then -- if we didn't add anything and it was supposed to create a new category, we cancel our move and nil this false new empty category
     NysTDL.db.profile.itemsList[cat] = nil;
   end
 
@@ -703,7 +698,7 @@ function itemsFrame:RemoveItem(self)
   local db = {
     ["name"] = name;
     ["cat"] = cat;
-    ["case"] = "All";
+    ["tabName"] = "All";
     ["checked"] = self:GetParent():GetChecked();
   }
 
@@ -712,13 +707,13 @@ function itemsFrame:RemoveItem(self)
   -- Daily part
   isPresent, pos = config:HasItem(NysTDL.db.profile.itemsDaily, name);
   if (isPresent) then
-    db.case = "Daily";
+    db.tabName = "Daily";
     table.remove(NysTDL.db.profile.itemsDaily, pos);
   end
   -- Weekly part
   isPresent, pos = config:HasItem(NysTDL.db.profile.itemsWeekly, name);
   if (isPresent) then
-    db.case = "Weekly";
+    db.tabName = "Weekly";
     table.remove(NysTDL.db.profile.itemsWeekly, pos);
   end
 
@@ -1475,7 +1470,7 @@ end
 -------------------------------------------------------------------------------------------
 
 -- generating the list items
-local function generateTab(tab, case)
+local function generateTab(tab, tabItems)
   -- We sort all of the categories in alphabetical order
   local tempTable = {}
   for t in pairs(NysTDL.db.profile.itemsList) do table.insert(tempTable, t) end
@@ -1484,7 +1479,7 @@ local function generateTab(tab, case)
   -- we load everything
   local lastData, once = nil, true;
   for _, n in pairs(tempTable) do
-    lastData, once = loadCategories(tab, NysTDL.db.profile.itemsList[n], label[n], case, n, lastData, once);
+    lastData, once = loadCategories(tab, NysTDL.db.profile.itemsList[n], label[n], tabItems, n, lastData, once);
   end
 end
 
@@ -1579,7 +1574,7 @@ local function loadOptions(tab)
 end
 
 -- loading the content (top to bottom)
-local function loadTab(tab, case)
+local function loadTab(tab, tabItems)
   itemsFrameUI.title:SetParent(tab);
   itemsFrameUI.title:SetPoint("TOP", tab, "TOPLEFT", centerXOffset, - 10);
 
@@ -1709,7 +1704,7 @@ local function loadTab(tab, case)
 
   -- Nothing label:
   itemsFrameUI.nothingLabel:SetParent(tab);
-  if (next(case) ~= nil) then -- if there is something to show in the tab we're in
+  if (next(tabItems) ~= nil) then -- if there is something to show in the tab we're in
     itemsFrameUI.nothingLabel:Hide();
   else
     itemsFrameUI.nothingLabel:SetPoint("TOP", itemsFrameUI.lineBottom, "TOP", 0, - 20); -- to correctly center this text on diffent screen sizes
@@ -1720,7 +1715,7 @@ local function loadTab(tab, case)
   itemsFrameUI.dummyLabel:SetPoint("TOPLEFT", itemsFrameUI.lineBottom, "TOPLEFT", - 35, - 20);
 
   -- generating all of the content (items, checkboxes, editboxes, category labels...)
-  generateTab(tab, case);
+  generateTab(tab, tabItems);
 end
 
 ----------------------------
@@ -2568,14 +2563,16 @@ function Nys_Tests(yes)
   elseif (yes == 2) then
     LibStub("AceConfigDialog-3.0"):Open("Nys_ToDoListWIP")
   elseif (yes == 3) then
-    print(GetAddOnMetadata(addonName, "X-WoW-Version"))
+    local slt = 2, 3;
+    print(slt)
+    -- print(GetAddOnMetadata(addonName, "X-WoW-Version"))
     -- print(config.database.options.args.general.args.toggleBind.obj.msgframe.msg:GetText())
   elseif (yes == 5) then -- EXPLOSION
     if (not NysTDL.db.profile.itemsList["EXPLOSION"]) then
     itemsFrame:AddItem("", {
       ["cat"] = "EXPLOSION",
       ["name"] = "1",
-      ["case"] = "All",
+      ["tabName"] = "All",
       ["checked"] = false,
     })
 
@@ -2583,7 +2580,7 @@ function Nys_Tests(yes)
       itemsFrame:AddItem("", {
         ["cat"] = "EXPLOSION",
         ["name"] = tostring(tonumber(NysTDL.db.profile.itemsList["EXPLOSION"][#NysTDL.db.profile.itemsList["EXPLOSION"]]) + 1),
-        ["case"] = "All",
+        ["tabName"] = "All",
         ["checked"] = false,
       })
     end
@@ -2595,7 +2592,7 @@ function Nys_Tests(yes)
     itemsFrame:AddItem("", {
       ["cat"] = "EXPLOSION",
       ["name"] = tostring(tonumber(NysTDL.db.profile.itemsList["EXPLOSION"][#NysTDL.db.profile.itemsList["EXPLOSION"]]) + 1),
-      ["case"] = "All",
+      ["tabName"] = "All",
       ["checked"] = false,
     })
     end

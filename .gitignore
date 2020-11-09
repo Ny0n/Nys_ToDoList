@@ -1,4 +1,4 @@
 \!build/*
 !!build/build.sh
-\!dev.txt
+\!dev.lua
 \!modifs.txt
