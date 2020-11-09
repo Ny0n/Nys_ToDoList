@@ -571,7 +571,6 @@ end
 function itemsFrame:AddItem(self, db)
   -- the big big function to add items
 
-  local stop = false; -- we can't use return; here, so we do it manually (but it's horrible yes)
   local addResult = {"", false}; -- message to be displayed in result of the function and wether there was an adding or not
   local name, tabName, cat, checked;
 
@@ -581,18 +580,12 @@ function itemsFrame:AddItem(self, db)
     cat = self:GetParent():GetName(); -- we get the category we're adding the item in
     checked = false;
 
+    -- there we check if the item name is not too big
     local l = config:CreateNoPointsLabel(itemsFrameUI, nil, name);
-    if (l:GetWidth() > itemNameWidthMax) then -- is it too big?
-      if (config:HasHyperlink(name)) then
-        l:SetFontObject("GameFontNormal")
-        if (l:GetWidth() > itemNameWidthMax) then -- even for a hyperlink?
-          config:Print(L["This item name is too big!"])
-          return;
-        end
-      else
-        config:Print(L["This item name is too big!"])
-        return;
-      end
+    if (l:GetWidth() > itemNameWidthMax and config:HasHyperlink(name)) then l:SetFontObject("GameFontNormal") end -- if it has an hyperlink in it and it's too big, we allow it to be a liitle longer, considering hyperlinks take more place
+    if (l:GetWidth() > itemNameWidthMax) then -- then we recheck to see if the item is not too long for good
+      config:Print(L["This item name is too big!"])
+      return;
     end
   else
     name = db.name;
@@ -604,53 +597,43 @@ function itemsFrame:AddItem(self, db)
   if (name == "") then
     addResult = {L["Please enter the name of the item!"], false};
   else -- if we typed something
-    local willCreateNewCat, isPresentInCurrentCat, isPresent1, isPresent2 = false;
-
-    isPresent1 = config:HasItem(All, name); -- does it already exists in All?
-
+    local willCreateNewCat = false;
     local catAlreadyExists = config:HasKey(NysTDL.db.profile.itemsList, cat);
     if (not catAlreadyExists) then NysTDL.db.profile.itemsList[cat] = {}; willCreateNewCat = true; end -- that means we'll be adding something to a new category, so we create the table to hold all theses shiny new items
 
+    local isPresentInCurrentCat;
     if (tabName == "All") then
       isPresentInCurrentCat = config:HasItem(NysTDL.db.profile.itemsList[cat], name); -- does it already exists in the typed category?
-    else
-      isPresentInCurrentCat = config:HasItem(NysTDL.db.profile.itemsList[cat], name); -- does it already exists in the typed category?
-      if (isPresent1 and not isPresentInCurrentCat) then -- if it already exists somewhere but not in this category
-        addResult = {L["This item name already exists!"], false};
-        stop = true;
-      else -- if it is present IN THIS category (maybe on an other tab) !OR! if it doesn't exists at all
-        isPresentInCurrentCat = config:HasItem(TabItemsTable(tabName), name); -- does it already exists in the current tab? (Daily or Weekly)
-      end
+    else -- if it's a daily/weekly item
+      isPresentInCurrentCat = config:HasItem(TabItemsTable(tabName), name); -- does it already exists in the current tab? (Daily or Weekly)
     end
 
-    if (not stop) then
-      if (isPresentInCurrentCat) then
-        addResult = {L["This item is already here in this category!"], false};
-      else
-        if (tabName == "Daily") then
-          isPresent2 = config:HasItem(NysTDL.db.profile.itemsWeekly, name);
-        elseif (tabName == "Weekly") then
-          isPresent2 = config:HasItem(NysTDL.db.profile.itemsDaily, name);
-        else
-          stop = true;
-          if (not isPresent1) then
-            table.insert(NysTDL.db.profile.itemsList[cat], name);
-            addResult = {L["\"%s\" added to %s! ('All' tab item)"]:format(name, cat), true};
-          else
-            addResult = {L["This item name already exists!"], false};
+    if (isPresentInCurrentCat) then
+      addResult = {L["This item is already here in this category!"], false};
+    else -- if it's not in the current category in the current tab
+      if (tabName == "All") then -- then we are creating a new item for the current cat in the All tab --CASE1 (add in 'All' tab)
+        table.insert(NysTDL.db.profile.itemsList[cat], name);
+        addResult = {L["\"%s\" added to %s! ('All' tab item)"]:format(name, cat), true};
+      else -- then we'll try to add the item as daily/weekly for the current cat in the current tab
+        if (config:HasItem(NysTDL.db.profile.itemsList[cat], name)) then -- if it exists in the category, we search where
+          -- checking...
+          local isPresentInOtherTab;
+          if (tabName == "Daily") then
+            isPresentInOtherTab = config:HasItem(NysTDL.db.profile.itemsWeekly, name);
+          elseif (tabName == "Weekly") then
+            isPresentInOtherTab = config:HasItem(NysTDL.db.profile.itemsDaily, name);
           end
-        end
-        if (not stop) then
-          if (not isPresent1) then
-            table.insert(NysTDL.db.profile.itemsList[cat], name);
-            table.insert(TabItemsTable(tabName), name);
-            addResult = {L["\"%s\" added to %s! (%s item)"]:format(name, cat, L[tabName]), true};
-          elseif (not isPresent2) then -- if it doesn't exists in the current tab, but it does in that category only in the 'All' tab
-            table.insert(TabItemsTable(tabName), name); -- we transform that item into a 'tabName' item for this category
-            addResult = {L["\"%s\" added to %s! (%s item)"]:format(name, cat, L[tabName]), true};
-          else
+
+          if (isPresentInOtherTab) then
             addResult = {L["No item can be daily and weekly!"], false};
+          else -- if it isn't in the other reset tab, it means that the item is in the All tab -- CASE2 (add in reset tab, already in All)
+            table.insert(TabItemsTable(tabName), name); -- in that case, we transform that item into a 'tabName' item for this category
+            addResult = {L["\"%s\" added to %s! (%s item)"]:format(name, cat, L[tabName]), true};
           end
+        else -- if that new reset item doesn't exists at all in that category, we create it -- CASE3 (add in 'All' tab and add in reset tab)
+          table.insert(NysTDL.db.profile.itemsList[cat], name);
+          table.insert(TabItemsTable(tabName), name);
+          addResult = {L["\"%s\" added to %s! (%s item)"]:format(name, cat, L[tabName]), true};
         end
       end
     end
