@@ -463,9 +463,9 @@ function config:GetKeyFromValue(tabSource, value)
 end
 
 function config:GetItemInfoFromCheckbox(checkBox)
-  local itemName = checkBox:GetName(); -- we get the name of the tied check button
   local catName = (select(2, checkBox:GetPoint())):GetName(); -- we get the category the checkbox is in
-  return itemName, catName;
+  local itemName = checkBox.text:GetText(); -- we get the text of the check box
+  return catName, itemName;
 end
 
 local function getHoursUntilReset()
@@ -628,7 +628,7 @@ function config:CreateFavoriteButton(relativeCheckButton)
 
   -- these are for changing the color depending on the mouse actions (since they are custom xml)
   -- and yea, this one's a bit complicated because I wanted its look to be really precise...
-  local itemName, catName = config:GetItemInfoFromCheckbox(relativeCheckButton);
+  local catName, itemName = config:GetItemInfoFromCheckbox(relativeCheckButton);
   btn:HookScript("OnEnter", function(self)
     if (not NysTDL.db.profile.itemsList[catName][itemName].favorite) then -- not favorited
       self.Icon:SetDesaturated(nil)
@@ -680,7 +680,7 @@ function config:CreateDescButton(relativeCheckButton)
 
   -- these are for changing the color depending on the mouse actions (since they are custom xml)
   -- and yea, this one's a bit complicated too because it works in very specific ways
-  local itemName, catName = config:GetItemInfoFromCheckbox(relativeCheckButton);
+  local catName, itemName = config:GetItemInfoFromCheckbox(relativeCheckButton);
   btn:HookScript("OnEnter", function(self)
     if (NysTDL.db.profile.itemsList[catName][itemName].description == "") then -- no description
       self.Icon:SetDesaturated(nil)
