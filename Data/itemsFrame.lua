@@ -163,12 +163,12 @@ local function FrameContentAlphaSlider_OnValueChanged(_, value)
   end
 end
 
-local function TabItemsTable(tabName)
-  -- returns the saved variable corresponding to the items for 'tabName'
+local function TabCatItemsTable(tabName, catName)
+  -- returns the saved variable table corresponding to the items for 'catName' in 'tabName'
   if (tabName == "Daily") then
-    return NysTDL.db.profile.itemsDaily;
+    return NysTDL.db.profile.itemsDaily[catName];
   elseif (tabName == "Weekly") then
-    return NysTDL.db.profile.itemsWeekly;
+    return NysTDL.db.profile.itemsWeekly[catName];
   end
   return All;
 end
@@ -188,7 +188,7 @@ function itemsFrame:ResetBtns(tabName, auto)
 
         checkBtn[All[i]]:SetChecked(false);
       end
-    elseif (config:HasItem(TabItemsTable(tabName), checkBtn[All[i]]:GetName())) then
+    elseif (config:HasItem(TabCatItemsTable(tabName), checkBtn[All[i]]:GetName())) then
       if (checkBtn[All[i]]:GetChecked()) then
         uncheckedSomething = true;
       end
@@ -222,7 +222,7 @@ function itemsFrame:CheckBtns(tabName)
 
         checkBtn[All[i]]:SetChecked(true);
       end
-    elseif (config:HasItem(TabItemsTable(tabName), checkBtn[All[i]]:GetName())) then
+    elseif (config:HasItem(TabCatItemsTable(tabName), checkBtn[All[i]]:GetName())) then
       if (not checkBtn[All[i]]:GetChecked()) then
         checkedSomething = true;
       end
@@ -302,7 +302,7 @@ function itemsFrame:updateRemainingNumber()
   for c, _ in pairs(label) do -- for every category labels
     local nbFavCat = 0
     for _, x in pairs(NysTDL.db.profile.itemsList[c]) do -- and for every items in them
-      if (config:HasItem(TabItemsTable(tab:GetName()), x)) then -- if the current loop item is in the tab we're on
+      if (config:HasItem(TabCatItemsTable(tab:GetName()), x)) then -- if the current loop item is in the tab we're on
         if (config:HasItem(NysTDL.db.profile.itemsFavorite, x)) then -- and it's a favorite
           if (not checkBtn[x]:GetChecked()) then -- and it's not checked
             nbFavCat = nbFavCat + 1 -- then it's one more remaining favorite hidden in the closed category
@@ -438,14 +438,14 @@ local function updateAllTable()
   end
 end
 
-local function refreshTab(cat, name, action, modif, checked)
+local function refreshTab(catName, name, action, modif, checked)
   -- if the last tab we were on is getting an update
   -- because of an add or remove of an item, we re-update it
 
   if (modif) then
     -- Removing case
     if (action == "Remove") then
-      if (cat == nil) then
+      if (catName == nil) then
         local isPresent, pos = config:HasItem(NysTDL.db.profile.checkedButtons, checkBtn[name]:GetName());
         if (checked and isPresent) then
           table.remove(NysTDL.db.profile.checkedButtons, pos);
@@ -493,16 +493,16 @@ local function refreshTab(cat, name, action, modif, checked)
         descBtn[name]:Hide();
       end
       -- we create the corresponding label (if it is a new one)
-      if (label[cat] == nil) then
+      if (label[catName] == nil) then
         -- category label
-        label[cat] = config:CreateNoPointsLabel(itemsFrameUI, cat, tostring(cat));
-        categoryLabelFavsRemaining[cat] = config:CreateNoPointsLabel(itemsFrameUI, cat.."_FavsRemaining", "");
+        label[catName] = config:CreateNoPointsLabel(itemsFrameUI, catName, tostring(catName));
+        categoryLabelFavsRemaining[catName] = config:CreateNoPointsLabel(itemsFrameUI, catName.."_FavsRemaining", "");
         -- associated edit box and add button
-        editBox[cat] = config:CreateNoPointsLabelEditBox(cat);
-        editBox[cat]:SetScript("OnEnterPressed", function(self) itemsFrame:AddItem(addBtn[self:GetName()]) self:SetFocus() end); -- if we press enter, it's like we clicked on the add button
-        table.insert(hyperlinkEditBoxes, editBox[cat]);
-        addBtn[cat] = config:CreateAddButton(editBox[cat]);
-        addBtn[cat]:SetScript("OnClick", function(self) itemsFrame:AddItem(self) self:GetParent():SetFocus() end);
+        editBox[catName] = config:CreateNoPointsLabelEditBox(catName);
+        editBox[catName]:SetScript("OnEnterPressed", function(self) itemsFrame:AddItem(addBtn[self:GetName()]) self:SetFocus() end); -- if we press enter, it's like we clicked on the add button
+        table.insert(hyperlinkEditBoxes, editBox[catName]);
+        addBtn[catName] = config:CreateAddButton(editBox[catName]);
+        addBtn[catName]:SetScript("OnClick", function(self) itemsFrame:AddItem(self) self:GetParent():SetFocus() end);
       end
 
       Tab_OnClick(_G[NysTDL.db.profile.lastLoadedTab]); -- we reload the tab to instantly display the changes
@@ -514,15 +514,15 @@ local function addCategory()
   -- the big function to add categories
 
   local db = {}
-  db.cat = itemsFrameUI.categoryEditBox:GetText();
+  db.catName = itemsFrameUI.categoryEditBox:GetText();
 
-  if (db.cat == "") then
+  if (db.catName == "") then
     config:Print(L["Please enter a category name!"])
     itemsFrameUI.categoryEditBox:SetFocus()
     return;
   end
 
-  local l = config:CreateNoPointsLabel(itemsFrameUI, nil, db.cat);
+  local l = config:CreateNoPointsLabel(itemsFrameUI, nil, db.catName);
   if (l:GetWidth() > categoryNameWidthMax) then
     config:Print(L["This categoty name is too big!"])
     itemsFrameUI.categoryEditBox:SetFocus()
@@ -572,12 +572,12 @@ function itemsFrame:AddItem(self, db)
   -- the big big function to add items
 
   local addResult = {"", false}; -- message to be displayed in result of the function and wether there was an adding or not
-  local name, tabName, cat, checked;
+  local name, tabName, catName, checked;
 
   if (type(db) ~= "table") then
     name = self:GetParent():GetText(); -- we get the name the player entered
     tabName = self:GetParent():GetParent():GetName(); -- we get the tab we're on
-    cat = self:GetParent():GetName(); -- we get the category we're adding the item in
+    catName = self:GetParent():GetName(); -- we get the category we're adding the item in
     checked = false;
 
     -- there we check if the item name is not too big
@@ -590,7 +590,7 @@ function itemsFrame:AddItem(self, db)
   else
     name = db.name;
     tabName = db.tabName;
-    cat = db.cat;
+    catName = db.catName;
     checked = db.checked;
   end
 
@@ -598,49 +598,49 @@ function itemsFrame:AddItem(self, db)
     addResult = {L["Please enter the name of the item!"], false};
   else -- if we typed something
     local willCreateNewCat = false;
-    local catAlreadyExists = config:HasKey(NysTDL.db.profile.itemsList, cat);
-    if (not catAlreadyExists) then NysTDL.db.profile.itemsList[cat] = {}; willCreateNewCat = true; end -- that means we'll be adding something to a new category, so we create the table to hold all theses shiny new items
+    local catAlreadyExists = config:HasKey(NysTDL.db.profile.itemsList, catName);
+    if (not catAlreadyExists) then NysTDL.db.profile.itemsList[catName] = {}; willCreateNewCat = true; end -- that means we'll be adding something to a new category, so we create the table to hold all theses shiny new items
 
     local isPresentInCurrentCat;
     if (tabName == "All") then
-      isPresentInCurrentCat = config:HasItem(NysTDL.db.profile.itemsList[cat], name); -- does it already exists in the typed category?
+      isPresentInCurrentCat = config:HasItem(NysTDL.db.profile.itemsList[catName], name); -- does it already exists in the typed category?
     else -- if it's a daily/weekly item
-      isPresentInCurrentCat = config:HasItem(TabItemsTable(tabName), name); -- does it already exists in the current tab? (Daily or Weekly)
+      isPresentInCurrentCat = config:HasItem(TabCatItemsTable(tabName, catName), name); -- does it already exists in the current tab's current categry? (Daily or Weekly)
     end
 
     if (isPresentInCurrentCat) then
       addResult = {L["This item is already here in this category!"], false};
     else -- if it's not in the current category in the current tab
       if (tabName == "All") then -- then we are creating a new item for the current cat in the All tab --CASE1 (add in 'All' tab)
-        table.insert(NysTDL.db.profile.itemsList[cat], name);
-        addResult = {L["\"%s\" added to %s! ('All' tab item)"]:format(name, cat), true};
+        table.insert(NysTDL.db.profile.itemsList[catName], name);
+        addResult = {L["\"%s\" added to %s! ('All' tab item)"]:format(name, catName), true};
       else -- then we'll try to add the item as daily/weekly for the current cat in the current tab
-        if (config:HasItem(NysTDL.db.profile.itemsList[cat], name)) then -- if it exists in the category, we search where
+        if (config:HasItem(NysTDL.db.profile.itemsList[catName], name)) then -- if it exists in the category, we search where
           -- checking...
           local isPresentInOtherTab;
           if (tabName == "Daily") then
-            isPresentInOtherTab = config:HasItem(NysTDL.db.profile.itemsWeekly, name);
+            isPresentInOtherTab = config:HasItem(NysTDL.db.profile.itemsWeekly[catName], name);
           elseif (tabName == "Weekly") then
-            isPresentInOtherTab = config:HasItem(NysTDL.db.profile.itemsDaily, name);
+            isPresentInOtherTab = config:HasItem(NysTDL.db.profile.itemsDaily[catName], name);
           end
 
           if (isPresentInOtherTab) then
             addResult = {L["No item can be daily and weekly!"], false};
           else -- if it isn't in the other reset tab, it means that the item is in the All tab -- CASE2 (add in reset tab, already in All)
-            table.insert(TabItemsTable(tabName), name); -- in that case, we transform that item into a 'tabName' item for this category
-            addResult = {L["\"%s\" added to %s! (%s item)"]:format(name, cat, L[tabName]), true};
+            table.insert(TabCatItemsTable(tabName, catName), name); -- in that case, we transform that item into a 'tabName' item for this category
+            addResult = {L["\"%s\" added to %s! (%s item)"]:format(name, catName, L[tabName]), true};
           end
         else -- if that new reset item doesn't exists at all in that category, we create it -- CASE3 (add in 'All' tab and add in reset tab)
-          table.insert(NysTDL.db.profile.itemsList[cat], name);
-          table.insert(TabItemsTable(tabName), name);
-          addResult = {L["\"%s\" added to %s! (%s item)"]:format(name, cat, L[tabName]), true};
+          table.insert(NysTDL.db.profile.itemsList[catName], name);
+          table.insert(TabCatItemsTable(tabName, catName), name);
+          addResult = {L["\"%s\" added to %s! (%s item)"]:format(name, catName, L[tabName]), true};
         end
       end
     end
   end
 
   if (willCreateNewCat and not addResult[2]) then -- if we didn't add anything and it was supposed to create a new category, we cancel our move and nil this false new empty category
-    NysTDL.db.profile.itemsList[cat] = nil;
+    NysTDL.db.profile.itemsList[catName] = nil;
   end
 
   -- okay so we print only if we're not in a clear undo process / single undo process but failed
@@ -650,7 +650,7 @@ function itemsFrame:AddItem(self, db)
 
   if (addResult[2]) then
     if (type(db) ~= "table") then -- if we come from the edit box to add an item next to the category name label
-      dontHideMePls[cat] = true; -- then the ending refresh must not hide the edit box
+      dontHideMePls[catName] = true; -- then the ending refresh must not hide the edit box
       self:GetParent():SetText(""); -- but we clear it since our query was succesful
     elseif (type(db) == "table" and db.form) then -- if we come from the Add a category form
       itemsFrameUI.categoryEditBox:SetText("");
@@ -661,7 +661,7 @@ function itemsFrame:AddItem(self, db)
     end
   end
 
-  refreshTab(cat, name, "Add", addResult[2], checked);
+  refreshTab(catName, name, "Add", addResult[2], checked);
 end
 
 function itemsFrame:RemoveItem(self)
@@ -671,7 +671,7 @@ function itemsFrame:RemoveItem(self)
   local isPresent, pos;
 
   local name = self:GetParent():GetName(); -- we get the name of the tied check button
-  local cat = (select(2, self:GetParent():GetPoint())):GetName(); -- we get the category we're in
+  local catName = (select(2, self:GetParent():GetPoint())):GetName(); -- we get the category we're in
 
   -- since the item will get removed, we check if his description frame was opened (can happen if there was no description on the item)
   -- and if so, we hide and destroy it
@@ -680,13 +680,13 @@ function itemsFrame:RemoveItem(self)
   -- undo part
   local db = {
     ["name"] = name;
-    ["cat"] = cat;
+    ["catName"] = catName;
     ["tabName"] = "All";
     ["checked"] = self:GetParent():GetChecked();
   }
 
   -- All part
-  table.remove(NysTDL.db.profile.itemsList[cat], (select(2, config:HasItem(NysTDL.db.profile.itemsList[cat], name))));
+  table.remove(NysTDL.db.profile.itemsList[catName], (select(2, config:HasItem(NysTDL.db.profile.itemsList[catName], name))));
   -- Daily part
   isPresent, pos = config:HasItem(NysTDL.db.profile.itemsDaily, name);
   if (isPresent) then
@@ -702,7 +702,7 @@ function itemsFrame:RemoveItem(self)
 
   if (not clearing) then
     config:Print(L["\"%s\" removed!"]:format(name));
-    dontHideMePls[cat] = true; -- we don't hide the edit box at the next refresh for the category we just deleted an item from
+    dontHideMePls[catName] = true; -- we don't hide the edit box at the next refresh for the category we just deleted an item from
   end
   modif = true;
 
@@ -714,19 +714,13 @@ end
 function itemsFrame:FavoriteClick(self)
   -- the function to favorite items
 
-  local name = self:GetParent():GetName(); -- we get the name of the tied check button
-  local cat = (select(2, self:GetParent():GetPoint())):GetName(); -- we get the category we're in so that we don't hide the add edit box at the next refresh
-  dontHideMePls[cat] = true;
+  local itemName, catName = config:GetItemInfoFromCheckbox(self:GetParent());
+  dontHideMePls[catName] = true;
 
-  local isPresent, pos = config:HasItem(NysTDL.db.profile.itemsFavorite, name)
-  if (not isPresent) then
-    table.insert(NysTDL.db.profile.itemsFavorite, name)
-  else
-    table.remove(NysTDL.db.profile.itemsFavorite, pos)
-  end
+  NysTDL.db.profile.itemsList[catName][itemName].favorite = not NysTDL.db.profile.itemsList[catName][itemName].favorite; -- we inverse the favorite state of the item
 
   Tab_OnClick(_G[NysTDL.db.profile.lastLoadedTab]); -- we reload the tab to instantly display the changes
-end
+end--#DONE#
 
 function itemsFrame:ApplyNewRainbowColor(i)
   i = i or 1
@@ -792,20 +786,19 @@ function itemsFrame:descriptionFrameHide(name)
     end
   end
   return false;
-end
+end--#DONE#
 
 function itemsFrame:DescriptionClick(self)
   -- the big function to create the description frame for each items
 
-  local name = self:GetParent():GetName(); -- we get the name of the tied check button
-  local cat = (select(2, self:GetParent():GetPoint())):GetName(); -- we get the category we're in so that we don't hide the add edit box at the next refresh
-  dontHideMePls[cat] = true;
+  local itemName, catName = config:GetItemInfoFromCheckbox(self:GetParent());
+  dontHideMePls[catName] = true;
 
-  if (itemsFrame:descriptionFrameHide(name.."_descFrame")) then return; end
+  if (itemsFrame:descriptionFrameHide(itemName.."_descFrame")) then return; end
 
   -- we create the mini frame holding the name of the item and his description in an edit box
-  local descFrame = CreateFrame("Frame", name.."_descFrame", UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil); -- importing the backdrop in the desc frames, as of wow 9.0
-  local w = config:CreateNoPointsLabel(UIParent, nil, name):GetWidth();
+  local descFrame = CreateFrame("Frame", itemName.."_descFrame", UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil); -- importing the backdrop in the desc frames, as of wow 9.0
+  local w = config:CreateNoPointsLabel(UIParent, nil, itemName):GetWidth();
   descFrame:SetSize((w < 180) and 180+75 or w+75, 110); -- 75 is large enough to place the closebutton, clearbutton, and a little bit of space at the right of the name
 
   -- background
@@ -836,12 +829,11 @@ function itemsFrame:DescriptionClick(self)
 
     while (self.timeSinceLastUpdate > updateRate) do -- every 0.05 sec (instead of every frame which is every 1/144 (0.007) sec for a 144hz display... optimization :D)
       -- we update non-stop the color of the title
-      local name = self.title:GetText();
       local currentAlpha = NysTDL.db.profile.descFrameContentAlpha/100;
-      if (checkBtn[name]:GetChecked()) then
+      if (checkBtn[catName][itemName]:GetChecked()) then
         self.title:SetTextColor(0, 1, 0, currentAlpha);
       else
-        if (config:HasItem(NysTDL.db.profile.itemsFavorite, checkBtn[name]:GetName())) then
+        if (NysTDL.db.profile.itemsList[catName][itemName].favorite) then
           local r, g, b = unpack(NysTDL.db.profile.favoritesColor);
           self.title:SetTextColor(r, g, b, currentAlpha);
         else
@@ -912,17 +904,17 @@ function itemsFrame:DescriptionClick(self)
   end);
 
   -- item label
-  descFrame.title = descFrame:CreateFontString(name.."_descFrameTitle")
+  descFrame.title = descFrame:CreateFontString(itemName.."_descFrameTitle")
   descFrame.title:SetFontObject("GameFontNormalLarge")
   descFrame.title:SetPoint("TOPLEFT", descFrame, "TOPLEFT", 6, -5)
-  descFrame.title:SetText(name)
+  descFrame.title:SetText(itemName)
   descFrame:SetHyperlinksEnabled(true); -- to enable OnHyperlinkClick
   descFrame:SetScript("OnHyperlinkClick", function(_, linkData, link, button)
     ChatFrame_OnHyperlinkShow(ChatFrame1, linkData, link, button)
   end);
 
   -- description edit box
-  descFrame.descriptionEditBox = CreateFrame("ScrollFrame", name.."_descFrameEditBox", descFrame, "InputScrollFrameTemplate");
+  descFrame.descriptionEditBox = CreateFrame("ScrollFrame", itemName.."_descFrameEditBox", descFrame, "InputScrollFrameTemplate");
   descFrame.descriptionEditBox.EditBox:SetFontObject("ChatFontNormal")
   descFrame.descriptionEditBox.EditBox:SetAutoFocus(false)
   descFrame.descriptionEditBox.EditBox:SetMaxLetters(0)
@@ -931,15 +923,14 @@ function itemsFrame:DescriptionClick(self)
   descFrame.descriptionEditBox.EditBox.Instructions:SetText(L["Add a description..."].."\n"..L["(automatically saved)"])
   descFrame.descriptionEditBox:SetPoint("TOPLEFT", descFrame, "TOPLEFT", 10, -30);
   descFrame.descriptionEditBox:SetPoint("BOTTOMRIGHT", descFrame, "BOTTOMRIGHT", -10, 10);
-  if (config:HasKey(NysTDL.db.profile.itemsDesc, name)) then -- if there is already a description for this item, we write it on frame creation
-    descFrame.descriptionEditBox.EditBox:SetText(NysTDL.db.profile.itemsDesc[name])
+  if (NysTDL.db.profile.itemsList[catName][itemName].description ~= "") then -- if there is already a description for this item, we write it on frame creation
+    descFrame.descriptionEditBox.EditBox:SetText(NysTDL.db.profile.itemsList[catName][itemName].description)
   end
   descFrame.descriptionEditBox.EditBox:SetScript("OnKeyUp", function(self)
     -- and here we save the description everytime we lift a finger (best auto-save possible I think)
-    local itemName = self:GetParent():GetParent().title:GetText()
-    NysTDL.db.profile.itemsDesc[itemName] = (self:GetText() ~= "") and self:GetText() or nil
+    NysTDL.db.profile.itemsList[catName][itemName].description = self:GetText()
     if (IsControlKeyDown()) then -- just in case we are ctrling-v, to color the icon
-      descBtn[name]:GetScript("OnShow")(descBtn[name])
+      descBtn[catName][itemName]:GetScript("OnShow")(descBtn[catName][itemName])
     end
   end)
   descFrame.descriptionEditBox.EditBox:SetHyperlinksEnabled(true); -- to enable OnHyperlinkClick
@@ -955,39 +946,40 @@ function itemsFrame:DescriptionClick(self)
   FrameContentAlphaSlider_OnValueChanged(nil, NysTDL.db.profile.frameContentAlpha);
 
   Tab_OnClick(_G[NysTDL.db.profile.lastLoadedTab]); -- we reload the tab to instantly display the changes
-end
+end--#DONE#
 
 function itemsFrame:ClearTab(tabName)
-  if (tabName == nil) then tabName = "All"; end
-
-  local items = {};
-  if (tabName == "All") then items = All; end
-  if (tabName == "Daily") then items = NysTDL.db.profile.itemsDaily; end
-  if (tabName == "Weekly") then items = NysTDL.db.profile.itemsWeekly; end
-
   -- first we get how many items are favorites and how many have descriptions in this tab (they are protected, we won't clear them)
+  local nbItems = 0;
   local nbProtected = 0;
-  for _, v in pairs(items) do
-    if (config:HasItem(NysTDL.db.profile.itemsFavorite, v) or config:HasKey(NysTDL.db.profile.itemsDesc, v)) then
-      nbProtected = nbProtected + 1;
+  for catName, items in pairs(NysTDL.db.profile.itemsList) do -- for every item
+    for itemName, data in pairs(items) do
+      if (data.tab == tabName) then -- if it is one in the selected tab
+        nbItems = nbItems + 1;
+        if (data.favorite or data.description ~= "") then -- if it is favorited or has a description
+          nbProtected = nbProtected + 1;
+        end
+      end
     end
   end
 
-  if (#items > nbProtected) then -- if there is at least one item that can be cleared in this tab
+  if (nbItems > nbProtected) then -- if there is at least one item that can be cleared in this tab
     -- we start the clear
     clearing = true;
 
     -- we keep in mind what tab we were on when we started the clear (just so that we come back to it after the job is done)
     local last = NysTDL.db.profile.lastLoadedTab;
 
-    local nb = #items - nbProtected; -- but before (if we want to undo it) we keep in mind how many items there were to be cleared
+    local nb = nbItems - nbProtected; -- but before (if we want to undo it) we keep in mind how many items there were to be cleared
 
     Tab_OnClick(_G["ToDoListUIFrameTab1"]); -- we put ourselves in the All tab so that evey item is loaded
 
-    for _, v in pairs(removeBtn) do
-      if (config:HasItem(items, v:GetParent():GetName())) then -- if the item is in the tab we want to clear
-        if (not config:HasItem(NysTDL.db.profile.itemsFavorite, v:GetParent():GetName()) and not config:HasKey(NysTDL.db.profile.itemsDesc, v:GetParent():GetName())) then -- if it's not a favorite nor it has a description
-          itemsFrame:RemoveItem(v); -- then we remove it
+    for catName, items in pairs(removeBtn) do
+      for itemName, btn in pairs(items) do
+        if (NysTDL.db.profile.itemsList[catName][itemName].tab == tabName) then -- if the item is in the tab we want to clear
+          if (not NysTDL.db.profile.itemsList[catName][itemName].favorite and NysTDL.db.profile.itemsList[catName][itemName].description == "") then -- if it's not a favorite nor it has a description
+            itemsFrame:RemoveItem(btn); -- then we remove it
+          end
         end
       end
     end
@@ -1002,7 +994,7 @@ function itemsFrame:ClearTab(tabName)
   else
     config:Print(L["Nothing can be cleared here!"]);
   end
-end
+end--#DONE#
 
 function itemsFrame:UndoRemove()
   -- function to undo the last removes we did
@@ -2028,7 +2020,7 @@ end
 
 function itemsFrame:ValidateTutorial(tuto_name)
   -- completes the "tuto_name" tutorial, only if it was active
-  local i = config:getKeyFromValue(tuto_order, tuto_name);
+  local i = config:GetKeyFromValue(tuto_order, tuto_name);
   if (NysTDL.db.global.tuto_progression < i) then
     if (NysTDL.db.global.tuto_progression == i-1) then
       NysTDL.db.global.tuto_progression = NysTDL.db.global.tuto_progression + 1; -- we validate the tutorial
@@ -2203,6 +2195,7 @@ end
 
 ---Creating the main window---
 function itemsFrame:CreateItemsFrame()
+  if (true) then return; end
   -- as of wow 9.0, we need to import the backdrop template into our frames if we want to use it in them, it is not set by default, so that's what we are doing here:
   itemsFrameUI = CreateFrame("Frame", "ToDoListUIFrame", UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil);
 
@@ -2546,14 +2539,49 @@ function Nys_Tests(yes)
   elseif (yes == 2) then
     LibStub("AceConfigDialog-3.0"):Open("Nys_ToDoListWIP")
   elseif (yes == 3) then
-    local slt = 2, 3;
-    print(slt)
+    local table = {
+      ["cat1"] = {
+        ["itemname1"] = {
+          tab = "Daily",
+          checked = false,
+          favorite = false,
+          description = "",
+        },
+        ["itemname2"] = {
+          tab = "All",
+          favorite = false,
+          checked = false,
+        }
+      },
+      ["cat2"] = {
+        ["itemname1"] = {
+          tab = "Weekly",
+          checked = false,
+        },
+        ["itemname2"] = {
+          tab = "All",
+          favorite = true,
+          desc = "",
+          checked = false,
+        }
+      },
+    }
+
+    print(table["cat2"]["itemname2"].favorite)
+    -- for catName, items in pairs(table) do
+    --   print("-------------------------")
+    --   print(catName)
+    --   for itemName, data in pairs(items) do
+    --     print(itemName)
+    --     print(data.checked)
+    --   end
+    -- end
     -- print(GetAddOnMetadata(addonName, "X-WoW-Version"))
     -- print(config.database.options.args.general.args.toggleBind.obj.msgframe.msg:GetText())
   elseif (yes == 5) then -- EXPLOSION
     if (not NysTDL.db.profile.itemsList["EXPLOSION"]) then
     itemsFrame:AddItem("", {
-      ["cat"] = "EXPLOSION",
+      ["catName"] = "EXPLOSION",
       ["name"] = "1",
       ["tabName"] = "All",
       ["checked"] = false,
@@ -2561,7 +2589,7 @@ function Nys_Tests(yes)
 
     for i = 1, 99 do
       itemsFrame:AddItem("", {
-        ["cat"] = "EXPLOSION",
+        ["catName"] = "EXPLOSION",
         ["name"] = tostring(tonumber(NysTDL.db.profile.itemsList["EXPLOSION"][#NysTDL.db.profile.itemsList["EXPLOSION"]]) + 1),
         ["tabName"] = "All",
         ["checked"] = false,
@@ -2573,7 +2601,7 @@ function Nys_Tests(yes)
 
     for i = 1, 100 do
     itemsFrame:AddItem("", {
-      ["cat"] = "EXPLOSION",
+      ["catName"] = "EXPLOSION",
       ["name"] = tostring(tonumber(NysTDL.db.profile.itemsList["EXPLOSION"][#NysTDL.db.profile.itemsList["EXPLOSION"]]) + 1),
       ["tabName"] = "All",
       ["checked"] = false,

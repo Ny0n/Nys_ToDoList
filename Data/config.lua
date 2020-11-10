@@ -308,11 +308,7 @@ config.database = {
             tdlButton = { show = false, red = false, points = { point = "CENTER", relativeTo = UIParent, relativePoint = "CENTER", xOffset = 0, yOffset = 0 } },
             framePos = { point = "CENTER", relativeTo = UIParent, relativePoint = "CENTER", xOffset = 0, yOffset = 0 },
             frameSize = { width = 340, height = 400 },
-            itemsList = nil,
-            itemsDaily = nil,
-            itemsWeekly = nil,
-            itemsFavorite = {},
-            itemsDesc = {},
+            itemsList = {},
             favoritesColor = { 1, 0.5, 0.6 },
             rainbow = false,
             rainbowSpeed = 2,
@@ -331,7 +327,6 @@ config.database = {
             descFrameAlpha = 65,
             descFrameContentAlpha = 100,
             lastLoadedTab = "ToDoListUIFrameTab2",
-            checkedButtons = {},
             closedCategories = {},
             undoTable = {},
         }, -- profile
@@ -426,6 +421,10 @@ function config:HasHyperlink(s)
 end
 
 function config:HasItem(table, item)
+  if type(table) ~= "table" then -- just in case
+    return false, 0;
+  end
+
   local isPresent = false;
   local pos = 0;
   for key, value in pairs(table) do
@@ -456,11 +455,17 @@ function config:HasAtLeastOneItem(tabSource, tabDest)
   return false;
 end
 
-function config:getKeyFromValue(tabSource, value)
+function config:GetKeyFromValue(tabSource, value)
   for k, v in pairs(tabSource) do
     if (v == value) then return k end
   end
   return nil
+end
+
+function config:GetItemInfoFromCheckbox(checkBox)
+  local itemName = checkBox:GetName(); -- we get the name of the tied check button
+  local catName = (select(2, checkBox:GetPoint())):GetName(); -- we get the category the checkbox is in
+  return itemName, catName;
 end
 
 local function getHoursUntilReset()
@@ -623,8 +628,9 @@ function config:CreateFavoriteButton(relativeCheckButton)
 
   -- these are for changing the color depending on the mouse actions (since they are custom xml)
   -- and yea, this one's a bit complicated because I wanted its look to be really precise...
+  local itemName, catName = config:GetItemInfoFromCheckbox(relativeCheckButton);
   btn:HookScript("OnEnter", function(self)
-    if (not config:HasItem(NysTDL.db.profile.itemsFavorite, self:GetParent():GetName())) then
+    if (not NysTDL.db.profile.itemsList[catName][itemName].favorite) then -- not favorited
       self.Icon:SetDesaturated(nil)
       self.Icon:SetVertexColor(1, 1, 1)
     else
@@ -632,7 +638,7 @@ function config:CreateFavoriteButton(relativeCheckButton)
     end
   end);
   btn:HookScript("OnLeave", function(self)
-    if (not config:HasItem(NysTDL.db.profile.itemsFavorite, self:GetParent():GetName())) then
+    if (not NysTDL.db.profile.itemsList[catName][itemName].favorite) then
       if (tonumber(string.format("%.1f", self.Icon:GetAlpha())) ~= 0.5) then -- if we are currently clicking on the button
         self.Icon:SetDesaturated(1)
         self.Icon:SetVertexColor(0.4, 0.4, 0.4)
@@ -644,7 +650,7 @@ function config:CreateFavoriteButton(relativeCheckButton)
    btn:HookScript("OnMouseUp", function(self)
      if (self.name == "FavoriteButton") then
        self:SetAlpha(1)
-       if (not config:HasItem(NysTDL.db.profile.itemsFavorite, self:GetParent():GetName())) then
+       if (not NysTDL.db.profile.itemsList[catName][itemName].favorite) then
          self.Icon:SetDesaturated(1)
          self.Icon:SetVertexColor(0.4, 0.4, 0.4)
        end
@@ -657,7 +663,7 @@ function config:CreateFavoriteButton(relativeCheckButton)
    end);
   btn:HookScript("OnShow", function(self)
     self:SetAlpha(1)
-    if (not config:HasItem(NysTDL.db.profile.itemsFavorite, self:GetParent():GetName())) then
+    if (not NysTDL.db.profile.itemsList[catName][itemName].favorite) then
       self.Icon:SetDesaturated(1)
       self.Icon:SetVertexColor(0.4, 0.4, 0.4)
     else
@@ -674,8 +680,9 @@ function config:CreateDescButton(relativeCheckButton)
 
   -- these are for changing the color depending on the mouse actions (since they are custom xml)
   -- and yea, this one's a bit complicated too because it works in very specific ways
+  local itemName, catName = config:GetItemInfoFromCheckbox(relativeCheckButton);
   btn:HookScript("OnEnter", function(self)
-    if (not config:HasKey(NysTDL.db.profile.itemsDesc, self:GetParent():GetName())) then
+    if (NysTDL.db.profile.itemsList[catName][itemName].description == "") then -- no description
       self.Icon:SetDesaturated(nil)
       self.Icon:SetVertexColor(1, 1, 1)
     else
@@ -683,7 +690,7 @@ function config:CreateDescButton(relativeCheckButton)
     end
   end);
   btn:HookScript("OnLeave", function(self)
-    if (not config:HasKey(NysTDL.db.profile.itemsDesc, self:GetParent():GetName())) then
+    if (NysTDL.db.profile.itemsList[catName][itemName].description == "") then
       if (tonumber(string.format("%.1f", self.Icon:GetAlpha())) ~= 0.5) then -- if we are currently clicking on the button
         self.Icon:SetDesaturated(1)
         self.Icon:SetVertexColor(0.4, 0.4, 0.4)
@@ -695,7 +702,7 @@ function config:CreateDescButton(relativeCheckButton)
    btn:HookScript("OnMouseUp", function(self)
      if (self.name == "DescButton") then
        self:SetAlpha(1)
-       if (not config:HasKey(NysTDL.db.profile.itemsDesc, self:GetParent():GetName())) then
+       if (NysTDL.db.profile.itemsList[catName][itemName].description == "") then
          self.Icon:SetDesaturated(1)
          self.Icon:SetVertexColor(0.4, 0.4, 0.4)
        end
@@ -708,7 +715,7 @@ function config:CreateDescButton(relativeCheckButton)
    end);
   btn:HookScript("OnShow", function(self)
     self:SetAlpha(1)
-    if (not config:HasKey(NysTDL.db.profile.itemsDesc, self:GetParent():GetName())) then
+    if (NysTDL.db.profile.itemsList[catName][itemName].description == "") then
       self.Icon:SetDesaturated(1)
       self.Icon:SetVertexColor(0.4, 0.4, 0.4)
     else

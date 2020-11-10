@@ -213,23 +213,7 @@ function NysTDL:DBInit()
   -- initialization of elements that need access to other files functions or need to be updated correctly when the profile changes
   if (self.db.profile.autoReset == nil) then self.db.profile.autoReset = { ["Daily"] = config:GetSecondsToReset().daily, ["Weekly"] = config:GetSecondsToReset().weekly } end
   if (not self.db.profile.rememberUndo) then self.db.profile.undoTable = {} end
-  if (self.db.profile.itemsList == nil) then self.db.profile.itemsList = {} end
-  if (self.db.profile.itemsDaily == nil) then
-    if (self.db.profile.itemsList["Daily"] ~= nil) then
-      self.db.profile.itemsDaily = config:Deepcopy(self.db.profile.itemsList["Daily"])
-      self.db.profile.itemsList["Daily"] = nil
-    else
-      self.db.profile.itemsDaily = {}
-    end
-  end
-  if (self.db.profile.itemsWeekly == nil) then
-    if (self.db.profile.itemsList["Weekly"] ~= nil) then
-    self.db.profile.itemsWeekly = config:Deepcopy(self.db.profile.itemsList["Weekly"])
-    self.db.profile.itemsList["Weekly"] = nil
-    else
-      self.db.profile.itemsWeekly = {}
-    end
-  end
+  -- oulala
 end
 
 function NysTDL:ProfileChanged()
