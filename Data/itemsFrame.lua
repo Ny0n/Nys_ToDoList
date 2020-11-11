@@ -223,41 +223,54 @@ end--#DONE#
 
 local function inChatIsDone(all, daily, weekly)
   -- we tell the player if he's the best c:
-  if (all == 0 and remainingCheckAll ~= 0 and next(All) ~= nil) then
+
+  -- first we get if there are at least one item in each tab, so that we don't say anything if we just deleted the only remaining item
+  local nbAll, nbDaily, nbWeekly = 0, 0, 0;
+  for _, items in pairs(NysTDL.db.profile.itemsList) do -- for every item
+    for _, data in pairs(items) do
+      if (data.tabName == "Daily") then
+        nbDaily = nbDaily + 1;
+      end
+      if (data.tabName == "Weekly") then
+        nbWeekly = nbWeekly + 1;
+      end
+      nbAll = nbAll + 1;
+    end
+  end
+
+  -- then we check everything and say the right thing
+  if (all == 0 and remainingCheckAll ~= 0 and nbAll > 0) then
     config:Print(L["Nice job, you did everything on the list!"]);
-  elseif (daily == 0 and remainingCheckDaily ~= 0 and next(NysTDL.db.profile.itemsDaily) ~= nil) then
+  elseif (daily == 0 and remainingCheckDaily ~= 0 and nbDaily > 0) then
     config:Print(L["Everything's done for today!"]);
-  elseif (weekly == 0 and remainingCheckWeekly ~= 0 and next(NysTDL.db.profile.itemsWeekly) ~= nil) then
+  elseif (weekly == 0 and remainingCheckWeekly ~= 0 and nbWeekly > 0) then
     config:Print(L["Everything's done for this week!"]);
   end
-end
+end--#DONE#
 
 function itemsFrame:updateRemainingNumber()
   -- we get how many things there is left to do in every tab
   local numberAll, numberDaily, numberWeekly = 0, 0, 0;
   local numberFavAll, numberFavDaily, numberFavWeekly = 0, 0, 0;
-  for i = 1, #All do
-    local name = checkBtn[All[i]].text:GetText();
-    local isDaily = config:HasItem(NysTDL.db.profile.itemsDaily, name);
-    local isWeekly = config:HasItem(NysTDL.db.profile.itemsWeekly, name);
-    local isFav = config:HasItem(NysTDL.db.profile.itemsFavorite, name);
-
-    if (not checkBtn[All[i]]:GetChecked()) then -- if the current button is not checked
-      if (isDaily) then
-        numberDaily = numberDaily + 1;
-        if (isFav) then
-          numberFavDaily = numberFavDaily + 1;
+  for _, items in pairs(NysTDL.db.profile.itemsList) do -- for every item
+    for _, data in pairs(items) do
+      if (not data.checked) then -- if it's not checked
+        numberAll = numberAll + 1; -- then it's one more not done
+        if (data.favorite) then -- and we check for the favorite state too
+          numberFavAll = numberFavAll + 1;
         end
-      end
-      if (isWeekly) then
-        numberWeekly = numberWeekly + 1;
-        if (isFav) then
-          numberFavWeekly = numberFavWeekly + 1;
+        if (data.tabName == "Daily") then
+          numberDaily = numberDaily + 1;
+          if (data.favorite) then
+            numberFavDaily = numberFavDaily + 1;
+          end
         end
-      end
-      numberAll = numberAll + 1;
-      if (isFav) then
-        numberFavAll = numberFavAll + 1;
+        if (data.tabName == "Weekly") then
+          numberWeekly = numberWeekly + 1;
+          if (data.favorite) then
+            numberFavWeekly = numberFavWeekly + 1;
+          end
+        end
       end
     end
   end
@@ -277,12 +290,12 @@ function itemsFrame:updateRemainingNumber()
     itemsFrameUI.remainingNumber:SetText(((numberWeekly > 0) and "|cffffffff" or "|cff00ff00")..numberWeekly.."|r "..((numberFavWeekly > 0) and string.format("|cff%s%s|r", hex, "("..numberFavWeekly..")") or ""));
   end
   -- same for the category label ones
-  for c, _ in pairs(label) do -- for every category labels
+  for catName in pairs(label) do -- for every category labels
     local nbFavCat = 0
-    for _, x in pairs(NysTDL.db.profile.itemsList[c]) do -- and for every items in them
-      if (config:HasItem(TabCatItemsTable(tab:GetName()), x)) then -- if the current loop item is in the tab we're on
-        if (config:HasItem(NysTDL.db.profile.itemsFavorite, x)) then -- and it's a favorite
-          if (not checkBtn[x]:GetChecked()) then -- and it's not checked
+    for _, data in pairs(NysTDL.db.profile.itemsList[catName]) do -- and for every items in them
+      if (data.tabName == tab:GetName()) then -- if the current loop item is in the tab we're on
+        if (data.favorite) then -- and it's a favorite
+          if (not data.checked) then -- and it's not checked
             nbFavCat = nbFavCat + 1 -- then it's one more remaining favorite hidden in the closed category
           end
         end
@@ -325,7 +338,7 @@ function itemsFrame:updateRemainingNumber()
   remainingCheckWeekly = numberWeekly;
 
   return numberAll, numberDaily, numberWeekly, numberFavAll, numberFavDaily, numberFavWeekly; -- and we return them, so that we can access it eg. in the favorites warning function
-end
+end--#DONE#
 
 function itemsFrame:updateCheckButtonsColor()
   for catName, items in pairs(NysTDL.db.profile.itemsList) do -- for every check buttons
@@ -365,34 +378,6 @@ function itemsFrame:autoResetedThisSessionGET()
 end--#DONE#
 
 -- Items modifications
-
-local function updateAllTable()
-  All = {}
-  local fav = {}
-  local others = {}
-
-  -- Completing the All table
-  for _, val in pairs(NysTDL.db.profile.itemsList) do
-    for _, v in pairs(val) do
-      if (config:HasItem(NysTDL.db.profile.itemsFavorite, v)) then
-        table.insert(fav, v)
-      else
-        table.insert(others, v)
-      end
-    end
-  end
-
-  -- then we sort them, so that every item will be sorted alphabetically in the list,
-  -- with the favorites in first of every categories
-  table.sort(fav)
-  table.sort(others)
-  for _, v in pairs(fav) do
-    table.insert(All, v)
-  end
-  for _, v in pairs(others) do
-    table.insert(All, v)
-  end
-end
 
 local function refreshTab(catName, itemName, action, modif)
   -- if the last tab we were on is getting an update
@@ -488,8 +473,6 @@ function itemsFrame:AddItem(self, db)
   local defaultNewItemsTable = {
     ["tabName"] = "All",
     ["checked"] = false,
-    ["favorite"] = false,
-    ["description"] = "",
   }
 
   if (type(db) ~= "table") then
@@ -618,7 +601,11 @@ function itemsFrame:FavoriteClick(self)
   local catName, itemName = config:GetItemInfoFromCheckbox(self:GetParent());
   dontHideMePls[catName] = true;
 
-  NysTDL.db.profile.itemsList[catName][itemName].favorite = not NysTDL.db.profile.itemsList[catName][itemName].favorite; -- we inverse the favorite state of the item
+  if (NysTDL.db.profile.itemsList[catName][itemName].favorite) then -- we set the new favorite state of the item
+    NysTDL.db.profile.itemsList[catName][itemName].favorite = nil;
+  else
+    NysTDL.db.profile.itemsList[catName][itemName].favorite = true;
+  end
 
   Tab_OnClick(_G[NysTDL.db.profile.lastLoadedTab]); -- we reload the tab to instantly display the changes
 end--#DONE#
@@ -829,7 +816,7 @@ function itemsFrame:DescriptionClick(self)
   end
   descFrame.descriptionEditBox.EditBox:SetScript("OnKeyUp", function(self)
     -- and here we save the description everytime we lift a finger (best auto-save possible I think)
-    NysTDL.db.profile.itemsList[catName][itemName].description = self:GetText()
+    NysTDL.db.profile.itemsList[catName][itemName].description = (self:GetText() ~= "") and self:GetText() or nil;
     if (IsControlKeyDown()) then -- just in case we are ctrling-v, to color the icon
       descBtn[catName][itemName]:GetScript("OnShow")(descBtn[catName][itemName])
     end
@@ -857,7 +844,7 @@ function itemsFrame:ClearTab(tabName)
     for itemName, data in pairs(items) do
       if (data.tabName == tabName) then -- if it is one in the selected tab
         nbItems = nbItems + 1;
-        if (data.favorite or data.description ~= "") then -- if it is favorited or has a description
+        if (data.favorite or data.description ~= "") then -- if it is a favorite or has a description
           nbProtected = nbProtected + 1;
         end
       end
@@ -878,7 +865,7 @@ function itemsFrame:ClearTab(tabName)
     for catName, items in pairs(removeBtn) do
       for itemName, btn in pairs(items) do
         if (NysTDL.db.profile.itemsList[catName][itemName].tabName == tabName) then -- if the item is in the tab we want to clear
-          if (not NysTDL.db.profile.itemsList[catName][itemName].favorite and NysTDL.db.profile.itemsList[catName][itemName].description == "") then -- if it's not a favorite nor it has a description
+          if (not NysTDL.db.profile.itemsList[catName][itemName].favorite and not NysTDL.db.profile.itemsList[catName][itemName].description) then -- if it's not a favorite nor it has a description
             itemsFrame:RemoveItem(btn); -- then we remove it
           end
         end
@@ -928,7 +915,7 @@ end--#DONE#
 
 -- Frame update: --
 ItemsFrame_Update = function()
-  -- updates everything about the frame once everytime we call this function
+  -- updates everything about the frame everytime we call this function
   itemsFrame:updateRemainingNumber();
   itemsFrame:updateCheckButtonsColor();
 end--#DONE#
@@ -1205,32 +1192,11 @@ local function loadMovable()
 end--#DONE#
 
 -- boom
-local function loadCategories(tab, category, categoryLabel, constraint, catName, lastData, once)
-  if (once) then -- doing that only one time
-    -- we hide every checkboxes
-    for i = 1, #All do
-      checkBtn[All[i]]:Hide();
-      checkBtn[All[i]]:SetParent(tab);
-      checkBtn[All[i]]:ClearAllPoints();
-    end
-    once = false;
-  end
-
-  -- if we are not in the all tab, we modify the category variable
-  -- (which is a table containig every item in this tab)
-  -- so that there will only be the items respective to the category
-  if (constraint ~= nil) then
-    local cat = {}
-    for i = 1, #category do
-      if (select(1, config:HasItem(constraint, category[i]))) then
-        table.insert(cat, category[i]);
-      end
-    end
-    category = cat;
-  end
+local function loadCategories(tab, categoryLabel, catName, itemNames, lastData)
+  -- here we generate and load each categories and their items one by one
 
   local lastLabel, l, m;
-  if (config:HasAtLeastOneItem(All, category)) then -- litterally, for this tab
+  if (next(itemNames) ~= nil) then -- if for the current category there is at least one item to show in the current tab
     -- category label
     if (lastData == nil) then
       lastLabel = itemsFrameUI.dummyLabel;
@@ -1283,7 +1249,7 @@ local function loadCategories(tab, category, categoryLabel, constraint, catName,
       -- checkboxes
       local buttonsLength = 0;
       for i = 1, #All do
-        if ((select(1, config:HasItem(category, checkBtn[All[i]].text:GetText())))) then
+        if ((select(1, config:HasItem(itemNames, checkBtn[All[i]].text:GetText())))) then
           buttonsLength = buttonsLength + 1;
 
           checkBtn[All[i]]:SetParent(tab);
@@ -1304,7 +1270,7 @@ local function loadCategories(tab, category, categoryLabel, constraint, catName,
       categoryLabelFavsRemaining[catName]:Show(); -- bc we only see him when the cat is closed
     end
   else
-    -- if the current label has no reason to be visible in this tab, we hide it (and for the checkboxes, they have already been hidden in the first call to this func).
+    -- if the current label has no reason to be visible in this tab, we hide it (and for the checkboxes, they have already been hidden before the first call to this func).
     -- so first we hide them to be sure they are gone from our view, and then it's a bit more complicated:
     -- we reset their parent to be the current tab, so that we're sure that they are all on the same tab, and then
     -- ClearAllPoints is pretty magical here since a hidden label CAN be clicked on and still manages to fire OnEnter and everything else, so :Hide() is not enough,
@@ -1320,23 +1286,10 @@ local function loadCategories(tab, category, categoryLabel, constraint, catName,
     editBox[catName]:ClearAllPoints();
     dontHideMePls[catName] = nil;
 
-    if (not next(NysTDL.db.profile.itemsList[catName])) then -- if there is no more item in a category, we delete the corresponding elements
-      -- we destroy them
-      addBtn[catName] = nil;
-      table.remove(hyperlinkEditBoxes, select(2, config:HasItem(hyperlinkEditBoxes, editBox[catName])))
-      editBox[catName] = nil;
-      label[catName] = nil;
-      categoryLabelFavsRemaining[catName] = nil;
-
-      -- and we nil them in the saved variable
-      NysTDL.db.profile.itemsList[catName] = nil;
-      if (config:HasKey(NysTDL.db.profile.closedCategories, catName) and NysTDL.db.profile.closedCategories[catName] ~= nil) then -- we verify if it was a closed category (can happen with the clear command)
-        NysTDL.db.profile.closedCategories[catName] = nil;
-      end
-    end
-
+    -- then, since there isn't anything to show in the current category for the current tab,
+    -- we check if it was a closed category, in which case, we remove it from the saved variable
     if (config:HasKey(NysTDL.db.profile.closedCategories, catName) and NysTDL.db.profile.closedCategories[catName] ~= nil) then
-      local isPresent, pos = config:HasItem(NysTDL.db.profile.closedCategories[catName], CurrentTab:GetName()); -- we get if it is closed in the current tab
+      local isPresent, pos = config:HasItem(NysTDL.db.profile.closedCategories[catName], tab:GetName()); -- we get if it is closed in the current tab
       if (isPresent) then -- if it is
         table.remove(NysTDL.db.profile.closedCategories[catName], pos); -- then we remove it from the saved variable
         if (#NysTDL.db.profile.closedCategories[catName] == 0) then -- and btw check if it was the only tab remaining where it was closed
@@ -1345,7 +1298,22 @@ local function loadCategories(tab, category, categoryLabel, constraint, catName,
       end
     end
 
-    return lastData, once; -- if we are here, lastData shall not be changed or there will be consequences! (so we end the function prematurely)
+    -- and btw, we check if there is no more item at all in that category
+    -- and if it's empty, we delete all of the corresponding elements, this is the place where we properly delete a category.
+    if (not next(NysTDL.db.profile.itemsList[catName])) then
+      -- we destroy them
+      addBtn[catName] = nil;
+      table.remove(hyperlinkEditBoxes, select(2, config:HasItem(hyperlinkEditBoxes, editBox[catName])))
+      editBox[catName] = nil;
+      label[catName] = nil;
+      categoryLabelFavsRemaining[catName] = nil;
+
+      -- and we nil them in the saved variables
+      NysTDL.db.profile.itemsList[catName] = nil;
+      NysTDL.db.profile.closedCategories[catName] = nil;
+    end
+
+    return lastData; -- if we are here, lastData shall not be changed or there will be consequences! (so we end the function prematurely)
   end
 
   lastData = {
@@ -1355,7 +1323,7 @@ local function loadCategories(tab, category, categoryLabel, constraint, catName,
     ["constraint"] = constraint,
     ["catName"] = catName,
   }
-  return lastData, once;
+  return lastData;
 end
 
 -------------------------------------------------------------------------------------------
@@ -1363,16 +1331,52 @@ end
 -------------------------------------------------------------------------------------------
 
 -- generating the list items
-local function generateTab(tab, tabItems)
+local function generateTab(tab)
   -- We sort all of the categories in alphabetical order
   local tempTable = {}
   for t in pairs(NysTDL.db.profile.itemsList) do table.insert(tempTable, t) end
   table.sort(tempTable);
 
-  -- we load everything
-  local lastData, once = nil, true;
-  for _, n in pairs(tempTable) do
-    lastData, once = loadCategories(tab, NysTDL.db.profile.itemsList[n], label[n], tabItems, n, lastData, once);
+  -- doing that only one time
+  -- before we reload the entire tab and items, we hide every checkboxes
+  for catName, items in pairs(NysTDL.db.profile.itemsList) do -- for every item
+    for itemName in pairs(items) do
+      checkBtn[catName][itemName]:Hide();
+      checkBtn[catName][itemName]:SetParent(tab);
+      checkBtn[catName][itemName]:ClearAllPoints();
+    end
+  end
+
+  -- then we load everything
+  local lastData = nil;
+  for _, catName in pairs(tempTable) do -- for each categories, alphabetically
+    -- we sort alphabetically all the items inside, with the favorites in first
+    local itemNames = {}
+    local fav = {}
+    local others = {}
+
+    -- first we get every favs and other items for the current cat and place them in their respective tables
+    for itemName, data in pairs(NysTDL.db.profile.itemsList[catName]) do
+      if (data.tabName == tab:GetName()) then
+        if (data.favorite) then
+          table.insert(fav, itemName)
+        else
+          table.insert(others, itemName)
+        end
+      end
+    end
+
+    -- sorting
+    table.sort(fav)
+    table.sort(others)
+    for _, v in pairs(fav) do
+      table.insert(itemNames, v)
+    end
+    for _, v in pairs(others) do
+      table.insert(itemNames, v)
+    end
+
+    lastData = loadCategories(tab, label[catName], catName, itemNames, lastData); -- and finally, we load them on the tab in the defined order
   end
 end
 
@@ -1467,7 +1471,7 @@ local function loadOptions(tab)
 end--#DONE#
 
 -- loading the content (top to bottom)
-local function loadTab(tab, tabItems)
+local function loadTab(tab)
   itemsFrameUI.title:SetParent(tab);
   itemsFrameUI.title:SetPoint("TOP", tab, "TOPLEFT", centerXOffset, - 10);
 
@@ -1608,8 +1612,8 @@ local function loadTab(tab, tabItems)
   itemsFrameUI.dummyLabel:SetPoint("TOPLEFT", itemsFrameUI.lineBottom, "TOPLEFT", - 35, - 20);
 
   -- generating all of the content (items, checkboxes, editboxes, category labels...)
-  generateTab(tab, tabItems);
-end
+  generateTab(tab);
+end--#DONE#
 
 ----------------------------
 
@@ -1973,9 +1977,9 @@ Tab_OnClick = function(self)
   CurrentTab = self.content;
 
   -- Loading the good tab
-  if (self:GetName() == "ToDoListUIFrameTab1") then loadTab(AllTab, All) end
-  if (self:GetName() == "ToDoListUIFrameTab2") then loadTab(DailyTab, NysTDL.db.profile.itemsDaily) end
-  if (self:GetName() == "ToDoListUIFrameTab3") then loadTab(WeeklyTab, NysTDL.db.profile.itemsWeekly) end
+  if (self:GetName() == "ToDoListUIFrameTab1") then loadTab(AllTab) end
+  if (self:GetName() == "ToDoListUIFrameTab2") then loadTab(DailyTab) end
+  if (self:GetName() == "ToDoListUIFrameTab3") then loadTab(WeeklyTab) end
 
   -- we update the frame after loading the tab to refresh the display
   ItemsFrame_Update();
@@ -1983,7 +1987,7 @@ Tab_OnClick = function(self)
   NysTDL.db.profile.lastLoadedTab = self:GetName();
 
   self.content:Show();
-end
+end--#DONE#
 
 --Creating the tabs
 local function SetTabs(frame, numTabs, ...)
@@ -2511,7 +2515,12 @@ function Nys_Tests(yes)
       table["cat2"]["itemname3"] = t
     end
     hey()
-    print(table["cat2"]["itemname3"].description)
+    local bsr = "bla"
+    if (bsr) then
+      print("olala")
+    end
+    -- print(table["cat2"]["itemname3"].description)
+
     -- for catName, items in pairs(table) do
     --   print("-------------------------")
     --   print(catName)

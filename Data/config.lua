@@ -446,15 +446,6 @@ function config:HasKey(table, key)
   return false;
 end
 
-function config:HasAtLeastOneItem(tabSource, tabDest)
-  for i = 1, #tabSource do
-    if (config:HasItem(tabDest, tabSource[i])) then
-      return true;
-    end
-  end
-  return false;
-end
-
 function config:GetKeyFromValue(tabSource, value)
   for k, v in pairs(tabSource) do
     if (v == value) then return k end
@@ -682,7 +673,7 @@ function config:CreateDescButton(relativeCheckButton)
   -- and yea, this one's a bit complicated too because it works in very specific ways
   local catName, itemName = config:GetItemInfoFromCheckbox(relativeCheckButton);
   btn:HookScript("OnEnter", function(self)
-    if (NysTDL.db.profile.itemsList[catName][itemName].description == "") then -- no description
+    if (not NysTDL.db.profile.itemsList[catName][itemName].description) then -- no description
       self.Icon:SetDesaturated(nil)
       self.Icon:SetVertexColor(1, 1, 1)
     else
@@ -690,7 +681,7 @@ function config:CreateDescButton(relativeCheckButton)
     end
   end);
   btn:HookScript("OnLeave", function(self)
-    if (NysTDL.db.profile.itemsList[catName][itemName].description == "") then
+    if (not NysTDL.db.profile.itemsList[catName][itemName].description) then
       if (tonumber(string.format("%.1f", self.Icon:GetAlpha())) ~= 0.5) then -- if we are currently clicking on the button
         self.Icon:SetDesaturated(1)
         self.Icon:SetVertexColor(0.4, 0.4, 0.4)
@@ -702,7 +693,7 @@ function config:CreateDescButton(relativeCheckButton)
    btn:HookScript("OnMouseUp", function(self)
      if (self.name == "DescButton") then
        self:SetAlpha(1)
-       if (NysTDL.db.profile.itemsList[catName][itemName].description == "") then
+       if (not NysTDL.db.profile.itemsList[catName][itemName].description) then
          self.Icon:SetDesaturated(1)
          self.Icon:SetVertexColor(0.4, 0.4, 0.4)
        end
@@ -715,7 +706,7 @@ function config:CreateDescButton(relativeCheckButton)
    end);
   btn:HookScript("OnShow", function(self)
     self:SetAlpha(1)
-    if (NysTDL.db.profile.itemsList[catName][itemName].description == "") then
+    if (not NysTDL.db.profile.itemsList[catName][itemName].description) then
       self.Icon:SetDesaturated(1)
       self.Icon:SetVertexColor(0.4, 0.4, 0.4)
     else
