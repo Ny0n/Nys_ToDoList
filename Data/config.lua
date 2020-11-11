@@ -613,13 +613,12 @@ function config:CreateRemoveButton(relativeCheckButton)
   return btn;
 end
 
-function config:CreateFavoriteButton(relativeCheckButton)
+function config:CreateFavoriteButton(relativeCheckButton, catName, itemName)
   local btn = CreateFrame("Button", nil, relativeCheckButton, "NysTDL_FavoriteButton");
   btn:SetPoint("LEFT", relativeCheckButton, "LEFT", - 20, -2);
 
   -- these are for changing the color depending on the mouse actions (since they are custom xml)
   -- and yea, this one's a bit complicated because I wanted its look to be really precise...
-  local catName, itemName = config:GetItemInfoFromCheckbox(relativeCheckButton);
   btn:HookScript("OnEnter", function(self)
     if (not NysTDL.db.profile.itemsList[catName][itemName].favorite) then -- not favorited
       self.Icon:SetDesaturated(nil)
@@ -665,13 +664,12 @@ function config:CreateFavoriteButton(relativeCheckButton)
   return btn;
 end
 
-function config:CreateDescButton(relativeCheckButton)
+function config:CreateDescButton(relativeCheckButton, catName, itemName)
   local btn = CreateFrame("Button", nil, relativeCheckButton, "NysTDL_DescButton");
   btn:SetPoint("LEFT", relativeCheckButton, "LEFT", - 20, 0);
 
   -- these are for changing the color depending on the mouse actions (since they are custom xml)
   -- and yea, this one's a bit complicated too because it works in very specific ways
-  local catName, itemName = config:GetItemInfoFromCheckbox(relativeCheckButton);
   btn:HookScript("OnEnter", function(self)
     if (not NysTDL.db.profile.itemsList[catName][itemName].description) then -- no description
       self.Icon:SetDesaturated(nil)

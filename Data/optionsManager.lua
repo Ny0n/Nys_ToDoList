@@ -344,7 +344,7 @@ end
 
 function NysTDL:favoritesColorSET(info, ...)
   NysTDL.db.profile.favoritesColor = { select(1, ...), select(2, ...), select(3, ...), select(4, ...) };
-  itemsFrame:updateCheckButtons()
+  itemsFrame:updateCheckButtonsColor()
   itemsFrame:updateRemainingNumber()
 end
 

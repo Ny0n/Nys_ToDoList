@@ -50,8 +50,6 @@ local descFrameLevelDiff = 20;
 local tutoFrameRightDist = 40;
 local cursorX, cursorY, cursorDist = 0, 0, 10; -- for my special drag
 
-local All = {};
-
 local ItemsFrame_Update;
 local ItemsFrame_UpdateTime;
 local Tab_OnClick;
@@ -171,7 +169,7 @@ function itemsFrame:ResetBtns(tabName, auto)
 
   for catName, items in pairs(NysTDL.db.profile.itemsList) do -- for every check buttons
     for itemName, data in pairs(items) do
-      if (data.tabName == tabName) then -- if it is in the selected tab
+      if (tabName == "All" or data.tabName == tabName) then -- if it is in the selected tab
         if (checkBtn[catName][itemName]:GetChecked()) then
           uncheckedSomething = true;
         end
@@ -199,7 +197,7 @@ function itemsFrame:CheckBtns(tabName)
 
   for catName, items in pairs(NysTDL.db.profile.itemsList) do -- for every check buttons
     for itemName, data in pairs(items) do
-      if (data.tabName == tabName) then -- if it is in the selected tab
+      if (tabName == "All" or data.tabName == tabName) then -- if it is in the selected tab
         if (not checkBtn[catName][itemName]:GetChecked()) then
           checkedSomething = true;
         end
@@ -293,7 +291,7 @@ function itemsFrame:updateRemainingNumber()
   for catName in pairs(label) do -- for every category labels
     local nbFavCat = 0
     for _, data in pairs(NysTDL.db.profile.itemsList[catName]) do -- and for every items in them
-      if (data.tabName == tab:GetName()) then -- if the current loop item is in the tab we're on
+      if (tab:GetName() == "All" or data.tabName == tab:GetName()) then -- if the current loop item is in the tab we're on
         if (data.favorite) then -- and it's a favorite
           if (not data.checked) then -- and it's not checked
             nbFavCat = nbFavCat + 1 -- then it's one more remaining favorite hidden in the closed category
@@ -301,8 +299,8 @@ function itemsFrame:updateRemainingNumber()
         end
       end
     end
-    categoryLabelFavsRemaining[c]:SetText((nbFavCat > 0) and "("..nbFavCat..")" or "")
-    categoryLabelFavsRemaining[c]:SetTextColor(unpack(NysTDL.db.profile.favoritesColor))
+    categoryLabelFavsRemaining[catName]:SetText((nbFavCat > 0) and "("..nbFavCat..")" or "")
+    categoryLabelFavsRemaining[catName]:SetTextColor(unpack(NysTDL.db.profile.favoritesColor))
   end
 
   if (NysTDL.db.profile.tdlButton.red) then -- we check here if we need to color the TDL button
@@ -504,11 +502,9 @@ function itemsFrame:AddItem(self, db)
 
     local isPresentInCurrentCat = false;
     if (config:HasKey(NysTDL.db.profile.itemsList[catName], itemName)) then -- if it's present somewhere in the category
-      if (tabName == "All") then
-        isPresentInCurrentCat = true; -- and if we're trying to add in the All tab, it's basically obliged to be already there
-      else
-        isPresentInCurrentCat = NysTDL.db.profile.itemsList[catName][itemName].tabName == tabName; -- but if we're adding somewhere else, it depends if the reset tab is the same or not
-      end
+        -- and if we're trying to add in the All tab, it's basically obliged to be already there
+        -- but if we're adding somewhere else, it depends if the reset tab is the same or not
+        isPresentInCurrentCat = tabName == "All" or NysTDL.db.profile.itemsList[catName][itemName].tabName == tabName;
     end
 
     if (isPresentInCurrentCat) then
@@ -545,7 +541,11 @@ function itemsFrame:AddItem(self, db)
   if (not undoing["clear"] and not (undoing["single"] and not undoing["singleok"])) then config:Print(addResult[1]);
   elseif (addResult[2]) then undoing["clearnb"] = undoing["clearnb"] + 1; end
 
-  if (addResult[2]) then
+  if (addResult[2]) then -- if the adding was succesfull
+    -- then we don't forget to set the checked state of the new item
+    NysTDL.db.profile.itemsList[catName][itemName].checked = checked;
+
+    -- and we clear some visuals
     if (type(db) ~= "table") then -- if we come from the edit box to add an item next to the category name label
       dontHideMePls[catName] = true; -- then the ending refresh must not hide the edit box
       self:GetParent():SetText(""); -- but we clear it since our query was succesful
@@ -811,7 +811,7 @@ function itemsFrame:DescriptionClick(self)
   descFrame.descriptionEditBox.EditBox.Instructions:SetText(L["Add a description..."].."\n"..L["(automatically saved)"])
   descFrame.descriptionEditBox:SetPoint("TOPLEFT", descFrame, "TOPLEFT", 10, -30);
   descFrame.descriptionEditBox:SetPoint("BOTTOMRIGHT", descFrame, "BOTTOMRIGHT", -10, 10);
-  if (NysTDL.db.profile.itemsList[catName][itemName].description ~= "") then -- if there is already a description for this item, we write it on frame creation
+  if (NysTDL.db.profile.itemsList[catName][itemName].description) then -- if there is already a description for this item, we write it on frame creation
     descFrame.descriptionEditBox.EditBox:SetText(NysTDL.db.profile.itemsList[catName][itemName].description)
   end
   descFrame.descriptionEditBox.EditBox:SetScript("OnKeyUp", function(self)
@@ -842,9 +842,9 @@ function itemsFrame:ClearTab(tabName)
   local nbProtected = 0;
   for catName, items in pairs(NysTDL.db.profile.itemsList) do -- for every item
     for itemName, data in pairs(items) do
-      if (data.tabName == tabName) then -- if it is one in the selected tab
+      if (tabName == "All" or data.tabName == tabName) then -- if it is one in the selected tab
         nbItems = nbItems + 1;
-        if (data.favorite or data.description ~= "") then -- if it is a favorite or has a description
+        if (data.favorite or data.description) then -- if it is a favorite or has a description
           nbProtected = nbProtected + 1;
         end
       end
@@ -855,16 +855,11 @@ function itemsFrame:ClearTab(tabName)
     -- we start the clear
     clearing = true;
 
-    -- we keep in mind what tab we were on when we started the clear (just so that we come back to it after the job is done)
-    local last = NysTDL.db.profile.lastLoadedTab;
-
     local nb = nbItems - nbProtected; -- but before (if we want to undo it) we keep in mind how many items there were to be cleared
 
-    Tab_OnClick(_G["ToDoListUIFrameTab1"]); -- we put ourselves in the All tab so that evey item is loaded
-
-    for catName, items in pairs(removeBtn) do
+    for catName, items in pairs(removeBtn) do -- for every remove button
       for itemName, btn in pairs(items) do
-        if (NysTDL.db.profile.itemsList[catName][itemName].tabName == tabName) then -- if the item is in the tab we want to clear
+        if (tabName == "All" or NysTDL.db.profile.itemsList[catName][itemName].tabName == tabName) then -- if the item is in the tab we want to clear
           if (not NysTDL.db.profile.itemsList[catName][itemName].favorite and not NysTDL.db.profile.itemsList[catName][itemName].description) then -- if it's not a favorite nor it has a description
             itemsFrame:RemoveItem(btn); -- then we remove it
           end
@@ -873,9 +868,6 @@ function itemsFrame:ClearTab(tabName)
     end
 
     table.insert(NysTDL.db.profile.undoTable, nb); -- and then we save how many items were actually removed
-
-    -- we refresh and go back to the tab we were on
-    Tab_OnClick(_G[last]);
 
     clearing = false;
     config:Print(L["Clear succesful! (%s tab, %i items)"]:format(L[tabName], nb));
@@ -1042,7 +1034,7 @@ local function ItemsFrame_OnUpdate(self, elapsed)
   else
     for catName, items in pairs(NysTDL.db.profile.itemsList) do
       for itemName, data in pairs(items) do
-        if (data.description ~= "") then
+        if (data.description) then
           -- if current item has a description, the paper icon takes the lead
           favoriteBtn[catName][itemName]:Hide();
           removeBtn[catName][itemName]:Hide()
@@ -1160,12 +1152,12 @@ function itemsFrame:CreateMovableCheckBtnElems(catName, itemName)
   removeBtn[catName][itemName]:SetScript("OnClick", function(self) itemsFrame:RemoveItem(self) end);
 
   if (not config:HasKey(favoriteBtn, catName)) then favoriteBtn[catName] = {} end
-  favoriteBtn[catName][itemName] = config:CreateFavoriteButton(checkBtn[catName][itemName]);
+  favoriteBtn[catName][itemName] = config:CreateFavoriteButton(checkBtn[catName][itemName], catName, itemName);
   favoriteBtn[catName][itemName]:SetScript("OnClick", function(self) itemsFrame:FavoriteClick(self) end);
   favoriteBtn[catName][itemName]:Hide();
 
   if (not config:HasKey(descBtn, catName)) then descBtn[catName] = {} end
-  descBtn[catName][itemName] = config:CreateDescButton(checkBtn[catName][itemName]);
+  descBtn[catName][itemName] = config:CreateDescButton(checkBtn[catName][itemName], catName, itemName);
   descBtn[catName][itemName]:SetScript("OnClick", function(self) itemsFrame:DescriptionClick(self) end);
   descBtn[catName][itemName]:Hide();
 end--#DONE#
@@ -1195,28 +1187,29 @@ end--#DONE#
 local function loadCategories(tab, categoryLabel, catName, itemNames, lastData)
   -- here we generate and load each categories and their items one by one
 
-  local lastLabel, l, m;
   if (next(itemNames) ~= nil) then -- if for the current category there is at least one item to show in the current tab
+    local lastLabel, newLabelHeightDelta, adjustHeight;
+
     -- category label
     if (lastData == nil) then
       lastLabel = itemsFrameUI.dummyLabel;
-      l = 0;
+      newLabelHeightDelta = 0; -- no delta, this is the start point
 
       -- tutorial
       tutorialFramesTarget.addItem = categoryLabel;
       tutorialFrames.addItem:SetPoint("RIGHT", tutorialFramesTarget.addItem, "LEFT", -23, 0);
     else
       lastLabel = lastData["categoryLabel"];
-      if ((select(1, config:HasKey(NysTDL.db.profile.closedCategories, lastData["catName"]))) and (select(1, config:HasItem(NysTDL.db.profile.closedCategories[lastData["catName"]], CurrentTab:GetName())))) then -- if the last category was a closed one in this tab
-        l = 1;
+      if (config:HasKey(NysTDL.db.profile.closedCategories, lastData["catName"]) and config:HasItem(NysTDL.db.profile.closedCategories[lastData["catName"]], tab:GetName())) then -- if the last category loaded was a closed one in this tab
+        newLabelHeightDelta = 1; -- we only have a delta of one
       else
-        l = #lastData["category"] + 1;
+        newLabelHeightDelta = #lastData["itemNames"] + 1; -- or else, we have a delta of the number of items loaded in the last category + the last category's label
       end
     end
 
-    if (l == 0) then m = 0; else m = 1; end -- just for a proper clean height
+    if (newLabelHeightDelta == 0) then adjustHeight = 0; else adjustHeight = 1; end -- just for a proper clean height
     categoryLabel:SetParent(tab);
-    categoryLabel:SetPoint("TOPLEFT", lastLabel, "TOPLEFT", 0, (-l * 22) - (m * 5)); -- here
+    categoryLabel:SetPoint("TOPLEFT", lastLabel, "TOPLEFT", 0, (-newLabelHeightDelta * 22) - (adjustHeight * 5)); -- here
     categoryLabel:Show();
 
     -- edit box
@@ -1245,27 +1238,23 @@ local function loadCategories(tab, categoryLabel, catName, itemNames, lastData)
     categoryLabelFavsRemaining[catName]:ClearAllPoints();
     categoryLabelFavsRemaining[catName]:SetPoint("LEFT", categoryLabel, "RIGHT", 6, 0);
 
-    if (not (select(1, config:HasKey(NysTDL.db.profile.closedCategories, catName))) or not (select(1, config:HasItem(NysTDL.db.profile.closedCategories[catName], CurrentTab:GetName())))) then -- if the category is opened in this tab, we display all of its items
+    if (not config:HasKey(NysTDL.db.profile.closedCategories, catName) or not config:HasItem(NysTDL.db.profile.closedCategories[catName], tab:GetName())) then -- if the category is opened in this tab, we display all of its items
       -- checkboxes
       local buttonsLength = 0;
-      for i = 1, #All do
-        if ((select(1, config:HasItem(itemNames, checkBtn[All[i]].text:GetText())))) then
+      for _, itemName in pairs(itemNames) do -- for every item to load
           buttonsLength = buttonsLength + 1;
 
-          checkBtn[All[i]]:SetParent(tab);
-          checkBtn[All[i]]:SetPoint("TOPLEFT", categoryLabel, "TOPLEFT", 30, - 22 * buttonsLength + 5);
-          checkBtn[All[i]]:Show();
-        end
+          checkBtn[catName][itemName]:SetParent(tab);
+          checkBtn[catName][itemName]:SetPoint("TOPLEFT", categoryLabel, "TOPLEFT", 30, - 22 * buttonsLength + 5);
+          checkBtn[catName][itemName]:Show();
       end
       categoryLabelFavsRemaining[catName]:Hide(); -- the only thing is that we hide it if the category is opened
     else
       -- if not, we still need to put them at their right place, anchors and parents (but we keep them hidden)
       -- especially for when we load the All tab, for the clearing
-      for i = 1, #All do
-        if ((select(1, config:HasItem(category, checkBtn[All[i]].text:GetText())))) then
-          checkBtn[All[i]]:SetParent(tab);
-          checkBtn[All[i]]:SetPoint("TOPLEFT", categoryLabel, "TOPLEFT");
-        end
+      for _, itemName in pairs(itemNames) do -- for every item to load but hidden
+        checkBtn[catName][itemName]:SetParent(tab);
+        checkBtn[catName][itemName]:SetPoint("TOPLEFT", categoryLabel, "TOPLEFT");
       end
       categoryLabelFavsRemaining[catName]:Show(); -- bc we only see him when the cat is closed
     end
@@ -1318,13 +1307,12 @@ local function loadCategories(tab, categoryLabel, catName, itemNames, lastData)
 
   lastData = {
     ["tab"] = tab,
-    ["category"] = category,
     ["categoryLabel"] = categoryLabel,
-    ["constraint"] = constraint,
     ["catName"] = catName,
+    ["itemNames"] = itemNames,
   }
   return lastData;
-end
+end--#DONE#
 
 -------------------------------------------------------------------------------------------
 -- Contenting:<3 --------------------------------------------------------------------------
@@ -1357,7 +1345,7 @@ local function generateTab(tab)
 
     -- first we get every favs and other items for the current cat and place them in their respective tables
     for itemName, data in pairs(NysTDL.db.profile.itemsList[catName]) do
-      if (data.tabName == tab:GetName()) then
+      if (tab:GetName() == "All" or data.tabName == tab:GetName()) then -- if we're loading the All tab, we don't care about the tabName of each item, we just take them all
         if (data.favorite) then
           table.insert(fav, itemName)
         else
@@ -1369,16 +1357,16 @@ local function generateTab(tab)
     -- sorting
     table.sort(fav)
     table.sort(others)
-    for _, v in pairs(fav) do
-      table.insert(itemNames, v)
+    for _, itemName in pairs(fav) do
+      table.insert(itemNames, itemName)
     end
-    for _, v in pairs(others) do
-      table.insert(itemNames, v)
+    for _, itemName in pairs(others) do
+      table.insert(itemNames, itemName)
     end
 
     lastData = loadCategories(tab, label[catName], catName, itemNames, lastData); -- and finally, we load them on the tab in the defined order
   end
-end
+end--#DONE#
 
 ----------------------------
 
@@ -1599,9 +1587,19 @@ local function loadTab(tab)
     itemsFrameUI.lineBottom:SetEndPoint("TOPLEFT", centerXOffset+lineOffset, height - 62)
   end
 
-  -- Nothing label:
+  -- Nothing label
+  -- first, we get how many items there are in the tab
+  local nbItemsInTab = 0;
+  for _, items in pairs(NysTDL.db.profile.itemsList) do -- for every item
+    for _, data in pairs(items) do
+      if (tab:GetName() == "All" or data.tabName == tab:GetName()) then
+        nbItemsInTab = nbItemsInTab + 1;
+      end
+    end
+  end
+  -- then we show/hide the nothing label depending on the result
   itemsFrameUI.nothingLabel:SetParent(tab);
-  if (next(tabItems) ~= nil) then -- if there is something to show in the tab we're in
+  if (nbItemsInTab > 0) then -- if there is something to show in the tab we're in
     itemsFrameUI.nothingLabel:Hide();
   else
     itemsFrameUI.nothingLabel:SetPoint("TOP", itemsFrameUI.lineBottom, "TOP", 0, - 20); -- to correctly center this text on diffent screen sizes
@@ -1971,10 +1969,10 @@ Tab_OnClick = function(self)
 
   itemsFrameUI.ScrollFrame:SetScrollChild(self.content);
 
-  -- we update the frame before loading the tab if there are changes pending (especially in the All variable)
+  -- we update the frame before loading the tab if there are changes pending
   ItemsFrame_Update();
 
-  CurrentTab = self.content;
+  CurrentTab = self.content; -- for an easier access to the currently selected tab, in any function
 
   -- Loading the good tab
   if (self:GetName() == "ToDoListUIFrameTab1") then loadTab(AllTab) end
@@ -2118,23 +2116,7 @@ end--#DONE#
 
 ---Creating the main window---
 function itemsFrame:CreateItemsFrame()
-  -- local cbtest = CreateFrame("CheckButton", "NysTDL_CheckBtn_cbtest", UIParent, "UICheckButtonTemplate");
-  -- cbtest:SetPoint("CENTER", UIParent, "CENTER")
-  -- cbtest.text:SetText("bonsoir");
-  -- cbtest.text:SetFontObject("GameFontNormalLarge");
-  -- cbtest:SetChecked(true)
-  -- cbtest:SetScript("OnClick", function(self)
-  --   print(self:GetChecked())
-  -- end);
-  -- print(cbtest.text:GetText())
-  -- local btntest = CreateFrame("Button", "NysTDL_CheckBtn_btntest", UIParent, "UIPanelButtonTemplate");
-  -- btntest:SetPoint("CENTER", UIParent, "CENTER", 0, -60)
-  -- btntest:SetText("bonsoir");
-  -- btntest:SetSize(80, 30);
-  -- btntest:SetScript("OnClick", function()
-  --   cbtest:SetChecked(not cbtest:GetChecked())
-  -- end);
-  if (true) then return; end
+  -- if (true) then return; end
   -- as of wow 9.0, we need to import the backdrop template into our frames if we want to use it in them, it is not set by default, so that's what we are doing here:
   itemsFrameUI = CreateFrame("Frame", "ToDoListUIFrame", UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil);
 
@@ -2243,7 +2225,7 @@ function itemsFrame:CreateItemsFrame()
   itemsFrame:Init();
 
   itemsFrameUI:Hide();
-end--#DONE#--#TODO#
+end--#DONE#
 
 -- Tests function (for me :p)
 function Nys_Tests(yes)
