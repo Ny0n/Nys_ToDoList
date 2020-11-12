@@ -68,7 +68,7 @@ function itemsFrame:Toggle()
     ItemsFrame_Update();
   end
   itemsFrameUI:SetShown(not itemsFrameUI:IsShown());
-end--#DONE#
+end
 
 function NysTDL:EditBoxInsertLink(text)
   -- when we shift-click on things, we hook the link from the chat function,
@@ -80,7 +80,7 @@ function NysTDL:EditBoxInsertLink(text)
 			return true
 		end
 	end
-end--#DONE#
+end
 
 -- actions
 local function ScrollFrame_OnMouseWheel(self, delta)
@@ -94,7 +94,7 @@ local function ScrollFrame_OnMouseWheel(self, delta)
   end
 
   self:SetVerticalScroll(newValue);
-end--#DONE#
+end
 
 local function FrameAlphaSlider_OnValueChanged(_, value)
   -- itemsList frame part
@@ -130,7 +130,7 @@ local function FrameAlphaSlider_OnValueChanged(_, value)
       end
     end
   end
-end--#DONE#
+end
 
 local function FrameContentAlphaSlider_OnValueChanged(_, value)
   -- itemsList frame part
@@ -159,7 +159,7 @@ local function FrameContentAlphaSlider_OnValueChanged(_, value)
     v.descriptionEditBox.ScrollBar:SetAlpha(value/100);
     v.resizeButton:SetAlpha(value/100);
   end
-end--#DONE#
+end
 
 -- frame functions
 function itemsFrame:ResetBtns(tabName, auto)
@@ -189,7 +189,7 @@ function itemsFrame:ResetBtns(tabName, auto)
   elseif (not auto) then -- we print this message only if it was the user's action that triggered this function (not the auto reset)
     config:Print(L["Nothing to uncheck here!"]);
   end
-end--#DONE#
+end
 
 function itemsFrame:CheckBtns(tabName)
   -- this function's goal is to check every item in the selected tab
@@ -217,7 +217,7 @@ function itemsFrame:CheckBtns(tabName)
   else
     config:Print(L["Nothing to check here!"]);
   end
-end--#DONE#
+end
 
 local function inChatIsDone(all, daily, weekly)
   -- we tell the player if he's the best c:
@@ -244,7 +244,7 @@ local function inChatIsDone(all, daily, weekly)
   elseif (weekly == 0 and remainingCheckWeekly ~= 0 and nbWeekly > 0) then
     config:Print(L["Everything's done for this week!"]);
   end
-end--#DONE#
+end
 
 function itemsFrame:updateRemainingNumber()
   -- we get how many things there is left to do in every tab
@@ -336,7 +336,7 @@ function itemsFrame:updateRemainingNumber()
   remainingCheckWeekly = numberWeekly;
 
   return numberAll, numberDaily, numberWeekly, numberFavAll, numberFavDaily, numberFavWeekly; -- and we return them, so that we can access it eg. in the favorites warning function
-end--#DONE#
+end
 
 function itemsFrame:updateCheckButtonsColor()
   for catName, items in pairs(NysTDL.db.profile.itemsList) do -- for every check buttons
@@ -353,7 +353,7 @@ function itemsFrame:updateCheckButtonsColor()
       end
     end
   end
-end--#DONE#
+end
 
 -- Saved variable functions
 
@@ -369,11 +369,11 @@ function itemsFrame:autoReset()
     itemsFrame:ResetBtns("Daily", true);
     autoResetedThisSession = true;
   end
-end--#DONE#
+end
 
 function itemsFrame:autoResetedThisSessionGET()
   return autoResetedThisSession;
-end--#DONE#
+end
 
 -- Items modifications
 
@@ -403,7 +403,7 @@ local function refreshTab(catName, itemName, action, modif)
 
     Tab_OnClick(_G[NysTDL.db.profile.lastLoadedTab]); -- we reload the tab to instantly display the changes
   end
-end--#DONE#
+end
 
 local function addCategory()
   -- the big function to add categories
@@ -461,7 +461,7 @@ local function addCategory()
   else
     itemsFrameUI.nameEditBox:SetFocus()
   end
-end--#DONE#
+end
 
 function itemsFrame:AddItem(self, db)
   -- the big big function to add items
@@ -559,7 +559,7 @@ function itemsFrame:AddItem(self, db)
   end
 
   refreshTab(catName, itemName, "Add", addResult[2]);
-end--#DONE#
+end
 
 function itemsFrame:RemoveItem(self)
   -- the really important function to delete items
@@ -572,7 +572,7 @@ function itemsFrame:RemoveItem(self)
 
   -- since the item will get removed, we check if his description frame was opened (can happen if there was no description on the item)
   -- and if so, we hide and destroy it
-  itemsFrame:descriptionFrameHide(itemName.."_descFrame")
+  itemsFrame:descriptionFrameHide("NysTDL_DescFrame_"..catName.."_"..itemName)
 
   -- undo part
   local db = {
@@ -593,7 +593,7 @@ function itemsFrame:RemoveItem(self)
   table.insert(NysTDL.db.profile.undoTable, db);
 
   refreshTab(catName, itemName, "Remove", true);
-end--#DONE#
+end
 
 function itemsFrame:FavoriteClick(self)
   -- the function to favorite items
@@ -608,7 +608,7 @@ function itemsFrame:FavoriteClick(self)
   end
 
   Tab_OnClick(_G[NysTDL.db.profile.lastLoadedTab]); -- we reload the tab to instantly display the changes
-end--#DONE#
+end
 
 function itemsFrame:ApplyNewRainbowColor(i)
   i = i or 1
@@ -658,7 +658,7 @@ function itemsFrame:ApplyNewRainbowColor(i)
   NysTDL.db.profile.favoritesColor = { r, g, b }
   itemsFrame:updateCheckButtonsColor()
   itemsFrame:updateRemainingNumber()
-end--#DONE#
+end
 
 function itemsFrame:descriptionFrameHide(name)
   -- here, if the name matches one of the opened description frames, we hide that frame, delete it from memory and reupdate the levels of every other active ones
@@ -674,7 +674,7 @@ function itemsFrame:descriptionFrameHide(name)
     end
   end
   return false;
-end--#DONE#
+end
 
 function itemsFrame:DescriptionClick(self)
   -- the big function to create the description frame for each items
@@ -682,10 +682,10 @@ function itemsFrame:DescriptionClick(self)
   local catName, itemName = config:GetItemInfoFromCheckbox(self:GetParent());
   dontHideMePls[catName] = true;
 
-  if (itemsFrame:descriptionFrameHide(itemName.."_descFrame")) then return; end
+  if (itemsFrame:descriptionFrameHide("NysTDL_DescFrame_"..catName.."_"..itemName)) then return; end
 
   -- we create the mini frame holding the name of the item and his description in an edit box
-  local descFrame = CreateFrame("Frame", itemName.."_descFrame", UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil); -- importing the backdrop in the desc frames, as of wow 9.0
+  local descFrame = CreateFrame("Frame", "NysTDL_DescFrame_"..catName.."_"..itemName, UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil); -- importing the backdrop in the desc frames, as of wow 9.0
   local w = config:CreateNoPointsLabel(UIParent, nil, itemName):GetWidth();
   descFrame:SetSize((w < 180) and 180+75 or w+75, 110); -- 75 is large enough to place the closebutton, clearbutton, and a little bit of space at the right of the name
 
@@ -834,7 +834,7 @@ function itemsFrame:DescriptionClick(self)
   FrameContentAlphaSlider_OnValueChanged(nil, NysTDL.db.profile.frameContentAlpha);
 
   Tab_OnClick(_G[NysTDL.db.profile.lastLoadedTab]); -- we reload the tab to instantly display the changes
-end--#DONE#
+end
 
 function itemsFrame:ClearTab(tabName)
   -- first we get how many items are favorites and how many have descriptions in this tab (they are protected, we won't clear them)
@@ -874,7 +874,7 @@ function itemsFrame:ClearTab(tabName)
   else
     config:Print(L["Nothing can be cleared here!"]);
   end
-end--#DONE#
+end
 
 function itemsFrame:UndoRemove()
   -- function to undo the last removes we did
@@ -903,19 +903,19 @@ function itemsFrame:UndoRemove()
   else
     config:Print(L["No remove/clear to undo!"]);
   end
-end--#DONE#
+end
 
 -- Frame update: --
 ItemsFrame_Update = function()
   -- updates everything about the frame everytime we call this function
   itemsFrame:updateRemainingNumber();
   itemsFrame:updateCheckButtonsColor();
-end--#DONE#
+end
 
 ItemsFrame_UpdateTime = function()
   -- updates things about time
   itemsFrame:autoReset();
-end--#DONE#
+end
 
 local function ItemsFrame_CheckLabels()
   -- update for the labels:
@@ -934,7 +934,7 @@ local function ItemsFrame_CheckLabels()
       label[k]:SetTextColor(1, 1, 1, 1); -- back to the default color
     end
   end
-end--#DONE#
+end
 
 local function ItemsFrame_OnMouseUp(_, button)
   local name = tostringall(unpack(labelHover)); -- we get the name of the label we clicked on (if we clicked on a label)
@@ -969,7 +969,7 @@ local function ItemsFrame_OnMouseUp(_, button)
       end
     end
   end
-end--#DONE#
+end
 
 local function ItemsFrame_OnVisibilityUpdate()
   -- things to do when we hide/show the list
@@ -977,7 +977,7 @@ local function ItemsFrame_OnVisibilityUpdate()
   tabActionsClosed = true;
   optionsClosed = true;
   Tab_OnClick(_G[NysTDL.db.profile.lastLoadedTab]);
-end--#DONE#
+end
 
 local function ItemsFrame_Scale()
   local scale = itemsFrameUI:GetWidth()/340;
@@ -991,7 +991,7 @@ local function ItemsFrame_Scale()
   for _, v in pairs(tutorialFrames) do
     v:SetScale(scale)
   end
-end--#DONE#
+end
 
 local function ItemsFrame_OnUpdate(self, elapsed)
   -- called every frame
@@ -1114,7 +1114,7 @@ local function ItemsFrame_OnUpdate(self, elapsed)
     ItemsFrame_UpdateTime();
     self.timeSinceLastRefresh = self.timeSinceLastRefresh - refreshRate;
   end
-end--#DONE#
+end
 
 ----------------------------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------------------
@@ -1128,7 +1128,7 @@ function itemsFrame:CreateMovableCheckBtnElems(catName, itemName)
   local data = NysTDL.db.profile.itemsList[catName][itemName];
 
   if (not config:HasKey(checkBtn, catName)) then checkBtn[catName] = {} end
-  checkBtn[catName][itemName] = CreateFrame("CheckButton", "NysTDL_CheckBtn_"..itemName, itemsFrameUI, "UICheckButtonTemplate");
+  checkBtn[catName][itemName] = CreateFrame("CheckButton", "NysTDL_CheckBtn_"..catName.."_"..itemName, itemsFrameUI, "UICheckButtonTemplate");
   checkBtn[catName][itemName].text:SetText(itemName);
   checkBtn[catName][itemName].text:SetFontObject("GameFontNormalLarge");
   if (config:HasHyperlink(itemName)) then -- this is for making more space for items that have hyperlinks in them
@@ -1160,7 +1160,7 @@ function itemsFrame:CreateMovableCheckBtnElems(catName, itemName)
   descBtn[catName][itemName] = config:CreateDescButton(checkBtn[catName][itemName], catName, itemName);
   descBtn[catName][itemName]:SetScript("OnClick", function(self) itemsFrame:DescriptionClick(self) end);
   descBtn[catName][itemName]:Hide();
-end--#DONE#
+end
 
 function itemsFrame:CreateMovableLabelElems(catName)
   -- category label
@@ -1172,7 +1172,7 @@ function itemsFrame:CreateMovableLabelElems(catName)
   table.insert(hyperlinkEditBoxes, editBox[catName]);
   addBtn[catName] = config:CreateAddButton(editBox[catName]);
   addBtn[catName]:SetScript("OnClick", function(self) itemsFrame:AddItem(self) self:GetParent():SetFocus() end);
-end--#DONE#
+end
 
 local function loadMovable()
   for catName, items in pairs(NysTDL.db.profile.itemsList) do
@@ -1181,7 +1181,7 @@ local function loadMovable()
       itemsFrame:CreateMovableCheckBtnElems(catName, itemName) -- All items transformed as checkboxes
     end
   end
-end--#DONE#
+end
 
 -- boom
 local function loadCategories(tab, categoryLabel, catName, itemNames, lastData)
@@ -1312,7 +1312,7 @@ local function loadCategories(tab, categoryLabel, catName, itemNames, lastData)
     ["itemNames"] = itemNames,
   }
   return lastData;
-end--#DONE#
+end
 
 -------------------------------------------------------------------------------------------
 -- Contenting:<3 --------------------------------------------------------------------------
@@ -1366,7 +1366,7 @@ local function generateTab(tab)
 
     lastData = loadCategories(tab, label[catName], catName, itemNames, lastData); -- and finally, we load them on the tab in the defined order
   end
-end--#DONE#
+end
 
 ----------------------------
 
@@ -1389,7 +1389,7 @@ local function loadAddACategory(tab)
 
   itemsFrameUI.addBtn:SetParent(tab);
   itemsFrameUI.addBtn:SetPoint("TOP", itemsFrameUI.labelFirstItemName, "TOPLEFT", 140, - 30);
-end--#DONE#
+end
 
 local function loadTabActions(tab)
   itemsFrameUI.tabActionsButton:SetParent(tab);
@@ -1414,7 +1414,7 @@ local function loadTabActions(tab)
 
   itemsFrameUI.btnClear:SetParent(tab);
   itemsFrameUI.btnClear:SetPoint("TOP", itemsFrameUI.btnCheck, "TOPLEFT", (w/2), -45);
-end--#DONE#
+end
 
 local function loadOptions(tab)
   itemsFrameUI.frameOptionsButton:SetParent(tab);
@@ -1456,7 +1456,7 @@ local function loadOptions(tab)
 
   itemsFrameUI.btnAddonOptions:SetParent(tab);
   itemsFrameUI.btnAddonOptions:SetPoint("TOP", itemsFrameUI.affectDesc, "TOP", 0, - 55);
-end--#DONE#
+end
 
 -- loading the content (top to bottom)
 local function loadTab(tab)
@@ -1611,7 +1611,7 @@ local function loadTab(tab)
 
   -- generating all of the content (items, checkboxes, editboxes, category labels...)
   generateTab(tab);
-end--#DONE#
+end
 
 ----------------------------
 
@@ -1666,7 +1666,7 @@ local function generateAddACategory()
   itemsFrameUI.addBtn = config:CreateButton("addButton", itemsFrameUI, L["Add category"]);
   itemsFrameUI.addBtn:SetScript("onClick", addCategory);
   table.insert(addACategoryItems, itemsFrameUI.addBtn);
-end--#DONE#
+end
 
 local function generateTabActions()
   itemsFrameUI.tabActionsButton = CreateFrame("Button", "categoryButton", itemsFrameUI, "NysTDL_TabActionsButton");
@@ -1708,7 +1708,7 @@ local function generateTabActions()
     itemsFrame:ClearTab(tabName);
   end);
   table.insert(tabActionsItems, itemsFrameUI.btnClear);
-end--#DONE#
+end
 
 local function generateOptions()
   itemsFrameUI.frameOptionsButton = CreateFrame("Button", "frameOptionsButton_itemsFrameUI", itemsFrameUI, "NysTDL_FrameOptionsButton");
@@ -1805,7 +1805,7 @@ local function generateOptions()
   itemsFrameUI.btnAddonOptions = config:CreateButton("addonOptionsButton", itemsFrameUI, L["Open addon options"], "Interface\\Buttons\\UI-OptionsButton");
   itemsFrameUI.btnAddonOptions:SetScript("OnClick", function() if (not NysTDL:ToggleOptions(true)) then itemsFrameUI:Hide(); end end);
   table.insert(frameOptionsItems, itemsFrameUI.btnAddonOptions);
-end--#DONE#
+end
 
 -- generating the content (top to bottom)
 local function generateFrameContent()
@@ -1850,7 +1850,7 @@ local function generateFrameContent()
   itemsFrameUI.nothingLabel = config:CreateNothingLabel(itemsFrameUI);
 
   itemsFrameUI.dummyLabel = config:CreateDummy(itemsFrameUI, itemsFrameUI.lineBottom, 0, 0);
-end--#DONE#
+end
 
 local function generateTutorialFrames()
   -- TUTO : How to add categories ("addNewCat")
@@ -1936,7 +1936,7 @@ local function generateTutorialFrames()
     -- targeted frame
     tutorialFramesTarget.accessOptions = itemsFrameUI.frameOptionsButton;
     TF_accessOptions:SetPoint("BOTTOM", tutorialFramesTarget.accessOptions, "TOP", 0, 18);
-end--#DONE#
+end
 
 function itemsFrame:ValidateTutorial(tuto_name)
   -- completes the "tuto_name" tutorial, only if it was active
@@ -1946,13 +1946,13 @@ function itemsFrame:ValidateTutorial(tuto_name)
       NysTDL.db.global.tuto_progression = NysTDL.db.global.tuto_progression + 1; -- we validate the tutorial
     end
   end
-end--#DONE#
+end
 
 function itemsFrame:RedoTutorial()
   NysTDL.db.global.tuto_progression = 0;
   ItemsFrame_OnVisibilityUpdate()
   itemsFrameUI.ScrollFrame:SetVerticalScroll(0);
-end--#DONE#
+end
 
 ----------------------------------
 -- Creating the frame and tabs
@@ -1985,7 +1985,7 @@ Tab_OnClick = function(self)
   NysTDL.db.profile.lastLoadedTab = self:GetName();
 
   self.content:Show();
-end--#DONE#
+end
 
 --Creating the tabs
 local function SetTabs(frame, numTabs, ...)
@@ -2026,7 +2026,7 @@ local function SetTabs(frame, numTabs, ...)
   end
 
   return unpack(contents);
-end--#DONE#
+end
 
 function itemsFrame:ResetContent()
   -- considering I don't want to reload the UI when we change the current profile,
@@ -2071,7 +2071,7 @@ function itemsFrame:ResetContent()
   tabActionsClosed = true;
   optionsClosed = true;
   autoResetedThisSession = false;
-end--#DONE#
+end
 
 --Frame init
 function itemsFrame:Init()
@@ -2112,7 +2112,7 @@ function itemsFrame:Init()
   itemsFrameUI.frameAlphaSlider:SetValue(NysTDL.db.profile.frameAlpha);
   itemsFrameUI.frameContentAlphaSlider:SetValue(NysTDL.db.profile.frameContentAlpha);
   itemsFrameUI.affectDesc:SetChecked(NysTDL.db.profile.affectDesc);
-end--#DONE#
+end
 
 ---Creating the main window---
 function itemsFrame:CreateItemsFrame()
@@ -2225,7 +2225,7 @@ function itemsFrame:CreateItemsFrame()
   itemsFrame:Init();
 
   itemsFrameUI:Hide();
-end--#DONE#
+end
 
 -- Tests function (for me :p)
 function Nys_Tests(yes)
