@@ -438,6 +438,10 @@ function config:HasItem(table, item)
 end
 
 function config:HasKey(table, key)
+  if type(table) ~= "table" then -- just in case
+    return false;
+  end
+  
   for k, _ in pairs(table) do
     if (k == key) then
       return true;
