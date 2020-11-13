@@ -213,22 +213,50 @@ function NysTDL:DBInit()
   -- initialization of elements that need access to other files functions or need to be updated correctly when the profile changes
   if (self.db.profile.autoReset == nil) then self.db.profile.autoReset = { ["Daily"] = config:GetSecondsToReset().daily, ["Weekly"] = config:GetSecondsToReset().weekly } end
   if (not self.db.profile.rememberUndo) then self.db.profile.undoTable = {} end
-  if (self.db.profile.itemsList == nil) then self.db.profile.itemsList = {} end
-  if (self.db.profile.itemsDaily == nil) then
-    if (self.db.profile.itemsList["Daily"] ~= nil) then
-      self.db.profile.itemsDaily = config:Deepcopy(self.db.profile.itemsList["Daily"])
-      self.db.profile.itemsList["Daily"] = nil
-    else
-      self.db.profile.itemsDaily = {}
+
+  if (self.db.profile.itemsDaily or self.db.profile.itemsWeekly or self.db.profile.itemsFavorite or self.db.profile.itemsDesc or self.db.profile.checkedButtons) then
+    -- if we're loading this profile for the first time after the update,
+    -- we need to change the saved variables to the new format
+    local oldItemsList = config:Deepcopy(self.db.profile.itemsList)
+    self.db.profile.itemsList = {}
+    
+    for catName, itemNames in pairs(oldItemsList) do -- for every cat we had
+      self.db.profile.itemsList[catName] = {}
+      for _, itemName in pairs(itemNames) do -- and for every item we had
+        -- first we get the previous data elements from the item
+        -- / tabName
+        local tabName = "All"
+        if (config:HasItem(self.db.profile.itemsDaily, itemName)) then
+          tabName = "Daily"
+        elseif (config:HasItem(self.db.profile.itemsWeekly, itemName)) then
+          tabName = "Weekly"
+        end
+        -- / checked
+        local checked = config:HasItem(self.db.profile.checkedButtons, itemName)
+        -- / favorite
+        local favorite = nil
+        if (config:HasItem(self.db.profile.itemsFavorite, itemName)) then
+          favorite = true
+        end
+        -- / description
+        local description = self.db.profile.itemsDesc[itemName]
+
+        -- then we replace it by the new var
+        self.db.profile.itemsList[catName][itemName] = {
+          ["tabName"] = tabName,
+          ["checked"] = checked,
+          ["favorite"] = favorite,
+          ["description"] = description,
+        }
+      end
     end
-  end
-  if (self.db.profile.itemsWeekly == nil) then
-    if (self.db.profile.itemsList["Weekly"] ~= nil) then
-    self.db.profile.itemsWeekly = config:Deepcopy(self.db.profile.itemsList["Weekly"])
-    self.db.profile.itemsList["Weekly"] = nil
-    else
-      self.db.profile.itemsWeekly = {}
-    end
+
+    -- bye bye
+    self.db.profile.itemsDaily = nil;
+    self.db.profile.itemsWeekly = nil;
+    self.db.profile.itemsFavorite = nil;
+    self.db.profile.itemsDesc = nil;
+    self.db.profile.checkedButtons = nil;
   end
 end
 
@@ -360,7 +388,7 @@ end
 
 function NysTDL:favoritesColorSET(info, ...)
   NysTDL.db.profile.favoritesColor = { select(1, ...), select(2, ...), select(3, ...), select(4, ...) };
-  itemsFrame:updateCheckButtons()
+  itemsFrame:updateCheckButtonsColor()
   itemsFrame:updateRemainingNumber()
 end
 
