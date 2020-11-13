@@ -467,6 +467,7 @@ function itemsFrame:AddItem(self, db)
   -- the big big function to add items
 
   local addResult = {"", false}; -- message to be displayed in result of the function and wether there was an adding or not
+  local willCreateNewCat = false;
   local itemName, tabName, catName, checked;
   local defaultNewItemsTable = {
     ["tabName"] = "All",
@@ -496,9 +497,11 @@ function itemsFrame:AddItem(self, db)
   if (itemName == "") then
     addResult = {L["Please enter the name of the item!"], false};
   else -- if we typed something
-    local willCreateNewCat = false;
     local catAlreadyExists = config:HasKey(NysTDL.db.profile.itemsList, catName);
-    if (not catAlreadyExists) then NysTDL.db.profile.itemsList[catName] = {}; willCreateNewCat = true; end -- that means we'll be adding something to a new category, so we create the table to hold all theses shiny new items
+    if (not catAlreadyExists) then -- that means we'll be adding something to a new category, so we create the table to hold all theses shiny new items
+      NysTDL.db.profile.itemsList[catName] = {};
+      willCreateNewCat = true;
+    end
 
     local isPresentInCurrentCat = false;
     if (config:HasKey(NysTDL.db.profile.itemsList[catName], itemName)) then -- if it's present somewhere in the category
@@ -564,8 +567,6 @@ end
 function itemsFrame:RemoveItem(self)
   -- the really important function to delete items
   -- if we're here, we're forced to delete an item so the result will be true in any case
-
-  local isPresent, pos;
 
   local catName, itemName = config:GetItemInfoFromCheckbox(self:GetParent());
   local data = NysTDL.db.profile.itemsList[catName][itemName];
@@ -840,8 +841,8 @@ function itemsFrame:ClearTab(tabName)
   -- first we get how many items are favorites and how many have descriptions in this tab (they are protected, we won't clear them)
   local nbItems = 0;
   local nbProtected = 0;
-  for catName, items in pairs(NysTDL.db.profile.itemsList) do -- for every item
-    for itemName, data in pairs(items) do
+  for _, items in pairs(NysTDL.db.profile.itemsList) do -- for every item
+    for _, data in pairs(items) do
       if (tabName == "All" or data.tabName == tabName) then -- if it is one in the selected tab
         nbItems = nbItems + 1;
         if (data.favorite or data.description) then -- if it is a favorite or has a description

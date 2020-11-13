@@ -219,7 +219,7 @@ function NysTDL:DBInit()
     -- we need to change the saved variables to the new format
     local oldItemsList = config:Deepcopy(self.db.profile.itemsList)
     self.db.profile.itemsList = {}
-    
+
     for catName, itemNames in pairs(oldItemsList) do -- for every cat we had
       self.db.profile.itemsList[catName] = {}
       for _, itemName in pairs(itemNames) do -- and for every item we had
@@ -239,7 +239,10 @@ function NysTDL:DBInit()
           favorite = true
         end
         -- / description
-        local description = self.db.profile.itemsDesc[itemName]
+        local description = nil;
+        if (config:HasKey(self.db.profile.itemsDesc, itemName)) then
+          description = self.db.profile.itemsDesc[itemName]
+        end
 
         -- then we replace it by the new var
         self.db.profile.itemsList[catName][itemName] = {
