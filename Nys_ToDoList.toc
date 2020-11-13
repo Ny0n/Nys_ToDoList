@@ -7,7 +7,7 @@
 ## X-WoW-Version: retail
 
 ## Author: Nyony (on Twitch)
-## Title: Ny's To-Do List WIP
+## Title: Ny's To-Do List
 ## Notes: A simple interface to remember everything you need to do!
 
 ## DefaultState: enabled
