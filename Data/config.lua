@@ -305,8 +305,8 @@ config.database = {
         },
         profile = {
             minimap = { hide = false, minimapPos = 241, lock = false, tooltip = true }, -- for LibDBIcon
-            tdlButton = { show = false, red = false, points = { point = "CENTER", relativeTo = UIParent, relativePoint = "CENTER", xOffset = 0, yOffset = 0 } },
-            framePos = { point = "CENTER", relativeTo = UIParent, relativePoint = "CENTER", xOffset = 0, yOffset = 0 },
+            tdlButton = { show = false, red = false, points = { point = "CENTER", relativeTo = nil, relativePoint = "CENTER", xOffset = 0, yOffset = 0 } }, -- relativeTo = nil => entire screen
+            framePos = { point = "CENTER", relativeTo = nil, relativePoint = "CENTER", xOffset = 0, yOffset = 0 }, -- relativeTo = nil => entire screen
             frameSize = { width = 340, height = 400 },
             itemsList = {},
             favoritesColor = { 1, 0.5, 0.6 },
@@ -441,7 +441,7 @@ function config:HasKey(table, key)
   if type(table) ~= "table" then -- just in case
     return false;
   end
-  
+
   for k, _ in pairs(table) do
     if (k == key) then
       return true;
