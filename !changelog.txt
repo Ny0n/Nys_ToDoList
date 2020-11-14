@@ -1,5 +1,5 @@
 V5.5.1  - here it is... you can finally use the same item names across different categories!
-        - corrected a big oopsies from 5.5
+        - corrected big oopsies from 5.5
 
 -------------------------
 
