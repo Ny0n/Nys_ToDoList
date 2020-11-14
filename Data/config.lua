@@ -305,8 +305,8 @@ config.database = {
         },
         profile = {
             minimap = { hide = false, minimapPos = 241, lock = false, tooltip = true }, -- for LibDBIcon
-            tdlButton = { show = false, red = false, points = { point = "CENTER", relativeTo = nil, relativePoint = "CENTER", xOffset = 0, yOffset = 0 } }, -- relativeTo = nil => entire screen
-            framePos = { point = "CENTER", relativeTo = nil, relativePoint = "CENTER", xOffset = 0, yOffset = 0 }, -- relativeTo = nil => entire screen
+            tdlButton = { show = false, red = false, points = { point = "CENTER", relativePoint = "CENTER", xOffset = 0, yOffset = 0 } },
+            framePos = { point = "CENTER", relativePoint = "CENTER", xOffset = 0, yOffset = 0 },
             frameSize = { width = 340, height = 400 },
             itemsList = {},
             favoritesColor = { 1, 0.5, 0.6 },

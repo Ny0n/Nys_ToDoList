@@ -1,7 +1,7 @@
 # /run print((select(4, GetBuildInfo())))
 ## Interface: 90001 # retail (selected)
 ## X-Interface: 11305 # classic
-## Version: 5.5.1
+## Version: 5.5.2
 
 # X-WoW-Version: set to 'retail' or 'classic' to auto adapt the addon
 ## X-WoW-Version: retail
