@@ -120,8 +120,8 @@ function NysTDL:CreateTDLButton()
   itemsFrame.tdlButton:SetScript("OnDragStart", itemsFrame.tdlButton.StartMoving);
   itemsFrame.tdlButton:SetScript("OnDragStop", function() -- we save its position
     itemsFrame.tdlButton:StopMovingOrSizing()
-    local points = self.db.profile.tdlButton.points
-    points.point, points.relativeTo, points.relativePoint, points.xOffset, points.yOffset = itemsFrame.tdlButton:GetPoint()
+    local points, _ = self.db.profile.tdlButton.points, nil
+    points.point, _, points.relativePoint, points.xOffset, points.yOffset = itemsFrame.tdlButton:GetPoint()
   end);
   itemsFrame.tdlButton:SetScript("OnClick", itemsFrame.Toggle); -- the function the button calls when pressed
   NysTDL:RefreshTDLButton();
@@ -130,7 +130,7 @@ end
 function NysTDL:RefreshTDLButton()
   local points = self.db.profile.tdlButton.points;
   itemsFrame.tdlButton:ClearAllPoints();
-  itemsFrame.tdlButton:SetPoint(points.point, points.relativeTo, points.relativePoint, points.xOffset, points.yOffset);
+  itemsFrame.tdlButton:SetPoint(points.point, nil, points.relativePoint, points.xOffset, points.yOffset); -- relativeFrame = nil -> entire screen
   itemsFrame.tdlButton:SetShown(self.db.profile.tdlButton.show);
 end
 

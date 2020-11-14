@@ -488,10 +488,20 @@ function itemsFrame:AddItem(self, db)
       return;
     end
   else
+    -- undoing / adding from cat form
     catName = db.catName;
     itemName = db.itemName;
     tabName = db.tabName;
     checked = db.checked;
+
+    if (catName == nil or itemName == nil or tabName == nil or checked == nil) then -- I prefer to do 'X == nil' than 'not X' bc checked is a boolean, this if is here to check that we do have a value in each of the variables, and those are the basic needed ones
+      -- this is the safe code, we can get here after the 5.5 update if we had some old undos in stock and decided to undo them
+      -- so we take their old data names
+      catName = db.cat;
+      itemName = db.name;
+      tabName = db.case;
+      checked = db.checked;
+    end
   end
 
   if (itemName == "") then
@@ -2085,7 +2095,7 @@ function itemsFrame:Init()
   -- we reposition the frame to match the saved variable
   local points = NysTDL.db.profile.framePos;
   itemsFrameUI:ClearAllPoints();
-  itemsFrameUI:SetPoint(points.point, points.relativeTo, points.relativePoint, points.xOffset, points.yOffset);
+  itemsFrameUI:SetPoint(points.point, nil, points.relativePoint, points.xOffset, points.yOffset); -- relativeFrame = nil -> entire screen
   -- and update its elements opacity to match the saved variable
   FrameAlphaSlider_OnValueChanged(nil, NysTDL.db.profile.frameAlpha);
   FrameContentAlphaSlider_OnValueChanged(nil, NysTDL.db.profile.frameContentAlpha);
@@ -2151,8 +2161,8 @@ function itemsFrame:CreateItemsFrame()
     if (self.hasMoved == true) then
       self:StopMovingOrSizing()
       self.hasMoved = false
-      local points = NysTDL.db.profile.framePos
-      points.point, points.relativeTo, points.relativePoint, points.xOffset, points.yOffset = self:GetPoint()
+      local points, _ = NysTDL.db.profile.framePos, nil
+      points.point, _, points.relativePoint, points.xOffset, points.yOffset = self:GetPoint()
     end
   end
   itemsFrameUI:HookScript("OnMouseDown", function(self, button)
