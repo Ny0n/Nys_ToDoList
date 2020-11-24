@@ -10,7 +10,7 @@
 ## Author: Nyony (on Twitch)
 ## Title: Ny's To-Do List
 ## Notes: A simple interface to remember everything you need to do!
-## X-Curse-Project-ID: 419221
+## X-Curse-Project-ID: 320655
 # ## X-WoWI-ID: xxx
 
 ## DefaultState: enabled
