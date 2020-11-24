@@ -1,4 +1,5 @@
-\!build/*
-!!build/build.sh
-\!dev.lua
-\!modifs.txt
+.other/private/
+.other/build/package/*
+!.other/build/package/package.sh
+Nys_ToDoList/Libs/*
+!Nys_ToDoList/Libs/embeds.xml

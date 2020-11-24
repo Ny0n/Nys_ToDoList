@@ -1,0 +1,41 @@
+# description of this workflow
+name: Create release
+
+# we run this action only when we push new tags (a.k.a when creating a new release)
+on:
+  push:
+    tags:
+      - '**'
+
+# a workflow is built up as jobs, and within these jobs are steps
+jobs:
+
+  # "build" is a job, you can name it anything you want
+  build:
+
+    # we can run our steps on pretty much anything, but the "ubuntu-latest" image is a safe bet
+    runs-on: ubuntu-latest
+
+    # specify the environment variables used by the packager, matching the secrets from the project on GitHub
+    env:
+      CF_API_KEY: ${{ secrets.CF_API_KEY }}
+      #WOWI_API_TOKEN: ${{ secrets.WOWI_API_TOKEN }}
+      GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
+
+    # "steps" holds a list of all the steps needed to package and release our AddOn
+    steps:
+
+      # we first have to clone the AddOn project, this is a required step
+      - name: Clone project
+        uses: actions/checkout@v1
+
+      # then we start packaging:
+      # starting with classic
+      - name: Create Classic Package
+        uses: BigWigsMods/packager@master
+        with:
+          args: -g classic
+
+      # then retail, so that it will be shown first on the releases (most recent)
+      - name: Create Retail Package
+        uses: BigWigsMods/packager@master

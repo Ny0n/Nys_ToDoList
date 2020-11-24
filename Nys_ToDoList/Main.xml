@@ -1,0 +1,19 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
+..\FrameXML\UI.xsd">
+
+  <!-- *******************/ LIBS FILE /************************* -->
+  <Include file="Libs\embeds.xml"/>
+
+  <!-- *******************/ LOCALES FILE /************************* -->
+  <Include file="Locales\locales.xml"/>
+
+  <!-- *******************/ DATA FILES /************************* -->
+  <Include file="Data\Scripts\templates.xml"/>
+  <Script file="Data\Scripts\config.lua"/>
+  <Script file="Data\Scripts\itemsFrame.lua"/>
+  <Script file="Data\Scripts\optionsManager.lua"/>
+  <Script file="Data\Scripts\init.lua"/>
+
+  <!-- Bindings file loaded automatically by WoW -->
+
+</Ui>

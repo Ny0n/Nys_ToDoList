@@ -1,0 +1,22 @@
+# /run print((select(4, GetBuildInfo())))
+#@retail@
+## Interface: 90002
+#@end-retail@
+#@non-retail@
+# ## Interface: 11305
+#@end-non-retail@
+## Version: 5.5.2
+
+## Author: Nyony (on Twitch)
+## Title: Ny's To-Do List
+## Notes: A simple interface to remember everything you need to do!
+## X-Curse-Project-ID: 419221
+# ## X-WoWI-ID: xxx
+
+## DefaultState: enabled
+## SavedVariables: NysToDoListDB
+
+## OptionalDeps: Ace3, LibDBIcon-1.0
+## X-Embeds: Ace3, LibDBIcon-1.0
+
+Main.xml
