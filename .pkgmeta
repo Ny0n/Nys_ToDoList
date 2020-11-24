@@ -1,0 +1,32 @@
+package-as: Nys_ToDoList
+
+enable-nolib-creation: no
+
+externals:
+  Nys_ToDoList/Libs/LibStub:              https://repos.curseforge.com/wow/libstub/trunk
+  Nys_ToDoList/Libs/CallbackHandler-1.0:  https://repos.curseforge.com/wow/callbackhandler/trunk/CallbackHandler-1.0
+  Nys_ToDoList/Libs/AceAddon-3.0:         https://repos.curseforge.com/wow/ace3/trunk/AceAddon-3.0
+  Nys_ToDoList/Libs/AceDB-3.0:            https://repos.curseforge.com/wow/ace3/trunk/AceDB-3.0
+  Nys_ToDoList/Libs/AceDBOptions-3.0:     https://repos.curseforge.com/wow/ace3/trunk/AceDBOptions-3.0
+  Nys_ToDoList/Libs/AceLocale-3.0:        https://repos.curseforge.com/wow/ace3/trunk/AceLocale-3.0
+  Nys_ToDoList/Libs/AceGUI-3.0:           https://repos.curseforge.com/wow/ace3/trunk/AceGUI-3.0
+  Nys_ToDoList/Libs/AceConfig-3.0:        https://repos.curseforge.com/wow/ace3/trunk/AceConfig-3.0
+  Nys_ToDoList/Libs/AceTimer-3.0:         https://repos.curseforge.com/wow/ace3/trunk/AceTimer-3.0
+  Nys_ToDoList/Libs/AceEvent-3.0:         https://repos.curseforge.com/wow/ace3/trunk/AceEvent-3.0
+  Nys_ToDoList/Libs/LibDataBroker-1.1:    https://repos.curseforge.com/wow/libdatabroker-1-1
+  Nys_ToDoList/Libs/LibDBIcon-1.0:        https://repos.curseforge.com/wow/libdbicon-1-0/trunk/LibDBIcon-1.0
+
+# Files and directories beginning with a dot (such as .git) are automatically ignored, as is the pgkmeta file itself
+# ignore:
+  # - xxx.xxx
+
+manual-changelog:
+  filename: CHANGELOG.md
+  markup-type: markdown
+
+# license-output: xxx.xxx
+
+# This moves {zip}/Nys_ToDoList(package-as)/Nys_ToDoList(in repo) to {zip}/Nys_ToDoList(package-as), basically moving the addon's files one folder up
+# for this command, every path is relative to the root of the zip (we're '{zip}/' unlike other commands, in which we are 'Nys_ToDoList(package-as)/')
+move-folders:
+  Nys_ToDoList/Nys_ToDoList: Nys_ToDoList

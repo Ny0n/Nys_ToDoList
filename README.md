@@ -1,7 +1,7 @@
 # Ny's To-Do List
 WoW addon for retail and classic
 
-![Preview](https://github.com/Ny0n/Nys_ToDoList/blob/main/!previews/preview1.png?raw=true)
+![Preview](https://github.com/Ny0n/Nys_ToDoList/blob/main/.other/previews/preview1.png?raw=true)
 
 This addon provides a simple frame where you can view and store all your to-do’s,
 and everything can be sorted as daily or weekly, in which cases it will reset automatically when the time comes!
@@ -20,9 +20,9 @@ it will surely give you the answers you are looking for.
 
 ## Feedback
 
-Please report any bugs/features/questions through an [issue](https://github.com/Ny0n/Nys_ToDoList/issues/new) on GitHub.
+Please report any bugs (with error messages if possible) through an [issue](https://github.com/Ny0n/Nys_ToDoList/issues/new) on GitHub.
 
-You can also visit [the addon's page on curseforge](https://www.curseforge.com/wow/addons/nys-todolist) for more information or to give direct feedback.
+You can also visit [the addon's page on curseforge](https://www.curseforge.com/wow/addons/nys-todolist) to give direct feedback.
 
 ## Downloads and changelog
 
