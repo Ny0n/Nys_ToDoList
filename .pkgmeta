@@ -17,8 +17,8 @@ externals:
   Nys_ToDoList/Libs/LibDBIcon-1.0:        https://repos.curseforge.com/wow/libdbicon-1-0/trunk/LibDBIcon-1.0
 
 # Files and directories beginning with a dot (such as .git) are automatically ignored, as is the pgkmeta file itself
-# ignore:
-  # - xxx.xxx
+ignore:
+  - Nys_ToDoList/Locales/_dev.lua
 
 manual-changelog:
   filename: CHANGELOG.md
