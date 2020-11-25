@@ -2,7 +2,7 @@
 ..\FrameXML\UI.xsd">
 
   <!--@do-not-package@-->
-  <Script file="_dev.lua"/>
+  <Script file="../Data/devLocale.lua"/>
   <!--@end-do-not-package@-->
   <Script file="deDE.lua"/>
   <Script file="enUS.lua"/>

@@ -18,7 +18,7 @@ externals:
 
 # Files and directories beginning with a dot (such as .git) are automatically ignored, as is the pgkmeta file itself
 ignore:
-  - Nys_ToDoList/Locales/_dev.lua
+  - Nys_ToDoList/Data/devLocale.lua
 
 manual-changelog:
   filename: CHANGELOG.md
