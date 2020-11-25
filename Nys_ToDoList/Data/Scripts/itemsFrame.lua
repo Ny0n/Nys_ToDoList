@@ -184,7 +184,7 @@ function itemsFrame:ResetBtns(tabName, auto)
     if (tabName == "All") then
       config:Print(L["Unchecked everything!"]);
     else
-      config:Print(L["Unchecked %s tab!"]:format(L[tabName]));
+      config:Print(config:SafeStringFormat(L["Unchecked %s tab!"], L[tabName]));
     end
   elseif (not auto) then -- we print this message only if it was the user's action that triggered this function (not the auto reset)
     config:Print(L["Nothing to uncheck here!"]);
@@ -212,7 +212,7 @@ function itemsFrame:CheckBtns(tabName)
     if (tabName == "All") then
       config:Print(L["Checked everything!"]);
     else
-      config:Print(L["Checked %s tab!"]:format(L[tabName]));
+      config:Print(config:SafeStringFormat(L["Checked %s tab!"], L[tabName]));
     end
   else
     config:Print(L["Nothing to check here!"]);
@@ -525,7 +525,7 @@ function itemsFrame:AddItem(self, db)
     else -- if it's not in the current category in the current tab
       if (tabName == "All") then -- then we are creating a new item for the current cat in the All tab --CASE1 (add in 'All' tab)
         NysTDL.db.profile.itemsList[catName][itemName] = defaultNewItemsTable;
-        addResult = {L["\"%s\" added to %s! ('All' tab item)"]:format(itemName, catName), true};
+        addResult = {config:SafeStringFormat(L["\"%s\" added to %s! ('All' tab item)"], itemName, catName), true};
       else -- then we'll try to add the item as daily/weekly for the current cat in the current tab
         if (config:HasKey(NysTDL.db.profile.itemsList[catName], itemName)) then -- if it exists in the category, we search where
           -- checking...
@@ -534,12 +534,12 @@ function itemsFrame:AddItem(self, db)
             addResult = {L["No item can be daily and weekly!"], false};
           else -- if it isn't in the other reset tab, it means that the item is in the All tab -- CASE2 (add in reset tab, already in All)
             data.tabName = tabName; -- in that case, we transform that item into a 'tabName' item for this category
-            addResult = {L["\"%s\" added to %s! (%s item)"]:format(itemName, catName, L[tabName]), true};
+            addResult = {config:SafeStringFormat(L["\"%s\" added to %s! (%s item)"], itemName, catName, L[tabName]), true};
           end
         else -- if that new reset item doesn't exists at all in that category, we create it -- CASE3 (add in 'All' tab and add in reset tab)
           NysTDL.db.profile.itemsList[catName][itemName] = defaultNewItemsTable;
           NysTDL.db.profile.itemsList[catName][itemName].tabName = tabName;
-          addResult = {L["\"%s\" added to %s! (%s item)"]:format(itemName, catName, L[tabName]), true};
+          addResult = {config:SafeStringFormat(L["\"%s\" added to %s! (%s item)"], itemName, catName, L[tabName]), true};
         end
       end
     end
@@ -597,7 +597,7 @@ function itemsFrame:RemoveItem(self)
   NysTDL.db.profile.itemsList[catName][itemName] = nil;
 
   if (not clearing) then
-    config:Print(L["\"%s\" removed!"]:format(itemName));
+    config:Print(config:SafeStringFormat(L["\"%s\" removed!"], itemName));
     dontHideMePls[catName] = true; -- we don't hide the edit box at the next refresh for the category we just deleted an item from
   end
 
@@ -881,7 +881,7 @@ function itemsFrame:ClearTab(tabName)
     table.insert(NysTDL.db.profile.undoTable, nb); -- and then we save how many items were actually removed
 
     clearing = false;
-    config:Print(L["Clear succesful! (%s tab, %i items)"]:format(L[tabName], nb));
+    config:Print(config:SafeStringFormat(L["Clear succesful! (%s tab, %i items)"], L[tabName], nb));
   else
     config:Print(L["Nothing can be cleared here!"]);
   end
@@ -899,7 +899,7 @@ function itemsFrame:UndoRemove()
         itemsFrame:AddItem(nil, NysTDL.db.profile.undoTable[#NysTDL.db.profile.undoTable]);
         table.remove(NysTDL.db.profile.undoTable, #NysTDL.db.profile.undoTable);
       end
-      config:Print(L["Clear undo succesful! (%i items added back)"]:format(undoing["clearnb"]));
+      config:Print(config:SafeStringFormat(L["Clear undo succesful! (%i items added back)"], undoing["clearnb"]));
       undoing["clearnb"] = 0;
       undoing["clear"] = false;
     else -- if it was a simple remove

@@ -71,7 +71,8 @@ init.commands = {
   end,
 
   [L["favorites"]] = function()
-    config:PrintForced(L["You can favorite items!"].."\n"..L["To do so, hold the SHIFT key when the list is opened, then click on the star icons to favorite the items that you want!"].."\n"..L["Perks of favorite items:"].."\n- "..L["cannot be deleted"].."\n- "..L["customizable color"].."\n- "..L["sorted first in categories"].."\n- "..L["have their own more visible remaining numbers"].."\n- "..L["have an auto chat warning/reminder system!"])
+    config:PrintForced(L["You can favorite items!"].."\n"..L["To do so, hold the SHIFT key when the list is opened, then click on the star icons to favorite the items that you want!"])
+    config:PrintForced(L["Perks of favorite items:"].."\n- "..L["cannot be deleted"].."\n- "..L["customizable color"].."\n- "..L["sorted first in categories"].."\n- "..L["have their own more visible remaining numbers"].."\n- "..L["have an auto chat warning/reminder system!"])
   end,
 
   [L["descriptions"]] = function()
@@ -94,10 +95,10 @@ init.commands = {
 
 -- Command catcher:
 local function HandleSlashCommands(str)
-  local path = init.commands; -- optimise!
+  local path = init.commands; -- easier to read
 
   if (#str == 0) then
-    -- User just entered "/tdl" with no additional args.
+    -- we just entered "/tdl" with no additional args.
     path[""]();
     return;
   end
@@ -106,8 +107,6 @@ local function HandleSlashCommands(str)
 
   local deep = 1;
   for id, arg in pairs(args) do
-    arg = arg:lower(); -- current arg to low caps
-
     if (path[arg]) then
       if (type(path[arg]) == "function") then
         -- all remaining args passed to our function!
@@ -118,7 +117,7 @@ local function HandleSlashCommands(str)
         path = path[arg]; -- another sub-table found!
 
         if ((select(deep, unpack(args))) == nil) then
-          -- User just entered "/tdl" with no additional args.
+          -- here we just entered into a sub table, with no additional args
           path[""]();
           return;
         end

@@ -155,6 +155,7 @@ L["Toggles the display of the 'To-Do List' button"] = true
 L["toggleways"] = true
 L["Too.. Many.. Colors..."] = true
 L["Total number of items left to do before tomorrow:"] = true
+L["translation error"] = true
 L["Tuesday"] = true
 L["tutorial"] = true
 L["Uncheck"] = true

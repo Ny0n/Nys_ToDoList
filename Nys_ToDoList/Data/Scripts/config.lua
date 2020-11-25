@@ -348,11 +348,11 @@ function config:PrintForced(...)
   local prefix = string.format("|cff%s%s|r", hex, config.toc.title..':');
 
   local tab = {}
-  for i = 0, #... do
-    local s = (select(i + 1, ...))
+  for i = 1, select("#", ...) do
+    local s = (select(i, ...))
     if type(s) == "table" then
-      for i = 0, #s do
-        table.insert(tab, (select(i + 1, unpack(s))))
+      for j = 1, #s do
+        table.insert(tab, (select(j, unpack(s))))
       end
     else
       table.insert(tab, s)
@@ -410,6 +410,25 @@ function config:Deepcopy(orig)
         copy = orig
     end
     return copy
+end
+
+function config:SafeStringFormat(str, ...)
+  -- safe format, in case there is an error in the localization (happened once)
+  -- (we check if there are the necessary %x in the string, corresponding to the content of ...)
+  -- only accepting %i and %s, it's enough for my use
+  local dup = str
+  for i=1, select("#", ...) do
+    local var = select(i, ...)
+    if (var) then
+      local toMatch = (type(var) == "number") and "%%i" or "%%s"
+      if (string.find(dup, toMatch)) then
+        dup = string.gsub(dup, toMatch, "", 1)
+      else
+        return str.."|cffff0000 --> !"..L["translation error"].."!|r"
+      end
+    end
+  end
+  return str:format(...) -- it should be good
 end
 
 function config:HasHyperlink(s)
