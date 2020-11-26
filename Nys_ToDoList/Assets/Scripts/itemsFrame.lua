@@ -25,7 +25,6 @@ local descFrames = {};
 local addBtn = {};
 local label = {};
 local editBox = {};
-local labelHover = {};
 local categoryLabelFavsRemaining = {};
 local addACategoryClosed = true;
 local tabActionsClosed = true;
@@ -578,7 +577,7 @@ function itemsFrame:RemoveItem(self)
   -- the really important function to delete items
   -- if we're here, we're forced to delete an item so the result will be true in any case
 
-  local catName, itemName = config:GetItemInfoFromCheckbox(self:GetParent());
+  local catName, itemName = itemsFrame:GetItemInfoFromCheckbox(self:GetParent());
   local data = NysTDL.db.profile.itemsList[catName][itemName];
 
   -- since the item will get removed, we check if his description frame was opened (can happen if there was no description on the item)
@@ -609,7 +608,7 @@ end
 function itemsFrame:FavoriteClick(self)
   -- the function to favorite items
 
-  local catName, itemName = config:GetItemInfoFromCheckbox(self:GetParent());
+  local catName, itemName = itemsFrame:GetItemInfoFromCheckbox(self:GetParent());
   dontHideMePls[catName] = true;
 
   if (NysTDL.db.profile.itemsList[catName][itemName].favorite) then -- we set the new favorite state of the item
@@ -690,7 +689,7 @@ end
 function itemsFrame:DescriptionClick(self)
   -- the big function to create the description frame for each items
 
-  local catName, itemName = config:GetItemInfoFromCheckbox(self:GetParent());
+  local catName, itemName = itemsFrame:GetItemInfoFromCheckbox(self:GetParent());
   dontHideMePls[catName] = true;
 
   if (itemsFrame:descriptionFrameHide("NysTDL_DescFrame_"..catName.."_"..itemName)) then return; end
@@ -928,60 +927,6 @@ ItemsFrame_UpdateTime = function()
   itemsFrame:autoReset();
 end
 
-local function ItemsFrame_CheckLabels()
-  -- update for the labels:
-  for k, _ in pairs(NysTDL.db.profile.itemsList) do
-    if (label[k]:IsMouseOver()) then -- for every label in the current tab, if our mouse is over one of them,
-      local r, g, b = unpack(config:ThemeDownTo01(config.database.theme));
-      label[k]:SetTextColor(r, g, b, 1); -- we change its visual
-      if (not config:HasItem(labelHover, k)) then
-        table.insert(labelHover, k); -- we add its category name in a table variable
-      end
-    else
-      local isPresent, pos = config:HasItem(labelHover, k);
-      if (isPresent) then
-        table.remove(labelHover, pos); -- if we're not hovering it, we delete it from that table
-      end
-      label[k]:SetTextColor(1, 1, 1, 1); -- back to the default color
-    end
-  end
-end
-
-local function ItemsFrame_OnMouseUp(_, button)
-  local name = tostringall(unpack(labelHover)); -- we get the name of the label we clicked on (if we clicked on a label)
-  if (name ~= "" and name ~= nil) then -- we test that here
-    if (button == "LeftButton") then
-      -- if we're here, it means we've clicked somewhere on the frame
-      if (next(labelHover)) then -- if we are mouse hovering one of the category labels
-        if (config:HasKey(NysTDL.db.profile.closedCategories, name) and NysTDL.db.profile.closedCategories[name] ~= nil) then -- if this is a category that is closed in certain tabs
-          local isPresent, pos = config:HasItem(NysTDL.db.profile.closedCategories[name], CurrentTab:GetName()); -- we get if it is closed in the current tab
-          if (isPresent) then -- if it is
-            table.remove(NysTDL.db.profile.closedCategories[name], pos); -- then we remove it from the saved variable
-            if (#NysTDL.db.profile.closedCategories[name] == 0) then -- and btw check if it was the only tab remaining where it was closed
-              NysTDL.db.profile.closedCategories[name] = nil; -- in which case we nil the table variable for that category
-            end
-          else  -- if it is opened in the current tab
-            table.insert(NysTDL.db.profile.closedCategories[name], CurrentTab:GetName()); -- then we close it by adding it to the saved variable
-          end
-        else -- if this category was closed nowhere
-          NysTDL.db.profile.closedCategories[name] = {CurrentTab:GetName()}; -- then we create its table variable and initialize it with the current tab (we close the category in the current tab)
-        end
-        Tab_OnClick(_G[NysTDL.db.profile.lastLoadedTab]); -- we reload the frame to display the changes
-      end
-    elseif (button == "RightButton") then
-      -- if the label we right clicked on is NOT a closed category
-      if (not (select(1, config:HasKey(NysTDL.db.profile.closedCategories, name))) or not (select(1, config:HasItem(NysTDL.db.profile.closedCategories[name], CurrentTab:GetName())))) then
-        -- then we toggle its edit box
-        editBox[name]:SetShown(not editBox[name]:IsShown());
-        dontHideMePls[name] = true;
-        if (editBox[name]:IsShown()) then itemsFrame:ValidateTutorial("addItem"); end -- tutorial
-        Tab_OnClick(_G[NysTDL.db.profile.lastLoadedTab]); -- and we reload the frame to hide any other edit boxes, we only want one shown at a time
-        if (editBox[name]:IsShown()) then editBox[name]:SetFocus() end -- and then we give that edit box the focus if we are showing it
-      end
-    end
-  end
-end
-
 local function ItemsFrame_OnVisibilityUpdate()
   -- things to do when we hide/show the list
   addACategoryClosed = true;
@@ -1116,8 +1061,9 @@ local function ItemsFrame_OnUpdate(self, elapsed)
   end
 
   while (self.timeSinceLastUpdate > updateRate) do -- every 0.05 sec (instead of every frame which is every 1/144 (0.007) sec for a 144hz display... optimization :D)
-    if (NysTDL.db.profile.rainbow) then itemsFrame:ApplyNewRainbowColor(NysTDL.db.profile.rainbowSpeed) end
-    ItemsFrame_CheckLabels();
+    if (NysTDL.db.profile.rainbow) then
+      itemsFrame:ApplyNewRainbowColor(NysTDL.db.profile.rainbowSpeed)
+    end
     self.timeSinceLastUpdate = self.timeSinceLastUpdate - updateRate;
   end
 
@@ -1134,6 +1080,12 @@ end
 --------------------------------------
 -- frame creation and functions
 --------------------------------------
+
+function itemsFrame:GetItemInfoFromCheckbox(checkBox)
+  local catName = (select(2, checkBox:GetPoint())):GetText(); -- we get the category the checkbox is in
+  local itemName = checkBox.text:GetText(); -- we get the text of the check box
+  return catName, itemName;
+end
 
 function itemsFrame:CreateMovableCheckBtnElems(catName, itemName)
   local data = NysTDL.db.profile.itemsList[catName][itemName];
@@ -1175,8 +1127,55 @@ end
 
 function itemsFrame:CreateMovableLabelElems(catName)
   -- category label
-  label[catName] = config:CreateNoPointsLabel(itemsFrameUI, catName, tostring(catName));
-  categoryLabelFavsRemaining[catName] = config:CreateNoPointsLabel(itemsFrameUI, catName.."_FavsRemaining", "");
+  label[catName] = config:CreateNoPointsInteractiveLabel("NysTDL_CatLabel_"..catName, itemsFrameUI, catName, "GameFontHighlightLarge");
+  label[catName].Button:SetScript("OnEnter", function(self)
+    local r, g, b = unpack(config:ThemeDownTo01(config.database.theme))
+    self:GetParent().Text:SetTextColor(r, g, b, 1) -- when we hover it, we color the label
+  end)
+  label[catName].Button:SetScript("OnLeave", function(self)
+    self:GetParent().Text:SetTextColor(1, 1, 1, 1) -- back to the default color
+  end)
+  label[catName].Button:SetScript("OnClick", function(self, button)
+    local catName = self:GetParent().Text:GetText()
+    if (button == "LeftButton") then -- we open/close the category
+      if (config:HasKey(NysTDL.db.profile.closedCategories, catName) and NysTDL.db.profile.closedCategories[catName] ~= nil) then -- if this is a category that is closed in certain tabs
+        local isPresent, pos = config:HasItem(NysTDL.db.profile.closedCategories[catName], CurrentTab:GetName()); -- we get if it is closed in the current tab
+        if (isPresent) then -- if it is
+          table.remove(NysTDL.db.profile.closedCategories[catName], pos); -- then we remove it from the saved variable
+          if (#NysTDL.db.profile.closedCategories[catName] == 0) then -- and btw check if it was the only tab remaining where it was closed
+            NysTDL.db.profile.closedCategories[catName] = nil; -- in which case we nil the table variable for that category
+          end
+        else  -- if it is opened in the current tab
+          table.insert(NysTDL.db.profile.closedCategories[catName], CurrentTab:GetName()); -- then we close it by adding it to the saved variable
+        end
+      else -- if this category was closed nowhere
+        NysTDL.db.profile.closedCategories[catName] = {CurrentTab:GetName()}; -- then we create its table variable and initialize it with the current tab (we close the category in the current tab)
+      end
+
+      -- and finally, we reload the frame to display the changes
+      Tab_OnClick(_G[NysTDL.db.profile.lastLoadedTab]);
+    elseif (button == "RightButton") then -- we try to toggle the edit box to add new items
+      -- if the label we right clicked on is NOT a closed category
+      if (not (select(1, config:HasKey(NysTDL.db.profile.closedCategories, catName))) or not (select(1, config:HasItem(NysTDL.db.profile.closedCategories[catName], CurrentTab:GetName())))) then
+        -- then we toggle its edit box
+        editBox[catName]:SetShown(not editBox[catName]:IsShown());
+        dontHideMePls[catName] = true;
+
+        -- tutorial
+        if (editBox[catName]:IsShown()) then itemsFrame:ValidateTutorial("addItem"); end
+
+        Tab_OnClick(_G[NysTDL.db.profile.lastLoadedTab]); -- and we reload the frame to hide any other edit boxes, we only want one shown at a time
+        if (editBox[catName]:IsShown()) then editBox[catName]:SetFocus() end -- and then we give that edit box the focus if we are showing it
+      end
+    end
+  end)
+  label[catName].Button:SetScript("OnDoubleClick", function(self, button)
+    print("dbclicked "..self:GetParent().Text:GetText())
+    print(button)
+  end)
+
+  -- associated favs remaining label
+  categoryLabelFavsRemaining[catName] = config:CreateNoPointsLabel(itemsFrameUI, label[catName]:GetName().."_FavsRemaining", "");
   -- associated edit box and add button
   editBox[catName] = config:CreateNoPointsLabelEditBox(catName);
   editBox[catName]:SetScript("OnEnterPressed", function(self) itemsFrame:AddItem(addBtn[self:GetName()]) self:SetFocus() end); -- if we press enter, it's like we clicked on the add button
@@ -1224,22 +1223,22 @@ local function loadCategories(tab, categoryLabel, catName, itemNames, lastData)
     categoryLabel:Show();
 
     -- edit box
-    editBox[categoryLabel:GetName()]:SetParent(tab);
+    editBox[catName]:SetParent(tab);
     -- edit box width (adapt to the category label's length)
-    local labelWidth = tonumber(string.format("%i", categoryLabel:GetWidth()));
+    local labelWidth = tonumber(string.format("%i", categoryLabel.Text:GetWidth()));
     local distanceFromLabelWhenOk = 160;
     if (labelWidth + 120 > editBoxAddItemWidth) then
-      editBox[categoryLabel:GetName()]:SetPoint("LEFT", categoryLabel, "RIGHT", 10, 0);
-      editBox[categoryLabel:GetName()]:SetWidth(editBoxAddItemWidth - labelWidth);
+      editBox[catName]:SetPoint("LEFT", categoryLabel.Text, "RIGHT", 10, 0);
+      editBox[catName]:SetWidth(editBoxAddItemWidth - labelWidth);
     else
-      editBox[categoryLabel:GetName()]:SetPoint("LEFT", categoryLabel, "LEFT", distanceFromLabelWhenOk, 0);
+      editBox[catName]:SetPoint("LEFT", categoryLabel.Text, "LEFT", distanceFromLabelWhenOk, 0);
     end
 
     -- we keep the edit box for this category shown if we just added an item with it
-    if (not dontHideMePls[categoryLabel:GetName()]) then
-      editBox[categoryLabel:GetName()]:Hide();
+    if (not dontHideMePls[catName]) then
+      editBox[catName]:Hide();
     else
-      dontHideMePls[categoryLabel:GetName()] = nil;
+      dontHideMePls[catName] = nil;
       -- we do not change its points, he's still here and anchored to the label (which may have moved, but will update the button as well on its own)
     end
 
@@ -1247,7 +1246,7 @@ local function loadCategories(tab, categoryLabel, catName, itemNames, lastData)
     -- if the category label is shown in this tab, we move that cat fav label here too, correctly anchored
     categoryLabelFavsRemaining[catName]:SetParent(tab);
     categoryLabelFavsRemaining[catName]:ClearAllPoints();
-    categoryLabelFavsRemaining[catName]:SetPoint("LEFT", categoryLabel, "RIGHT", 6, 0);
+    categoryLabelFavsRemaining[catName]:SetPoint("LEFT", categoryLabel.Text, "RIGHT", 6, 0);
 
     if (not config:HasKey(NysTDL.db.profile.closedCategories, catName) or not config:HasItem(NysTDL.db.profile.closedCategories[catName], tab:GetName())) then -- if the category is opened in this tab, we display all of its items
       -- checkboxes
@@ -1256,7 +1255,7 @@ local function loadCategories(tab, categoryLabel, catName, itemNames, lastData)
           buttonsLength = buttonsLength + 1;
 
           checkBtn[catName][itemName]:SetParent(tab);
-          checkBtn[catName][itemName]:SetPoint("TOPLEFT", categoryLabel, "TOPLEFT", 30, - 22 * buttonsLength + 5);
+          checkBtn[catName][itemName]:SetPoint("TOPLEFT", categoryLabel.Text, "TOPLEFT", 30, - 22 * buttonsLength + 5);
           checkBtn[catName][itemName]:Show();
       end
       categoryLabelFavsRemaining[catName]:Hide(); -- the only thing is that we hide it if the category is opened
@@ -1265,7 +1264,7 @@ local function loadCategories(tab, categoryLabel, catName, itemNames, lastData)
       -- especially for when we load the All tab, for the clearing
       for _, itemName in pairs(itemNames) do -- for every item to load but hidden
         checkBtn[catName][itemName]:SetParent(tab);
-        checkBtn[catName][itemName]:SetPoint("TOPLEFT", categoryLabel, "TOPLEFT");
+        checkBtn[catName][itemName]:SetPoint("TOPLEFT", categoryLabel.Text, "TOPLEFT");
       end
       categoryLabelFavsRemaining[catName]:Show(); -- bc we only see him when the cat is closed
     end
@@ -2076,7 +2075,6 @@ function itemsFrame:ResetContent()
   addBtn = {};
   label = {};
   editBox = {};
-  labelHover = {};
   categoryLabelFavsRemaining = {};
   addACategoryClosed = true;
   tabActionsClosed = true;
@@ -2127,6 +2125,14 @@ end
 
 ---Creating the main window---
 function itemsFrame:CreateItemsFrame()
+  -- local f = CreateFrame("Frame", nil, UIParent, "NysTDL_InteractiveLabel")
+  -- f:SetPoint("CENTER")
+  -- f.Text:SetText("BLABLA")
+  -- local l = config:CreateNoPointsLabel(UIParent, nil, "BLABLA");
+  -- f.Button:SetScript("OnClick", function(self,button) print("hello") end)
+  -- f.Button:SetScript("OnEnter", function(self) self:GetParent().Text:SetTextColor(1, 0, 0) end)
+  -- f.Button:SetScript("OnLeave", function(self) self:GetParent().Text:SetTextColor(0, 1, 0) end)
+  -- f:Show()
   -- if (true) then return; end
   -- as of wow 9.0, we need to import the backdrop template into our frames if we want to use it in them, it is not set by default, so that's what we are doing here:
   itemsFrameUI = CreateFrame("Frame", "ToDoListUIFrame", UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil);
@@ -2144,7 +2150,6 @@ function itemsFrame:CreateItemsFrame()
   itemsFrameUI:EnableMouse(true);
 
   itemsFrameUI:HookScript("OnUpdate", ItemsFrame_OnUpdate);
-  itemsFrameUI:HookScript("OnMouseUp", ItemsFrame_OnMouseUp);
   itemsFrameUI:HookScript("OnShow", ItemsFrame_OnVisibilityUpdate);
   itemsFrameUI:HookScript("OnHide", ItemsFrame_OnVisibilityUpdate);
   itemsFrameUI:HookScript("OnSizeChanged", function(self)

@@ -475,12 +475,6 @@ function config:GetKeyFromValue(tabSource, value)
   return nil
 end
 
-function config:GetItemInfoFromCheckbox(checkBox)
-  local catName = (select(2, checkBox:GetPoint())):GetName(); -- we get the category the checkbox is in
-  local itemName = checkBox.text:GetText(); -- we get the text of the check box
-  return catName, itemName;
-end
-
 local function getHoursUntilReset()
   local dateValue = date("*t");
 
@@ -561,6 +555,13 @@ function config:CreateNoPointsLabel(relativeFrame, name, text)
   local label = relativeFrame:CreateFontString(name);
   label:SetFontObject("GameFontHighlightLarge");
   label:SetText(text);
+  return label;
+end
+
+function config:CreateNoPointsInteractiveLabel(name, relativeFrame, text, fontObjectString)
+  local label = CreateFrame("Frame", name, relativeFrame, "NysTDL_InteractiveLabel")
+  label.Text:SetFontObject(fontObjectString);
+  label.Text:SetText(text)
   return label;
 end
 

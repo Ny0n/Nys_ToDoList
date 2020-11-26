@@ -524,4 +524,25 @@
 		</Scripts>
 	</Frame>
 
+  <Frame name="NysTDL_InteractiveLabel" virtual="true">
+    <Size x="1" y="1"/> <!-- We give it a size so that it can appear on screen, but the text's size will override this visually -->
+		<Layers>
+			<Layer level="ARTWORK">
+				<FontString name="$parentText" parentKey="Text">
+					<Anchors>
+						<Anchor point="TOPLEFT"/>
+					</Anchors>
+				</FontString>
+			</Layer>
+		</Layers>
+		<Frames>
+			<Button name="$parentButton" parentKey="Button" registerForClicks="LeftButtonUp, RightButtonUp">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeKey="$parent.Text"/>
+					<Anchor point="BOTTOMRIGHT" relativeKey="$parent.Text"/>
+				</Anchors>
+			</Button>
+		</Frames>
+	</Frame>
+
 </Ui>
