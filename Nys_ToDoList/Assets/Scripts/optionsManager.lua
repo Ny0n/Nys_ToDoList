@@ -474,6 +474,16 @@ function NysTDL:rememberUndoSET(info, newValue)
   NysTDL.db.profile.rememberUndo = newValue;
 end
 
+-- highlightOnFocus
+function NysTDL:highlightOnFocusGET(info)
+  NysTDL:highlightOnFocusSET(info, NysTDL.db.profile.highlightOnFocus)
+  return NysTDL.db.profile.highlightOnFocus;
+end
+
+function NysTDL:highlightOnFocusSET(info, newValue)
+  NysTDL.db.profile.highlightOnFocus = newValue;
+end
+
 -- keyBind
 function NysTDL:keyBindGET(info)
   -- here we don't need to call the SET since the key binding is independant of profiles

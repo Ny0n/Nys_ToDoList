@@ -15,8 +15,8 @@ local AllTab, DailyTab, WeeklyTab, CurrentTab;
 -- reset variables
 local remainingCheckAll, remainingCheckDaily, remainingCheckWeekly = 0, 0, 0;
 local clearing, undoing = false, { ["clear"] = false, ["clearnb"] = 0, ["single"] = false, ["singleok"] = true};
+local renaming = false
 
-local dontHideMePls = {};
 local checkBtn = {};
 local removeBtn = {};
 local favoriteBtn = {};
@@ -194,7 +194,7 @@ function itemsFrame:CheckBtns(tabName)
   -- this function's goal is to check every item in the selected tab
   local checkedSomething = false;
 
-  for catName, items in pairs(NysTDL.db.profile.itemsList) do -- for every check buttons
+  for catName, items in pairs(NysTDL.db.profile.itemsList) do -- for every item
     for itemName, data in pairs(items) do
       if (tabName == "All" or data.tabName == tabName) then -- if it is in the selected tab
         if (not checkBtn[catName][itemName]:GetChecked()) then
@@ -410,40 +410,41 @@ local function addCategory()
   local db = {}
   db.catName = itemsFrameUI.categoryEditBox:GetText();
 
+  local function SetFocus(editBox) -- DRY
+    editBox:SetFocus()
+    if (NysTDL.db.profile.highlightOnFocus) then
+      editBox:HighlightText()
+    else
+      editBox:HighlightText(0, 0)
+    end
+  end
+
   if (db.catName == "") then
     config:Print(L["Please enter a category name!"])
-    itemsFrameUI.categoryEditBox:SetFocus()
+    SetFocus(itemsFrameUI.categoryEditBox)
     return;
   end
 
   local l = config:CreateNoPointsLabel(itemsFrameUI, nil, db.catName);
   if (l:GetWidth() > categoryNameWidthMax) then
     config:Print(L["This categoty name is too big!"])
-    itemsFrameUI.categoryEditBox:SetFocus()
+    SetFocus(itemsFrameUI.categoryEditBox)
     return;
   end
 
   db.itemName = itemsFrameUI.nameEditBox:GetText();
   if (db.itemName == "") then
     config:Print(L["Please enter the name of the item!"])
-    itemsFrameUI.nameEditBox:SetFocus()
+    SetFocus(itemsFrameUI.nameEditBox)
     return;
   end
 
   local l = config:CreateNoPointsLabel(itemsFrameUI, nil, db.itemName);
-  if (l:GetWidth() > itemNameWidthMax) then -- is it too big?
-    if (config:HasHyperlink(db.itemName)) then
-      l:SetFontObject("GameFontNormal")
-      if (l:GetWidth() > itemNameWidthMax) then -- even for a hyperlink?
-        config:Print(L["This item name is too big!"])
-        itemsFrameUI.nameEditBox:SetFocus()
-        return;
-      end
-    else
-      config:Print(L["This item name is too big!"])
-      itemsFrameUI.nameEditBox:SetFocus()
-      return;
-    end
+  if (l:GetWidth() > itemNameWidthMax and config:HasHyperlink(db.itemName)) then l:SetFontObject("GameFontNormal") end -- if it has an hyperlink in it and it's too big, we allow it to be a liitle longer, considering hyperlinks take more place
+  if (l:GetWidth() > itemNameWidthMax) then -- then we recheck to see if the item is not too long for good
+    config:Print(L["This item name is too big!"])
+    SetFocus(itemsFrameUI.nameEditBox)
+    return;
   end
 
   db.tabName = itemsFrameUI.categoryButton:GetParent():GetName();
@@ -455,16 +456,18 @@ local function addCategory()
   itemsFrame:AddItem(nil, db);
 
   -- after the adding, we give back the focus to the edit box that needs it, depending on if it was a success or not
-  if (itemsFrameUI.categoryEditBox:GetText() == "") then
-    itemsFrameUI.categoryEditBox:SetFocus()
-  else
-    itemsFrameUI.nameEditBox:SetFocus()
+  if (itemsFrameUI.categoryEditBox:GetText() == "") then-- if the adding was a success, it should have cleared both edit boxes
+    SetFocus(itemsFrameUI.categoryEditBox) -- so we go back to the category edit box
+  else -- but if it wasn't cleared, it means the adding failed
+    SetFocus(itemsFrameUI.nameEditBox) -- and that can only mean one thing: the item name is the problem, so we go back to it
   end
 end
 
 function itemsFrame:RenameCategory(oldCatName, newCatName)
-  print("RENAME CATEGORY")
-  print(oldCatName, newCatName)
+  -- basically, it's the same process from the MoveItem func, just throught a for loop so we do every item in the category
+  for itemName, data in pairs(NysTDL.db.profile.itemsList[oldCatName]) do -- for every item in the category
+    itemsFrame:MoveItem(oldCatName, newCatName, itemName, itemName, data.tabName)
+  end
 end
 
 function itemsFrame:AddItem(self, db)
@@ -490,7 +493,7 @@ function itemsFrame:AddItem(self, db)
     local l = config:CreateNoPointsLabel(itemsFrameUI, nil, itemName);
     if (l:GetWidth() > itemNameWidthMax and config:HasHyperlink(itemName)) then l:SetFontObject("GameFontNormal") end -- if it has an hyperlink in it and it's too big, we allow it to be a liitle longer, considering hyperlinks take more place
     if (l:GetWidth() > itemNameWidthMax) then -- then we recheck to see if the item is not too long for good
-      config:Print(L["This item name is too big!"])
+      config:PrintForced(L["This item name is too big!"])
       return;
     end
   else
@@ -558,7 +561,7 @@ function itemsFrame:AddItem(self, db)
 
   -- okay so we print only if we're not in a clear undo process / single undo process but failed
   if (undoing["single"]) then undoing["singleok"] = addResult[2]; end
-  if (not undoing["clear"] and not (undoing["single"] and not undoing["singleok"])) then config:Print(addResult[1]);
+  if (not undoing["clear"] and not (undoing["single"] and not undoing["singleok"])) and not renaming then config:Print(addResult[1]);
   elseif (addResult[2]) then undoing["clearnb"] = undoing["clearnb"] + 1; end
 
   if (addResult[2]) then -- if the adding was succesfull
@@ -567,7 +570,6 @@ function itemsFrame:AddItem(self, db)
 
     -- and we clear some visuals
     if (type(db) ~= "table") then -- if we come from the edit box to add an item next to the category name label
-      dontHideMePls[catName] = true; -- then the ending refresh must not hide the edit box
       self:GetParent():SetText(""); -- but we clear it since our query was succesful
     elseif (type(db) == "table" and db.form) then -- if we come from the Add a category form
       itemsFrameUI.categoryEditBox:SetText("");
@@ -584,7 +586,7 @@ end
 function itemsFrame:RemoveItem(self)
   -- the really important function to delete items
   -- if we're here, we're forced to delete an item so the result will be true in any case
-  
+
   local catName, itemName = self:GetParent().catName, self:GetParent().itemName;
   local data = NysTDL.db.profile.itemsList[catName][itemName];
 
@@ -593,46 +595,46 @@ function itemsFrame:RemoveItem(self)
   itemsFrame:descriptionFrameHide("NysTDL_DescFrame_"..catName.."_"..itemName)
 
   -- undo part
-  local db = {
-    ["catName"] = catName,
-    ["itemName"] = itemName,
-    ["tabName"] = data.tabName,
-    ["checked"] = data.checked,
-  }
+  if (not renaming) then
+    local db = {
+      ["catName"] = catName,
+      ["itemName"] = itemName,
+      ["tabName"] = data.tabName,
+      ["checked"] = data.checked,
+    }
+    table.insert(NysTDL.db.profile.undoTable, db);
+  end
 
   -- remove part
   NysTDL.db.profile.itemsList[catName][itemName] = nil;
 
-  if (not clearing) then
+  if (not clearing and not renaming) then
     config:Print(config:SafeStringFormat(L["\"%s\" removed!"], itemName));
-    dontHideMePls[catName] = true; -- we don't hide the edit box at the next refresh for the category we just deleted an item from
   end
-
-  table.insert(NysTDL.db.profile.undoTable, db);
 
   refreshTab(catName, itemName, "Remove", true);
 end
 
-function itemsFrame:RenameItem(catName, oldItemName, newItemName)
-  print("RENAME ITEM")
-  print(catName, oldItemName, newItemName)
+function itemsFrame:MoveItem(oldCatName, newCatName, oldItemName, newItemName, newTabName)
   -- so first, we prep the database to send to the AddItem func
   local data = {
-    ["catName"] = catName,
+    ["catName"] = newCatName,
     ["itemName"] = newItemName,
-    ["tabName"] = CurrentTab:GetName(),
-    ["checked"] = NysTDL.db.profile.itemsList[catName][oldItemName].checked,
+    ["tabName"] = newTabName,
+    ["checked"] = NysTDL.db.profile.itemsList[oldCatName][oldItemName].checked,
     -- while saving the old item's data while we're at it
-    ["favorite"] = NysTDL.db.profile.itemsList[catName][oldItemName].favorite,
-    ["description"] = NysTDL.db.profile.itemsList[catName][oldItemName].description
+    ["favorite"] = NysTDL.db.profile.itemsList[oldCatName][oldItemName].favorite,
+    ["description"] = NysTDL.db.profile.itemsList[oldCatName][oldItemName].description
   }
 
   -- then we can start renaming
-  itemsFrame:RemoveItem(removeBtn[catName][oldItemName])
+  renaming = true
+  itemsFrame:RemoveItem(removeBtn[oldCatName][oldItemName])
   itemsFrame:AddItem(nil, data)
+  renaming = false
   -- and finally, we put back the original item data
-  NysTDL.db.profile.itemsList[catName][newItemName].favorite = data.favorite
-  NysTDL.db.profile.itemsList[catName][newItemName].description = data.description
+  NysTDL.db.profile.itemsList[newCatName][newItemName].favorite = data.favorite
+  NysTDL.db.profile.itemsList[newCatName][newItemName].description = data.description
 
   Tab_OnClick(_G[NysTDL.db.profile.lastLoadedTab]); -- we reload the tab to instantly display the changes
 end
@@ -641,7 +643,6 @@ function itemsFrame:FavoriteClick(self)
   -- the function to favorite items
 
   local catName, itemName = self:GetParent().catName, self:GetParent().itemName;
-  dontHideMePls[catName] = true;
 
   if (NysTDL.db.profile.itemsList[catName][itemName].favorite) then -- we set the new favorite state of the item
     NysTDL.db.profile.itemsList[catName][itemName].favorite = nil;
@@ -722,7 +723,6 @@ function itemsFrame:DescriptionClick(self)
   -- the big function to create the description frame for each items
 
   local catName, itemName = self:GetParent().catName, self:GetParent().itemName;
-  dontHideMePls[catName] = true;
 
   if (itemsFrame:descriptionFrameHide("NysTDL_DescFrame_"..catName.."_"..itemName)) then return; end
 
@@ -1167,7 +1167,7 @@ function itemsFrame:CreateMovableCheckBtnElems(catName, itemName)
       local newItemName = self:GetText()
       -- first, we do some tests
       if (newItemName == "") then -- if the new item name is empty
-        config:PrintForced(L["Please enter the name of the item!"])
+        self:GetScript("OnEscapePressed")(self) -- we cancel the action
         return;
       elseif (newItemName == itemName) then -- if the new is the same as the old
         self:GetScript("OnEscapePressed")(self) -- we cancel the action
@@ -1192,7 +1192,7 @@ function itemsFrame:CreateMovableCheckBtnElems(catName, itemName)
       end
 
       -- and if everything is good, we can rename the item (a.k.a, delete the current one and creating a new one)
-      itemsFrame:RenameItem(catName, itemName, newItemName)
+      itemsFrame:MoveItem(catName, catName, itemName, newItemName, CurrentTab:GetName())
     end)
 
     -- cancelling
@@ -1255,15 +1255,19 @@ function itemsFrame:CreateMovableLabelElems(catName)
     elseif (button == "RightButton") then -- we try to toggle the edit box to add new items
       -- if the label we right clicked on is NOT a closed category
       if (not (select(1, config:HasKey(NysTDL.db.profile.closedCategories, catName))) or not (select(1, config:HasItem(NysTDL.db.profile.closedCategories[catName], CurrentTab:GetName())))) then
-        -- then we toggle its edit box
+        -- we toggle its edit box
         editBox[catName]:SetShown(not editBox[catName]:IsShown());
-        dontHideMePls[catName] = true;
 
-        -- tutorial
-        if (editBox[catName]:IsShown()) then itemsFrame:ValidateTutorial("addItem"); end
+        if (editBox[catName]:IsShown()) then
+          -- tutorial
+          itemsFrame:ValidateTutorial("addItem");
 
-        Tab_OnClick(_G[NysTDL.db.profile.lastLoadedTab]); -- and we reload the frame to hide any other edit boxes, we only want one shown at a time
-        if (editBox[catName]:IsShown()) then editBox[catName]:SetFocus() end -- and then we give that edit box the focus if we are showing it
+          -- we also give that edit box the focus if we are showing it
+          editBox[catName]:SetFocus()
+          if (not NysTDL.db.profile.highlightOnFocus) then
+            editBox[catName]:HighlightText(0, 0)
+          end
+        end
       end
     end
   end)
@@ -1285,7 +1289,7 @@ function itemsFrame:CreateMovableLabelElems(catName)
       local newCatName = self:GetText()
       -- first, we do some tests
       if (newCatName == "") then -- if the new cat name is empty
-        config:PrintForced(L["Please enter a category name!"])
+        self:GetScript("OnEscapePressed")(self) -- we cancel the action
         return;
       elseif (newCatName == catName) then -- if the new is the same as the old
         self:GetScript("OnEscapePressed")(self) -- we cancel the action
@@ -1314,10 +1318,26 @@ function itemsFrame:CreateMovableLabelElems(catName)
   categoryLabelFavsRemaining[catName] = config:CreateNoPointsLabel(itemsFrameUI, label[catName]:GetName().."_FavsRemaining", "");
   -- associated edit box and add button
   editBox[catName] = config:CreateNoPointsLabelEditBox(catName);
-  editBox[catName]:SetScript("OnEnterPressed", function(self) itemsFrame:AddItem(addBtn[self:GetName()]) self:SetFocus() end); -- if we press enter, it's like we clicked on the add button
+  editBox[catName]:SetScript("OnEnterPressed", function(self)
+    itemsFrame:AddItem(addBtn[self:GetName()])
+    self:Show() -- we keep it shown to add more items
+    self:SetFocus()
+    if (NysTDL.db.profile.highlightOnFocus) then
+      self:HighlightText()
+    end
+  end);
+  -- cancelling
+  editBox[catName]:SetScript("OnEscapePressed", function(self)
+    self:Hide()
+  end)
+  editBox[catName]:HookScript("OnEditFocusLost", function(self)
+    self:GetScript("OnEscapePressed")(self)
+  end)
   table.insert(hyperlinkEditBoxes, editBox[catName]);
   addBtn[catName] = config:CreateAddButton(editBox[catName]);
-  addBtn[catName]:SetScript("OnClick", function(self) itemsFrame:AddItem(self) self:GetParent():SetFocus() end);
+  addBtn[catName]:SetScript("OnClick", function(self)
+    self:GetParent():GetScript("OnEnterPressed")(self:GetParent())
+  end); -- if we click on it, it's the same as pressing enter in the edit box
 end
 
 local function loadMovable()
@@ -1369,14 +1389,7 @@ local function loadCategories(tab, categoryLabel, catName, itemNames, lastData)
     else
       editBox[catName]:SetPoint("LEFT", categoryLabel, "LEFT", distanceFromLabelWhenOk, 0);
     end
-
-    -- we keep the edit box for this category shown if we just added an item with it
-    if (not dontHideMePls[catName]) then
-      editBox[catName]:Hide();
-    else
-      dontHideMePls[catName] = nil;
-      -- we do not change its points, he's still here and anchored to the label (which may have moved, but will update the button as well on its own)
-    end
+    editBox[catName]:Hide(); -- we hide every edit box when we reload the tab
 
     -- label showing how much favs is left in a closed category
     -- if the category label is shown in this tab, we move that cat fav label here too, correctly anchored
@@ -1419,7 +1432,6 @@ local function loadCategories(tab, categoryLabel, catName, itemNames, lastData)
     editBox[catName]:Hide();
     editBox[catName]:SetParent(tab);
     editBox[catName]:ClearAllPoints();
-    dontHideMePls[catName] = nil;
 
     -- then, since there isn't anything to show in the current category for the current tab,
     -- we check if it was a closed category, in which case, we remove it from the saved variable
@@ -1793,6 +1805,13 @@ local function generateAddACategory()
   itemsFrameUI.categoryEditBox:SetAutoFocus(false);
   itemsFrameUI.categoryEditBox:SetScript("OnKeyDown", function(_, key) if (key == "TAB") then itemsFrameUI.nameEditBox:SetFocus() end end) -- to switch easily between the two edit boxes
   itemsFrameUI.categoryEditBox:SetScript("OnEnterPressed", addCategory); -- if we press enter, it's like we clicked on the add button
+  itemsFrameUI.categoryEditBox:HookScript("OnEditFocusGained", function(self)
+    if (NysTDL.db.profile.highlightOnFocus) then
+      self:HighlightText()
+    else
+      self:HighlightText(self:GetCursorPosition(), self:GetCursorPosition())
+    end
+  end)
   table.insert(addACategoryItems, itemsFrameUI.categoryEditBox);
 
   itemsFrameUI.labelFirstItemName = itemsFrameUI:CreateFontString(nil); -- info label 3
@@ -1806,6 +1825,13 @@ local function generateAddACategory()
   itemsFrameUI.nameEditBox:SetAutoFocus(false);
   itemsFrameUI.nameEditBox:SetScript("OnKeyDown", function(_, key) if (key == "TAB") then itemsFrameUI.categoryEditBox:SetFocus() end end)
   itemsFrameUI.nameEditBox:SetScript("OnEnterPressed", addCategory); -- if we press enter, it's like we clicked on the add button
+  itemsFrameUI.nameEditBox:HookScript("OnEditFocusGained", function(self)
+    if (NysTDL.db.profile.highlightOnFocus) then
+      self:HighlightText()
+    else
+      self:HighlightText(self:GetCursorPosition(), self:GetCursorPosition())
+    end
+  end)
   table.insert(addACategoryItems, itemsFrameUI.nameEditBox);
   table.insert(hyperlinkEditBoxes, itemsFrameUI.nameEditBox);
 
@@ -2202,7 +2228,6 @@ function itemsFrame:ResetContent()
   remainingCheckAll, remainingCheckDaily, remainingCheckWeekly = 0, 0, 0;
   clearing, undoing = false, { ["clear"] = false, ["clearnb"] = 0, ["single"] = false, ["singleok"] = true};
 
-  dontHideMePls = {};
   checkBtn = {};
   removeBtn = {};
   favoriteBtn = {};
@@ -2258,7 +2283,7 @@ function itemsFrame:Init()
   itemsFrameUI.frameContentAlphaSlider:SetValue(NysTDL.db.profile.frameContentAlpha);
   itemsFrameUI.affectDesc:SetChecked(NysTDL.db.profile.affectDesc);
 end
-local FRAMETTEST
+
 ---Creating the main window---
 function itemsFrame:CreateItemsFrame()
   -- local b = CreateFrame("CheckButton", nil, UIParent, "UICheckButtonTemplate");

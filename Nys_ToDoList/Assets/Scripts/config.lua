@@ -139,6 +139,14 @@ config.database = {
                   get = "rememberUndoGET",
                   set = "rememberUndoSET",
               }, -- rememberUndo
+              highlightOnFocus = {
+                  order = 3.8,
+                  type = "toggle",
+                  name = L["test1"],
+                  desc = L["test2"],
+                  get = "highlightOnFocusGET",
+                  set = "highlightOnFocusSET",
+              }, -- highlightOnFocus
               favoritesColor = {
                   order = 3.4,
                   type = "color",
@@ -320,6 +328,7 @@ config.database = {
             normalWarning = false,
             hourlyReminder = false,
             rememberUndo = true,
+            highlightOnFocus = true,
             frameAlpha = 65,
             frameContentAlpha = 100,
             affectDesc = true,
@@ -773,10 +782,12 @@ function config:CreateNoPointsRenameEditBox(relativeFrame, text, width, height)
   renameEditBox:SetFontObject("GameFontHighlightLarge")
   renameEditBox:SetAutoFocus(false)
   renameEditBox:SetFocus()
-  renameEditBox:HighlightText(0, 0)
-  renameEditBox:HookScript("OnEditFocusGained", function(self)
-    self:HighlightText(0, 0) -- we don't select everything by default when we select the edit box
-  end)
+  if (not NysTDL.db.profile.highlightOnFocus) then
+    renameEditBox:HighlightText(0, 0)
+  end
+  -- renameEditBox:HookScript("OnEditFocusGained", function(self)
+  --   self:HighlightText(0, 0) -- we don't select everything by default when we select the edit box
+  -- end)
   return renameEditBox
 end
 

@@ -4,6 +4,8 @@ addonTable.devLocale = L
 
 -- ============================================ --
 
+L["test1"] = true
+L["test2"] = true
 L["This item name already exists in the category"] = true
 L["This category name already exists"] = true
 L["Please choose a different name to avoid overriding data"] = true
