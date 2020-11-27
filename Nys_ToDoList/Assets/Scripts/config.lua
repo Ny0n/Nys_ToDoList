@@ -432,8 +432,11 @@ function config:SafeStringFormat(str, ...)
 end
 
 function config:HasHyperlink(s)
-  if (s ~= nil and string.find(s, "|H") ~= nil) then
-    return true
+  if (s ~= nil) then
+    -- a hyperlink pattern has at least one '|H' and two '|h', so this is the closest test i can think of
+    if ((select(2, string.gsub(s, "|H", "")) >= 1) and (select(2, string.gsub(s, "|h", "")) >= 2)) then
+      return true
+    end
   end
   return false
 end
@@ -562,6 +565,13 @@ function config:CreateNoPointsInteractiveLabel(name, relativeFrame, text, fontOb
   local label = CreateFrame("Frame", name, relativeFrame, "NysTDL_InteractiveLabel")
   label.Text:SetFontObject(fontObjectString);
   label.Text:SetText(text)
+  label:SetSize(label.Text:GetWidth(), label.Text:GetHeight()) -- we init the size to the text's size
+
+  -- this updates the frame's size each time the text's size is changed
+  label.Button:SetScript("OnSizeChanged", function(self, width, height)
+    self:GetParent():SetSize(width, height)
+  end);
+
   return label;
 end
 
@@ -754,6 +764,20 @@ function config:CreateAddButton(relativeEditBox)
     self.Icon:SetTextColor(1, 1, 1);
   end);
   return btn;
+end
+
+function config:CreateNoPointsRenameEditBox(relativeFrame, text, width, height)
+  local renameEditBox = CreateFrame("EditBox", relativeFrame:GetName().."_renameEditBox", relativeFrame, "InputBoxTemplate")
+  renameEditBox:SetSize(width-10, height)
+  renameEditBox:SetText(text)
+  renameEditBox:SetFontObject("GameFontHighlightLarge")
+  renameEditBox:SetAutoFocus(false)
+  renameEditBox:SetFocus()
+  renameEditBox:HighlightText(0, 0)
+  renameEditBox:HookScript("OnEditFocusGained", function(self)
+    self:HighlightText(0, 0) -- we don't select everything by default when we select the edit box
+  end)
+  return renameEditBox
 end
 
 function config:CreateNoPointsLabelEditBox(name)

@@ -342,12 +342,12 @@ function itemsFrame:updateCheckButtonsColor()
     for itemName, data in pairs(items) do
       -- we color them in a color corresponding to their checked state
       if (checkBtn[catName][itemName]:GetChecked()) then
-        checkBtn[catName][itemName].text:SetTextColor(0, 1, 0);
+        checkBtn[catName][itemName].InteractiveLabel.Text:SetTextColor(0, 1, 0);
       else
         if (data.favorite) then
-          checkBtn[catName][itemName].text:SetTextColor(unpack(NysTDL.db.profile.favoritesColor));
+          checkBtn[catName][itemName].InteractiveLabel.Text:SetTextColor(unpack(NysTDL.db.profile.favoritesColor));
         else
-          checkBtn[catName][itemName].text:SetTextColor(unpack(config:ThemeDownTo01(config.database.theme_yellow)));
+          checkBtn[catName][itemName].InteractiveLabel.Text:SetTextColor(unpack(config:ThemeDownTo01(config.database.theme_yellow)));
         end
       end
     end
@@ -462,6 +462,11 @@ local function addCategory()
   end
 end
 
+function itemsFrame:RenameCategory(oldCatName, newCatName)
+  print("RENAME CATEGORY")
+  print(oldCatName, newCatName)
+end
+
 function itemsFrame:AddItem(self, db)
   -- the big big function to add items
 
@@ -474,9 +479,11 @@ function itemsFrame:AddItem(self, db)
   }
 
   if (type(db) ~= "table") then
-    catName = self:GetParent():GetName(); -- we get the category we're adding the item in
-    itemName = self:GetParent():GetText(); -- we get the item name the player entered
-    tabName = self:GetParent():GetParent():GetName(); -- we get the tab we're on
+    -- if we're here, it means that we added a new item from the edit box next to the category names
+    -- and self is the '+' button, its parent is the edit box
+    catName = self:GetParent():GetName(); -- we get the category we're adding the item in (it's the name of the edit box)
+    itemName = self:GetParent():GetText(); -- we get the item name the player entered (the text inside the edit box)
+    tabName = self:GetParent():GetParent():GetName(); -- we get the tab we're on (the name of the edit box's parent)
     checked = false;
 
     -- there we check if the item name is not too big
@@ -487,7 +494,7 @@ function itemsFrame:AddItem(self, db)
       return;
     end
   else
-    -- undoing / adding from cat form
+    -- undoing / adding from category form
     catName = db.catName;
     itemName = db.itemName;
     tabName = db.tabName;
@@ -577,7 +584,7 @@ function itemsFrame:RemoveItem(self)
   -- the really important function to delete items
   -- if we're here, we're forced to delete an item so the result will be true in any case
 
-  local catName, itemName = itemsFrame:GetItemInfoFromCheckbox(self:GetParent());
+  local catName, itemName = self:GetParent().catName, self:GetParent().itemName;
   local data = NysTDL.db.profile.itemsList[catName][itemName];
 
   -- since the item will get removed, we check if his description frame was opened (can happen if there was no description on the item)
@@ -605,10 +612,15 @@ function itemsFrame:RemoveItem(self)
   refreshTab(catName, itemName, "Remove", true);
 end
 
+function itemsFrame:RenameItem(catName, oldItemName, newItemName)
+  print("RENAME ITEM")
+  print(catName, oldItemName, newItemName)
+end
+
 function itemsFrame:FavoriteClick(self)
   -- the function to favorite items
 
-  local catName, itemName = itemsFrame:GetItemInfoFromCheckbox(self:GetParent());
+  local catName, itemName = self:GetParent().catName, self:GetParent().itemName;
   dontHideMePls[catName] = true;
 
   if (NysTDL.db.profile.itemsList[catName][itemName].favorite) then -- we set the new favorite state of the item
@@ -689,7 +701,7 @@ end
 function itemsFrame:DescriptionClick(self)
   -- the big function to create the description frame for each items
 
-  local catName, itemName = itemsFrame:GetItemInfoFromCheckbox(self:GetParent());
+  local catName, itemName = self:GetParent().catName, self:GetParent().itemName;
   dontHideMePls[catName] = true;
 
   if (itemsFrame:descriptionFrameHide("NysTDL_DescFrame_"..catName.."_"..itemName)) then return; end
@@ -1081,33 +1093,90 @@ end
 -- frame creation and functions
 --------------------------------------
 
-function itemsFrame:GetItemInfoFromCheckbox(checkBox)
-  local catName = (select(2, checkBox:GetPoint())):GetText(); -- we get the category the checkbox is in
-  local itemName = checkBox.text:GetText(); -- we get the text of the check box
-  return catName, itemName;
-end
-
 function itemsFrame:CreateMovableCheckBtnElems(catName, itemName)
   local data = NysTDL.db.profile.itemsList[catName][itemName];
 
   if (not config:HasKey(checkBtn, catName)) then checkBtn[catName] = {} end
   checkBtn[catName][itemName] = CreateFrame("CheckButton", "NysTDL_CheckBtn_"..catName.."_"..itemName, itemsFrameUI, "UICheckButtonTemplate");
-  checkBtn[catName][itemName].text:SetText(itemName);
-  checkBtn[catName][itemName].text:SetFontObject("GameFontNormalLarge");
+  checkBtn[catName][itemName].InteractiveLabel = config:CreateNoPointsInteractiveLabel(checkBtn[catName][itemName]:GetName().."_InteractiveLabel", checkBtn[catName][itemName], itemName, "GameFontNormalLarge");
+  checkBtn[catName][itemName].InteractiveLabel:SetPoint("LEFT", checkBtn[catName][itemName], "RIGHT")
+  checkBtn[catName][itemName].InteractiveLabel.Text:SetPoint("LEFT", checkBtn[catName][itemName], "RIGHT", 20, 0)
+  checkBtn[catName][itemName].catName = catName -- easy access to the catName this button is in
+  checkBtn[catName][itemName].itemName = itemName -- easy access to the itemName of this button, this also allows the shown text to be different
   if (config:HasHyperlink(itemName)) then -- this is for making more space for items that have hyperlinks in them
-    local l = config:CreateNoPointsLabel(itemsFrameUI, nil, itemName);
-    if (l:GetWidth() > itemNameWidthMax) then
-      checkBtn[catName][itemName].text:SetFontObject("GameFontNormal");
+    if (checkBtn[catName][itemName].InteractiveLabel.Text:GetWidth() > itemNameWidthMax) then
+      checkBtn[catName][itemName].InteractiveLabel.Text:SetFontObject("GameFontNormal");
     end
+
+    -- and also to deactivate the InteractiveLabel's Button, so that we can actually click on the links
+    -- unless we are holding Alt, and to detect this, we actually put on them an OnUpdate script
+    checkBtn[catName][itemName].InteractiveLabel:SetScript("OnUpdate", function(self)
+      if (IsAltKeyDown()) then
+        self.Button:Show()
+      else
+        self.Button:Hide()
+      end
+    end)
   end
   checkBtn[catName][itemName]:SetChecked(data.checked)
   checkBtn[catName][itemName]:SetScript("OnClick", function(self)
     data.checked = self:GetChecked()
     ItemsFrame_Update()
   end);
-  checkBtn[catName][itemName]:SetHyperlinksEnabled(true); -- to enable OnHyperlinkClick
-  checkBtn[catName][itemName]:SetScript("OnHyperlinkClick", function(_, linkData, link, button)
+  checkBtn[catName][itemName].InteractiveLabel:SetHyperlinksEnabled(true); -- to enable OnHyperlinkClick
+  checkBtn[catName][itemName].InteractiveLabel:SetScript("OnHyperlinkClick", function(_, linkData, link, button)
     ChatFrame_OnHyperlinkShow(ChatFrame1, linkData, link, button)
+  end);
+  checkBtn[catName][itemName].InteractiveLabel.Button:SetScript("OnDoubleClick", function(self)
+    -- first, we hide the label
+    local checkBtn = self:GetParent():GetParent()
+    checkBtn.InteractiveLabel:Hide()
+
+    -- then, we can create the new edit box to rename the item, where the label was
+    local catName, itemName = checkBtn.catName, checkBtn.itemName
+    local renameEditBox = config:CreateNoPointsRenameEditBox(checkBtn, itemName, itemNameWidthMax, self:GetHeight())
+    renameEditBox:SetPoint("LEFT", checkBtn, "RIGHT", 5, 0)
+    -- renameEditBox:SetHyperlinksEnabled(true); -- to enable OnHyperlinkClick
+    -- renameEditBox:SetScript("OnHyperlinkClick", function(_, linkData, link, button)
+    --   ChatFrame_OnHyperlinkShow(ChatFrame1, linkData, link, button)
+    -- end);
+    table.insert(hyperlinkEditBoxes, renameEditBox) -- so that we can add hyperlinks in it
+
+    -- let's go!
+    renameEditBox:SetScript("OnEnterPressed", function(self)
+      local newItemName = self:GetText()
+      -- first, we do some tests
+      if (newItemName == "") then -- if the new item name is empty
+        config:PrintForced(L["Please enter the name of the item!"])
+        return;
+      elseif (config:HasKey(NysTDL.db.profile.itemsList[catName], newItemName)) then -- if the new item name already exists somewhere in the category
+        local isPresentInCurrentCat = CurrentTab:GetName() == "All" or NysTDL.db.profile.itemsList[catName][itemName].tabName == CurrentTab:GetName();
+
+        if (isPresentInCurrentCat) then
+          config:PrintForced(L["This item is already here in this category!"])
+        else
+          config:PrintForced(L["No item can be daily and weekly!"])
+        end
+
+        return;
+      elseif (newItemName == itemName) then -- if the new is the same as the old
+        self:GetScript("OnEscapePressed")(self) -- we cancel the action
+        return;
+      end
+
+      -- and if everything is good, we can rename the item
+      itemsFrame:RenameItem(catName, itemName, newItemName)
+    end)
+
+    -- cancelling
+    renameEditBox:SetScript("OnEscapePressed", function(self)
+      self:Hide()
+      checkBtn.InteractiveLabel:Show()
+      table.remove(hyperlinkEditBoxes, select(2, config:HasItem(hyperlinkEditBoxes, self))) -- removing the ref of the hyperlink edit box
+    end)
+    renameEditBox:HookScript("OnEditFocusLost", function(self)
+      self:GetScript("OnEscapePressed")(self)
+    end)
   end);
 
   if (not config:HasKey(removeBtn, catName)) then removeBtn[catName] = {} end
@@ -1128,6 +1197,7 @@ end
 function itemsFrame:CreateMovableLabelElems(catName)
   -- category label
   label[catName] = config:CreateNoPointsInteractiveLabel("NysTDL_CatLabel_"..catName, itemsFrameUI, catName, "GameFontHighlightLarge");
+  label[catName].catName = catName -- easy access to the catName of the label, this also allows the shown text to be different
   label[catName].Button:SetScript("OnEnter", function(self)
     local r, g, b = unpack(config:ThemeDownTo01(config.database.theme))
     self:GetParent().Text:SetTextColor(r, g, b, 1) -- when we hover it, we color the label
@@ -1136,7 +1206,8 @@ function itemsFrame:CreateMovableLabelElems(catName)
     self:GetParent().Text:SetTextColor(1, 1, 1, 1) -- back to the default color
   end)
   label[catName].Button:SetScript("OnClick", function(self, button)
-    local catName = self:GetParent().Text:GetText()
+    if (IsAltKeyDown()) then return; end -- we don't do any of the OnClick code if we have the Alt key down, bc it means that we want to rename the category by double clicking
+    local catName = self:GetParent().catName
     if (button == "LeftButton") then -- we open/close the category
       if (config:HasKey(NysTDL.db.profile.closedCategories, catName) and NysTDL.db.profile.closedCategories[catName] ~= nil) then -- if this is a category that is closed in certain tabs
         local isPresent, pos = config:HasItem(NysTDL.db.profile.closedCategories[catName], CurrentTab:GetName()); -- we get if it is closed in the current tab
@@ -1169,9 +1240,47 @@ function itemsFrame:CreateMovableLabelElems(catName)
       end
     end
   end)
-  label[catName].Button:SetScript("OnDoubleClick", function(self, button)
-    print("dbclicked "..self:GetParent().Text:GetText())
-    print(button)
+  label[catName].Button:SetScript("OnDoubleClick", function(self)
+    if (not IsAltKeyDown()) then return; end -- we don't do any of the OnDoubleClick code if we don't have the Alt key down
+
+    -- first, we hide the label
+    local label = self:GetParent()
+    label.Text:Hide()
+    label.Button:Hide()
+
+    -- then, we can create the new edit box to rename the category, where the label was
+    local catName = label.catName
+    local renameEditBox = config:CreateNoPointsRenameEditBox(label, catName, categoryNameWidthMax, self:GetHeight())
+    renameEditBox:SetPoint("LEFT", label, "LEFT", 5, 0)
+
+    -- let's go!
+    renameEditBox:SetScript("OnEnterPressed", function(self)
+      local newCatName = self:GetText()
+      -- first, we do some tests
+      if (newCatName == "") then -- if the new cat name is empty
+        config:PrintForced(L["Please enter a category name!"])
+        return;
+      elseif (config:HasKey(NysTDL.db.profile.itemsList, newCatName)) then -- if the new cat name already exists
+        config:PrintForced(L["This category name already exists, please enter a different name!"])
+        return;
+      elseif (newCatName == catName) then -- if the new is the same as the old
+        self:GetScript("OnEscapePressed")(self) -- we cancel the action
+        return;
+      end
+
+      -- and if everything is good, we can rename the category
+      itemsFrame:RenameCategory(catName, newCatName)
+    end)
+
+    -- cancelling
+    renameEditBox:SetScript("OnEscapePressed", function(self)
+      self:Hide()
+      label.Text:Show()
+      label.Button:Show()
+    end)
+    renameEditBox:HookScript("OnEditFocusLost", function(self)
+      self:GetScript("OnEscapePressed")(self)
+    end)
   end)
 
   -- associated favs remaining label
@@ -1228,10 +1337,10 @@ local function loadCategories(tab, categoryLabel, catName, itemNames, lastData)
     local labelWidth = tonumber(string.format("%i", categoryLabel.Text:GetWidth()));
     local distanceFromLabelWhenOk = 160;
     if (labelWidth + 120 > editBoxAddItemWidth) then
-      editBox[catName]:SetPoint("LEFT", categoryLabel.Text, "RIGHT", 10, 0);
+      editBox[catName]:SetPoint("LEFT", categoryLabel, "RIGHT", 10, 0);
       editBox[catName]:SetWidth(editBoxAddItemWidth - labelWidth);
     else
-      editBox[catName]:SetPoint("LEFT", categoryLabel.Text, "LEFT", distanceFromLabelWhenOk, 0);
+      editBox[catName]:SetPoint("LEFT", categoryLabel, "LEFT", distanceFromLabelWhenOk, 0);
     end
 
     -- we keep the edit box for this category shown if we just added an item with it
@@ -1246,7 +1355,7 @@ local function loadCategories(tab, categoryLabel, catName, itemNames, lastData)
     -- if the category label is shown in this tab, we move that cat fav label here too, correctly anchored
     categoryLabelFavsRemaining[catName]:SetParent(tab);
     categoryLabelFavsRemaining[catName]:ClearAllPoints();
-    categoryLabelFavsRemaining[catName]:SetPoint("LEFT", categoryLabel.Text, "RIGHT", 6, 0);
+    categoryLabelFavsRemaining[catName]:SetPoint("LEFT", categoryLabel, "RIGHT", 6, 0);
 
     if (not config:HasKey(NysTDL.db.profile.closedCategories, catName) or not config:HasItem(NysTDL.db.profile.closedCategories[catName], tab:GetName())) then -- if the category is opened in this tab, we display all of its items
       -- checkboxes
@@ -1255,7 +1364,7 @@ local function loadCategories(tab, categoryLabel, catName, itemNames, lastData)
           buttonsLength = buttonsLength + 1;
 
           checkBtn[catName][itemName]:SetParent(tab);
-          checkBtn[catName][itemName]:SetPoint("TOPLEFT", categoryLabel.Text, "TOPLEFT", 30, - 22 * buttonsLength + 5);
+          checkBtn[catName][itemName]:SetPoint("TOPLEFT", categoryLabel, "TOPLEFT", 30, - 22 * buttonsLength + 5);
           checkBtn[catName][itemName]:Show();
       end
       categoryLabelFavsRemaining[catName]:Hide(); -- the only thing is that we hide it if the category is opened
@@ -1264,7 +1373,7 @@ local function loadCategories(tab, categoryLabel, catName, itemNames, lastData)
       -- especially for when we load the All tab, for the clearing
       for _, itemName in pairs(itemNames) do -- for every item to load but hidden
         checkBtn[catName][itemName]:SetParent(tab);
-        checkBtn[catName][itemName]:SetPoint("TOPLEFT", categoryLabel.Text, "TOPLEFT");
+        checkBtn[catName][itemName]:SetPoint("TOPLEFT", categoryLabel, "TOPLEFT");
       end
       categoryLabelFavsRemaining[catName]:Show(); -- bc we only see him when the cat is closed
     end
@@ -2122,17 +2231,22 @@ function itemsFrame:Init()
   itemsFrameUI.frameContentAlphaSlider:SetValue(NysTDL.db.profile.frameContentAlpha);
   itemsFrameUI.affectDesc:SetChecked(NysTDL.db.profile.affectDesc);
 end
-
+local FRAMETTEST
 ---Creating the main window---
 function itemsFrame:CreateItemsFrame()
-  -- local f = CreateFrame("Frame", nil, UIParent, "NysTDL_InteractiveLabel")
-  -- f:SetPoint("CENTER")
-  -- f.Text:SetText("BLABLA")
-  -- local l = config:CreateNoPointsLabel(UIParent, nil, "BLABLA");
-  -- f.Button:SetScript("OnClick", function(self,button) print("hello") end)
-  -- f.Button:SetScript("OnEnter", function(self) self:GetParent().Text:SetTextColor(1, 0, 0) end)
-  -- f.Button:SetScript("OnLeave", function(self) self:GetParent().Text:SetTextColor(0, 1, 0) end)
-  -- f:Show()
+  -- local b = CreateFrame("CheckButton", nil, UIParent, "UICheckButtonTemplate");
+  -- FRAMETTEST = config:CreateNoPointsInteractiveLabel(nil, b, "bonsoir", "GameFontNormalLarge");
+  -- b:SetPoint("CENTER")
+  -- FRAMETTEST:SetPoint("LEFT", b, "RIGHT")
+  -- FRAMETTEST:Show()
+  -- b:SetScript("OnClick", function(self)
+  --   print("clicked")
+  -- end);
+  -- -- FRAMETTEST.Button:SetScript("OnSizeChanged", function(self, width, height)
+  -- --   print(width)
+  -- --   print(height)
+  -- -- end);
+  --
   -- if (true) then return; end
   -- as of wow 9.0, we need to import the backdrop template into our frames if we want to use it in them, it is not set by default, so that's what we are doing here:
   itemsFrameUI = CreateFrame("Frame", "ToDoListUIFrame", UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil);
@@ -2148,6 +2262,10 @@ function itemsFrame:CreateItemsFrame()
   itemsFrameUI:SetMovable(true);
   itemsFrameUI:SetClampedToScreen(true);
   itemsFrameUI:EnableMouse(true);
+  -- itemsFrameUI:SetHyperlinksEnabled(true); -- to enable OnHyperlinkClick
+  -- itemsFrameUI:SetScript("OnHyperlinkClick", function(_, linkData, link, button)
+  --   ChatFrame_OnHyperlinkShow(ChatFrame1, linkData, link, button)
+  -- end);
 
   itemsFrameUI:HookScript("OnUpdate", ItemsFrame_OnUpdate);
   itemsFrameUI:HookScript("OnShow", ItemsFrame_OnVisibilityUpdate);
@@ -2365,9 +2483,15 @@ function Nys_Tests(yes)
     })
     end
   elseif (yes == 4) then
-    print("Daily:    "..tostringall(NysTDL.db.profile.autoReset["Daily"]))
-    print("Weekly: "..tostringall(NysTDL.db.profile.autoReset["Weekly"]))
-    print("Time:    "..tostringall(time()))
+    local s = "oua"
+    local function test(str)
+      str = "slt"
+    end
+    test(s)
+    print(s)
+    -- print("Daily:    "..tostringall(NysTDL.db.profile.autoReset["Daily"]))
+    -- print("Weekly: "..tostringall(NysTDL.db.profile.autoReset["Weekly"]))
+    -- print("Time:    "..tostringall(time()))
   end
   print("--Nys_Tests--")
 end
