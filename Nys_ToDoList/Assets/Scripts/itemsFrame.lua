@@ -539,7 +539,8 @@ function itemsFrame:AddItem(self, db)
           if (data.tabName ~= "All" and data.tabName ~= tabName) then -- if the item already exists in this category but in an other reset tab
             addResult = {L["No item can be daily and weekly!"], false};
           else -- if it isn't in the other reset tab, it means that the item is in the All tab -- CASE2 (add in reset tab, already in All)
-            data.tabName = tabName; -- in that case, we transform that item into a 'tabName' item for this category
+            checked = data.checked -- in that case, we update the checked state to match the one the item had in the All tab
+            data.tabName = tabName; -- and we transform that item into a 'tabName' item for this category
             addResult = {config:SafeStringFormat(L["\"%s\" added to %s! (%s item)"], itemName, catName, L[tabName]), true};
           end
         else -- if that new reset item doesn't exists at all in that category, we create it -- CASE3 (add in 'All' tab and add in reset tab)
@@ -583,7 +584,7 @@ end
 function itemsFrame:RemoveItem(self)
   -- the really important function to delete items
   -- if we're here, we're forced to delete an item so the result will be true in any case
-
+  
   local catName, itemName = self:GetParent().catName, self:GetParent().itemName;
   local data = NysTDL.db.profile.itemsList[catName][itemName];
 
@@ -615,6 +616,25 @@ end
 function itemsFrame:RenameItem(catName, oldItemName, newItemName)
   print("RENAME ITEM")
   print(catName, oldItemName, newItemName)
+  -- so first, we prep the database to send to the AddItem func
+  local data = {
+    ["catName"] = catName,
+    ["itemName"] = newItemName,
+    ["tabName"] = CurrentTab:GetName(),
+    ["checked"] = NysTDL.db.profile.itemsList[catName][oldItemName].checked,
+    -- while saving the old item's data while we're at it
+    ["favorite"] = NysTDL.db.profile.itemsList[catName][oldItemName].favorite,
+    ["description"] = NysTDL.db.profile.itemsList[catName][oldItemName].description
+  }
+
+  -- then we can start renaming
+  itemsFrame:RemoveItem(removeBtn[catName][oldItemName])
+  itemsFrame:AddItem(nil, data)
+  -- and finally, we put back the original item data
+  NysTDL.db.profile.itemsList[catName][newItemName].favorite = data.favorite
+  NysTDL.db.profile.itemsList[catName][newItemName].description = data.description
+
+  Tab_OnClick(_G[NysTDL.db.profile.lastLoadedTab]); -- we reload the tab to instantly display the changes
 end
 
 function itemsFrame:FavoriteClick(self)
@@ -1149,22 +1169,29 @@ function itemsFrame:CreateMovableCheckBtnElems(catName, itemName)
       if (newItemName == "") then -- if the new item name is empty
         config:PrintForced(L["Please enter the name of the item!"])
         return;
-      elseif (config:HasKey(NysTDL.db.profile.itemsList[catName], newItemName)) then -- if the new item name already exists somewhere in the category
-        local isPresentInCurrentCat = CurrentTab:GetName() == "All" or NysTDL.db.profile.itemsList[catName][itemName].tabName == CurrentTab:GetName();
-
-        if (isPresentInCurrentCat) then
-          config:PrintForced(L["This item is already here in this category!"])
-        else
-          config:PrintForced(L["No item can be daily and weekly!"])
-        end
-
-        return;
       elseif (newItemName == itemName) then -- if the new is the same as the old
         self:GetScript("OnEscapePressed")(self) -- we cancel the action
         return;
+      elseif (config:HasKey(NysTDL.db.profile.itemsList[catName], newItemName)) then -- if the new item name already exists somewhere in the category
+        -- local newItemTabName = NysTDL.db.profile.itemsList[catName][newItemName].tabName
+        -- local isPresentInCurrentTab = CurrentTab:GetName() == "All" or newItemTabName == CurrentTab:GetName();
+        --
+        -- if (isPresentInCurrentTab) then
+        --   config:PrintForced(L["This item is already here in this category!"])
+        --   return;
+        -- else
+        --   -- we check if it is in the other reset tab
+        --   -- because at this point, it's either the new item is in the All tab and we're adding it in a reset tab, or it's in an other reset tab
+        --   if (newItemTabName ~= "All") then -- not ONLY in the All tab
+        --     config:PrintForced(L["No item can be daily and weekly!"])
+        --     return;
+        --   end
+        -- end
+        config:PrintForced(L["This item name already exists in the category"]..". "..L["Please choose a different name to avoid overriding data"])
+        return;
       end
 
-      -- and if everything is good, we can rename the item
+      -- and if everything is good, we can rename the item (a.k.a, delete the current one and creating a new one)
       itemsFrame:RenameItem(catName, itemName, newItemName)
     end)
 
@@ -1260,11 +1287,11 @@ function itemsFrame:CreateMovableLabelElems(catName)
       if (newCatName == "") then -- if the new cat name is empty
         config:PrintForced(L["Please enter a category name!"])
         return;
-      elseif (config:HasKey(NysTDL.db.profile.itemsList, newCatName)) then -- if the new cat name already exists
-        config:PrintForced(L["This category name already exists, please enter a different name!"])
-        return;
       elseif (newCatName == catName) then -- if the new is the same as the old
         self:GetScript("OnEscapePressed")(self) -- we cancel the action
+        return;
+      elseif (config:HasKey(NysTDL.db.profile.itemsList, newCatName)) then -- if the new cat name already exists
+        config:PrintForced(L["This category name already exists"]..". "..L["Please choose a different name to avoid overriding data"])
         return;
       end
 
