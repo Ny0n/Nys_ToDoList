@@ -2167,7 +2167,7 @@ local function generateTutorialFrames()
     TF_ALTkey:SetSize(220, 50)
     TF_ALTkey.ArrowUP:Show()
     TF_ALTkey.Text:SetWidth(TF_ALTkey:GetWidth() - tutoFrameRightDist)
-    TF_ALTkey.Text:SetText(L["One last thing: if you hold ALT while the list is opened, some interesting buttons will appear!"]);
+    TF_ALTkey.Text:SetText(L["One more thing: if you hold ALT while the list is opened, some interesting buttons will appear!"]);
     TF_ALTkey.closeButton = CreateFrame("Button", "closeButton", TF_ALTkey, "UIPanelCloseButton");
     TF_ALTkey.closeButton:SetPoint("TOPRIGHT", TF_ALTkey, "TOPRIGHT", 6, 6);
     TF_ALTkey.closeButton:SetScript("onClick", function() NysTDL.db.global.tuto_progression = NysTDL.db.global.tuto_progression + 1; end);
