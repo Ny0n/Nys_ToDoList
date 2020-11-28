@@ -536,7 +536,7 @@
 			</Layer>
 		</Layers>
 		<Frames>
-			<Button level="BACKGROUND" name="$parentButton" parentKey="Button" registerForClicks="LeftButtonUp, RightButtonUp">
+			<Button name="$parentButton" parentKey="Button" registerForClicks="LeftButtonUp, RightButtonUp">
 				<Anchors>
 					<Anchor point="TOPLEFT" relativeKey="$parent.Text"/>
 					<Anchor point="BOTTOMRIGHT" relativeKey="$parent.Text"/>
