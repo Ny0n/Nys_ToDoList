@@ -480,6 +480,17 @@ function config:HasKey(table, key)
   return false;
 end
 
+function config:DoesItemStillExists(catName, itemName)
+  -- returns true or false, depending on the existence of the item
+  -- it's basically a sanity check for functions that need it
+  if (config:HasKey(NysTDL.db.profile.itemsList, catName)) then
+    if (config:HasKey(NysTDL.db.profile.itemsList[catName], itemName)) then
+      return true
+    end
+  end
+  return false
+end
+
 function config:GetKeyFromValue(tabSource, value)
   for k, v in pairs(tabSource) do
     if (v == value) then return k end
@@ -662,6 +673,7 @@ function config:CreateFavoriteButton(relativeCheckButton, catName, itemName)
   -- these are for changing the color depending on the mouse actions (since they are custom xml)
   -- and yea, this one's a bit complicated because I wanted its look to be really precise...
   btn:HookScript("OnEnter", function(self)
+    if (not config:DoesItemStillExists(catName, itemName)) then return; end
     if (not NysTDL.db.profile.itemsList[catName][itemName].favorite) then -- not favorited
       self.Icon:SetDesaturated(nil)
       self.Icon:SetVertexColor(1, 1, 1)
@@ -670,6 +682,7 @@ function config:CreateFavoriteButton(relativeCheckButton, catName, itemName)
     end
   end);
   btn:HookScript("OnLeave", function(self)
+    if (not config:DoesItemStillExists(catName, itemName)) then return; end
     if (not NysTDL.db.profile.itemsList[catName][itemName].favorite) then
       if (tonumber(string.format("%.1f", self.Icon:GetAlpha())) ~= 0.5) then -- if we are currently clicking on the button
         self.Icon:SetDesaturated(1)
@@ -680,6 +693,7 @@ function config:CreateFavoriteButton(relativeCheckButton, catName, itemName)
     end
    end);
    btn:HookScript("OnMouseUp", function(self)
+     if (not config:DoesItemStillExists(catName, itemName)) then return; end
      if (self.name == "FavoriteButton") then
        self:SetAlpha(1)
        if (not NysTDL.db.profile.itemsList[catName][itemName].favorite) then
@@ -694,6 +708,7 @@ function config:CreateFavoriteButton(relativeCheckButton, catName, itemName)
      end
    end);
   btn:HookScript("OnShow", function(self)
+    if (not config:DoesItemStillExists(catName, itemName)) then return; end
     self:SetAlpha(1)
     if (not NysTDL.db.profile.itemsList[catName][itemName].favorite) then
       self.Icon:SetDesaturated(1)
@@ -713,6 +728,7 @@ function config:CreateDescButton(relativeCheckButton, catName, itemName)
   -- these are for changing the color depending on the mouse actions (since they are custom xml)
   -- and yea, this one's a bit complicated too because it works in very specific ways
   btn:HookScript("OnEnter", function(self)
+    if (not config:DoesItemStillExists(catName, itemName)) then return; end
     if (not NysTDL.db.profile.itemsList[catName][itemName].description) then -- no description
       self.Icon:SetDesaturated(nil)
       self.Icon:SetVertexColor(1, 1, 1)
@@ -721,6 +737,7 @@ function config:CreateDescButton(relativeCheckButton, catName, itemName)
     end
   end);
   btn:HookScript("OnLeave", function(self)
+    if (not config:DoesItemStillExists(catName, itemName)) then return; end
     if (not NysTDL.db.profile.itemsList[catName][itemName].description) then
       if (tonumber(string.format("%.1f", self.Icon:GetAlpha())) ~= 0.5) then -- if we are currently clicking on the button
         self.Icon:SetDesaturated(1)
@@ -731,6 +748,7 @@ function config:CreateDescButton(relativeCheckButton, catName, itemName)
     end
    end);
    btn:HookScript("OnMouseUp", function(self)
+     if (not config:DoesItemStillExists(catName, itemName)) then return; end
      if (self.name == "DescButton") then
        self:SetAlpha(1)
        if (not NysTDL.db.profile.itemsList[catName][itemName].description) then
@@ -745,6 +763,7 @@ function config:CreateDescButton(relativeCheckButton, catName, itemName)
      end
    end);
   btn:HookScript("OnShow", function(self)
+    if (not config:DoesItemStillExists(catName, itemName)) then return; end
     self:SetAlpha(1)
     if (not NysTDL.db.profile.itemsList[catName][itemName].description) then
       self.Icon:SetDesaturated(1)

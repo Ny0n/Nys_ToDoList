@@ -1312,6 +1312,12 @@ function itemsFrame:CreateMovableLabelElems(catName)
     local renameEditBox = config:CreateNoPointsRenameEditBox(label, catName, categoryNameWidthMax, self:GetHeight())
     renameEditBox:SetPoint("LEFT", label, "LEFT", 5, 0)
 
+    -- we move the favs remaining label to the right of the edit box while it's shown
+    if (config:HasKey(categoryLabelFavsRemaining, catName)) then
+      categoryLabelFavsRemaining[catName]:ClearAllPoints();
+      categoryLabelFavsRemaining[catName]:SetPoint("LEFT", renameEditBox, "RIGHT", 6, 0);
+    end
+
     -- let's go!
     renameEditBox:SetScript("OnEnterPressed", function(self)
       local newCatName = self:GetText()
@@ -1342,6 +1348,11 @@ function itemsFrame:CreateMovableLabelElems(catName)
       self:Hide()
       label.Text:Show()
       label.Button:Show()
+      -- when hiding the edit box, we reset the pos of the favs remaining label
+      if (config:HasKey(categoryLabelFavsRemaining, catName)) then
+        categoryLabelFavsRemaining[catName]:ClearAllPoints();
+        categoryLabelFavsRemaining[catName]:SetPoint("LEFT", label, "RIGHT", 6, 0);
+      end
     end)
     renameEditBox:HookScript("OnEditFocusLost", function(self)
       self:GetScript("OnEscapePressed")(self)
@@ -1349,7 +1360,8 @@ function itemsFrame:CreateMovableLabelElems(catName)
   end)
 
   -- associated favs remaining label
-  categoryLabelFavsRemaining[catName] = config:CreateNoPointsLabel(itemsFrameUI, label[catName]:GetName().."_FavsRemaining", "");
+  categoryLabelFavsRemaining[catName] = config:CreateNoPointsLabel(label[catName], label[catName]:GetName().."_FavsRemaining", "");
+
   -- associated edit box and add button
   editBox[catName] = config:CreateNoPointsLabelEditBox(catName);
   editBox[catName]:SetScript("OnEnterPressed", function(self)
@@ -1403,10 +1415,16 @@ local function loadCategories(tab, categoryLabel, catName, itemNames, lastData)
       end
     end
 
+    -- category label placement
     if (newLabelHeightDelta == 0) then adjustHeight = 0; else adjustHeight = 1; end -- just for a proper clean height
     categoryLabel:SetParent(tab);
     categoryLabel:SetPoint("TOPLEFT", lastLabel, "TOPLEFT", 0, (-newLabelHeightDelta * 22) - (adjustHeight * 5)); -- here
     categoryLabel:Show();
+
+    -- category label favs remaining placement
+    -- we determine if it is shown or not later
+    categoryLabelFavsRemaining[catName]:SetParent(categoryLabel)
+    categoryLabelFavsRemaining[catName]:SetPoint("LEFT", categoryLabel, "RIGHT", 6, 0)
 
     -- edit box
     editBox[catName]:SetParent(tab);
@@ -1423,13 +1441,8 @@ local function loadCategories(tab, categoryLabel, catName, itemNames, lastData)
     end
     editBox[catName]:Hide(); -- we hide every edit box by default when we reload the tab
 
-    -- label showing how much favs is left in a closed category
-    -- if the category label is shown in this tab, we move that cat fav label here too, correctly anchored
-    categoryLabelFavsRemaining[catName]:SetParent(tab);
-    categoryLabelFavsRemaining[catName]:ClearAllPoints();
-    categoryLabelFavsRemaining[catName]:SetPoint("LEFT", categoryLabel, "RIGHT", 6, 0);
-
-    if (not config:HasKey(NysTDL.db.profile.closedCategories, catName) or not config:HasItem(NysTDL.db.profile.closedCategories[catName], tab:GetName())) then -- if the category is opened in this tab, we display all of its items
+    -- if the category is opened in this tab, we display all of its items
+    if (not config:HasKey(NysTDL.db.profile.closedCategories, catName) or not config:HasItem(NysTDL.db.profile.closedCategories[catName], tab:GetName())) then
       -- checkboxes
       local buttonsLength = 0;
       for _, itemName in pairs(itemNames) do -- for every item to load
