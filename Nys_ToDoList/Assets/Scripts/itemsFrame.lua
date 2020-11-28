@@ -22,7 +22,6 @@ local removeBtn = {};
 local favoriteBtn = {};
 local descBtn = {};
 local descFrames = {};
-local addBtn = {};
 local label = {};
 local editBox = {};
 local categoryLabelFavsRemaining = {};
@@ -42,7 +41,6 @@ local frameOptionsItems = {}
 local currentDBItemsList;
 local categoryNameWidthMax = 220;
 local itemNameWidthMax = 240;
-local editBoxAddItemWidth = 270;
 local centerXOffset = 165;
 local lineOffset = 120;
 local descFrameLevelDiff = 20;
@@ -500,10 +498,10 @@ function itemsFrame:AddItem(self, db)
 
   if (type(db) ~= "table") then
     -- if we're here, it means that we added a new item from the edit box next to the category names
-    -- and self is the '+' button, its parent is the edit box
-    catName = self:GetParent():GetName(); -- we get the category we're adding the item in (it's the name of the edit box)
-    itemName = self:GetParent():GetText(); -- we get the item name the player entered (the text inside the edit box)
-    tabName = self:GetParent():GetParent():GetName(); -- we get the tab we're on (the name of the edit box's parent)
+    -- and self is the edit box itself
+    catName = self:GetName(); -- we get the category we're adding the item in (it's the name of the edit box)
+    itemName = self:GetText(); -- we get the item name the player entered (the text inside the edit box)
+    tabName = self:GetParent():GetName(); -- we get the tab we're on (the name of the edit box's parent)
     checked = false;
 
     -- there we check if the item name is not too big
@@ -592,7 +590,7 @@ function itemsFrame:AddItem(self, db)
 
     -- and we clear some visuals
     if (type(db) ~= "table") then -- if we come from the edit box to add an item next to the category name label
-      self:GetParent():SetText(""); -- but we clear it since our query was succesful
+      self:SetText(""); -- but we clear it since our query was succesful
     elseif (type(db) == "table" and db.form) then -- if we come from the Add a category form
       itemsFrameUI.categoryEditBox:SetText("");
       itemsFrameUI.nameEditBox:SetText("");
@@ -1355,7 +1353,7 @@ function itemsFrame:CreateMovableLabelElems(catName)
   -- associated edit box and add button
   editBox[catName] = config:CreateNoPointsLabelEditBox(catName);
   editBox[catName]:SetScript("OnEnterPressed", function(self)
-    itemsFrame:AddItem(addBtn[self:GetName()])
+    itemsFrame:AddItem(self)
     self:Show() -- we keep it shown to add more items
     self:SetFocus()
     if (NysTDL.db.profile.highlightOnFocus) then
@@ -1370,10 +1368,6 @@ function itemsFrame:CreateMovableLabelElems(catName)
     self:GetScript("OnEscapePressed")(self)
   end)
   table.insert(hyperlinkEditBoxes, editBox[catName]);
-  addBtn[catName] = config:CreateAddButton(editBox[catName]);
-  addBtn[catName]:SetScript("OnClick", function(self)
-    self:GetParent():GetScript("OnEnterPressed")(self:GetParent())
-  end); -- if we click on it, it's the same as pressing enter in the edit box
 end
 
 local function loadMovable()
@@ -1416,16 +1410,18 @@ local function loadCategories(tab, categoryLabel, catName, itemNames, lastData)
 
     -- edit box
     editBox[catName]:SetParent(tab);
-    -- edit box width (adapt to the category label's length)
+    -- edit box width (we adapt it based on the category label's width)
     local labelWidth = tonumber(string.format("%i", categoryLabel.Text:GetWidth()));
-    local distanceFromLabelWhenOk = 160;
-    if (labelWidth + 120 > editBoxAddItemWidth) then
-      editBox[catName]:SetPoint("LEFT", categoryLabel, "RIGHT", 10, 0);
-      editBox[catName]:SetWidth(editBoxAddItemWidth - labelWidth);
+    local rightPointDistance = 297; -- in alignment with the item renaming edit boxes
+    local editBoxAddItemWidth = 150;
+    if (labelWidth + editBoxAddItemWidth > rightPointDistance) then
+      editBox[catName]:SetSize(editBoxAddItemWidth - 10 - ((labelWidth + editBoxAddItemWidth) - rightPointDistance), 30);
+      editBox[catName]:SetPoint("RIGHT", categoryLabel, "LEFT", rightPointDistance, 0);
     else
-      editBox[catName]:SetPoint("LEFT", categoryLabel, "LEFT", distanceFromLabelWhenOk, 0);
+      editBox[catName]:SetSize(editBoxAddItemWidth - 10, 30);
+      editBox[catName]:SetPoint("RIGHT", categoryLabel, "LEFT", rightPointDistance, 0);
     end
-    editBox[catName]:Hide(); -- we hide every edit box when we reload the tab
+    editBox[catName]:Hide(); -- we hide every edit box by default when we reload the tab
 
     -- label showing how much favs is left in a closed category
     -- if the category label is shown in this tab, we move that cat fav label here too, correctly anchored
@@ -1485,7 +1481,6 @@ local function loadCategories(tab, categoryLabel, catName, itemNames, lastData)
     -- and if it's empty, we delete all of the corresponding elements, this is the place where we properly delete a category.
     if (not next(NysTDL.db.profile.itemsList[catName])) then
       -- we destroy them
-      addBtn[catName] = nil;
       table.remove(hyperlinkEditBoxes, select(2, config:HasItem(hyperlinkEditBoxes, editBox[catName])))
       editBox[catName] = nil;
       label[catName] = nil;
@@ -2269,7 +2264,6 @@ function itemsFrame:ResetContent()
   favoriteBtn = {};
   descBtn = {};
   descFrames = {};
-  addBtn = {};
   label = {};
   editBox = {};
   categoryLabelFavsRemaining = {};

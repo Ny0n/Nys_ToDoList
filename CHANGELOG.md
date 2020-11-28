@@ -1,11 +1,11 @@
 #### **5.6-alpha**
 
 - You can now rename items and categories!
-For items: just double click on them.
-For categories, and items with hyperlinks in them: it's the same thing, just hold ALT while doing it.
+- For items: just double click on them.
+- For categories, and items with hyperlinks in them: it's the same thing, just hold ALT while doing it.
 - Upgraded the way the edit boxes work, plus a new option in the settings for a better control and feeling
 - Bumped interface number
-- massive update to localizations: it is now automatically managed, so you can contribute in the addon's localization page on curseforge and if it is verified, it will appear in the next update way faster than before.
+- massive update to localizations: do not hesitate to contribute in the addon's localization page on curseforge and if it is verified, it will appear in the next update way faster than before.
 - Other miscellaneous improvements and corrections
 
 #### **5.5.2**

@@ -757,24 +757,6 @@ function config:CreateDescButton(relativeCheckButton, catName, itemName)
   return btn;
 end
 
-function config:CreateAddButton(relativeEditBox)
-  local btn = CreateFrame("Button", nil, relativeEditBox, "NysTDL_AddButton");
-  btn.tooltip = L["Press enter or click to add the item"];
-  btn:SetPoint("RIGHT", relativeEditBox, "RIGHT", 16, - 1.2);
-
-  -- these are for changing the color depending on the mouse actions (since they are custom xml)
-  btn:HookScript("OnEnter", function(self)
-    self.Icon:SetTextColor(unpack(config:ThemeDownTo01(config.database.theme_yellow)), tonumber(string.format("%.1f", self.Icon:GetAlpha())));
-  end);
-  btn:HookScript("OnLeave", function(self)
-    self.Icon:SetTextColor(1, 1, 1, tonumber(string.format("%.1f", self.Icon:GetAlpha())));
-  end);
-  btn:HookScript("OnShow", function(self)
-    self.Icon:SetTextColor(1, 1, 1);
-  end);
-  return btn;
-end
-
 function config:CreateNoPointsRenameEditBox(relativeFrame, text, width, height)
   local renameEditBox = CreateFrame("EditBox", relativeFrame:GetName().."_renameEditBox", relativeFrame, "InputBoxTemplate")
   renameEditBox:SetSize(width-10, height)
@@ -793,8 +775,23 @@ end
 
 function config:CreateNoPointsLabelEditBox(name)
   local edb = CreateFrame("EditBox", name, nil, "InputBoxTemplate");
-  edb:SetSize(120, 30);
   edb:SetAutoFocus(false);
+  -- edb:SetTextInsets(0, 15, 0, 0);
+  -- local btn = CreateFrame("Button", nil, edb, "NysTDL_AddButton");
+  -- btn.tooltip = L["Press enter to add the item"];
+  -- btn:SetPoint("RIGHT", edb, "RIGHT", -4, -1.2);
+  -- btn:EnableMouse(true)
+  --
+  -- -- these are for changing the color depending on the mouse actions (since they are custom xml)
+  -- btn:HookScript("OnEnter", function(self)
+  --   self.Icon:SetTextColor(1, 1, 0, 0.6);
+  -- end);
+  -- btn:HookScript("OnLeave", function(self)
+  --   self.Icon:SetTextColor(1, 1, 1, 0.4);
+  -- end);
+  -- btn:HookScript("OnShow", function(self)
+  --   self.Icon:SetTextColor(1, 1, 1, 0.4);
+  -- end);
   return edb;
 end
 
