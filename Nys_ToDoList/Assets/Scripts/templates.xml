@@ -116,7 +116,7 @@
           self.MiniTooltip:SetHeight(26)
         end
         if (self.name == "AddButton") then
-          self.MiniTooltip:SetPoint("BOTTOMRIGHT", self, "TOPLEFT", -3, 7)
+          self.MiniTooltip:SetPoint("BOTTOMRIGHT", self, "TOPRIGHT", 4, 7)
         elseif (self.name == "TooltipResizeButton") then
           self.MiniTooltip:SetPoint("BOTTOMRIGHT", self, "BOTTOMLEFT", -5, 0)
         elseif (self.name == "ClearButton") then
@@ -319,8 +319,8 @@
     </Layers>
   </Button>
 
-  <!-- Add button -->
-  <Button name="NysTDL_AddButton" inherits="NysTDL_IconButtonTooltipScripts, InlineHyperlinkFrameTemplate, NysTDL_IconButtonPositionScripts" virtual="true">
+  <!-- Add button, not needed for now -->
+  <!-- <Button name="NysTDL_AddButton" inherits="NysTDL_IconButtonTooltipScripts, InlineHyperlinkFrameTemplate" virtual="true">
     <Size x="12" y="12"/>
     <KeyValues>
       <KeyValue key="tooltip" value="locale"/>
@@ -336,7 +336,7 @@
         </FontString>
       </Layer>
     </Layers>
-  </Button>
+  </Button> -->
 
   <!-- resize button -->
   <Button name="NysTDL_ResizeButton" virtual="true">
@@ -522,6 +522,27 @@
 				self:SetHeight(self.Text:GetHeight()+30);
 			</OnShow>
 		</Scripts>
+	</Frame>
+
+  <Frame name="NysTDL_InteractiveLabel" virtual="true">
+    <!-- the size is set everytime the text changes, see the config file (func: CreateNoPointsInteractiveLabel) -->
+		<Layers>
+			<Layer level="OVERLAY">
+				<FontString name="$parentText" parentKey="Text">
+					<Anchors>
+						<Anchor point="TOPLEFT"/>
+					</Anchors>
+				</FontString>
+			</Layer>
+		</Layers>
+		<Frames>
+			<Button name="$parentButton" parentKey="Button" registerForClicks="LeftButtonUp, RightButtonUp">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeKey="$parent.Text"/>
+					<Anchor point="BOTTOMRIGHT" relativeKey="$parent.Text"/>
+				</Anchors>
+			</Button>
+		</Frames>
 	</Frame>
 
 </Ui>

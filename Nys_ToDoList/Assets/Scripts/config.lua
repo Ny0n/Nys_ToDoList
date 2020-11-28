@@ -139,6 +139,14 @@ config.database = {
                   get = "rememberUndoGET",
                   set = "rememberUndoSET",
               }, -- rememberUndo
+              highlightOnFocus = {
+                  order = 3.8,
+                  type = "toggle",
+                  name = L["Highlight edit boxes"],
+                  desc = L["When focusing on edit boxes, automatically highlights the text inside"],
+                  get = "highlightOnFocusGET",
+                  set = "highlightOnFocusSET",
+              }, -- highlightOnFocus
               favoritesColor = {
                   order = 3.4,
                   type = "color",
@@ -320,6 +328,7 @@ config.database = {
             normalWarning = false,
             hourlyReminder = false,
             rememberUndo = true,
+            highlightOnFocus = true,
             frameAlpha = 65,
             frameContentAlpha = 100,
             affectDesc = true,
@@ -348,11 +357,11 @@ function config:PrintForced(...)
   local prefix = string.format("|cff%s%s|r", hex, config.toc.title..':');
 
   local tab = {}
-  for i = 0, #... do
-    local s = (select(i + 1, ...))
+  for i = 1, select("#", ...) do
+    local s = (select(i, ...))
     if type(s) == "table" then
-      for i = 0, #s do
-        table.insert(tab, (select(i + 1, unpack(s))))
+      for j = 1, #s do
+        table.insert(tab, (select(j, unpack(s))))
       end
     else
       table.insert(tab, s)
@@ -412,9 +421,31 @@ function config:Deepcopy(orig)
     return copy
 end
 
+function config:SafeStringFormat(str, ...)
+  -- safe format, in case there is an error in the localization (happened once)
+  -- (we check if there are the necessary %x in the string, corresponding to the content of ...)
+  -- only accepting %i and %s, it's enough for my use
+  local dup = str
+  for i=1, select("#", ...) do
+    local var = select(i, ...)
+    if (var) then
+      local toMatch = (type(var) == "number") and "%%i" or "%%s"
+      if (string.find(dup, toMatch)) then
+        dup = string.gsub(dup, toMatch, "", 1)
+      else
+        return str.."|cffff0000 --> !"..L["translation error"].."!|r"
+      end
+    end
+  end
+  return str:format(...) -- it should be good
+end
+
 function config:HasHyperlink(s)
-  if (s ~= nil and string.find(s, "|H") ~= nil) then
-    return true
+  if (s ~= nil) then
+    -- a hyperlink pattern has at least one '|H' and two '|h', so this is the closest test i can think of
+    if ((select(2, string.gsub(s, "|H", "")) >= 1) and (select(2, string.gsub(s, "|h", "")) >= 2)) then
+      return true
+    end
   end
   return false
 end
@@ -454,12 +485,6 @@ function config:GetKeyFromValue(tabSource, value)
     if (v == value) then return k end
   end
   return nil
-end
-
-function config:GetItemInfoFromCheckbox(checkBox)
-  local catName = (select(2, checkBox:GetPoint())):GetName(); -- we get the category the checkbox is in
-  local itemName = checkBox.text:GetText(); -- we get the text of the check box
-  return catName, itemName;
 end
 
 local function getHoursUntilReset()
@@ -542,6 +567,20 @@ function config:CreateNoPointsLabel(relativeFrame, name, text)
   local label = relativeFrame:CreateFontString(name);
   label:SetFontObject("GameFontHighlightLarge");
   label:SetText(text);
+  return label;
+end
+
+function config:CreateNoPointsInteractiveLabel(name, relativeFrame, text, fontObjectString)
+  local label = CreateFrame("Frame", name, relativeFrame, "NysTDL_InteractiveLabel")
+  label.Text:SetFontObject(fontObjectString);
+  label.Text:SetText(text)
+  label:SetSize(label.Text:GetWidth(), label.Text:GetHeight()) -- we init the size to the text's size
+
+  -- this updates the frame's size each time the text's size is changed
+  label.Button:SetScript("OnSizeChanged", function(self, width, height)
+    self:GetParent():SetSize(width, height)
+  end);
+
   return label;
 end
 
@@ -718,28 +757,41 @@ function config:CreateDescButton(relativeCheckButton, catName, itemName)
   return btn;
 end
 
-function config:CreateAddButton(relativeEditBox)
-  local btn = CreateFrame("Button", nil, relativeEditBox, "NysTDL_AddButton");
-  btn.tooltip = L["Press enter or click to add the item"];
-  btn:SetPoint("RIGHT", relativeEditBox, "RIGHT", 16, - 1.2);
-
-  -- these are for changing the color depending on the mouse actions (since they are custom xml)
-  btn:HookScript("OnEnter", function(self)
-    self.Icon:SetTextColor(unpack(config:ThemeDownTo01(config.database.theme_yellow)), tonumber(string.format("%.1f", self.Icon:GetAlpha())));
-  end);
-  btn:HookScript("OnLeave", function(self)
-    self.Icon:SetTextColor(1, 1, 1, tonumber(string.format("%.1f", self.Icon:GetAlpha())));
-  end);
-  btn:HookScript("OnShow", function(self)
-    self.Icon:SetTextColor(1, 1, 1);
-  end);
-  return btn;
+function config:CreateNoPointsRenameEditBox(relativeFrame, text, width, height)
+  local renameEditBox = CreateFrame("EditBox", relativeFrame:GetName().."_renameEditBox", relativeFrame, "InputBoxTemplate")
+  renameEditBox:SetSize(width-10, height)
+  renameEditBox:SetText(text)
+  renameEditBox:SetFontObject("GameFontHighlightLarge")
+  renameEditBox:SetAutoFocus(false)
+  renameEditBox:SetFocus()
+  if (not NysTDL.db.profile.highlightOnFocus) then
+    renameEditBox:HighlightText(0, 0)
+  end
+  -- renameEditBox:HookScript("OnEditFocusGained", function(self)
+  --   self:HighlightText(0, 0) -- we don't select everything by default when we select the edit box
+  -- end)
+  return renameEditBox
 end
 
 function config:CreateNoPointsLabelEditBox(name)
   local edb = CreateFrame("EditBox", name, nil, "InputBoxTemplate");
-  edb:SetSize(120, 30);
   edb:SetAutoFocus(false);
+  -- edb:SetTextInsets(0, 15, 0, 0);
+  -- local btn = CreateFrame("Button", nil, edb, "NysTDL_AddButton");
+  -- btn.tooltip = L["Press enter to add the item"];
+  -- btn:SetPoint("RIGHT", edb, "RIGHT", -4, -1.2);
+  -- btn:EnableMouse(true)
+  --
+  -- -- these are for changing the color depending on the mouse actions (since they are custom xml)
+  -- btn:HookScript("OnEnter", function(self)
+  --   self.Icon:SetTextColor(1, 1, 0, 0.6);
+  -- end);
+  -- btn:HookScript("OnLeave", function(self)
+  --   self.Icon:SetTextColor(1, 1, 1, 0.4);
+  -- end);
+  -- btn:HookScript("OnShow", function(self)
+  --   self.Icon:SetTextColor(1, 1, 1, 0.4);
+  -- end);
   return edb;
 end
 

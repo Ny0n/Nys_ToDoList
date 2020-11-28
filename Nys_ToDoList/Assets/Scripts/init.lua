@@ -59,10 +59,10 @@ init.commands = {
 
   [L["info"]] = function()
     local hex = config:RGBToHex(config.database.theme2)
-    config:PrintForced(L["Here are a few commands to help you:"].."\n"..string.format("|cff%s%s|r", hex, "/tdl "..L["toggleways"]).." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["categories"]).." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["favorites"]).." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["descriptions"]).." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["hiddenbuttons"]).." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["hyperlinks"]).." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["tutorial"]))
+    config:PrintForced(L["Here are a few commands to help you:"].."\n"..string.format("|cff%s%s|r", hex, "/tdl "..L["toggle"]).." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["categories"]).." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["favorites"]).." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["descriptions"]).." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["hyperlinks"]).." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["tutorial"]))
   end,
 
-  [L["toggleways"]] = function()
+  [L["toggle"]] = function()
     config:PrintForced(L["To toggle the list, you have several ways:"]..'\n- '..L["minimap button (the default)"]..'\n- '..L["a normal TDL button"]..'\n- '..L["databroker plugin (eg. titan panel)"]..'\n- '..L["the '/tdl' command"]..'\n- '..L["key binding"]..'\n'..L["You can go to the addon options in the game's interface settings to customize this."])
   end,
 
@@ -71,15 +71,12 @@ init.commands = {
   end,
 
   [L["favorites"]] = function()
-    config:PrintForced(L["You can favorite items!"].."\n"..L["To do so, hold the SHIFT key when the list is opened, then click on the star icons to favorite the items that you want!"].."\n"..L["Perks of favorite items:"].."\n- "..L["cannot be deleted"].."\n- "..L["customizable color"].."\n- "..L["sorted first in categories"].."\n- "..L["have their own more visible remaining numbers"].."\n- "..L["have an auto chat warning/reminder system!"])
+    config:PrintForced(L["You can favorite items!"].."\n"..L["To do so, hold the SHIFT key when the list is opened, then click on the star icons to favorite the items that you want!"])
+    config:PrintForced(L["Perks of favorite items:"].."\n- "..L["cannot be deleted"].."\n- "..L["customizable color"].."\n- "..L["sorted first in categories"].."\n- "..L["have their own more visible remaining numbers"].."\n- "..L["have an auto chat warning/reminder system!"])
   end,
 
   [L["descriptions"]] = function()
     config:PrintForced(L["You can add descriptions on items!"].."\n"..L["To do so, hold the CTRL key when the list is opened, then click on the page icons to open a description frame!"].."\n- "..L["they are auto-saved and have no length limitations"].."\n- "..L["if an item has a description, he cannot be deleted (empty the description if you want to do so)"])
-  end,
-
-  [L["hiddenbuttons"]] = function()
-    config:PrintForced(L["There are some hidden buttons on the list."].."\n"..L["To show them, hold the ALT key when the list is opened!"])
   end,
 
   [L["hyperlinks"]] = function()
@@ -94,10 +91,10 @@ init.commands = {
 
 -- Command catcher:
 local function HandleSlashCommands(str)
-  local path = init.commands; -- optimise!
+  local path = init.commands; -- easier to read
 
   if (#str == 0) then
-    -- User just entered "/tdl" with no additional args.
+    -- we just entered "/tdl" with no additional args.
     path[""]();
     return;
   end
@@ -106,8 +103,6 @@ local function HandleSlashCommands(str)
 
   local deep = 1;
   for id, arg in pairs(args) do
-    arg = arg:lower(); -- current arg to low caps
-
     if (path[arg]) then
       if (type(path[arg]) == "function") then
         -- all remaining args passed to our function!
@@ -118,7 +113,7 @@ local function HandleSlashCommands(str)
         path = path[arg]; -- another sub-table found!
 
         if ((select(deep, unpack(args))) == nil) then
-          -- User just entered "/tdl" with no additional args.
+          -- here we just entered into a sub table, with no additional args
           path[""]();
           return;
         end

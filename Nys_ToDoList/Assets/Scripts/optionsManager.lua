@@ -69,7 +69,7 @@ function NysTDL:Warn()
             local hex = config:RGBToHex({ NysTDL.db.profile.favoritesColor[1]*255, NysTDL.db.profile.favoritesColor[2]*255, NysTDL.db.profile.favoritesColor[3]*255} )
             str = string.format("|cff%s%s|r", hex, str)
             if (not haveWarned) then config:PrintForced(warn) haveWarned = true end
-            config:PrintForced(L["You still have %s favorite item(s) to do before the next reset, don't forget them!"]:format(str))
+            config:PrintForced(config:SafeStringFormat(L["You still have %s favorite item(s) to do before the next reset, don't forget them!"], str))
           end
         end
       end
@@ -102,7 +102,7 @@ function NysTDL:Warn()
 
       if (haveWarned) then
         local timeUntil = config:GetTimeUntilReset()
-        local str2 = L["Time remaining: %i hours %i min"]:format(timeUntil.hour, timeUntil.min + 1)
+        local str2 = config:SafeStringFormat(L["Time remaining: %i hours %i min"], timeUntil.hour, timeUntil.min + 1)
         config:PrintForced(str2)
       end
     end
@@ -162,7 +162,7 @@ function NysTDL:CreateMinimapButton()
   local LDB_o_minimap = LDB:NewDataObject(addonName, {
     type = "launcher",
     label = config.toc.title,
-    icon = "Interface\\AddOns\\"..addonName.."\\Data\\Textures\\minimap_icon",
+    icon = "Interface\\AddOns\\"..addonName.."\\Assets\\Art\\minimap_icon",
     OnClick = function()
       if (IsControlKeyDown()) then
         -- lock minimap button
@@ -472,6 +472,16 @@ end
 
 function NysTDL:rememberUndoSET(info, newValue)
   NysTDL.db.profile.rememberUndo = newValue;
+end
+
+-- highlightOnFocus
+function NysTDL:highlightOnFocusGET(info)
+  NysTDL:highlightOnFocusSET(info, NysTDL.db.profile.highlightOnFocus)
+  return NysTDL.db.profile.highlightOnFocus;
+end
+
+function NysTDL:highlightOnFocusSET(info, newValue)
+  NysTDL.db.profile.highlightOnFocus = newValue;
 end
 
 -- keyBind
