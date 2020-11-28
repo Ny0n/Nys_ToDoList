@@ -59,10 +59,10 @@ init.commands = {
 
   [L["info"]] = function()
     local hex = config:RGBToHex(config.database.theme2)
-    config:PrintForced(L["Here are a few commands to help you:"].."\n"..string.format("|cff%s%s|r", hex, "/tdl "..L["toggleways"]).." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["categories"]).." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["favorites"]).." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["descriptions"]).." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["hiddenbuttons"]).." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["hyperlinks"]).." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["tutorial"]))
+    config:PrintForced(L["Here are a few commands to help you:"].."\n"..string.format("|cff%s%s|r", hex, "/tdl "..L["toggle"]).." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["categories"]).." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["favorites"]).." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["descriptions"]).." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["hyperlinks"]).." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["tutorial"]))
   end,
 
-  [L["toggleways"]] = function()
+  [L["toggle"]] = function()
     config:PrintForced(L["To toggle the list, you have several ways:"]..'\n- '..L["minimap button (the default)"]..'\n- '..L["a normal TDL button"]..'\n- '..L["databroker plugin (eg. titan panel)"]..'\n- '..L["the '/tdl' command"]..'\n- '..L["key binding"]..'\n'..L["You can go to the addon options in the game's interface settings to customize this."])
   end,
 
@@ -77,10 +77,6 @@ init.commands = {
 
   [L["descriptions"]] = function()
     config:PrintForced(L["You can add descriptions on items!"].."\n"..L["To do so, hold the CTRL key when the list is opened, then click on the page icons to open a description frame!"].."\n- "..L["they are auto-saved and have no length limitations"].."\n- "..L["if an item has a description, he cannot be deleted (empty the description if you want to do so)"])
-  end,
-
-  [L["hiddenbuttons"]] = function()
-    config:PrintForced(L["There are some hidden buttons on the list."].."\n"..L["To show them, hold the ALT key when the list is opened!"])
   end,
 
   [L["hyperlinks"]] = function()

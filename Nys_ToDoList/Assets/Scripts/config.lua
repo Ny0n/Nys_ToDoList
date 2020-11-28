@@ -142,8 +142,8 @@ config.database = {
               highlightOnFocus = {
                   order = 3.8,
                   type = "toggle",
-                  name = L["test1"],
-                  desc = L["test2"],
+                  name = L["Highlight edit boxes"],
+                  desc = L["When focusing on edit boxes, automatically highlights the text inside"],
                   get = "highlightOnFocusGET",
                   set = "highlightOnFocusSET",
               }, -- highlightOnFocus

@@ -15,7 +15,7 @@ local AllTab, DailyTab, WeeklyTab, CurrentTab;
 -- reset variables
 local remainingCheckAll, remainingCheckDaily, remainingCheckWeekly = 0, 0, 0;
 local clearing, undoing = false, { ["clear"] = false, ["clearnb"] = 0, ["single"] = false, ["singleok"] = true};
-local renaming = false
+local movingItem, movingCategory = false, false
 
 local checkBtn = {};
 local removeBtn = {};
@@ -220,6 +220,8 @@ end
 
 local function inChatIsDone(all, daily, weekly)
   -- we tell the player if he's the best c:
+  -- also we don't do this when we are moving things
+  if (movingCategory or movingItem) then return; end
 
   -- first we get if there are at least one item in each tab, so that we don't say anything if we just deleted the only remaining item
   local nbAll, nbDaily, nbWeekly = 0, 0, 0;
@@ -420,21 +422,21 @@ local function addCategory()
   end
 
   if (db.catName == "") then
-    config:Print(L["Please enter a category name!"])
+    config:PrintForced(L["Please enter a category name!"])
     SetFocus(itemsFrameUI.categoryEditBox)
     return;
   end
 
   local l = config:CreateNoPointsLabel(itemsFrameUI, nil, db.catName);
   if (l:GetWidth() > categoryNameWidthMax) then
-    config:Print(L["This categoty name is too big!"])
+    config:PrintForced(L["This categoty name is too big!"])
     SetFocus(itemsFrameUI.categoryEditBox)
     return;
   end
 
   db.itemName = itemsFrameUI.nameEditBox:GetText();
   if (db.itemName == "") then
-    config:Print(L["Please enter the name of the item!"])
+    config:PrintForced(L["Please enter the name of the item!"])
     SetFocus(itemsFrameUI.nameEditBox)
     return;
   end
@@ -442,7 +444,7 @@ local function addCategory()
   local l = config:CreateNoPointsLabel(itemsFrameUI, nil, db.itemName);
   if (l:GetWidth() > itemNameWidthMax and config:HasHyperlink(db.itemName)) then l:SetFontObject("GameFontNormal") end -- if it has an hyperlink in it and it's too big, we allow it to be a liitle longer, considering hyperlinks take more place
   if (l:GetWidth() > itemNameWidthMax) then -- then we recheck to see if the item is not too long for good
-    config:Print(L["This item name is too big!"])
+    config:PrintForced(L["This item name is too big!"])
     SetFocus(itemsFrameUI.nameEditBox)
     return;
   end
@@ -464,10 +466,25 @@ local function addCategory()
 end
 
 function itemsFrame:RenameCategory(oldCatName, newCatName)
-  -- basically, it's the same process from the MoveItem func, just throught a for loop so we do every item in the category
-  for itemName, data in pairs(NysTDL.db.profile.itemsList[oldCatName]) do -- for every item in the category
-    itemsFrame:MoveItem(oldCatName, newCatName, itemName, itemName, data.tabName)
+  -- so first, we check if the category was closed in some tabs or not,
+  -- and save this closed data to put it to the new category after the rename
+  local closedData = nil
+  if (config:HasKey(NysTDL.db.profile.closedCategories, oldCatName) and NysTDL.db.profile.closedCategories[oldCatName] ~= nil) then
+    closedData = config:Deepcopy(NysTDL.db.profile.closedCategories[oldCatName]) -- we need to deepcopy it since it's a table
   end
+
+  -- then we can start renaming the category
+  -- basically, it's the same process from the MoveItem func, just through a for loop so we do every item in the category
+  movingCategory = true
+  for itemName, data in pairs(NysTDL.db.profile.itemsList[oldCatName]) do -- for every item in the category
+    itemsFrame:MoveItem(oldCatName, newCatName, itemName, itemName, data.tabName) -- we move it to the new cat
+  end
+  movingCategory = false
+
+  -- and finally, we put back the closed category data
+  NysTDL.db.profile.closedCategories[newCatName] = closedData
+
+  Tab_OnClick(_G[NysTDL.db.profile.lastLoadedTab]); -- we reload the tab to instantly display the changes
 end
 
 function itemsFrame:AddItem(self, db)
@@ -561,7 +578,12 @@ function itemsFrame:AddItem(self, db)
 
   -- okay so we print only if we're not in a clear undo process / single undo process but failed
   if (undoing["single"]) then undoing["singleok"] = addResult[2]; end
-  if (not undoing["clear"] and not (undoing["single"] and not undoing["singleok"])) and not renaming then config:Print(addResult[1]);
+  if (not undoing["clear"] and not (undoing["single"] and not undoing["singleok"])) and not movingItem then
+    if (addResult[2]) then
+      config:Print(addResult[1]);
+    else
+      config:PrintForced(addResult[1]);
+    end
   elseif (addResult[2]) then undoing["clearnb"] = undoing["clearnb"] + 1; end
 
   if (addResult[2]) then -- if the adding was succesfull
@@ -595,7 +617,7 @@ function itemsFrame:RemoveItem(self)
   itemsFrame:descriptionFrameHide("NysTDL_DescFrame_"..catName.."_"..itemName)
 
   -- undo part
-  if (not renaming) then
+  if (not movingItem) then
     local db = {
       ["catName"] = catName,
       ["itemName"] = itemName,
@@ -608,7 +630,7 @@ function itemsFrame:RemoveItem(self)
   -- remove part
   NysTDL.db.profile.itemsList[catName][itemName] = nil;
 
-  if (not clearing and not renaming) then
+  if (not clearing and not movingItem) then
     config:Print(config:SafeStringFormat(L["\"%s\" removed!"], itemName));
   end
 
@@ -628,10 +650,11 @@ function itemsFrame:MoveItem(oldCatName, newCatName, oldItemName, newItemName, n
   }
 
   -- then we can start renaming
-  renaming = true
+  movingItem = true
   itemsFrame:RemoveItem(removeBtn[oldCatName][oldItemName])
   itemsFrame:AddItem(nil, data)
-  renaming = false
+  movingItem = false
+
   -- and finally, we put back the original item data
   NysTDL.db.profile.itemsList[newCatName][newItemName].favorite = data.favorite
   NysTDL.db.profile.itemsList[newCatName][newItemName].description = data.description
@@ -1189,6 +1212,13 @@ function itemsFrame:CreateMovableCheckBtnElems(catName, itemName)
         -- end
         config:PrintForced(L["This item name already exists in the category"]..". "..L["Please choose a different name to avoid overriding data"])
         return;
+      else
+        local l = config:CreateNoPointsLabel(itemsFrameUI, nil, newItemName);
+        if (l:GetWidth() > itemNameWidthMax and config:HasHyperlink(newItemName)) then l:SetFontObject("GameFontNormal") end -- if it has an hyperlink in it and it's too big, we allow it to be a liitle longer, considering hyperlinks take more place
+        if (l:GetWidth() > itemNameWidthMax) then -- then we recheck to see if the item is not too long for good
+          config:PrintForced(L["This item name is too big!"])
+          return;
+        end
       end
 
       -- and if everything is good, we can rename the item (a.k.a, delete the current one and creating a new one)
@@ -1297,6 +1327,12 @@ function itemsFrame:CreateMovableLabelElems(catName)
       elseif (config:HasKey(NysTDL.db.profile.itemsList, newCatName)) then -- if the new cat name already exists
         config:PrintForced(L["This category name already exists"]..". "..L["Please choose a different name to avoid overriding data"])
         return;
+      else
+        local l = config:CreateNoPointsLabel(itemsFrameUI, nil, newCatName);
+        if (l:GetWidth() > categoryNameWidthMax) then -- if the new cat name is too big
+          config:PrintForced(L["This categoty name is too big!"])
+          return;
+        end
       end
 
       -- and if everything is good, we can rename the category
