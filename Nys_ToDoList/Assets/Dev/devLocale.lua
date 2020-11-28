@@ -4,6 +4,10 @@ addonTable.devLocale = L
 
 -- ============================================ --
 
+L["One last thing: if you hold ALT while the list is opened, some interesting buttons will appear!"] = true
+L["For categories, and items with hyperlinks in them: hold ALT then double click on them."] = true
+L["For items: just double click on them."] = true
+L["rename"] = true
 L["Highlight edit boxes"] = true
 L["When focusing on edit boxes, automatically highlights the text inside"] = true
 L["This item name already exists in the category"] = true
