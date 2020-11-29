@@ -59,7 +59,15 @@ init.commands = {
 
   [L["info"]] = function()
     local hex = config:RGBToHex(config.database.theme2)
-    config:PrintForced(L["Here are a few commands to help you:"].."\n"..string.format("|cff%s%s|r", hex, "/tdl "..L["toggle"]).." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["categories"]).." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["favorites"]).." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["descriptions"]).." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["hyperlinks"]).." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["tutorial"]))
+    local str = L["Here are a few commands to help you:"].."\n"
+    str = str.." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["toggle"])
+    str = str.." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["categories"])
+    str = str.." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["favorites"])
+    str = str.." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["descriptions"])
+    str = str.." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["hyperlinks"])
+    str = str.." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["rename"])
+    str = str.." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["tutorial"])
+    config:PrintForced(str)
   end,
 
   [L["toggle"]] = function()
@@ -81,6 +89,10 @@ init.commands = {
 
   [L["hyperlinks"]] = function()
     config:PrintForced(L["You can add hyperlinks in the list!"]..' '..L["It works the same way as when you link items or other things in the chat, just shift-click!"])
+  end,
+
+  [L["rename"]] = function()
+    config:PrintForced(L["For items: just double click on them."].."\n"..L["For categories, and items with hyperlinks in them: hold ALT then double click on them."])
   end,
 
   [L["tutorial"]] = function()
@@ -189,7 +201,18 @@ function NysTDL:OnInitialize()
     itemsFrame:CreateItemsFrame();
 
     -- addon fully loaded!
+
+    -- checking for an addon update
+    if (self.db.global.addonUpdated) then
+      self:AddonUpdated()
+      self.db.global.addonUpdated = false
+    end
+
     local hex = config:RGBToHex(config.database.theme2);
     config:Print(L["addon loaded!"]..' ('..string.format("|cff%s%s|r", hex, "/tdl "..L["info"])..')');
     addonLoaded = true;
+end
+
+function NysTDL:AddonUpdated()
+  -- called once, when the addon gets an update
 end

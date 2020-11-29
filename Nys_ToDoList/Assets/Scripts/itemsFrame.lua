@@ -31,10 +31,14 @@ local optionsClosed = true;
 local autoResetedThisSession = false;
 
 -- these are for code comfort (sort of)
-local hyperlinkEditBoxes = {};
+
+-- tutorial
 local tutorialFrames = {}
-local tuto_order = { "addNewCat", "addCat", "addItem", "accessOptions", "getMoreInfo" }
 local tutorialFramesTarget = {}
+local tuto_order = { "addNewCat", "addCat", "addItem", "accessOptions", "getMoreInfo", "ALTkey" }
+
+-- other
+local hyperlinkEditBoxes = {};
 local addACategoryItems = {}
 local tabActionsItems = {}
 local frameOptionsItems = {}
@@ -1064,6 +1068,7 @@ local function ItemsFrame_OnUpdate(self, elapsed)
   end
 
   if (IsAltKeyDown()) then
+    itemsFrame:ValidateTutorial("ALTkey"); -- tutorial
     -- we switch the category and frame options buttons for the undo and frame action ones and vice versa
     itemsFrameUI.categoryButton:Hide()
     itemsFrameUI.undoButton:Show()
@@ -1312,6 +1317,12 @@ function itemsFrame:CreateMovableLabelElems(catName)
     local renameEditBox = config:CreateNoPointsRenameEditBox(label, catName, categoryNameWidthMax, self:GetHeight())
     renameEditBox:SetPoint("LEFT", label, "LEFT", 5, 0)
 
+    -- we move the favs remaining label to the right of the edit box while it's shown
+    if (config:HasKey(categoryLabelFavsRemaining, catName)) then
+      categoryLabelFavsRemaining[catName]:ClearAllPoints();
+      categoryLabelFavsRemaining[catName]:SetPoint("LEFT", renameEditBox, "RIGHT", 6, 0);
+    end
+
     -- let's go!
     renameEditBox:SetScript("OnEnterPressed", function(self)
       local newCatName = self:GetText()
@@ -1342,6 +1353,11 @@ function itemsFrame:CreateMovableLabelElems(catName)
       self:Hide()
       label.Text:Show()
       label.Button:Show()
+      -- when hiding the edit box, we reset the pos of the favs remaining label
+      if (config:HasKey(categoryLabelFavsRemaining, catName)) then
+        categoryLabelFavsRemaining[catName]:ClearAllPoints();
+        categoryLabelFavsRemaining[catName]:SetPoint("LEFT", label, "RIGHT", 6, 0);
+      end
     end)
     renameEditBox:HookScript("OnEditFocusLost", function(self)
       self:GetScript("OnEscapePressed")(self)
@@ -1349,7 +1365,8 @@ function itemsFrame:CreateMovableLabelElems(catName)
   end)
 
   -- associated favs remaining label
-  categoryLabelFavsRemaining[catName] = config:CreateNoPointsLabel(itemsFrameUI, label[catName]:GetName().."_FavsRemaining", "");
+  categoryLabelFavsRemaining[catName] = config:CreateNoPointsLabel(label[catName], label[catName]:GetName().."_FavsRemaining", "");
+
   -- associated edit box and add button
   editBox[catName] = config:CreateNoPointsLabelEditBox(catName);
   editBox[catName]:SetScript("OnEnterPressed", function(self)
@@ -1403,10 +1420,16 @@ local function loadCategories(tab, categoryLabel, catName, itemNames, lastData)
       end
     end
 
+    -- category label placement
     if (newLabelHeightDelta == 0) then adjustHeight = 0; else adjustHeight = 1; end -- just for a proper clean height
     categoryLabel:SetParent(tab);
     categoryLabel:SetPoint("TOPLEFT", lastLabel, "TOPLEFT", 0, (-newLabelHeightDelta * 22) - (adjustHeight * 5)); -- here
     categoryLabel:Show();
+
+    -- category label favs remaining placement
+    -- we determine if it is shown or not later
+    categoryLabelFavsRemaining[catName]:SetParent(categoryLabel)
+    categoryLabelFavsRemaining[catName]:SetPoint("LEFT", categoryLabel, "RIGHT", 6, 0)
 
     -- edit box
     editBox[catName]:SetParent(tab);
@@ -1423,13 +1446,8 @@ local function loadCategories(tab, categoryLabel, catName, itemNames, lastData)
     end
     editBox[catName]:Hide(); -- we hide every edit box by default when we reload the tab
 
-    -- label showing how much favs is left in a closed category
-    -- if the category label is shown in this tab, we move that cat fav label here too, correctly anchored
-    categoryLabelFavsRemaining[catName]:SetParent(tab);
-    categoryLabelFavsRemaining[catName]:ClearAllPoints();
-    categoryLabelFavsRemaining[catName]:SetPoint("LEFT", categoryLabel, "RIGHT", 6, 0);
-
-    if (not config:HasKey(NysTDL.db.profile.closedCategories, catName) or not config:HasItem(NysTDL.db.profile.closedCategories[catName], tab:GetName())) then -- if the category is opened in this tab, we display all of its items
+    -- if the category is opened in this tab, we display all of its items
+    if (not config:HasKey(NysTDL.db.profile.closedCategories, catName) or not config:HasItem(NysTDL.db.profile.closedCategories[catName], tab:GetName())) then
       -- checkboxes
       local buttonsLength = 0;
       for _, itemName in pairs(itemNames) do -- for every item to load
@@ -2055,12 +2073,13 @@ local function generateFrameContent()
   itemsFrameUI.dummyLabel = config:CreateDummy(itemsFrameUI, itemsFrameUI.lineBottom, 0, 0);
 end
 
+-- tutorial
 local function generateTutorialFrames()
   -- TUTO : How to add categories ("addNewCat")
     -- frame
     local TF_addNewCat = CreateFrame("Frame", "NysTDL_TF_addNewCat", itemsFrameUI, "NysTDL_HelpPlateTooltip")
     TF_addNewCat:SetSize(190, 50)
-    TF_addNewCat.ArrowRIGHT:Show()
+    TF_addNewCat.ArrowDOWN:Show()
     TF_addNewCat.Text:SetWidth(TF_addNewCat:GetWidth() - tutoFrameRightDist)
     TF_addNewCat.Text:SetText(L["Start by adding a new category!"]);
     TF_addNewCat.closeButton = CreateFrame("Button", "closeButton", TF_addNewCat, "UIPanelCloseButton");
@@ -2070,8 +2089,10 @@ local function generateTutorialFrames()
     TF_addNewCat:Hide() -- we hide them by default, we show them only when we need to
 
     -- targeted frame
+    -- tutorialFramesTarget.addNewCat = itemsFrameUI.categoryButton;
+    -- TF_addNewCat:SetPoint("LEFT", tutorialFramesTarget.addNewCat, "RIGHT", 18, 0);
     tutorialFramesTarget.addNewCat = itemsFrameUI.categoryButton;
-    TF_addNewCat:SetPoint("LEFT", tutorialFramesTarget.addNewCat, "RIGHT", 16, 0);
+    TF_addNewCat:SetPoint("TOP", tutorialFramesTarget.addNewCat, "BOTTOM", 0, -18);
 
   -- TUTO : Adding the categories ("addCat")
     -- frame
@@ -2139,6 +2160,23 @@ local function generateTutorialFrames()
     -- targeted frame
     tutorialFramesTarget.accessOptions = itemsFrameUI.frameOptionsButton;
     TF_accessOptions:SetPoint("BOTTOM", tutorialFramesTarget.accessOptions, "TOP", 0, 18);
+
+  -- TUTO : what does holding ALT do? ("ALTkey")
+    -- frame
+    local TF_ALTkey = CreateFrame("Frame", "NysTDL_TF_ALTkey", itemsFrameUI, "NysTDL_HelpPlateTooltip")
+    TF_ALTkey:SetSize(220, 50)
+    TF_ALTkey.ArrowUP:Show()
+    TF_ALTkey.Text:SetWidth(TF_ALTkey:GetWidth() - tutoFrameRightDist)
+    TF_ALTkey.Text:SetText(L["One more thing: if you hold ALT while the list is opened, some interesting buttons will appear!"]);
+    TF_ALTkey.closeButton = CreateFrame("Button", "closeButton", TF_ALTkey, "UIPanelCloseButton");
+    TF_ALTkey.closeButton:SetPoint("TOPRIGHT", TF_ALTkey, "TOPRIGHT", 6, 6);
+    TF_ALTkey.closeButton:SetScript("onClick", function() NysTDL.db.global.tuto_progression = NysTDL.db.global.tuto_progression + 1; end);
+    tutorialFrames.ALTkey = TF_ALTkey;
+    TF_ALTkey:Hide()
+
+    -- targeted frame
+    tutorialFramesTarget.ALTkey = itemsFrameUI;
+    TF_ALTkey:SetPoint("BOTTOM", tutorialFramesTarget.ALTkey, "TOP", 0, 18);
 end
 
 function itemsFrame:ValidateTutorial(tuto_name)
@@ -2339,7 +2377,7 @@ function itemsFrame:CreateItemsFrame()
   -- properties
   itemsFrameUI:SetResizable(true);
   itemsFrameUI:SetMinResize(240, 284);
-  itemsFrameUI:SetMaxResize(400, 600);
+  itemsFrameUI:SetMaxResize(600, 1000);
   itemsFrameUI:SetFrameLevel(200);
   itemsFrameUI:SetMovable(true);
   itemsFrameUI:SetClampedToScreen(true);

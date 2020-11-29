@@ -209,13 +209,51 @@ function NysTDL:CreateMinimapButton()
   end, delay)
 end
 
+-- this func is called once in init, on the addon load
+-- and also every time we switch profiles
 function NysTDL:DBInit()
+  -- checking for an addon update, globally
+  if (self.db.global.latestVersion ~= config.toc.version) then
+    self:GlobalNewVersion()
+    self.db.global.latestVersion = config.toc.version
+    self.db.global.addonUpdated = true
+  end
+
+  -- checking for an addon update, for the profile that was just loaded
+  if (self.db.profile.latestVersion ~= config.toc.version) then
+    self:ProfileNewVersion()
+    self.db.profile.latestVersion = config.toc.version
+  end
+
   -- initialization of elements that need access to other files functions or need to be updated correctly when the profile changes
   if (self.db.profile.autoReset == nil) then self.db.profile.autoReset = { ["Daily"] = config:GetSecondsToReset().daily, ["Weekly"] = config:GetSecondsToReset().weekly } end
   if (not self.db.profile.rememberUndo) then self.db.profile.undoTable = {} end
+end
 
+function NysTDL:ProfileChanged()
+  NysTDL:DBInit(); -- in case the selected profile is empty
+
+  -- we update the changes for the list
+  itemsFrame:ResetContent();
+  itemsFrame:Init();
+
+  -- we update the changes to the options (since I now use tabs and the options are not instantly getting a refresh when changing profiles)
+  NysTDL:CallAllGETTERS();
+end
+
+-- these two functions are called only once, each time there is an addon update
+function NysTDL:GlobalNewVersion() -- global
+  -- updates the global saved variables once after an update
+
+  if (NysTDL.db.global.tuto_progression > 0) then -- if we already completed the tutorial
+    -- since i added in the update a new tutorial frame that i want ppl to see, i just go back step in the tuto progression
+    NysTDL.db.global.tuto_progression = NysTDL.db.global.tuto_progression - 1;
+  end
+end
+
+function NysTDL:ProfileNewVersion() -- profile
+  -- if we're loading this profile for the first time after updating to 5.5+ from 5.4-
   if (self.db.profile.itemsDaily or self.db.profile.itemsWeekly or self.db.profile.itemsFavorite or self.db.profile.itemsDesc or self.db.profile.checkedButtons) then
-    -- if we're loading this profile for the first time after the update,
     -- we need to change the saved variables to the new format
     local oldItemsList = config:Deepcopy(self.db.profile.itemsList)
     self.db.profile.itemsList = {}
@@ -261,17 +299,6 @@ function NysTDL:DBInit()
     self.db.profile.itemsDesc = nil;
     self.db.profile.checkedButtons = nil;
   end
-end
-
-function NysTDL:ProfileChanged()
-  NysTDL:DBInit(); -- in case the selected profile is empty
-
-  -- we update the changes for the list
-  itemsFrame:ResetContent();
-  itemsFrame:Init();
-
-  -- we update the changes to the options (since I now use tabs and the options are not instantly getting a refresh when changing profiles)
-  NysTDL:CallAllGETTERS();
 end
 
 --/*******************/ GETTERS/SETTERS /*************************/--
