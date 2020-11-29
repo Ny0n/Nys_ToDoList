@@ -212,6 +212,13 @@ end
 -- this func is called once in init, on the addon load
 -- and also every time we switch profiles
 function NysTDL:DBInit()
+  -- checking for an addon update, globally
+  if (self.db.global.latestVersion ~= config.toc.version) then
+    self:GlobalNewVersion()
+    self.db.global.latestVersion = config.toc.version
+    self.db.global.addonUpdated = true
+  end
+
   -- checking for an addon update, for the profile that was just loaded
   if (self.db.profile.latestVersion ~= config.toc.version) then
     self:ProfileNewVersion()
@@ -236,7 +243,7 @@ end
 
 -- these two functions are called only once, each time there is an addon update
 function NysTDL:GlobalNewVersion() -- global
-  print("global_newversion")
+  -- updates the global saved variables once after an update
 
   if (NysTDL.db.global.tuto_progression > 0) then -- if we already completed the tutorial
     -- since i added in the update a new tutorial frame that i want ppl to see, i just go back step in the tuto progression
@@ -245,7 +252,6 @@ function NysTDL:GlobalNewVersion() -- global
 end
 
 function NysTDL:ProfileNewVersion() -- profile
-  print("profile_newversion")
   -- if we're loading this profile for the first time after updating to 5.5+ from 5.4-
   if (self.db.profile.itemsDaily or self.db.profile.itemsWeekly or self.db.profile.itemsFavorite or self.db.profile.itemsDesc or self.db.profile.checkedButtons) then
     -- we need to change the saved variables to the new format

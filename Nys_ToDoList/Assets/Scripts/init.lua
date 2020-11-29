@@ -202,13 +202,17 @@ function NysTDL:OnInitialize()
 
     -- addon fully loaded!
 
-    -- checking for an addon update, globally
-    if (self.db.global.latestVersion ~= config.toc.version) then
-      self:GlobalNewVersion()
-      self.db.global.latestVersion = config.toc.version
+    -- checking for an addon update
+    if (self.db.global.addonUpdated) then
+      self:AddonUpdated()
+      self.db.global.addonUpdated = false
     end
 
     local hex = config:RGBToHex(config.database.theme2);
     config:Print(L["addon loaded!"]..' ('..string.format("|cff%s%s|r", hex, "/tdl "..L["info"])..')');
     addonLoaded = true;
+end
+
+function NysTDL:AddonUpdated()
+  -- called once, when the addon gets an update
 end

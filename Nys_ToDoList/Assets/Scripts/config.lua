@@ -306,13 +306,14 @@ config.database = {
     -- AceDB defaults table
     defaults = {
         global = {
-            latestVersion = "", -- used to call a func only once, each time there is an addon update
+            addonUpdated = true, -- used to call an update func in init, only once after each addon update
+            latestVersion = "", -- used to update the global saved variables once after each addon update
             tuto_progression = 0,
             UI_reloading = false,
             warnTimerRemaining = 0,
         },
         profile = {
-            latestVersion = "", -- same as the global one, just specific to each profile
+            latestVersion = "", -- used to update the profile saved variables once after each addon update, independent for each profile
             minimap = { hide = false, minimapPos = 241, lock = false, tooltip = true }, -- for LibDBIcon
             tdlButton = { show = false, red = false, points = { point = "CENTER", relativePoint = "CENTER", xOffset = 0, yOffset = 0 } },
             framePos = { point = "CENTER", relativePoint = "CENTER", xOffset = 0, yOffset = 0 },
