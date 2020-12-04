@@ -54,7 +54,7 @@ then
   rm -rf "$packagedir/$addonname"*
 
   # and we create (use) the packaging script from 'BigWigsMods/packager' on github
-  curl -s "https://raw.githubusercontent.com/BigWigsMods/packager/c9ed5f8fb84bc280c83a37563a90a741edfbfd9a/release.sh" > "$packagedir/package.sh"
+  curl -s "https://raw.githubusercontent.com/BigWigsMods/packager/e29ee19573d8e5490572b67f006eb5337b5a4436/release.sh" > "$packagedir/package.sh"
   # i voluntarily used a specific commit and not the latest master vesion,
   # because i need to add a line of code inside the script at a specific point,
   # and i need consistency to do that, so i'm sure that the curl always gives me the same script

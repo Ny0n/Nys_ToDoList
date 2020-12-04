@@ -2,3 +2,4 @@
 .other/build/package/
 Nys_ToDoList/Libs/*
 !Nys_ToDoList/Libs/embeds.xml
+!Nys_ToDoList/Libs/LibDataBroker-1.1/
