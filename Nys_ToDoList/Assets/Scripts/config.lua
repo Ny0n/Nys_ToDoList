@@ -35,271 +35,301 @@ config.database = {
     options = {
         handler = NysTDL,
         type = "group",
-        name = config.toc.title..' ('..config.toc.version..') - '..L["Options"],
-        childGroups = "tab",
+        name = config.toc.title.." ("..config.toc.version..")",
         args = {
-          general = {
-      			order = 0,
+          main = {
+            order = 0,
             type = "group",
-            name = L["General"],
-      			desc = L["Manage general options"],
+            name = L["Options"],
+            childGroups = "tab",
             args = {
+              general = {
+                order = 0,
+                type = "group",
+                name = L["General"],
+                args = {
 
-              -- / options widgets / --
+                  -- / options widgets / --
 
-              weeklyDay = {
-                  order = 4.1,
-                  type = "select",
-                  style = "dropdown",
-                  name = L["Weekly reset day"],
-                  desc = L["Choose the day for the weekly reset"],
-                  values = {
-                    [2] = L["Monday"],
-                    [3] = L["Tuesday"],
-                    [4] = L["Wednesday"],
-                    [5] = L["Thursday"],
-                    [6] = L["Friday"],
-                    [7] = L["Saturday"],
-                    [1] = L["Sunday"],
-                  },
-                  sorting = {
-                    2, 3, 4, 5, 6, 7, 1,
-                  },
-                  get = "weeklyDayGET",
-                  set = "weeklyDaySET",
-              }, -- weeklyDay
-              dailyHour = {
-                  order = 4.2,
-                  type = "range",
-                  name = L["Daily reset hour"],
-                  desc = L["Choose the hour for the daily reset"],
-                  min = 0,
-                  max = 23,
-                  step = 1,
-                  get = "dailyHourGET",
-                  set = "dailyHourSET",
-              }, -- dailyHour
-              showChatMessages = {
-                  order = 3.1,
-                  type = "toggle",
-                  name = L["Show chat messages"],
-                  desc = L["Enable or disable the chat messages"]..'\n'..L["(warnings override this option)"],
-                  get = "showChatMessagesGET",
-                  set = "showChatMessagesSET",
-              }, -- showChatMessages
-              showWarnings = {
-                  order = 3.2,
-                  type = "toggle",
-                  name = L["Show warnings"],
-                  desc = L["Enable or disable the chat warning/reminder system"]..'\n'..L["(chat message when logging in)"],
-                  get = "showWarningsGET",
-                  set = "showWarningsSET",
-              }, -- showWarnings
-              groupWarnings = {
-                  order = 3.3,
-                  type = "group",
-                  name = L["Warnings:"],
-                  inline = true,
-                  hidden = function() return not NysTDL.db.profile.showWarnings end,
-                  args = {
-                    favoritesWarning = {
-                        order = 1.1,
-                        type = "toggle",
-                        name = L["Favorites warning"],
-                        desc = L["Enable warnings for favorite items"],
-                        get = "favoritesWarningGET",
-                        set = "favoritesWarningSET",
-                    }, -- favoritesWarning
-                    normalWarning = {
-                        order = 1.2,
-                        type = "toggle",
-                        name = L["Normal warning"],
-                        desc = L["Enable warnings for non-favorite items"],
-                        get = "normalWarningGET",
-                        set = "normalWarningSET",
-                    }, -- normalWarning
-                    hourlyReminder = {
-                        order = 1.3,
-                        type = "toggle",
-                        name = L["Hourly reminder"],
-                        desc = L["Show warnings every 60 min following your log-in time"],
-                        get = "hourlyReminderGET",
-                        set = "hourlyReminderSET",
-                        disabled = function()
-                          return not (NysTDL.db.profile.favoritesWarning or NysTDL.db.profile.normalWarning)
-                        end,
-                    }, -- hourlyReminder
-                  }
-              }, -- groupWarnings
-              rememberUndo = {
-                  order = 3.7,
-                  type = "toggle",
-                  name = L["Remember undos"],
-                  desc = L["Save undos between sessions"],
-                  get = "rememberUndoGET",
-                  set = "rememberUndoSET",
-              }, -- rememberUndo
-              highlightOnFocus = {
-                  order = 3.8,
-                  type = "toggle",
-                  name = L["Highlight edit boxes"],
-                  desc = L["When focusing on edit boxes, automatically highlights the text inside"],
-                  get = "highlightOnFocusGET",
-                  set = "highlightOnFocusSET",
-              }, -- highlightOnFocus
-              favoritesColor = {
-                  order = 3.4,
-                  type = "color",
-                  name = L["Favorites color"],
-                  desc = L["Change the color for the favorite items"],
-                  get = "favoritesColorGET",
-                  set = "favoritesColorSET",
-                  disabled = function() return NysTDL.db.profile.rainbow end,
-              }, -- favoritesColor
-              rainbow = {
-                  order = 3.5,
-                  type = "toggle",
-                  name = L["Rainbow"],
-                  desc = L["Too.. Many.. Colors..."],
-                  get = "rainbowGET",
-                  set = "rainbowSET",
-              }, -- rainbow
-              rainbowSpeed = {
-                  order = 3.6,
-                  type = "range",
-                  name = L["Rainbow speed"],
-                  desc = L["Because why not?"],
-                  min = 1,
-                  max = 6,
-                  step = 1,
-                  get = "rainbowSpeedGET",
-                  set = "rainbowSpeedSET",
-                  hidden = function() return not NysTDL.db.profile.rainbow end
-              }, -- rainbowSpeed
-              tdlButtonShow = {
-                  order = 2.3,
-                  type = "toggle",
-                  name = L["Show TDL button"],
-                  desc = L["Toggles the display of the 'To-Do List' button"],
-                  get = "tdlButtonShowGET",
-                  set = "tdlButtonShowSET",
-              }, -- tdlButtonShow
-              tdlButtonRed = {
-                  order = 2.4,
-                  type = "toggle",
-                  name = L["Red"],
-                  desc = L["Changes the color of the TDL button if there are items left to do before tomorrow"],
-                  get = "tdlButtonRedGET",
-                  set = "tdlButtonRedSET",
-                  hidden = function() return not NysTDL.db.profile.tdlButton.show end
-              }, -- tdlButtonShow
-              minimapButtonHide = {
-                  order = 2.1,
-                  type = "toggle",
-                  name = L["Show minimap button"],
-                  desc = L["Toggles the display of the minimap button"],
-                  get = function(info) return not NysTDL:minimapButtonHideGET(info) end,
-                  set = function(info, newValue) NysTDL:minimapButtonHideSET(info, not newValue) end,
-              }, -- minimapButtonHide
-              minimapButtonTooltip = {
-                  order = 2.2,
-                  -- disabled = function() return NysTDL.db.profile.minimap.hide; end,
-                  type = "toggle",
-                  name = L["Show tooltip"],
-                  desc = L["Show the tooltip of the minimap/databroker button"],
-                  get = "minimapButtonTooltipGET",
-                  set = "minimapButtonTooltipSET",
-              }, -- minimapButtonTooltip
-              keyBind = {
-                  type = "keybinding",
-                  name = L["Show/Hide the list"],
-                  desc = L["Bind a key to toggle the list"]..'\n'..L["(independant from profile)"],
-                  order = 1.1,
-                  get = "keyBindGET",
-                  set = "keyBindSET",
-              }, -- keyBind
+                  weeklyDay = {
+                      order = 4.1,
+                      type = "select",
+                      style = "dropdown",
+                      name = L["Weekly reset day"],
+                      desc = L["Choose the day for the weekly reset"],
+                      values = {
+                        [2] = L["Monday"],
+                        [3] = L["Tuesday"],
+                        [4] = L["Wednesday"],
+                        [5] = L["Thursday"],
+                        [6] = L["Friday"],
+                        [7] = L["Saturday"],
+                        [1] = L["Sunday"],
+                      },
+                      sorting = {
+                        2, 3, 4, 5, 6, 7, 1,
+                      },
+                      get = "weeklyDayGET",
+                      set = "weeklyDaySET",
+                  }, -- weeklyDay
+                  dailyHour = {
+                      order = 4.2,
+                      type = "range",
+                      name = L["Daily reset hour"],
+                      desc = L["Choose the hour for the daily reset"],
+                      min = 0,
+                      max = 23,
+                      step = 1,
+                      get = "dailyHourGET",
+                      set = "dailyHourSET",
+                  }, -- dailyHour
+                  showChatMessages = {
+                      order = 3.1,
+                      type = "toggle",
+                      name = L["Show chat messages"],
+                      desc = L["Enable or disable the chat messages"]..'\n'..L["(warnings override this option)"],
+                      get = "showChatMessagesGET",
+                      set = "showChatMessagesSET",
+                  }, -- showChatMessages
+                  showWarnings = {
+                      order = 3.2,
+                      type = "toggle",
+                      name = L["Show warnings"],
+                      desc = L["Enable or disable the chat warning/reminder system"]..'\n'..L["(chat message when logging in)"],
+                      get = "showWarningsGET",
+                      set = "showWarningsSET",
+                  }, -- showWarnings
+                  groupWarnings = {
+                      order = 3.3,
+                      type = "group",
+                      name = L["Warnings:"],
+                      inline = true,
+                      hidden = function() return not NysTDL.db.profile.showWarnings end,
+                      args = {
+                        favoritesWarning = {
+                            order = 1.1,
+                            type = "toggle",
+                            name = L["Favorites warning"],
+                            desc = L["Enable warnings for favorite items"],
+                            get = "favoritesWarningGET",
+                            set = "favoritesWarningSET",
+                        }, -- favoritesWarning
+                        normalWarning = {
+                            order = 1.2,
+                            type = "toggle",
+                            name = L["Normal warning"],
+                            desc = L["Enable warnings for non-favorite items"],
+                            get = "normalWarningGET",
+                            set = "normalWarningSET",
+                        }, -- normalWarning
+                        hourlyReminder = {
+                            order = 1.3,
+                            type = "toggle",
+                            name = L["Hourly reminder"],
+                            desc = L["Show warnings every 60 min following your log-in time"],
+                            get = "hourlyReminderGET",
+                            set = "hourlyReminderSET",
+                            disabled = function()
+                              return not (NysTDL.db.profile.favoritesWarning or NysTDL.db.profile.normalWarning)
+                            end,
+                        }, -- hourlyReminder
+                      }
+                  }, -- groupWarnings
+                  rememberUndo = {
+                      order = 3.7,
+                      type = "toggle",
+                      name = L["Remember undos"],
+                      desc = L["Save undos between sessions"],
+                      get = "rememberUndoGET",
+                      set = "rememberUndoSET",
+                  }, -- rememberUndo
+                  highlightOnFocus = {
+                      order = 3.8,
+                      type = "toggle",
+                      name = L["Highlight edit boxes"],
+                      desc = L["When focusing on edit boxes, automatically highlights the text inside"],
+                      get = "highlightOnFocusGET",
+                      set = "highlightOnFocusSET",
+                  }, -- highlightOnFocus
+                  favoritesColor = {
+                      order = 3.4,
+                      type = "color",
+                      name = L["Favorites color"],
+                      desc = L["Change the color for the favorite items"],
+                      get = "favoritesColorGET",
+                      set = "favoritesColorSET",
+                      disabled = function() return NysTDL.db.profile.rainbow end,
+                  }, -- favoritesColor
+                  rainbow = {
+                      order = 3.5,
+                      type = "toggle",
+                      name = L["Rainbow"],
+                      desc = L["Too.. Many.. Colors..."],
+                      get = "rainbowGET",
+                      set = "rainbowSET",
+                  }, -- rainbow
+                  rainbowSpeed = {
+                      order = 3.6,
+                      type = "range",
+                      name = L["Rainbow speed"],
+                      desc = L["Because why not?"],
+                      min = 1,
+                      max = 6,
+                      step = 1,
+                      get = "rainbowSpeedGET",
+                      set = "rainbowSpeedSET",
+                      hidden = function() return not NysTDL.db.profile.rainbow end
+                  }, -- rainbowSpeed
+                  tdlButtonShow = {
+                      order = 2.3,
+                      type = "toggle",
+                      name = L["Show TDL button"],
+                      desc = L["Toggles the display of the 'To-Do List' button"],
+                      get = "tdlButtonShowGET",
+                      set = "tdlButtonShowSET",
+                  }, -- tdlButtonShow
+                  tdlButtonRed = {
+                      order = 2.4,
+                      type = "toggle",
+                      name = L["Red"],
+                      desc = L["Changes the color of the TDL button if there are items left to do before tomorrow"],
+                      get = "tdlButtonRedGET",
+                      set = "tdlButtonRedSET",
+                      hidden = function() return not NysTDL.db.profile.tdlButton.show end
+                  }, -- tdlButtonShow
+                  minimapButtonHide = {
+                      order = 2.1,
+                      type = "toggle",
+                      name = L["Show minimap button"],
+                      desc = L["Toggles the display of the minimap button"],
+                      get = function(info) return not NysTDL:minimapButtonHideGET(info) end,
+                      set = function(info, newValue) NysTDL:minimapButtonHideSET(info, not newValue) end,
+                  }, -- minimapButtonHide
+                  minimapButtonTooltip = {
+                      order = 2.2,
+                      -- disabled = function() return NysTDL.db.profile.minimap.hide; end,
+                      type = "toggle",
+                      name = L["Show tooltip"],
+                      desc = L["Show the tooltip of the minimap/databroker button"],
+                      get = "minimapButtonTooltipGET",
+                      set = "minimapButtonTooltipSET",
+                  }, -- minimapButtonTooltip
+                  keyBind = {
+                      type = "keybinding",
+                      name = L["Show/Hide the list"],
+                      desc = L["Bind a key to toggle the list"]..'\n'..L["(independant from profile)"],
+                      order = 1.1,
+                      get = "keyBindGET",
+                      set = "keyBindSET",
+                  }, -- keyBind
 
-              -- / layout widgets / --
+                  -- / layout widgets / --
 
-              -- spacers
-              spacer111 = {
-          			order = 1.11,
-          			type = "description",
-          			width = "full",
-          			name = "",
-          		}, -- spacer111
-              spacer199 = {
-          			order = 1.99,
-          			type = "description",
-          			width = "full",
-          			name = "\n",
-          		}, -- spacer199
-              spacer221 = {
-          			order = 2.21,
-          			type = "description",
-          			width = "full",
-          			name = "",
-          		}, -- spacer221
-              spacer299 = {
-          			order = 2.99,
-          			type = "description",
-          			width = "full",
-          			name = "\n",
-          		}, -- spacer299
-              spacer321 = {
-          			order = 3.21,
-          			type = "description",
-          			width = "full",
-          			name = "",
-          		}, -- spacer321
-              spacer331 = {
-          			order = 3.31,
-          			type = "description",
-          			width = "full",
-          			name = "",
-          		}, -- spacer331
-              spacer361 = {
-          			order = 3.61,
-          			type = "description",
-          			width = "full",
-          			name = "",
-          		}, -- spacer361
-              spacer399 = {
-          			order = 3.99,
-          			type = "description",
-          			width = "full",
-          			name = "\n",
-          		}, -- spacer399
-              -- spacer411 = {
-          		-- 	order = 4.11,
-          		-- 	type = "description",
-          		-- 	width = "full",
-          		-- 	name = "",
-          		-- }, -- spacer411
+                  -- spacers
+                  spacer111 = {
+                    order = 1.11,
+                    type = "description",
+                    width = "full",
+                    name = "",
+                  }, -- spacer111
+                  spacer199 = {
+                    order = 1.99,
+                    type = "description",
+                    width = "full",
+                    name = "\n",
+                  }, -- spacer199
+                  spacer221 = {
+                    order = 2.21,
+                    type = "description",
+                    width = "full",
+                    name = "",
+                  }, -- spacer221
+                  spacer299 = {
+                    order = 2.99,
+                    type = "description",
+                    width = "full",
+                    name = "\n",
+                  }, -- spacer299
+                  spacer321 = {
+                    order = 3.21,
+                    type = "description",
+                    width = "full",
+                    name = "",
+                  }, -- spacer321
+                  spacer331 = {
+                    order = 3.31,
+                    type = "description",
+                    width = "full",
+                    name = "",
+                  }, -- spacer331
+                  spacer361 = {
+                    order = 3.61,
+                    type = "description",
+                    width = "full",
+                    name = "",
+                  }, -- spacer361
+                  spacer399 = {
+                    order = 3.99,
+                    type = "description",
+                    width = "full",
+                    name = "\n",
+                  }, -- spacer399
+                  -- spacer411 = {
+                  -- 	order = 4.11,
+                  -- 	type = "description",
+                  -- 	width = "full",
+                  -- 	name = "",
+                  -- }, -- spacer411
 
-              -- headers
-              header1 = {
-          			order = 1,
-          			type = "header",
-                name = L["Key Binding"],
-          		}, -- header1
-              header2 = {
-          			order = 2,
-          			type = "header",
-                name = L["Buttons"],
-          		}, -- header2
-              header3 = {
-          			order = 3,
-          			type = "header",
-                name = L["Settings"],
-          		}, -- header3
-              header4 = {
-          			order = 4,
-          			type = "header",
-                name = L["Auto Uncheck"],
-          		}, -- header4
+                  -- headers
+                  header1 = {
+                    order = 1,
+                    type = "header",
+                    name = L["Key Binding"],
+                  }, -- header1
+                  header2 = {
+                    order = 2,
+                    type = "header",
+                    name = L["Buttons"],
+                  }, -- header2
+                  header3 = {
+                    order = 3,
+                    type = "header",
+                    name = L["Settings"],
+                  }, -- header3
+                  header4 = {
+                    order = 4,
+                    type = "header",
+                    name = L["Auto Uncheck"],
+                  }, -- header4
+                }, -- args
+              }, -- general
+              -- tabs = {
+              --   order = 1,
+              --   type = "group",
+              --   name = "Tabs",
+              --   args = {
+              --   } -- args
+              -- } -- tabs
+              -- new main tab
             }, -- args
-          }, -- general
+          }, -- main
+          child_profiles = {
+            order = 1,
+            type = "group",
+            name = L["Profiles"],
+            childGroups = "tab",
+            args = {
+              -- importexport = {
+              --   order = 101, -- since the profiles tab will have 100, the default value, when created from AceDBOptions
+              --   type = "group",
+              --   name = "Import/Export",
+              --   args = {
+              --   } -- args
+              -- } -- importexport
+              -- new profiles tab
+            }, -- args
+          } -- child_profiles
         }, -- args
     }, -- options
 
@@ -409,15 +439,21 @@ function config:DimTheme(theme, dim)
   return { r*dim, g*dim, b*dim }
 end
 
-function config:Deepcopy(orig)
+function config:Deepcopy(orig, copies)
+    copies = copies or {}
     local orig_type = type(orig)
     local copy
     if orig_type == 'table' then
-        copy = {}
-        for orig_key, orig_value in next, orig, nil do
-            copy[config:Deepcopy(orig_key)] = config:Deepcopy(orig_value)
+        if copies[orig] then
+            copy = copies[orig]
+        else
+            copy = {}
+            copies[orig] = copy
+            for orig_key, orig_value in next, orig, nil do
+                copy[config:Deepcopy(orig_key, copies)] = config:Deepcopy(orig_value, copies)
+            end
+            setmetatable(copy, config:Deepcopy(getmetatable(orig), copies))
         end
-        setmetatable(copy, config:Deepcopy(getmetatable(orig)))
     else -- number, string, boolean, etc
         copy = orig
     end

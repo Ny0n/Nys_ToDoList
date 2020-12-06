@@ -306,7 +306,8 @@ function itemsFrame:updateRemainingNumber()
     categoryLabelFavsRemaining[catName]:SetTextColor(unpack(NysTDL.db.profile.favoritesColor))
   end
 
-  if (NysTDL.db.profile.tdlButton.red) then -- we check here if we need to color the TDL button
+  itemsFrame.tdlButton:SetNormalFontObject("GameFontNormalLarge"); -- by default, we reset the color of the TDL button to yellow
+  if (NysTDL.db.profile.tdlButton.red) then -- we check here if we need to color it red here
     local red = false
     -- we first check if there are daily remaining items
     if (numberDaily > 0) then
@@ -328,8 +329,6 @@ function itemsFrame:updateRemainingNumber()
         font:SetTextColor(1, 0, 0, 1) -- red
         itemsFrame.tdlButton:SetNormalFontObject(font)
       end
-    else
-      itemsFrame.tdlButton:SetNormalFontObject("GameFontNormalLarge"); -- yellow
     end
   end
 

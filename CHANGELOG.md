@@ -1,3 +1,8 @@
+#### **5.7**
+
+- Options update, this one is mainly prepping things, so that it's easier for me to add new options from now on, and cleaner for you
+- Moved the profiles tab to the left, and added new options concerning the list's tabs
+
 #### **5.6.1**
 
 - Localization update

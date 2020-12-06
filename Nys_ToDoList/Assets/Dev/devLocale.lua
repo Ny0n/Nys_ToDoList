@@ -4,6 +4,7 @@ addonTable.devLocale = L
 
 -- ============================================ --
 
+L["Profiles"] = true
 L["One more thing: if you hold ALT while the list is opened, some interesting buttons will appear!"] = true
 L["For categories, and items with hyperlinks in them: hold ALT then double click on them."] = true
 L["For items: just double click on them."] = true
@@ -88,7 +89,6 @@ L["Key Binding"] = true
 L["Left click - resize"] = true
 L["Left-click on the category names to expand or shrink their content."] = true
 L["lock minimap button"] = true
-L["Manage general options"] = true
 L["minimap button (the default)"] = true
 L["Monday"] = true
 L["Nice job, you did everything on the list!"] = true
