@@ -1,3 +1,7 @@
+#### **5.6.1**
+
+- Localization update
+
 #### **5.6**
 
 - You can now rename items and categories!
