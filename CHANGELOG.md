@@ -1,7 +1,8 @@
-#### **5.7**
+#### **5.6.2**
 
-- Options update, this one is mainly prepping things, so that it's easier for me to add new options from now on, and cleaner for you
-- Moved the profiles tab to the left, and added new options concerning the list's tabs
+- This one is mainly prepping things, so that it's easier for me to add new options from now on, and cleaner for you
+- Moved the profiles tab to the left
+- fixed a renaming bug
 
 #### **5.6.1**
 
