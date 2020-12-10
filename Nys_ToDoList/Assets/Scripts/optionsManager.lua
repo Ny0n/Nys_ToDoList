@@ -311,14 +311,25 @@ end
 function NysTDL:CallAllGETTERS()
   -- this simply calls every getters of every options in the options table
   -- (and so updates them, since i also call the setters like explained before)
-  for _,v in pairs(config.database.options.args.general.args) do
-    if (v.type ~= "description" and v.type ~= "header") then
-      if (type(v.get) == "string") then
-        NysTDL[v.get]();
-      elseif(type(v.get) == "function") then
-        v:get();
+
+  function RecursiveGet(arg)
+    if (arg.type == "group") then
+      for _, subarg in pairs(arg.args) do
+        RecursiveGet(subarg)
+      end
+    else
+      if (arg.type ~= "description" and arg.type ~= "header") then
+        if (type(arg.get) == "string") then
+          NysTDL[arg.get]();
+        elseif(type(arg.get) == "function") then
+          arg:get();
+        end
       end
     end
+  end
+
+  for _, arg in pairs(config.database.options.args.main.args) do -- for every option in the main section
+    RecursiveGet(arg)
   end
 end
 
@@ -460,13 +471,8 @@ function NysTDL:tdlButtonRedGET(info)
 end
 
 function NysTDL:tdlButtonRedSET(info, newValue)
-  if (NysTDL.db.profile.tdlButton.red and not newValue) then
-    itemsFrame.tdlButton:SetNormalFontObject("GameFontNormalLarge");
-  end
   NysTDL.db.profile.tdlButton.red = newValue;
-  if (NysTDL.db.profile.tdlButton.red) then
-    itemsFrame:updateRemainingNumber() -- we check if we need to color the button instantly in case the set was true
-  end
+  itemsFrame:updateRemainingNumber() -- we update the color depending on the new frame's data
 end
 
 -- minimapButtonHide

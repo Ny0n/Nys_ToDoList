@@ -16,7 +16,7 @@ local warnTimerTime = 3600; -- in seconds (1 hour)
 -- we need to put them here so they have acces to every function in every file of the addon
 
 function NysTDL:PLAYER_LOGIN()
-  local disabled = config.database.options.args.general.args.groupWarnings.args.hourlyReminder.disabled
+  local disabled = config.database.options.args.main.args.general.args.groupWarnings.args.hourlyReminder.disabled
   if (NysTDL.db.global.UI_reloading) then -- just to be sure that it wasn't a reload, but a genuine player log in
     NysTDL.db.global.UI_reloading = false
 
@@ -169,27 +169,25 @@ function NysTDL:OnInitialize()
 
     -- this is for adapting the width of the widgets to the length of their respective names (that can change with the locale)
     local wDef = { toggle = 160, select = 265, range = 200, keybinding = 200, color = 180 }
-    NysTDL:InitializeOptionsWidthRecursive(config.database.options.args.general.args, wDef)
+    NysTDL:InitializeOptionsWidthRecursive(config.database.options.args.main.args.general.args, wDef)
 
     -- we register our options table for AceConfig
     LibStub("AceConfigRegistry-3.0"):ValidateOptionsTable(config.database.options, addonName)
-    -- We register all our options table to be shown in the main options frame in the interface panel (there are nos sub pages, here i'm using tabs)
-    LibStub("AceConfig-3.0"):RegisterOptionsTable(addonName, config.database.options) -- General tab, which is in the options table already
-    config.database.options.args.profiles = LibStub("AceDBOptions-3.0"):GetOptionsTable(self.db) -- Profiles tab, taken from AceDBOptions
+    LibStub("AceConfig-3.0"):RegisterOptionsTable(addonName, config.database.options)
 
-    -- we modify the profiles section a bit to better fit our needs
-    -- config.database.options.args.profiles.inline = true
-    local args = config:Deepcopy(config.database.options.args.profiles.args)
+    -- then we add the profiles management, using AceDBOptions
+    config.database.options.args.child_profiles.args.profiles = LibStub("AceDBOptions-3.0"):GetOptionsTable(self.db)
+    -- we also modify it a bit to better fit our needs (by adding some confirm pop-ups)
+    local args = config:Deepcopy(config.database.options.args.child_profiles.args.profiles.args)
     args.reset.confirm = true
     args.reset.confirmText = L["WARNING"]..'\n\n'..L["Resetting this profile will also clear the list."]..'\n'..L["Are you sure?"]..'\n'
     args.copyfrom.confirm = true
     args.copyfrom.confirmText = L["This action will override your settings, including the list."]..'\n'..L["Are you sure?"]..'\n'
-    config.database.options.args.profiles.args = args
+    config.database.options.args.child_profiles.args.profiles.args = args
 
-    -- we add our frame to blizzard's interface options frame
-    self.optionsFrame = LibStub("AceConfigDialog-3.0"):AddToBlizOptions(addonName, config.toc.title, nil) -- using config.database.options
-    -- self.optionsFrame.timeSinceLastUpdate = 0
-    -- self.optionsFrame:HookScript("OnUpdate", NysTDL.optionsFrame_OnUpdate)
+    -- we add our frame to wow's interface options panel
+    self.optionsFrame = LibStub("AceConfigDialog-3.0"):AddToBlizOptions(addonName, config.toc.title, nil, "main")
+    LibStub("AceConfigDialog-3.0"):AddToBlizOptions(addonName, "Profiles", config.toc.title, "child_profiles")
 
     -- / ********************** / --
 

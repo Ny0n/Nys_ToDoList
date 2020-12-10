@@ -306,7 +306,8 @@ function itemsFrame:updateRemainingNumber()
     categoryLabelFavsRemaining[catName]:SetTextColor(unpack(NysTDL.db.profile.favoritesColor))
   end
 
-  if (NysTDL.db.profile.tdlButton.red) then -- we check here if we need to color the TDL button
+  itemsFrame.tdlButton:SetNormalFontObject("GameFontNormalLarge"); -- by default, we reset the color of the TDL button to yellow
+  if (NysTDL.db.profile.tdlButton.red) then -- we check here if we need to color it red here
     local red = false
     -- we first check if there are daily remaining items
     if (numberDaily > 0) then
@@ -328,8 +329,6 @@ function itemsFrame:updateRemainingNumber()
         font:SetTextColor(1, 0, 0, 1) -- red
         itemsFrame.tdlButton:SetNormalFontObject(font)
       end
-    else
-      itemsFrame.tdlButton:SetNormalFontObject("GameFontNormalLarge"); -- yellow
     end
   end
 
@@ -1199,25 +1198,11 @@ function itemsFrame:CreateMovableCheckBtnElems(catName, itemName)
         self:GetScript("OnEscapePressed")(self) -- we cancel the action
         return;
       elseif (config:HasKey(NysTDL.db.profile.itemsList[catName], newItemName)) then -- if the new item name already exists somewhere in the category
-        -- local newItemTabName = NysTDL.db.profile.itemsList[catName][newItemName].tabName
-        -- local isPresentInCurrentTab = CurrentTab:GetName() == "All" or newItemTabName == CurrentTab:GetName();
-        --
-        -- if (isPresentInCurrentTab) then
-        --   config:PrintForced(L["This item is already here in this category!"])
-        --   return;
-        -- else
-        --   -- we check if it is in the other reset tab
-        --   -- because at this point, it's either the new item is in the All tab and we're adding it in a reset tab, or it's in an other reset tab
-        --   if (newItemTabName ~= "All") then -- not ONLY in the All tab
-        --     config:PrintForced(L["No item can be daily and weekly!"])
-        --     return;
-        --   end
-        -- end
         config:PrintForced(L["This item name already exists in the category"]..". "..L["Please choose a different name to avoid overriding data"])
         return;
       else
         local l = config:CreateNoPointsLabel(itemsFrameUI, nil, newItemName);
-        if (l:GetWidth() > itemNameWidthMax and config:HasHyperlink(newItemName)) then l:SetFontObject("GameFontNormal") end -- if it has an hyperlink in it and it's too big, we allow it to be a liitle longer, considering hyperlinks take more place
+        if (l:GetWidth() > itemNameWidthMax and config:HasHyperlink(newItemName)) then l:SetFontObject("GameFontNormal") end -- if it has an hyperlink in it and it's too big, we allow it to be a little longer, considering hyperlinks take more place
         if (l:GetWidth() > itemNameWidthMax) then -- then we recheck to see if the item is not too long for good
           config:PrintForced(L["This item name is too big!"])
           return;
@@ -1225,7 +1210,8 @@ function itemsFrame:CreateMovableCheckBtnElems(catName, itemName)
       end
 
       -- and if everything is good, we can rename the item (a.k.a, delete the current one and creating a new one)
-      itemsFrame:MoveItem(catName, catName, itemName, newItemName, CurrentTab:GetName())
+      -- while keeping the same cat, and same tab
+      itemsFrame:MoveItem(catName, catName, itemName, newItemName, NysTDL.db.profile.itemsList[catName][itemName].tabName)
     end)
 
     -- cancelling

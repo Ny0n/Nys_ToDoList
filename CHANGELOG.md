@@ -1,3 +1,10 @@
+#### **5.6.2**
+
+- This one is mainly prepping things, so that it's easier for me to add new options from now on, and cleaner for you
+- Moved the profiles tab to the left
+- Fixed a renaming bug
+- Added Brazilian Portuguese localization
+
 #### **5.6.1**
 
 - Localization update
