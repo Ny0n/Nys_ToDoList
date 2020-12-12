@@ -187,7 +187,7 @@ function NysTDL:OnInitialize()
 
     -- we add our frame to wow's interface options panel
     self.optionsFrame = LibStub("AceConfigDialog-3.0"):AddToBlizOptions(addonName, config.toc.title, nil, "main")
-    LibStub("AceConfigDialog-3.0"):AddToBlizOptions(addonName, "Profiles", config.toc.title, "child_profiles")
+    LibStub("AceConfigDialog-3.0"):AddToBlizOptions(addonName, L["Profiles"], config.toc.title, "child_profiles")
 
     -- / ********************** / --
 

@@ -304,20 +304,88 @@ config.database = {
                   }, -- header4
                 }, -- args
               }, -- general
-              -- tabs = {
-              --   order = 1,
-              --   type = "group",
-              --   name = "Tabs",
-              --   args = {
-              --   } -- args
-              -- } -- tabs
+              tabs = {
+                order = 1,
+                type = "group",
+                name = L["Tabs"],
+                args = {
+                  instantRefresh = {
+                      order = 0.1,
+                      type = "toggle",
+                      name = L["Instant refresh"],
+                      desc = L["Applies the following settings instantly when checking items, instead of waiting for any other action"],
+                      get = "instantRefreshGET",
+                      set = "instantRefreshSET",
+                  }, -- instantRefresh
+                  deleteAllTabItems = {
+                      order = 1.1,
+                      type = "toggle",
+                      name = L["Delete checked items"],
+                      desc = L["Automatically deletes checked items that are unique to the 'All' tab"],
+                      get = "deleteAllTabItemsGET",
+                      set = "deleteAllTabItemsSET",
+                  }, -- deleteAllTabItems
+                  showOnlyAllTabItems = {
+                      order = 1.2,
+                      type = "toggle",
+                      name = L["Only show tab items"],
+                      desc = L["Only show items unique to the 'All' tab"],
+                      get = "showOnlyAllTabItemsGET",
+                      set = "showOnlyAllTabItemsSET",
+                  }, -- showOnlyAllTabItems
+                  hideDailyTabItems = {
+                      order = 2.1,
+                      type = "toggle",
+                      name = L["Hide checked items"],
+                      desc = L["Automatically hides checked items in the tab until the next reset"],
+                      get = "hideDailyTabItemsGET",
+                      set = "hideDailyTabItemsSET",
+                  }, -- hideDailyTabItems
+                  hideWeeklyTabItems = {
+                      order = 3.1,
+                      type = "toggle",
+                      name = L["Hide checked items"],
+                      desc = L["Automatically hides checked items in the tab until the next reset"],
+                      get = "hideWeeklyTabItemsGET",
+                      set = "hideWeeklyTabItemsSET",
+                  }, -- hideWeeklyTabItems
+
+
+                  -- / layout widgets / --
+
+                  -- spacers
+                  spacer111 = {
+                    order = 1.11,
+                    type = "description",
+                    width = "full",
+                    name = "",
+                  }, -- spacer111
+
+                  -- headers
+                  header1 = {
+                    order = 1,
+                    type = "header",
+                    name = L["All"],
+                  }, -- header1
+                  header2 = {
+                    order = 2,
+                    type = "header",
+                    name = L["Daily"],
+                  }, -- header2
+                  header3 = {
+                    order = 3,
+                    type = "header",
+                    name = L["Weekly"],
+                  }, -- header3
+                } -- args
+              } -- tabs
               -- new main tab
             }, -- args
           }, -- main
           child_profiles = {
             order = 1,
             type = "group",
-            name = "Profiles",
+            name = L["Profiles"],
             childGroups = "tab",
             args = {
               -- importexport = {
@@ -344,11 +412,27 @@ config.database = {
         },
         profile = {
             latestVersion = "", -- used to update the profile saved variables once after each addon update, independent for each profile
-            minimap = { hide = false, minimapPos = 241, lock = false, tooltip = true }, -- for LibDBIcon
-            tdlButton = { show = false, red = false, points = { point = "CENTER", relativePoint = "CENTER", xOffset = 0, yOffset = 0 } },
+
+            -- // Misc
+            itemsList = {},
+            closedCategories = {},
+            undoTable = {},
+            lastLoadedTab = "ToDoListUIFrameTab2",
+
+            -- // Frame Options
             framePos = { point = "CENTER", relativePoint = "CENTER", xOffset = 0, yOffset = 0 },
             frameSize = { width = 340, height = 400 },
-            itemsList = {},
+            frameAlpha = 65,
+            frameContentAlpha = 100,
+            affectDesc = true,
+            descFrameAlpha = 65,
+            descFrameContentAlpha = 100,
+
+            -- // Addon Options
+
+            --'General' tab
+            minimap = { hide = false, minimapPos = 241, lock = false, tooltip = true }, -- for LibDBIcon
+            tdlButton = { show = false, red = false, points = { point = "CENTER", relativePoint = "CENTER", xOffset = 0, yOffset = 0 } },
             favoritesColor = { 1, 0.5, 0.6 },
             rainbow = false,
             rainbowSpeed = 2,
@@ -362,14 +446,13 @@ config.database = {
             hourlyReminder = false,
             rememberUndo = true,
             highlightOnFocus = true,
-            frameAlpha = 65,
-            frameContentAlpha = 100,
-            affectDesc = true,
-            descFrameAlpha = 65,
-            descFrameContentAlpha = 100,
-            lastLoadedTab = "ToDoListUIFrameTab2",
-            closedCategories = {},
-            undoTable = {},
+
+            --'Tabs' tab
+            instantRefresh = false,
+            deleteAllTabItems = false,
+            showOnlyAllTabItems = false,
+            hideDailyTabItems = false,
+            hideWeeklyTabItems = false,
         }, -- profile
     }, -- defaults
 }
@@ -637,7 +720,6 @@ end
 function config:CreateNothingLabel(relativeFrame)
   local label = relativeFrame:CreateFontString(nil);
   label:SetFontObject("GameFontHighlightLarge");
-  label:SetText(L["There are no items!"]);
   label:SetTextColor(0.5, 0.5, 0.5, 0.5);
   return label;
 end
