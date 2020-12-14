@@ -4,6 +4,7 @@ addonTable.devLocale = L
 
 -- ============================================ --
 
+L["Chat Messages"] = true
 L["(%i hidden item(s))"] = true
 L["Applies the following settings instantly when checking items, instead of waiting for any other action"] = true
 L["Instant refresh"] = true
@@ -30,7 +31,7 @@ L["\"%s\" removed!"] = true
 L["(automatically saved)"] = true
 L["(chat message when logging in)"] = true
 L["(independant from profile)"] = true
-L["(warnings override this option)"] = true
+L["(warnings ignore this option)"] = true
 L["A category cannot be empty, if it is, it will just get deleted from the tab."] = true
 L["a normal TDL button"] = true
 L["A simple interface to remember everything you need to do!"] = true
@@ -67,7 +68,7 @@ L["Daily"] = true
 L["Daily reset hour"] = true
 L["databroker plugin (eg. titan panel)"] = true
 L["descriptions"] = true
-L["Enable or disable the chat messages"] = true
+L["Enable or disable non-essential chat messages"] = true
 L["Enable or disable the chat warning/reminder system"] = true
 L["Enable warnings for favorite items"] = true
 L["Enable warnings for non-favorite items"] = true
@@ -172,7 +173,7 @@ L["Unchecked everything!"] = true
 L["Undo last remove/clear"] = true
 L["unlock minimap button"] = true
 L["WARNING"] = true
-L["Warnings:"] = true
+L["Warnings"] = true
 L["Wednesday"] = true
 L["Weekly"] = true
 L["Weekly reset day"] = true

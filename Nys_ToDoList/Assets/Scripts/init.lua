@@ -16,7 +16,7 @@ local warnTimerTime = 3600; -- in seconds (1 hour)
 -- we need to put them here so they have acces to every function in every file of the addon
 
 function NysTDL:PLAYER_LOGIN()
-  local disabled = config.database.options.args.main.args.general.args.groupWarnings.args.hourlyReminder.disabled
+  local disabled = config.database.options.args.main.args.chat.args.groupWarnings.args.hourlyReminder.disabled
   if (NysTDL.db.global.UI_reloading) then -- just to be sure that it wasn't a reload, but a genuine player log in
     NysTDL.db.global.UI_reloading = false
 
@@ -169,7 +169,7 @@ function NysTDL:OnInitialize()
 
     -- this is for adapting the width of the widgets to the length of their respective names (that can change with the locale)
     local wDef = { toggle = 160, select = 265, range = 200, keybinding = 200, color = 180 }
-    NysTDL:InitializeOptionsWidthRecursive(config.database.options.args.main.args.general.args, wDef)
+    NysTDL:InitializeOptionsWidthRecursive(config.database.options.args.main.args, wDef)
 
     -- we register our options table for AceConfig
     LibStub("AceConfigRegistry-3.0"):ValidateOptionsTable(config.database.options, addonName)

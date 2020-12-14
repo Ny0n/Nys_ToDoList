@@ -15,6 +15,7 @@ local AllTab, DailyTab, WeeklyTab, CurrentTab;
 -- reset variables
 local clearing, undoing = false, { ["clear"] = false, ["clearnb"] = 0, ["single"] = false, ["singleok"] = true};
 local movingItem, movingCategory = false, false
+local dontReloadPls = false
 
 local checkBtn = {};
 local removeBtn = {};
@@ -70,7 +71,29 @@ function itemsFrame:Toggle()
   itemsFrameUI:SetShown(not itemsFrameUI:IsShown());
 end
 
-function itemsFrame:ReloadTab()
+function itemsFrame:ReloadTab(tabGlobalWidgetName)
+  NysTDL.db.profile.lastLoadedTab = tabGlobalWidgetName or NysTDL.db.profile.lastLoadedTab
+
+  if (dontReloadPls) then
+    dontReloadPls = false
+    return;
+  end
+
+  -- // ************************************************************* // --
+
+  if ((not undoing["clear"] and not undoing["single"]) and NysTDL.db.profile.deleteAllTabItems) then -- OPTION: delete checked 'All' tab items
+    for catName, items in pairs(NysTDL.db.profile.itemsList) do -- for every item
+      for itemName, data in pairs(items) do
+        if (data.tabName == "All") then
+          if (data.checked) then
+            dontReloadPls = true
+            itemsFrame:RemoveItem(removeBtn[catName][itemName])
+          end
+        end
+      end
+    end
+  end
+
   Tab_OnClick(_G[NysTDL.db.profile.lastLoadedTab])
 end
 
@@ -90,19 +113,20 @@ local function ItemIsInTab(itemTabName, tabName)
   return ((tabName == "All" and not NysTDL.db.profile.showOnlyAllTabItems) or itemTabName == tabName)
 end
 
-local function CheckItemPresenceInTab(catName, itemName, tabName)
+local function ItemIsHiddenInResetTab(catName, itemName, tabName)
   local checked = NysTDL.db.profile.itemsList[catName][itemName].checked
   local itemTabName = NysTDL.db.profile.itemsList[catName][itemName].tabName
-  if (tabName == "All" or not checked) then
-    return true
+
+  if (checked) then
+    if ((tabName == "Daily" and NysTDL.db.profile.hideDailyTabItems) and itemTabName == tabName) then
+      return true
+    end
+    if ((tabName == "Weekly" and NysTDL.db.profile.hideWeeklyTabItems) and itemTabName == tabName) then
+      return true
+    end
   end
-  if ((tabName == "Daily" and NysTDL.db.profile.hideDailyTabItems) and itemTabName == tabName) then
-    return false
-  end
-  if ((tabName == "Weekly" and NysTDL.db.profile.hideWeeklyTabItems) and itemTabName == tabName) then
-    return false
-  end
-  return true
+
+  return false
 end
 
 -- actions
@@ -1577,7 +1601,7 @@ local function generateTab(tab)
     -- first we get every favs and other items for the current cat and place them in their respective tables
     for itemName, data in pairs(NysTDL.db.profile.itemsList[catName]) do
       if (ItemIsInTab(data.tabName, tab:GetName())) then
-        if (CheckItemPresenceInTab(catName, itemName, tab:GetName())) then
+        if (not ItemIsHiddenInResetTab(catName, itemName, tab:GetName())) then
           if (data.favorite) then
             table.insert(fav, itemName)
           else
@@ -2251,8 +2275,6 @@ Tab_OnClick = function(self)
   -- we update the frame after loading the tab to refresh the display
   ItemsFrame_Update();
 
-  NysTDL.db.profile.lastLoadedTab = self:GetName();
-
   self.content:Show();
 end
 
@@ -2268,7 +2290,10 @@ local function SetTabs(frame, numTabs, ...)
 
     tab:SetID(i);
     tab:SetText(select(i, ...));
-    tab:SetScript("OnClick", Tab_OnClick);
+    tab:SetScript("OnClick", function(self)
+      itemsFrame:ReloadTab(self:GetName())
+    end);
+
     if (i == 1) then -- OnUpdate hook
       tab:HookScript("OnUpdate", function()
         for i = 1, 3 do
