@@ -352,79 +352,6 @@ end
 
 -- // 'General' tab // --
 
--- weeklyDay
-function NysTDL:weeklyDayGET(info)
-  NysTDL:weeklyDaySET(info, NysTDL.db.profile.weeklyDay)
-  return NysTDL.db.profile.weeklyDay;
-end
-
-function NysTDL:weeklyDaySET(info, newValue)
-  NysTDL.db.profile.weeklyDay = newValue;
-  NysTDL.db.profile.autoReset["Weekly"] = config:GetSecondsToReset().weekly;
-end
-
--- dailyHour
-function NysTDL:dailyHourGET(info)
-  NysTDL:dailyHourSET(info, NysTDL.db.profile.dailyHour)
-  return NysTDL.db.profile.dailyHour;
-end
-
-function NysTDL:dailyHourSET(info, newValue)
-  NysTDL.db.profile.dailyHour = newValue;
-  NysTDL.db.profile.autoReset["Daily"] = config:GetSecondsToReset().daily
-  NysTDL.db.profile.autoReset["Weekly"] = config:GetSecondsToReset().weekly
-end
-
---showChatMessages
-function NysTDL:showChatMessagesGET(info)
-  NysTDL:showChatMessagesSET(info, NysTDL.db.profile.showChatMessages)
-  return NysTDL.db.profile.showChatMessages;
-end
-
-function NysTDL:showChatMessagesSET(info, newValue)
-  NysTDL.db.profile.showChatMessages = newValue;
-end
-
---showWarnings
-function NysTDL:showWarningsGET(info)
-  NysTDL:showWarningsSET(info, NysTDL.db.profile.showWarnings)
-  return NysTDL.db.profile.showWarnings;
-end
-
-function NysTDL:showWarningsSET(info, newValue)
-  NysTDL.db.profile.showWarnings = newValue;
-end
-
---favoritesWarning
-function NysTDL:favoritesWarningGET(info)
-  NysTDL:favoritesWarningSET(info, NysTDL.db.profile.favoritesWarning)
-  return NysTDL.db.profile.favoritesWarning;
-end
-
-function NysTDL:favoritesWarningSET(info, newValue)
-  NysTDL.db.profile.favoritesWarning = newValue;
-end
-
---normalWarning
-function NysTDL:normalWarningGET(info)
-  NysTDL:normalWarningSET(info, NysTDL.db.profile.normalWarning)
-  return NysTDL.db.profile.normalWarning;
-end
-
-function NysTDL:normalWarningSET(info, newValue)
-  NysTDL.db.profile.normalWarning = newValue;
-end
-
---hourlyReminder
-function NysTDL:hourlyReminderGET(info)
-  NysTDL:hourlyReminderSET(info, NysTDL.db.profile.hourlyReminder)
-  return NysTDL.db.profile.hourlyReminder;
-end
-
-function NysTDL:hourlyReminderSET(info, newValue)
-  NysTDL.db.profile.hourlyReminder = newValue;
-end
-
 --favoritesColor
 function NysTDL:favoritesColorGET(info)
   NysTDL:favoritesColorSET(info, unpack(NysTDL.db.profile.favoritesColor))
@@ -605,4 +532,81 @@ end
 function NysTDL:hideWeeklyTabItemsSET(info, newValue)
   NysTDL.db.profile.hideWeeklyTabItems = newValue;
   itemsFrame:ReloadTab()
+end
+
+-- // 'Chat Messages' tab // --
+
+--showChatMessages
+function NysTDL:showChatMessagesGET(info)
+  NysTDL:showChatMessagesSET(info, NysTDL.db.profile.showChatMessages)
+  return NysTDL.db.profile.showChatMessages;
+end
+
+function NysTDL:showChatMessagesSET(info, newValue)
+  NysTDL.db.profile.showChatMessages = newValue;
+end
+
+--showWarnings
+function NysTDL:showWarningsGET(info)
+  NysTDL:showWarningsSET(info, NysTDL.db.profile.showWarnings)
+  return NysTDL.db.profile.showWarnings;
+end
+
+function NysTDL:showWarningsSET(info, newValue)
+  NysTDL.db.profile.showWarnings = newValue;
+end
+
+--favoritesWarning
+function NysTDL:favoritesWarningGET(info)
+  NysTDL:favoritesWarningSET(info, NysTDL.db.profile.favoritesWarning)
+  return NysTDL.db.profile.favoritesWarning;
+end
+
+function NysTDL:favoritesWarningSET(info, newValue)
+  NysTDL.db.profile.favoritesWarning = newValue;
+end
+
+--normalWarning
+function NysTDL:normalWarningGET(info)
+  NysTDL:normalWarningSET(info, NysTDL.db.profile.normalWarning)
+  return NysTDL.db.profile.normalWarning;
+end
+
+function NysTDL:normalWarningSET(info, newValue)
+  NysTDL.db.profile.normalWarning = newValue;
+end
+
+--hourlyReminder
+function NysTDL:hourlyReminderGET(info)
+  NysTDL:hourlyReminderSET(info, NysTDL.db.profile.hourlyReminder)
+  return NysTDL.db.profile.hourlyReminder;
+end
+
+function NysTDL:hourlyReminderSET(info, newValue)
+  NysTDL.db.profile.hourlyReminder = newValue;
+end
+
+-- // 'Auto Uncheck' tab // --
+
+-- weeklyDay
+function NysTDL:weeklyDayGET(info)
+  NysTDL:weeklyDaySET(info, NysTDL.db.profile.weeklyDay)
+  return NysTDL.db.profile.weeklyDay;
+end
+
+function NysTDL:weeklyDaySET(info, newValue)
+  NysTDL.db.profile.weeklyDay = newValue;
+  NysTDL.db.profile.autoReset["Weekly"] = config:GetSecondsToReset().weekly;
+end
+
+-- dailyHour
+function NysTDL:dailyHourGET(info)
+  NysTDL:dailyHourSET(info, NysTDL.db.profile.dailyHour)
+  return NysTDL.db.profile.dailyHour;
+end
+
+function NysTDL:dailyHourSET(info, newValue)
+  NysTDL.db.profile.dailyHour = newValue;
+  NysTDL.db.profile.autoReset["Daily"] = config:GetSecondsToReset().daily
+  NysTDL.db.profile.autoReset["Weekly"] = config:GetSecondsToReset().weekly
 end

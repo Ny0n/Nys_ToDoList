@@ -129,6 +129,16 @@ local function ItemIsHiddenInResetTab(catName, itemName, tabName)
   return false
 end
 
+function itemsFrame:GetCategoriesOrdered()
+  -- returns a table containing the name of every category there is, ordered
+  local categories = {}
+
+  for category in pairs(NysTDL.db.profile.itemsList) do table.insert(categories, category) end
+  table.sort(categories);
+
+  return categories
+end
+
 -- actions
 local function ScrollFrame_OnMouseWheel(self, delta)
   -- defines how fast we can scroll throught the tabs (here: 35)
@@ -1576,9 +1586,7 @@ end
 -- generating the list items
 local function generateTab(tab)
   -- We sort all of the categories in alphabetical order
-  local tempTable = {}
-  for t in pairs(NysTDL.db.profile.itemsList) do table.insert(tempTable, t) end
-  table.sort(tempTable);
+  local tempTable = itemsFrame:GetCategoriesOrdered()
 
   -- doing that only one time
   -- before we reload the entire tab and items, we hide every checkboxes
@@ -1914,6 +1922,61 @@ local function generateAddACategory()
     end
   end)
   table.insert(addACategoryItems, itemsFrameUI.categoryEditBox);
+
+  --/************************************************/--
+
+  itemsFrameUI.categoriesDropdown = CreateFrame("Frame", nil, UIParent, "UIDropDownMenuTemplate")
+  -- Implement the function to change the weekly reset day, then refresh
+  function itemsFrameUI.categoriesDropdown:SetValue(newValue)
+    -- we update the category edit box
+    if (itemsFrameUI.categoryEditBox:GetText() == newValue) then
+      itemsFrameUI.categoryEditBox:SetText("")
+    elseif (newValue ~= nil) then
+      itemsFrameUI.categoryEditBox:SetText(newValue)
+    end
+
+    -- Because this is called from a sub-menu, only that menu level is closed by default.
+    -- Close the entire menu with this next call
+    CloseDropDownMenus()
+  end
+  -- Create and bind the initialization function to the dropdown menu
+  UIDropDownMenu_Initialize(itemsFrameUI.categoriesDropdown, function(self, level, menuList)
+    local info = UIDropDownMenu_CreateInfo()
+
+    -- the title
+    info.isTitle = true
+    info.notCheckable = true
+    info.text = L["Add to an existing category"]
+    UIDropDownMenu_AddButton(info)
+
+    -- the categories
+    info.notCheckable = false
+    info.isTitle = false
+    info.disabled = false
+    local categories = itemsFrame:GetCategoriesOrdered()
+    for k, v in pairs(categories) do
+      info.func = self.SetValue
+      info.arg1 = v
+      info.text = info.arg1
+      info.checked = itemsFrameUI.categoryEditBox:GetText() == info.arg1
+      UIDropDownMenu_AddButton(info)
+    end
+
+    -- the cancel button
+    info.func = nil
+    info.arg1 = nil
+    info.checked = false
+    info.notCheckable = true
+    info.text = L["Cancel"]
+    UIDropDownMenu_AddButton(info)
+  end, "MENU")
+
+  itemsFrameUI.categoriesDropdownButton = config:CreateRemoveButton(itemsFrameUI.categoryEditBox, "OLAOALLA")
+  itemsFrameUI.categoriesDropdownButton:SetScript("OnClick", function()
+    ToggleDropDownMenu(1, nil, itemsFrameUI.categoriesDropdown, "OLAOALLA", 3, -3)
+  end)
+
+  --/************************************************/--
 
   itemsFrameUI.labelFirstItemName = itemsFrameUI:CreateFontString(nil); -- info label 3
   itemsFrameUI.labelFirstItemName:SetFontObject("GameFontHighlightLarge");
@@ -2407,19 +2470,6 @@ end
 
 ---Creating the main window---
 function itemsFrame:CreateItemsFrame()
-  -- local b = CreateFrame("CheckButton", nil, UIParent, "UICheckButtonTemplate");
-  -- FRAMETTEST = config:CreateNoPointsInteractiveLabel(nil, b, "bonsoir", "GameFontNormalLarge");
-  -- b:SetPoint("CENTER")
-  -- FRAMETTEST:SetPoint("LEFT", b, "RIGHT")
-  -- FRAMETTEST:Show()
-  -- b:SetScript("OnClick", function(self)
-  --   print("clicked")
-  -- end);
-  -- -- FRAMETTEST.Button:SetScript("OnSizeChanged", function(self, width, height)
-  -- --   print(width)
-  -- --   print(height)
-  -- -- end);
-  --
   -- if (true) then return; end
   -- as of wow 9.0, we need to import the backdrop template into our frames if we want to use it in them, it is not set by default, so that's what we are doing here:
   itemsFrameUI = CreateFrame("Frame", "ToDoListUIFrame", UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil);

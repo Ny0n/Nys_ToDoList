@@ -4,6 +4,8 @@ addonTable.devLocale = L
 
 -- ============================================ --
 
+L["Add to an existing category"] = true
+L["Cancel"] = true
 L["Chat Messages"] = true
 L["(%i hidden item(s))"] = true
 L["Applies the following settings instantly when checking items, instead of waiting for any other action"] = true

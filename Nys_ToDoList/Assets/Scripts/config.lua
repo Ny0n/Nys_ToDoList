@@ -820,8 +820,8 @@ function config:CreateHelpButton(relativeFrame)
   return btn;
 end
 
-function config:CreateRemoveButton(relativeCheckButton)
-  local btn = CreateFrame("Button", nil, relativeCheckButton, "NysTDL_RemoveButton");
+function config:CreateRemoveButton(relativeCheckButton, test)
+  local btn = CreateFrame("Button", test, relativeCheckButton, "NysTDL_RemoveButton");
   btn:SetPoint("LEFT", relativeCheckButton, "LEFT", - 20, 0);
 
   -- these are for changing the color depending on the mouse actions (since they are custom xml)

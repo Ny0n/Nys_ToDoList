@@ -1,3 +1,10 @@
+#### **5.7**
+
+- Added new options for tabs!
+- You can now decide to automatically hide checked items until the next reset, delete those who are unique to the 'All' tab, or even choose to only see in that tab the unique items, insteal of... All of them.
+- Reorganized the options
+- Added a dropdown menu to select already existing categories when using the 'Add a category' form
+
 #### **5.6.2**
 
 - This one is mainly prepping things, so that it's easier for me to add new options from now on, and cleaner for you
