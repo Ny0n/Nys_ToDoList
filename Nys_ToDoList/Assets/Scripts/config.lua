@@ -51,90 +51,6 @@ config.database = {
 
                   -- / options widgets / --
 
-                  weeklyDay = {
-                      order = 4.1,
-                      type = "select",
-                      style = "dropdown",
-                      name = L["Weekly reset day"],
-                      desc = L["Choose the day for the weekly reset"],
-                      values = {
-                        [2] = L["Monday"],
-                        [3] = L["Tuesday"],
-                        [4] = L["Wednesday"],
-                        [5] = L["Thursday"],
-                        [6] = L["Friday"],
-                        [7] = L["Saturday"],
-                        [1] = L["Sunday"],
-                      },
-                      sorting = {
-                        2, 3, 4, 5, 6, 7, 1,
-                      },
-                      get = "weeklyDayGET",
-                      set = "weeklyDaySET",
-                  }, -- weeklyDay
-                  dailyHour = {
-                      order = 4.2,
-                      type = "range",
-                      name = L["Daily reset hour"],
-                      desc = L["Choose the hour for the daily reset"],
-                      min = 0,
-                      max = 23,
-                      step = 1,
-                      get = "dailyHourGET",
-                      set = "dailyHourSET",
-                  }, -- dailyHour
-                  showChatMessages = {
-                      order = 3.1,
-                      type = "toggle",
-                      name = L["Show chat messages"],
-                      desc = L["Enable or disable the chat messages"]..'\n'..L["(warnings override this option)"],
-                      get = "showChatMessagesGET",
-                      set = "showChatMessagesSET",
-                  }, -- showChatMessages
-                  showWarnings = {
-                      order = 3.2,
-                      type = "toggle",
-                      name = L["Show warnings"],
-                      desc = L["Enable or disable the chat warning/reminder system"]..'\n'..L["(chat message when logging in)"],
-                      get = "showWarningsGET",
-                      set = "showWarningsSET",
-                  }, -- showWarnings
-                  groupWarnings = {
-                      order = 3.3,
-                      type = "group",
-                      name = L["Warnings:"],
-                      inline = true,
-                      hidden = function() return not NysTDL.db.profile.showWarnings end,
-                      args = {
-                        favoritesWarning = {
-                            order = 1.1,
-                            type = "toggle",
-                            name = L["Favorites warning"],
-                            desc = L["Enable warnings for favorite items"],
-                            get = "favoritesWarningGET",
-                            set = "favoritesWarningSET",
-                        }, -- favoritesWarning
-                        normalWarning = {
-                            order = 1.2,
-                            type = "toggle",
-                            name = L["Normal warning"],
-                            desc = L["Enable warnings for non-favorite items"],
-                            get = "normalWarningGET",
-                            set = "normalWarningSET",
-                        }, -- normalWarning
-                        hourlyReminder = {
-                            order = 1.3,
-                            type = "toggle",
-                            name = L["Hourly reminder"],
-                            desc = L["Show warnings every 60 min following your log-in time"],
-                            get = "hourlyReminderGET",
-                            set = "hourlyReminderSET",
-                            disabled = function()
-                              return not (NysTDL.db.profile.favoritesWarning or NysTDL.db.profile.normalWarning)
-                            end,
-                        }, -- hourlyReminder
-                      }
-                  }, -- groupWarnings
                   rememberUndo = {
                       order = 3.7,
                       type = "toggle",
@@ -250,12 +166,6 @@ config.database = {
                     width = "full",
                     name = "\n",
                   }, -- spacer299
-                  spacer321 = {
-                    order = 3.21,
-                    type = "description",
-                    width = "full",
-                    name = "",
-                  }, -- spacer321
                   spacer331 = {
                     order = 3.31,
                     type = "description",
@@ -274,12 +184,6 @@ config.database = {
                     width = "full",
                     name = "\n",
                   }, -- spacer399
-                  -- spacer411 = {
-                  -- 	order = 4.11,
-                  -- 	type = "description",
-                  -- 	width = "full",
-                  -- 	name = "",
-                  -- }, -- spacer411
 
                   -- headers
                   header1 = {
@@ -297,27 +201,248 @@ config.database = {
                     type = "header",
                     name = L["Settings"],
                   }, -- header3
-                  header4 = {
-                    order = 4,
-                    type = "header",
-                    name = L["Auto Uncheck"],
-                  }, -- header4
                 }, -- args
               }, -- general
-              -- tabs = {
-              --   order = 1,
-              --   type = "group",
-              --   name = "Tabs",
-              --   args = {
-              --   } -- args
-              -- } -- tabs
+              tabs = {
+                order = 1,
+                type = "group",
+                name = L["Tabs"],
+                args = {
+                  instantRefresh = {
+                      order = 0.1,
+                      type = "toggle",
+                      name = L["Instant refresh"],
+                      desc = L["Applies the following settings instantly when checking items, instead of waiting for any other action"],
+                      get = "instantRefreshGET",
+                      set = "instantRefreshSET",
+                  }, -- instantRefresh
+                  deleteAllTabItems = {
+                      order = 1.1,
+                      type = "toggle",
+                      name = L["Delete checked items"],
+                      desc = L["Automatically deletes checked items that are unique to the 'All' tab"],
+                      get = "deleteAllTabItemsGET",
+                      set = "deleteAllTabItemsSET",
+                  }, -- deleteAllTabItems
+                  showOnlyAllTabItems = {
+                      order = 1.2,
+                      type = "toggle",
+                      name = L["Only show tab items"],
+                      desc = L["Only show items unique to the 'All' tab"],
+                      get = "showOnlyAllTabItemsGET",
+                      set = "showOnlyAllTabItemsSET",
+                  }, -- showOnlyAllTabItems
+                  hideDailyTabItems = {
+                      order = 2.1,
+                      type = "toggle",
+                      name = L["Hide checked items"],
+                      desc = L["Automatically hides checked items in the tab until the next reset"],
+                      get = "hideDailyTabItemsGET",
+                      set = "hideDailyTabItemsSET",
+                  }, -- hideDailyTabItems
+                  hideWeeklyTabItems = {
+                      order = 3.1,
+                      type = "toggle",
+                      name = L["Hide checked items"],
+                      desc = L["Automatically hides checked items in the tab until the next reset"],
+                      get = "hideWeeklyTabItemsGET",
+                      set = "hideWeeklyTabItemsSET",
+                  }, -- hideWeeklyTabItems
+
+
+                  -- / layout widgets / --
+
+                  -- spacers
+                  spacer099 = {
+                    order = 0.99,
+                    type = "description",
+                    width = "full",
+                    name = "\n",
+                  }, -- spacer099
+                  spacer111 = {
+                    order = 1.11,
+                    type = "description",
+                    width = "full",
+                    name = "",
+                  }, -- spacer111
+                  spacer199 = {
+                    order = 1.99,
+                    type = "description",
+                    width = "full",
+                    name = "\n",
+                  }, -- spacer199
+                  spacer299 = {
+                    order = 2.99,
+                    type = "description",
+                    width = "full",
+                    name = "\n",
+                  }, -- spacer299
+                  spacer399 = {
+                    order = 3.99,
+                    type = "description",
+                    width = "full",
+                    name = "\n",
+                  }, -- spacer399
+
+                  -- headers
+                  header1 = {
+                    order = 0,
+                    type = "header",
+                    name = L["General"],
+                  }, -- header1
+                  header2 = {
+                    order = 1,
+                    type = "header",
+                    name = L["All"],
+                  }, -- header2
+                  header3 = {
+                    order = 2,
+                    type = "header",
+                    name = L["Daily"],
+                  }, -- header3
+                  header4 = {
+                    order = 3,
+                    type = "header",
+                    name = L["Weekly"],
+                  }, -- header4
+                } -- args
+              }, -- tabs
+              chat = {
+                order = 2,
+                type = "group",
+                name = L["Chat Messages"],
+                args = {
+                  showChatMessages = {
+                      order = 0.1,
+                      type = "toggle",
+                      name = L["Show chat messages"],
+                      desc = L["Enable or disable non-essential chat messages"]..'\n'..L["(warnings ignore this option)"],
+                      get = "showChatMessagesGET",
+                      set = "showChatMessagesSET",
+                  }, -- showChatMessages
+                  showWarnings = {
+                      order = 1.1,
+                      type = "toggle",
+                      name = L["Show warnings"],
+                      desc = L["Enable or disable the chat warning/reminder system"]..'\n'..L["(chat message when logging in)"],
+                      get = "showWarningsGET",
+                      set = "showWarningsSET",
+                  }, -- showWarnings
+                  groupWarnings = {
+                      order = 1.2,
+                      type = "group",
+                      name = L["Warnings"]..":",
+                      inline = true,
+                      hidden = function() return not NysTDL.db.profile.showWarnings end,
+                      args = {
+                        favoritesWarning = {
+                            order = 1.1,
+                            type = "toggle",
+                            name = L["Favorites warning"],
+                            desc = L["Enable warnings for favorite items"],
+                            get = "favoritesWarningGET",
+                            set = "favoritesWarningSET",
+                        }, -- favoritesWarning
+                        normalWarning = {
+                            order = 1.2,
+                            type = "toggle",
+                            name = L["Normal warning"],
+                            desc = L["Enable warnings for non-favorite items"],
+                            get = "normalWarningGET",
+                            set = "normalWarningSET",
+                        }, -- normalWarning
+                        hourlyReminder = {
+                            order = 1.3,
+                            type = "toggle",
+                            name = L["Hourly reminder"],
+                            desc = L["Show warnings every 60 min following your log-in time"],
+                            get = "hourlyReminderGET",
+                            set = "hourlyReminderSET",
+                            disabled = function()
+                              return not (NysTDL.db.profile.favoritesWarning or NysTDL.db.profile.normalWarning)
+                            end,
+                        }, -- hourlyReminder
+                      }
+                  }, -- groupWarnings
+
+                  -- / layout widgets / --
+
+                  -- spacers
+                  spacer011 = {
+                    order = 0.99,
+                    type = "description",
+                    width = "full",
+                    name = "\n",
+                  }, -- spacer011
+
+                  -- headers
+                  header1 = {
+                    order = 0,
+                    type = "header",
+                    name = L["General"],
+                  }, -- header1
+                  header2 = {
+                    order = 1,
+                    type = "header",
+                    name = L["Warnings"],
+                  }, -- header2
+                } -- args
+              }, -- chat
+              reset = {
+                order = 3,
+                type = "group",
+                name = L["Auto Uncheck"],
+                args = {
+                  weeklyDay = {
+                      order = 0.1,
+                      type = "select",
+                      style = "dropdown",
+                      name = L["Weekly reset day"],
+                      desc = L["Choose the day for the weekly reset"],
+                      values = {
+                        [2] = L["Monday"],
+                        [3] = L["Tuesday"],
+                        [4] = L["Wednesday"],
+                        [5] = L["Thursday"],
+                        [6] = L["Friday"],
+                        [7] = L["Saturday"],
+                        [1] = L["Sunday"],
+                      },
+                      sorting = {
+                        2, 3, 4, 5, 6, 7, 1,
+                      },
+                      get = "weeklyDayGET",
+                      set = "weeklyDaySET",
+                  }, -- weeklyDay
+                  dailyHour = {
+                      order = 0.2,
+                      type = "range",
+                      name = L["Daily reset hour"],
+                      desc = L["Choose the hour for the daily reset"],
+                      min = 0,
+                      max = 23,
+                      step = 1,
+                      get = "dailyHourGET",
+                      set = "dailyHourSET",
+                  }, -- dailyHour
+
+                  -- / layout widgets / --
+
+                  -- headers
+                  header1 = {
+                    order = 0,
+                    type = "header",
+                    name = L["General"],
+                  }, -- header1
+                } -- args
+              }, -- reset
               -- new main tab
             }, -- args
           }, -- main
           child_profiles = {
             order = 1,
             type = "group",
-            name = "Profiles",
+            name = L["Profiles"],
             childGroups = "tab",
             args = {
               -- importexport = {
@@ -344,11 +469,27 @@ config.database = {
         },
         profile = {
             latestVersion = "", -- used to update the profile saved variables once after each addon update, independent for each profile
-            minimap = { hide = false, minimapPos = 241, lock = false, tooltip = true }, -- for LibDBIcon
-            tdlButton = { show = false, red = false, points = { point = "CENTER", relativePoint = "CENTER", xOffset = 0, yOffset = 0 } },
+
+            -- // Misc
+            itemsList = {},
+            closedCategories = {},
+            undoTable = {},
+            lastLoadedTab = "ToDoListUIFrameTab2",
+
+            -- // Frame Options
             framePos = { point = "CENTER", relativePoint = "CENTER", xOffset = 0, yOffset = 0 },
             frameSize = { width = 340, height = 400 },
-            itemsList = {},
+            frameAlpha = 65,
+            frameContentAlpha = 100,
+            affectDesc = true,
+            descFrameAlpha = 65,
+            descFrameContentAlpha = 100,
+
+            -- // Addon Options
+
+            --'General' tab
+            minimap = { hide = false, minimapPos = 241, lock = false, tooltip = true }, -- for LibDBIcon
+            tdlButton = { show = false, red = false, points = { point = "CENTER", relativePoint = "CENTER", xOffset = 0, yOffset = 0 } },
             favoritesColor = { 1, 0.5, 0.6 },
             rainbow = false,
             rainbowSpeed = 2,
@@ -362,14 +503,13 @@ config.database = {
             hourlyReminder = false,
             rememberUndo = true,
             highlightOnFocus = true,
-            frameAlpha = 65,
-            frameContentAlpha = 100,
-            affectDesc = true,
-            descFrameAlpha = 65,
-            descFrameContentAlpha = 100,
-            lastLoadedTab = "ToDoListUIFrameTab2",
-            closedCategories = {},
-            undoTable = {},
+
+            --'Tabs' tab
+            instantRefresh = false,
+            deleteAllTabItems = false,
+            showOnlyAllTabItems = false,
+            hideDailyTabItems = false,
+            hideWeeklyTabItems = false,
         }, -- profile
     }, -- defaults
 }
@@ -637,7 +777,6 @@ end
 function config:CreateNothingLabel(relativeFrame)
   local label = relativeFrame:CreateFontString(nil);
   label:SetFontObject("GameFontHighlightLarge");
-  label:SetText(L["There are no items!"]);
   label:SetTextColor(0.5, 0.5, 0.5, 0.5);
   return label;
 end

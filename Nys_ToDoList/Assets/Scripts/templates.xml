@@ -37,6 +37,7 @@
         <!-- reset the icon's position and opacity -->
         local xOffset = 0;
         if (self.name == "UndoButton") then xOffset = -0.5; end
+        if (self.name == "CategoryButton") then xOffset = 0.5; end
 
         local yOffset = 0;
         if (self.name == "UndoButton") then yOffset = -0.5; end
@@ -48,6 +49,7 @@
         <!-- reset the icon's position and opacity -->
         local xOffset = 0;
         if (self.name == "UndoButton") then xOffset = -0.5; end
+        if (self.name == "CategoryButton") then xOffset = 0.5; end
 
         local yOffset = 0;
         if (self.name == "UndoButton") then yOffset = -0.5; end
@@ -142,12 +144,14 @@
     </KeyValues>
     <Layers>
       <Layer level="OVERLAY">
-        <FontString parentKey="Icon" font="Fonts\FRIZQT__.TTF" inherits="GameFontNormalLarge" text="+">
-          <FontHeight val="22"/>
+        <Texture parentKey="Icon" file="Interface\BUTTONS\UI-PlusMinus-Buttons">
+          <TexCoords left="0" right="0.5" top="0" bottom="0.5"/>
+          <Size x="12.5" y="12.5"/>
+          <Color r="0.85" g="1" b="1"/> <!-- a bit less red -->
           <Anchors>
             <Anchor point="CENTER"/>
           </Anchors>
-        </FontString>
+        </Texture>
       </Layer>
     </Layers>
   </Button>
@@ -301,6 +305,23 @@
     </Layers>
   </Button>
 
+  <!-- Dropdown button -->
+  <Button name="NysTDL_DropdownButton" virtual="true">
+    <Size x="25" y="25"/> <!-- Size of interactable zone -->
+    <KeyValues>
+      <KeyValue key="name" value="DropdownButton"/>
+    </KeyValues>
+		<NormalTexture file="Interface\ChatFrame\UI-ChatIcon-ScrollDown-Up"/>
+		<PushedTexture file="Interface\ChatFrame\UI-ChatIcon-ScrollDown-Down"/>
+		<DisabledTexture file="Interface\ChatFrame\UI-ChatIcon-ScrollDown-Disabled"/>
+    <HighlightTexture file="Interface\Buttons\UI-Common-MouseHilight" alphaMode="ADD" alpha="0.75">
+      <Anchors>
+        <Anchor point="TOPLEFT" x="2" y="-2"/>
+        <Anchor point="BOTTOMRIGHT" x="-2" y="2"/>
+      </Anchors>
+    </HighlightTexture>
+  </Button>
+
   <!-- Description button -->
   <Button name="NysTDL_DescButton" inherits="InlineHyperlinkFrameTemplate, NysTDL_IconButtonPositionScripts" virtual="true">
     <Size x="13" y="13"/> <!-- Size of interactable zone -->
@@ -318,25 +339,6 @@
       </Layer>
     </Layers>
   </Button>
-
-  <!-- Add button, not needed for now -->
-  <!-- <Button name="NysTDL_AddButton" inherits="NysTDL_IconButtonTooltipScripts, InlineHyperlinkFrameTemplate" virtual="true">
-    <Size x="12" y="12"/>
-    <KeyValues>
-      <KeyValue key="tooltip" value="locale"/>
-      <KeyValue key="name" value="AddButton"/>
-    </KeyValues>
-    <Layers>
-      <Layer>
-        <FontString parentKey="Icon" font="Fonts\FRIZQT__.TTF" inherits="GameFontNormalLarge" text="+">
-          <FontHeight val="22"/>
-          <Anchors>
-            <Anchor point="CENTER"/>
-          </Anchors>
-        </FontString>
-      </Layer>
-    </Layers>
-  </Button> -->
 
   <!-- resize button -->
   <Button name="NysTDL_ResizeButton" virtual="true">
