@@ -1155,7 +1155,7 @@ local function ItemsFrame_OnUpdate(self, elapsed)
   end
 
   -- we also update their color, if one of the button menus is opened
-  itemsFrameUI.categoryButton.Icon:SetDesaturated(nil) itemsFrameUI.categoryButton.Icon:SetVertexColor(0.8, 1, 1) -- here we change the vertex color because the original icon is a bit reddish
+  itemsFrameUI.categoryButton.Icon:SetDesaturated(nil) itemsFrameUI.categoryButton.Icon:SetVertexColor(0.85, 1, 1) -- here we change the vertex color because the original icon is a bit reddish
   itemsFrameUI.frameOptionsButton.Icon:SetDesaturated(nil)
   itemsFrameUI.tabActionsButton.Icon:SetDesaturated(nil)
   if (not addACategoryClosed) then
@@ -1934,13 +1934,9 @@ local function generateAddACategory()
       itemsFrameUI.categoryEditBox:SetText(newValue)
       SetFocusEditBox(itemsFrameUI.nameEditBox)
     end
-
-    -- Because this is called from a sub-menu, only that menu level is closed by default.
-    -- Close the entire menu with this next call
-    CloseDropDownMenus()
   end
   -- Create and bind the initialization function to the dropdown menu
-  UIDropDownMenu_Initialize(itemsFrameUI.categoriesDropdown, function(self, level, menuList)
+  UIDropDownMenu_Initialize(itemsFrameUI.categoriesDropdown, function(self)
     local info = UIDropDownMenu_CreateInfo()
 
     -- the title
@@ -1954,7 +1950,7 @@ local function generateAddACategory()
     info.isTitle = false
     info.disabled = false
     local categories = itemsFrame:GetCategoriesOrdered()
-    for k, v in pairs(categories) do
+    for _, v in pairs(categories) do
       info.func = self.SetValue
       info.arg1 = v
       info.text = info.arg1
@@ -1975,6 +1971,9 @@ local function generateAddACategory()
   itemsFrameUI.categoriesDropdownButton:SetPoint("LEFT", itemsFrameUI.categoryEditBox, "RIGHT", 0, -1)
   itemsFrameUI.categoriesDropdownButton:SetScript("OnClick", function()
     ToggleDropDownMenu(1, nil, itemsFrameUI.categoriesDropdown, "NysTDL_DropdownButton_Categories", 0, 0)
+  end)
+  itemsFrameUI.categoriesDropdownButton:SetScript("OnHide", function()
+    CloseDropDownMenus()
   end)
 
   --/************************************************/--
