@@ -218,6 +218,15 @@ local function FrameContentAlphaSlider_OnValueChanged(_, value)
   end
 end
 
+local function SetFocusEditBox(editBox) -- DRY
+  editBox:SetFocus()
+  if (NysTDL.db.profile.highlightOnFocus) then
+    editBox:HighlightText()
+  else
+    editBox:HighlightText(0, 0)
+  end
+end
+
 -- frame functions
 function itemsFrame:ResetBtns(tabName, auto)
   -- this function's goal is to reset (uncheck) every item in the given tab
@@ -477,32 +486,25 @@ local function addCategory()
   local db = {}
   db.catName = itemsFrameUI.categoryEditBox:GetText();
 
-  local function SetFocus(editBox) -- DRY
-    editBox:SetFocus()
-    if (NysTDL.db.profile.highlightOnFocus) then
-      editBox:HighlightText()
-    else
-      editBox:HighlightText(0, 0)
-    end
-  end
+
 
   if (db.catName == "") then
     config:PrintForced(L["Please enter a category name!"])
-    SetFocus(itemsFrameUI.categoryEditBox)
+    SetFocusEditBox(itemsFrameUI.categoryEditBox)
     return;
   end
 
   local l = config:CreateNoPointsLabel(itemsFrameUI, nil, db.catName);
   if (l:GetWidth() > categoryNameWidthMax) then
     config:PrintForced(L["This categoty name is too big!"])
-    SetFocus(itemsFrameUI.categoryEditBox)
+    SetFocusEditBox(itemsFrameUI.categoryEditBox)
     return;
   end
 
   db.itemName = itemsFrameUI.nameEditBox:GetText();
   if (db.itemName == "") then
     config:PrintForced(L["Please enter the name of the item!"])
-    SetFocus(itemsFrameUI.nameEditBox)
+    SetFocusEditBox(itemsFrameUI.nameEditBox)
     return;
   end
 
@@ -510,7 +512,7 @@ local function addCategory()
   if (l:GetWidth() > itemNameWidthMax and config:HasHyperlink(db.itemName)) then l:SetFontObject("GameFontNormal") end -- if it has an hyperlink in it and it's too big, we allow it to be a liitle longer, considering hyperlinks take more place
   if (l:GetWidth() > itemNameWidthMax) then -- then we recheck to see if the item is not too long for good
     config:PrintForced(L["This item name is too big!"])
-    SetFocus(itemsFrameUI.nameEditBox)
+    SetFocusEditBox(itemsFrameUI.nameEditBox)
     return;
   end
 
@@ -524,9 +526,9 @@ local function addCategory()
 
   -- after the adding, we give back the focus to the edit box that needs it, depending on if it was a success or not
   if (itemsFrameUI.categoryEditBox:GetText() == "") then-- if the adding was a success, it should have cleared both edit boxes
-    SetFocus(itemsFrameUI.categoryEditBox) -- so we go back to the category edit box
+    SetFocusEditBox(itemsFrameUI.categoryEditBox) -- so we go back to the category edit box
   else -- but if it wasn't cleared, it means the adding failed
-    SetFocus(itemsFrameUI.nameEditBox) -- and that can only mean one thing: the item name is the problem, so we go back to it
+    SetFocusEditBox(itemsFrameUI.nameEditBox) -- and that can only mean one thing: the item name is the problem, so we go back to it
   end
 end
 
@@ -1153,15 +1155,15 @@ local function ItemsFrame_OnUpdate(self, elapsed)
   end
 
   -- we also update their color, if one of the button menus is opened
-  itemsFrameUI.categoryButton.Icon:SetTextColor(unpack(config:ThemeDownTo01(config.database.theme_yellow))) -- for this one, it's text, not an icon!
-  itemsFrameUI.frameOptionsButton.Icon:SetDesaturated(nil) itemsFrameUI.frameOptionsButton.Icon:SetVertexColor(1, 1, 1)
-  itemsFrameUI.tabActionsButton.Icon:SetDesaturated(nil) itemsFrameUI.tabActionsButton.Icon:SetVertexColor(1, 1, 1)
+  itemsFrameUI.categoryButton.Icon:SetDesaturated(nil) itemsFrameUI.categoryButton.Icon:SetVertexColor(0.8, 1, 1) -- here we change the vertex color because the original icon is a bit reddish
+  itemsFrameUI.frameOptionsButton.Icon:SetDesaturated(nil)
+  itemsFrameUI.tabActionsButton.Icon:SetDesaturated(nil)
   if (not addACategoryClosed) then
-  itemsFrameUI.categoryButton.Icon:SetTextColor(0.8, 0.8, 0.8)
+  itemsFrameUI.categoryButton.Icon:SetDesaturated(1) itemsFrameUI.categoryButton.Icon:SetVertexColor(1, 1, 1)
   elseif (not optionsClosed) then
-    itemsFrameUI.frameOptionsButton.Icon:SetDesaturated(1) itemsFrameUI.frameOptionsButton.Icon:SetVertexColor(1, 1, 1)
+    itemsFrameUI.frameOptionsButton.Icon:SetDesaturated(1)
   elseif (not tabActionsClosed) then
-    itemsFrameUI.tabActionsButton.Icon:SetDesaturated(1) itemsFrameUI.tabActionsButton.Icon:SetVertexColor(1, 1, 1)
+    itemsFrameUI.tabActionsButton.Icon:SetDesaturated(1)
   end
 
   -- here we manage the visibility of the tutorial frames, showing them if their corresponding buttons is shown, their tuto has not been completed (false) and the previous one is true.
@@ -1352,10 +1354,7 @@ function itemsFrame:CreateMovableLabelElems(catName)
           itemsFrame:ValidateTutorial("addItem");
 
           -- we also give that edit box the focus if we are showing it
-          editBox[catName]:SetFocus()
-          if (not NysTDL.db.profile.highlightOnFocus) then
-            editBox[catName]:HighlightText(0, 0)
-          end
+          SetFocusEditBox(editBox[catName])
         end
       end
     end
@@ -1428,10 +1427,7 @@ function itemsFrame:CreateMovableLabelElems(catName)
   editBox[catName]:SetScript("OnEnterPressed", function(self)
     itemsFrame:AddItem(self)
     self:Show() -- we keep it shown to add more items
-    self:SetFocus()
-    if (NysTDL.db.profile.highlightOnFocus) then
-      self:HighlightText()
-    end
+    SetFocusEditBox(self)
   end);
   -- cancelling
   editBox[catName]:SetScript("OnEscapePressed", function(self)
@@ -1645,7 +1641,7 @@ local function loadAddACategory(tab)
   itemsFrameUI.labelCategoryName:SetParent(tab);
   itemsFrameUI.labelCategoryName:SetPoint("TOPLEFT", itemsFrameUI.categoryTitle, "TOP", -140, - 35);
   itemsFrameUI.categoryEditBox:SetParent(tab);
-  itemsFrameUI.categoryEditBox:SetPoint("RIGHT", itemsFrameUI.labelCategoryName, "LEFT", 280, 0);
+  itemsFrameUI.categoryEditBox:SetPoint("RIGHT", itemsFrameUI.labelCategoryName, "LEFT", 257, 0);
 
   itemsFrameUI.labelFirstItemName:SetParent(tab);
   itemsFrameUI.labelFirstItemName:SetPoint("TOPLEFT", itemsFrameUI.labelCategoryName, "TOPLEFT", 0, - 25);
@@ -1893,7 +1889,9 @@ local function generateAddACategory()
     itemsFrame:ValidateTutorial("addNewCat"); -- tutorial
 
     itemsFrame:ReloadTab() -- we reload the frame to display the changes
-    if (not addACategoryClosed) then itemsFrameUI.categoryEditBox:SetFocus() end -- then we give the focus to the category edit box if we opened the menu
+    if (not addACategoryClosed) then
+      SetFocusEditBox(itemsFrameUI.categoryEditBox)
+    end -- then we give the focus to the category edit box if we opened the menu
   end);
 
   --/************************************************/--
@@ -1910,9 +1908,9 @@ local function generateAddACategory()
 
   itemsFrameUI.categoryEditBox = CreateFrame("EditBox", nil, itemsFrameUI, "InputBoxTemplate"); -- edit box to put the new category name
   local l = config:CreateNoPointsLabel(itemsFrameUI, nil, itemsFrameUI.labelCategoryName:GetText());
-  itemsFrameUI.categoryEditBox:SetSize(280 - l:GetWidth() - 20, 30);
+  itemsFrameUI.categoryEditBox:SetSize(257 - l:GetWidth() - 20, 30);
   itemsFrameUI.categoryEditBox:SetAutoFocus(false);
-  itemsFrameUI.categoryEditBox:SetScript("OnKeyDown", function(_, key) if (key == "TAB") then itemsFrameUI.nameEditBox:SetFocus() end end) -- to switch easily between the two edit boxes
+  itemsFrameUI.categoryEditBox:SetScript("OnKeyDown", function(_, key) if (key == "TAB") then SetFocusEditBox(itemsFrameUI.nameEditBox) end end) -- to switch easily between the two edit boxes
   itemsFrameUI.categoryEditBox:SetScript("OnEnterPressed", addCategory); -- if we press enter, it's like we clicked on the add button
   itemsFrameUI.categoryEditBox:HookScript("OnEditFocusGained", function(self)
     if (NysTDL.db.profile.highlightOnFocus) then
@@ -1931,8 +1929,10 @@ local function generateAddACategory()
     -- we update the category edit box
     if (itemsFrameUI.categoryEditBox:GetText() == newValue) then
       itemsFrameUI.categoryEditBox:SetText("")
+      SetFocusEditBox(itemsFrameUI.categoryEditBox)
     elseif (newValue ~= nil) then
       itemsFrameUI.categoryEditBox:SetText(newValue)
+      SetFocusEditBox(itemsFrameUI.nameEditBox)
     end
 
     -- Because this is called from a sub-menu, only that menu level is closed by default.
@@ -1946,7 +1946,7 @@ local function generateAddACategory()
     -- the title
     info.isTitle = true
     info.notCheckable = true
-    info.text = L["Add to an existing category"]
+    info.text = L["Use an existing category"]
     UIDropDownMenu_AddButton(info)
 
     -- the categories
@@ -1971,9 +1971,10 @@ local function generateAddACategory()
     UIDropDownMenu_AddButton(info)
   end, "MENU")
 
-  itemsFrameUI.categoriesDropdownButton = config:CreateRemoveButton(itemsFrameUI.categoryEditBox, "OLAOALLA")
+  itemsFrameUI.categoriesDropdownButton = CreateFrame("Button", "NysTDL_DropdownButton_Categories", itemsFrameUI.categoryEditBox, "NysTDL_DropdownButton")
+  itemsFrameUI.categoriesDropdownButton:SetPoint("LEFT", itemsFrameUI.categoryEditBox, "RIGHT", 0, -1)
   itemsFrameUI.categoriesDropdownButton:SetScript("OnClick", function()
-    ToggleDropDownMenu(1, nil, itemsFrameUI.categoriesDropdown, "OLAOALLA", 3, -3)
+    ToggleDropDownMenu(1, nil, itemsFrameUI.categoriesDropdown, "NysTDL_DropdownButton_Categories", 0, 0)
   end)
 
   --/************************************************/--
@@ -1987,7 +1988,7 @@ local function generateAddACategory()
   l = config:CreateNoPointsLabel(itemsFrameUI, nil, itemsFrameUI.labelFirstItemName:GetText());
   itemsFrameUI.nameEditBox:SetSize(280 - l:GetWidth() - 20, 30);
   itemsFrameUI.nameEditBox:SetAutoFocus(false);
-  itemsFrameUI.nameEditBox:SetScript("OnKeyDown", function(_, key) if (key == "TAB") then itemsFrameUI.categoryEditBox:SetFocus() end end)
+  itemsFrameUI.nameEditBox:SetScript("OnKeyDown", function(_, key) if (key == "TAB") then SetFocusEditBox(itemsFrameUI.categoryEditBox) end end)
   itemsFrameUI.nameEditBox:SetScript("OnEnterPressed", addCategory); -- if we press enter, it's like we clicked on the add button
   itemsFrameUI.nameEditBox:HookScript("OnEditFocusGained", function(self)
     if (NysTDL.db.profile.highlightOnFocus) then
@@ -2470,6 +2471,9 @@ end
 
 ---Creating the main window---
 function itemsFrame:CreateItemsFrame()
+  -- local btn = CreateFrame("Frame", nil, UIParent, "LargeUIDropDownMenuTemplate")
+  -- btn:SetPoint("CENTER")
+  -- UIDropDownMenu_SetWidth(btn, 200)
   -- if (true) then return; end
   -- as of wow 9.0, we need to import the backdrop template into our frames if we want to use it in them, it is not set by default, so that's what we are doing here:
   itemsFrameUI = CreateFrame("Frame", "ToDoListUIFrame", UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil);
