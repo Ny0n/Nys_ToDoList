@@ -4,8 +4,9 @@ addonTable.devLocale = L
 
 -- ============================================ --
 
-L["Keep the list opened after reloads if it was last time"] = true
-L["Keep it opened"] = true
+L["Open by default"] = true
+L["Keeps the list opened if it was during last session"] = true
+L["Stay opened"] = true
 L["Use an existing category"] = true
 L["Cancel"] = true
 L["Chat Messages"] = true

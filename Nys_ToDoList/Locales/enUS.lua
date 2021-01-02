@@ -10,7 +10,7 @@ local L = LibStub("AceLocale-3.0"):NewLocale(addonName, "enUS", true)
 --@do-not-package@
 
 -- this code, present in every localization file,
--- as well as the "_dev.lua" script are used for local development and testing for translations.
+-- as well as the "devLocale.lua" script are used for local development and testing for translations.
 
 -- basically, it allows me to never touch any localization file.
 -- all I have to do is update the table inside the dev file as I wish,

@@ -2689,7 +2689,11 @@ function itemsFrame:CreateItemsFrame()
   -- Initializing the frame with the current data
   itemsFrame:Init()
 
-  if (NysTDL.db.profile.keepOpen) then
+  -- when we're here, the list was just created, so it is opened by default already,
+  -- then we decide what we want to do with that
+  if (NysTDL.db.profile.openByDefault) then
+    ItemsFrame_OnVisibilityUpdate()
+  elseif (NysTDL.db.profile.keepOpen) then
     itemsFrameUI:SetShown(NysTDL.db.profile.lastListVisibility)
   else
     itemsFrameUI:Hide()

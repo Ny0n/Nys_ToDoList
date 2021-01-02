@@ -448,6 +448,16 @@ function NysTDL:keepOpenSET(info, newValue)
   NysTDL.db.profile.keepOpen = newValue;
 end
 
+-- openByDefault
+function NysTDL:openByDefaultGET(info)
+  NysTDL:openByDefaultSET(info, NysTDL.db.profile.openByDefault)
+  return NysTDL.db.profile.openByDefault;
+end
+
+function NysTDL:openByDefaultSET(info, newValue)
+  NysTDL.db.profile.openByDefault = newValue;
+end
+
 -- highlightOnFocus
 function NysTDL:highlightOnFocusGET(info)
   NysTDL:highlightOnFocusSET(info, NysTDL.db.profile.highlightOnFocus)

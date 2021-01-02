@@ -55,11 +55,20 @@ config.database = {
                   keepOpen = {
                       order = 1.2,
                       type = "toggle",
-                      name = L["Keep it opened"],
-                      desc = L["Keep the list opened after reloads if it was last time"],
+                      name = L["Stay opened"],
+                      desc = L["Keeps the list opened if it was during last session"],
                       get = "keepOpenGET",
                       set = "keepOpenSET",
+                      disabled = function() return NysTDL.db.profile.openByDefault end,
                   }, -- rememberUndo
+                  openByDefault = {
+                      order = 1.3,
+                      type = "toggle",
+                      name = L["Open by default"],
+                      get = "openByDefaultGET",
+                      set = "openByDefaultSET",
+                      hidden = function() return not NysTDL.db.profile.keepOpen end
+                  }, -- openByDefault
                   rememberUndo = {
                       order = 3.7,
                       type = "toggle",
@@ -152,7 +161,7 @@ config.database = {
 
                   -- spacers
                   spacer111 = {
-                    order = 1.11,
+                    order = 1.31,
                     type = "description",
                     width = "full",
                     name = "",
@@ -507,6 +516,7 @@ config.database = {
             rememberUndo = true,
             highlightOnFocus = true,
             keepOpen = false,
+            openByDefault = false,
 
             --'Tabs' tab
             instantRefresh = false,
