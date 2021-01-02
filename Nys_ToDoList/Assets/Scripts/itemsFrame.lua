@@ -39,7 +39,8 @@ local tutorialFramesTarget = {}
 local tuto_order = { "addNewCat", "addCat", "addItem", "accessOptions", "getMoreInfo", "ALTkey" }
 
 -- other
-local hyperlinkEditBoxes = {};
+local shownInTab = {}
+local hyperlinkEditBoxes = {}
 local addACategoryItems = {}
 local tabActionsItems = {}
 local frameOptionsItems = {}
@@ -114,15 +115,14 @@ local function ItemIsInTab(itemTabName, tabName)
   return ((tabName == "All" and not NysTDL.db.profile.showOnlyAllTabItems) or itemTabName == tabName)
 end
 
-local function ItemIsHiddenInResetTab(catName, itemName, tabName)
+local function ItemIsHiddenInResetTab(catName, itemName)
   local checked = NysTDL.db.profile.itemsList[catName][itemName].checked
   local itemTabName = NysTDL.db.profile.itemsList[catName][itemName].tabName
 
   if (checked) then
-    if ((tabName == "Daily" and NysTDL.db.profile.hideDailyTabItems) and itemTabName == tabName) then
-      return true
-    end
-    if ((tabName == "Weekly" and NysTDL.db.profile.hideWeeklyTabItems) and itemTabName == tabName) then
+    -- if it's a checked daily item and we have to hide these, same for weekly
+    if ((NysTDL.db.profile.hideDailyTabItems and itemTabName == "Daily")
+    or (NysTDL.db.profile.hideWeeklyTabItems and itemTabName == "Weekly")) then
       return true
     end
   end
@@ -1590,14 +1590,15 @@ local function generateTab(tab)
   -- before we reload the entire tab and items, we hide every checkboxes
   for catName, items in pairs(NysTDL.db.profile.itemsList) do -- for every item
     for itemName in pairs(items) do
-      checkBtn[catName][itemName]:Hide();
-      checkBtn[catName][itemName]:SetParent(tab);
-      checkBtn[catName][itemName]:ClearAllPoints();
+      checkBtn[catName][itemName]:Hide()
+      checkBtn[catName][itemName]:SetParent(tab)
+      checkBtn[catName][itemName]:ClearAllPoints()
     end
   end
 
   -- then we load everything
-  local lastData = nil;
+  local lastData = nil
+  shownInTab[tab:GetName()] = 0
   for _, catName in pairs(tempTable) do -- for each categories, alphabetically
     -- we sort alphabetically all the items inside, with the favorites in first
     local itemNames = {}
@@ -1607,7 +1608,7 @@ local function generateTab(tab)
     -- first we get every favs and other items for the current cat and place them in their respective tables
     for itemName, data in pairs(NysTDL.db.profile.itemsList[catName]) do
       if (ItemIsInTab(data.tabName, tab:GetName())) then
-        if (not ItemIsHiddenInResetTab(catName, itemName, tab:GetName())) then
+        if (not ItemIsHiddenInResetTab(catName, itemName)) then
           if (data.favorite) then
             table.insert(fav, itemName)
           else
@@ -1626,6 +1627,8 @@ local function generateTab(tab)
     for _, itemName in pairs(others) do
       table.insert(itemNames, itemName)
     end
+
+    shownInTab[tab:GetName()] = shownInTab[tab:GetName()] + #itemNames
 
     lastData = loadCategories(tab, label[catName], catName, itemNames, lastData); -- and finally, we load them on the tab in the defined order
   end
@@ -1850,32 +1853,32 @@ local function loadTab(tab)
     itemsFrameUI.lineBottom:SetEndPoint("TOPLEFT", centerXOffset+lineOffset, height - 62)
   end
 
+  itemsFrameUI.dummyLabel:SetParent(tab)
+  itemsFrameUI.dummyLabel:SetPoint("TOPLEFT", itemsFrameUI.lineBottom, "TOPLEFT", - 35, - 20)
+
+  -- generating all of the content (items, checkboxes, editboxes, category labels...)
+  generateTab(tab)
+
   -- Nothing label
-  -- first, we get how many items there are in the tab
+  -- first, we get how many items there are shown in the tab
   local checked, _, unchecked = itemsFrame:updateRemainingNumber()
 
-  -- then we show/hide the nothing label depending on the result
-  itemsFrameUI.nothingLabel:SetParent(tab);
-  itemsFrameUI.nothingLabel:SetPoint("TOP", itemsFrameUI.lineBottom, "TOP", 0, - 20); -- to correctly center this text on diffent screen sizes
-  itemsFrameUI.nothingLabel:Hide();
+  -- then we show/hide the nothing label depending on the result and shownInTab
+  itemsFrameUI.nothingLabel:SetParent(tab)
+  itemsFrameUI.nothingLabel:SetPoint("TOP", itemsFrameUI.lineBottom, "TOP", 0, - 20) -- to correctly center this text on diffent screen sizes
+  itemsFrameUI.nothingLabel:Hide()
   if (checked[tab:GetName()] + unchecked[tab:GetName()] == 0) then -- if there is nothing to show in the tab we're in
-    itemsFrameUI.nothingLabel:SetText(L["There are no items!"]);
-    itemsFrameUI.nothingLabel:Show();
+    itemsFrameUI.nothingLabel:SetText(L["There are no items!"])
+    itemsFrameUI.nothingLabel:Show()
   else -- if there are items in the tab
     if (unchecked[tab:GetName()] == 0) then -- and if they are checked ones
       -- we check if they are hidden or not, and if they are, we show the nothing label with a different text
-      if (((tab:GetName() == "Daily") and NysTDL.db.profile.hideDailyTabItems) or ((tab:GetName() == "Weekly") and NysTDL.db.profile.hideWeeklyTabItems)) then
-        itemsFrameUI.nothingLabel:SetText(config:SafeStringFormat(L["(%i hidden item(s))"], checked[tab:GetName()]));
-        itemsFrameUI.nothingLabel:Show();
+      if (shownInTab[tab:GetName()] == 0) then
+        itemsFrameUI.nothingLabel:SetText(config:SafeStringFormat(L["(%i hidden item(s))"], checked[tab:GetName()]))
+        itemsFrameUI.nothingLabel:Show()
       end
     end
   end
-
-  itemsFrameUI.dummyLabel:SetParent(tab);
-  itemsFrameUI.dummyLabel:SetPoint("TOPLEFT", itemsFrameUI.lineBottom, "TOPLEFT", - 35, - 20);
-
-  -- generating all of the content (items, checkboxes, editboxes, category labels...)
-  generateTab(tab);
 end
 
 ----------------------------
