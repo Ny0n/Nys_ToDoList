@@ -2533,7 +2533,7 @@ function itemsFrame:ResetContent()
 end
 
 --Frame init
-function itemsFrame:Init()
+function itemsFrame:Init(profileChanged)
   -- this one is for keeping track of the old itemsList when we reset,
   -- so that we can hide everything when we change profiles
   currentDBItemsList = NysTDL.db.profile.itemsList;
@@ -2571,6 +2571,11 @@ function itemsFrame:Init()
   itemsFrameUI.frameAlphaSlider:SetValue(NysTDL.db.profile.frameAlpha);
   itemsFrameUI.frameContentAlphaSlider:SetValue(NysTDL.db.profile.frameContentAlpha);
   itemsFrameUI.affectDesc:SetChecked(NysTDL.db.profile.affectDesc);
+
+  -- when we're here, the list already exists, we just switched profiles and we need to update the new visibility
+  if (profileChanged) then
+    ItemsFrame_OnVisibilityUpdate()
+  end
 end
 
 ---Creating the main window---
@@ -2687,7 +2692,7 @@ function itemsFrame:CreateItemsFrame()
   AllTab, DailyTab, WeeklyTab = SetTabs(itemsFrameUI, 3, L["All"], L["Daily"], L["Weekly"])
 
   -- Initializing the frame with the current data
-  itemsFrame:Init()
+  itemsFrame:Init(false)
 
   -- when we're here, the list was just created, so it is opened by default already,
   -- then we decide what we want to do with that

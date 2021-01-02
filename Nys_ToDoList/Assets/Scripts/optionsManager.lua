@@ -233,14 +233,14 @@ function NysTDL:DBInit()
 end
 
 function NysTDL:ProfileChanged()
-  NysTDL:DBInit(); -- in case the selected profile is empty
+  NysTDL:DBInit() -- in case the selected profile is empty
 
   -- we update the changes for the list
-  itemsFrame:ResetContent();
-  itemsFrame:Init();
+  itemsFrame:ResetContent()
+  itemsFrame:Init(true)
 
   -- we update the changes to the options (since I now use tabs and the options are not instantly getting a refresh when changing profiles)
-  NysTDL:CallAllGETTERS();
+  NysTDL:CallAllGETTERS()
 end
 
 -- these two functions are called only once, each time there is an addon update
