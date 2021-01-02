@@ -66,10 +66,10 @@ local refreshRate = 1;
 function itemsFrame:Toggle()
   -- changes the visibility of the ToDoList frame
   if (not itemsFrameUI:IsShown()) then -- We update the frame if we are about to show it
-    ItemsFrame_UpdateTime();
-    ItemsFrame_Update();
+    ItemsFrame_UpdateTime()
+    ItemsFrame_Update()
   end
-  itemsFrameUI:SetShown(not itemsFrameUI:IsShown());
+  itemsFrameUI:SetShown(not itemsFrameUI:IsShown())
 end
 
 function itemsFrame:ReloadTab(tabGlobalWidgetName)
@@ -1058,6 +1058,7 @@ local function ItemsFrame_OnVisibilityUpdate()
   tabActionsClosed = true;
   optionsClosed = true;
   itemsFrame:ReloadTab()
+  NysTDL.db.profile.lastListVisibility = itemsFrameUI:IsShown()
 end
 
 local function ItemsFrame_Scale()
@@ -2676,16 +2677,20 @@ function itemsFrame:CreateItemsFrame()
   end)
   itemsFrameUI.resizeButton:RegisterForClicks("RightButtonUp")
   itemsFrameUI.resizeButton:HookScript("OnClick", function() -- reset size
-    itemsFrameUI:SetSize(340, 400);
+    itemsFrameUI:SetSize(340, 400)
   end)
 
   -- Generating the tabs --
-  AllTab, DailyTab, WeeklyTab = SetTabs(itemsFrameUI, 3, L["All"], L["Daily"], L["Weekly"]);
+  AllTab, DailyTab, WeeklyTab = SetTabs(itemsFrameUI, 3, L["All"], L["Daily"], L["Weekly"])
 
   -- Initializing the frame with the current data
-  itemsFrame:Init();
+  itemsFrame:Init()
 
-  itemsFrameUI:Hide();
+  if (NysTDL.db.profile.keepOpen) then
+    itemsFrameUI:SetShown(NysTDL.db.profile.lastListVisibility)
+  else
+    itemsFrameUI:Hide()
+  end
 end
 
 --@do-not-package@

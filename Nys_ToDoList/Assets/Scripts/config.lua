@@ -52,6 +52,14 @@ config.database = {
 
                   -- / options widgets / --
 
+                  keepOpen = {
+                      order = 1.2,
+                      type = "toggle",
+                      name = L["Keep it opened"],
+                      desc = L["Keep the list opened after reloads if it was last time"],
+                      get = "keepOpenGET",
+                      set = "keepOpenSET",
+                  }, -- rememberUndo
                   rememberUndo = {
                       order = 3.7,
                       type = "toggle",
@@ -476,6 +484,7 @@ config.database = {
             closedCategories = {},
             undoTable = {},
             lastLoadedTab = "ToDoListUIFrameTab2",
+            lastListVisibility = false,
 
             -- // Frame Options
             framePos = { point = "CENTER", relativePoint = "CENTER", xOffset = 0, yOffset = 0 },
@@ -494,16 +503,10 @@ config.database = {
             favoritesColor = { 1, 0.5, 0.6 },
             rainbow = false,
             rainbowSpeed = 2,
-            weeklyDay = 4,
-            dailyHour = 9,
             autoReset = nil,
-            showChatMessages = true,
-            showWarnings = false,
-            favoritesWarning = true,
-            normalWarning = false,
-            hourlyReminder = false,
             rememberUndo = true,
             highlightOnFocus = true,
+            keepOpen = false,
 
             --'Tabs' tab
             instantRefresh = false,
@@ -511,6 +514,17 @@ config.database = {
             showOnlyAllTabItems = false,
             hideDailyTabItems = false,
             hideWeeklyTabItems = false,
+
+            --'Chat Messages' tab
+            showChatMessages = true,
+            showWarnings = false,
+            favoritesWarning = true,
+            normalWarning = false,
+            hourlyReminder = false,
+
+            --'Auto Uncheck' tab
+            weeklyDay = 4,
+            dailyHour = 9,
         }, -- profile
     }, -- defaults
 }

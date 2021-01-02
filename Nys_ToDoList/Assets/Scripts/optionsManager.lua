@@ -438,6 +438,16 @@ function NysTDL:rememberUndoSET(info, newValue)
   NysTDL.db.profile.rememberUndo = newValue;
 end
 
+-- keepOpen
+function NysTDL:keepOpenGET(info)
+  NysTDL:keepOpenSET(info, NysTDL.db.profile.keepOpen)
+  return NysTDL.db.profile.keepOpen;
+end
+
+function NysTDL:keepOpenSET(info, newValue)
+  NysTDL.db.profile.keepOpen = newValue;
+end
+
 -- highlightOnFocus
 function NysTDL:highlightOnFocusGET(info)
   NysTDL:highlightOnFocusSET(info, NysTDL.db.profile.highlightOnFocus)
