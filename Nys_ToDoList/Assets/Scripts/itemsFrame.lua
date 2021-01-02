@@ -7,6 +7,7 @@ local itemsFrame = tdlTable.itemsFrame;
 
 -- Variables declaration --
 local L = config.L;
+local LDD = config.LDD;
 itemsFrame.tdlButton = 0; -- so we can access it here, even though we create it in init.lua
 
 local itemsFrameUI;
@@ -38,7 +39,8 @@ local tutorialFramesTarget = {}
 local tuto_order = { "addNewCat", "addCat", "addItem", "accessOptions", "getMoreInfo", "ALTkey" }
 
 -- other
-local hyperlinkEditBoxes = {};
+local shownInTab = {}
+local hyperlinkEditBoxes = {}
 local addACategoryItems = {}
 local tabActionsItems = {}
 local frameOptionsItems = {}
@@ -65,10 +67,10 @@ local refreshRate = 1;
 function itemsFrame:Toggle()
   -- changes the visibility of the ToDoList frame
   if (not itemsFrameUI:IsShown()) then -- We update the frame if we are about to show it
-    ItemsFrame_UpdateTime();
-    ItemsFrame_Update();
+    ItemsFrame_UpdateTime()
+    ItemsFrame_Update()
   end
-  itemsFrameUI:SetShown(not itemsFrameUI:IsShown());
+  itemsFrameUI:SetShown(not itemsFrameUI:IsShown())
 end
 
 function itemsFrame:ReloadTab(tabGlobalWidgetName)
@@ -113,15 +115,14 @@ local function ItemIsInTab(itemTabName, tabName)
   return ((tabName == "All" and not NysTDL.db.profile.showOnlyAllTabItems) or itemTabName == tabName)
 end
 
-local function ItemIsHiddenInResetTab(catName, itemName, tabName)
+local function ItemIsHiddenInResetTab(catName, itemName)
   local checked = NysTDL.db.profile.itemsList[catName][itemName].checked
   local itemTabName = NysTDL.db.profile.itemsList[catName][itemName].tabName
 
   if (checked) then
-    if ((tabName == "Daily" and NysTDL.db.profile.hideDailyTabItems) and itemTabName == tabName) then
-      return true
-    end
-    if ((tabName == "Weekly" and NysTDL.db.profile.hideWeeklyTabItems) and itemTabName == tabName) then
+    -- if it's a checked daily item and we have to hide these, same for weekly
+    if ((NysTDL.db.profile.hideDailyTabItems and itemTabName == "Daily")
+    or (NysTDL.db.profile.hideWeeklyTabItems and itemTabName == "Weekly")) then
       return true
     end
   end
@@ -1057,6 +1058,7 @@ local function ItemsFrame_OnVisibilityUpdate()
   tabActionsClosed = true;
   optionsClosed = true;
   itemsFrame:ReloadTab()
+  NysTDL.db.profile.lastListVisibility = itemsFrameUI:IsShown()
 end
 
 local function ItemsFrame_Scale()
@@ -1588,14 +1590,15 @@ local function generateTab(tab)
   -- before we reload the entire tab and items, we hide every checkboxes
   for catName, items in pairs(NysTDL.db.profile.itemsList) do -- for every item
     for itemName in pairs(items) do
-      checkBtn[catName][itemName]:Hide();
-      checkBtn[catName][itemName]:SetParent(tab);
-      checkBtn[catName][itemName]:ClearAllPoints();
+      checkBtn[catName][itemName]:Hide()
+      checkBtn[catName][itemName]:SetParent(tab)
+      checkBtn[catName][itemName]:ClearAllPoints()
     end
   end
 
   -- then we load everything
-  local lastData = nil;
+  local lastData = nil
+  shownInTab[tab:GetName()] = 0
   for _, catName in pairs(tempTable) do -- for each categories, alphabetically
     -- we sort alphabetically all the items inside, with the favorites in first
     local itemNames = {}
@@ -1605,7 +1608,7 @@ local function generateTab(tab)
     -- first we get every favs and other items for the current cat and place them in their respective tables
     for itemName, data in pairs(NysTDL.db.profile.itemsList[catName]) do
       if (ItemIsInTab(data.tabName, tab:GetName())) then
-        if (not ItemIsHiddenInResetTab(catName, itemName, tab:GetName())) then
+        if (not ItemIsHiddenInResetTab(catName, itemName)) then
           if (data.favorite) then
             table.insert(fav, itemName)
           else
@@ -1624,6 +1627,8 @@ local function generateTab(tab)
     for _, itemName in pairs(others) do
       table.insert(itemNames, itemName)
     end
+
+    shownInTab[tab:GetName()] = shownInTab[tab:GetName()] + #itemNames
 
     lastData = loadCategories(tab, label[catName], catName, itemNames, lastData); -- and finally, we load them on the tab in the defined order
   end
@@ -1848,32 +1853,32 @@ local function loadTab(tab)
     itemsFrameUI.lineBottom:SetEndPoint("TOPLEFT", centerXOffset+lineOffset, height - 62)
   end
 
+  itemsFrameUI.dummyLabel:SetParent(tab)
+  itemsFrameUI.dummyLabel:SetPoint("TOPLEFT", itemsFrameUI.lineBottom, "TOPLEFT", - 35, - 20)
+
+  -- generating all of the content (items, checkboxes, editboxes, category labels...)
+  generateTab(tab)
+
   -- Nothing label
-  -- first, we get how many items there are in the tab
+  -- first, we get how many items there are shown in the tab
   local checked, _, unchecked = itemsFrame:updateRemainingNumber()
 
-  -- then we show/hide the nothing label depending on the result
-  itemsFrameUI.nothingLabel:SetParent(tab);
-  itemsFrameUI.nothingLabel:SetPoint("TOP", itemsFrameUI.lineBottom, "TOP", 0, - 20); -- to correctly center this text on diffent screen sizes
-  itemsFrameUI.nothingLabel:Hide();
+  -- then we show/hide the nothing label depending on the result and shownInTab
+  itemsFrameUI.nothingLabel:SetParent(tab)
+  itemsFrameUI.nothingLabel:SetPoint("TOP", itemsFrameUI.lineBottom, "TOP", 0, - 20) -- to correctly center this text on diffent screen sizes
+  itemsFrameUI.nothingLabel:Hide()
   if (checked[tab:GetName()] + unchecked[tab:GetName()] == 0) then -- if there is nothing to show in the tab we're in
-    itemsFrameUI.nothingLabel:SetText(L["There are no items!"]);
-    itemsFrameUI.nothingLabel:Show();
+    itemsFrameUI.nothingLabel:SetText(L["There are no items!"])
+    itemsFrameUI.nothingLabel:Show()
   else -- if there are items in the tab
     if (unchecked[tab:GetName()] == 0) then -- and if they are checked ones
       -- we check if they are hidden or not, and if they are, we show the nothing label with a different text
-      if (((tab:GetName() == "Daily") and NysTDL.db.profile.hideDailyTabItems) or ((tab:GetName() == "Weekly") and NysTDL.db.profile.hideWeeklyTabItems)) then
-        itemsFrameUI.nothingLabel:SetText(config:SafeStringFormat(L["(%i hidden item(s))"], checked[tab:GetName()]));
-        itemsFrameUI.nothingLabel:Show();
+      if (shownInTab[tab:GetName()] == 0) then
+        itemsFrameUI.nothingLabel:SetText(config:SafeStringFormat(L["(%i hidden item(s))"], checked[tab:GetName()]))
+        itemsFrameUI.nothingLabel:Show()
       end
     end
   end
-
-  itemsFrameUI.dummyLabel:SetParent(tab);
-  itemsFrameUI.dummyLabel:SetPoint("TOPLEFT", itemsFrameUI.lineBottom, "TOPLEFT", - 35, - 20);
-
-  -- generating all of the content (items, checkboxes, editboxes, category labels...)
-  generateTab(tab);
 end
 
 ----------------------------
@@ -1923,9 +1928,18 @@ local function generateAddACategory()
 
   --/************************************************/--
 
-  itemsFrameUI.categoriesDropdown = CreateFrame("Frame", nil, UIParent, "UIDropDownMenuTemplate")
+  --  // LibUIDropDownMenu version // --
+
+  itemsFrameUI.categoriesDropdown = LDD:Create_UIDropDownMenu("NysTDL_Frame_CategoriesDropdown", nil)
+
+  itemsFrameUI.categoriesDropdown.HideMenu = function()
+  	if L_UIDROPDOWNMENU_OPEN_MENU == itemsFrameUI.categoriesDropdown then
+  		LDD:CloseDropDownMenus()
+  	end
+  end
+
   -- Implement the function to change the weekly reset day, then refresh
-  function itemsFrameUI.categoriesDropdown:SetValue(newValue)
+  itemsFrameUI.categoriesDropdown.SetValue = function(self, newValue)
     -- we update the category edit box
     if (itemsFrameUI.categoryEditBox:GetText() == newValue) then
       itemsFrameUI.categoryEditBox:SetText("")
@@ -1935,46 +1949,137 @@ local function generateAddACategory()
       SetFocusEditBox(itemsFrameUI.nameEditBox)
     end
   end
+
   -- Create and bind the initialization function to the dropdown menu
-  UIDropDownMenu_Initialize(itemsFrameUI.categoriesDropdown, function(self)
-    local info = UIDropDownMenu_CreateInfo()
+  LDD:UIDropDownMenu_Initialize(itemsFrameUI.categoriesDropdown, function(self, level)
+    if not level then return end
+    local info = LDD:UIDropDownMenu_CreateInfo()
+    wipe(info)
 
-    -- the title
-    info.isTitle = true
-    info.notCheckable = true
-    info.text = L["Use an existing category"]
-    UIDropDownMenu_AddButton(info)
+    if level == 1 then
+      -- the title
+      info.isTitle = true
+      info.notCheckable = true
+      info.text = L["Use an existing category"]
+      LDD:UIDropDownMenu_AddButton(info, level)
 
-    -- the categories
-    info.notCheckable = false
-    info.isTitle = false
-    info.disabled = false
-    local categories = itemsFrame:GetCategoriesOrdered()
-    for _, v in pairs(categories) do
+      -- the categories
+      wipe(info)
       info.func = self.SetValue
-      info.arg1 = v
-      info.text = info.arg1
-      info.checked = itemsFrameUI.categoryEditBox:GetText() == info.arg1
-      UIDropDownMenu_AddButton(info)
-    end
+      local categories = itemsFrame:GetCategoriesOrdered()
+      for _, v in pairs(categories) do
+        info.arg1 = v
+        info.text = v
+        info.checked = itemsFrameUI.categoryEditBox:GetText() == v
+        LDD:UIDropDownMenu_AddButton(info, level)
+      end
 
-    -- the cancel button
-    info.func = nil
-    info.arg1 = nil
-    info.checked = false
-    info.notCheckable = true
-    info.text = L["Cancel"]
-    UIDropDownMenu_AddButton(info)
+      -- the close button
+      wipe(info)
+  		info.notCheckable = true
+  		info.text = CLOSE
+  		info.func = self.HideMenu
+  		LDD:UIDropDownMenu_AddButton(info, level)
+    end
   end, "MENU")
 
-  itemsFrameUI.categoriesDropdownButton = CreateFrame("Button", "NysTDL_DropdownButton_Categories", itemsFrameUI.categoryEditBox, "NysTDL_DropdownButton")
+  itemsFrameUI.categoriesDropdownButton = CreateFrame("Button", "NysTDL_Button_CategoriesDropdown", itemsFrameUI.categoryEditBox, "NysTDL_DropdownButton")
   itemsFrameUI.categoriesDropdownButton:SetPoint("LEFT", itemsFrameUI.categoryEditBox, "RIGHT", 0, -1)
-  itemsFrameUI.categoriesDropdownButton:SetScript("OnClick", function()
-    ToggleDropDownMenu(1, nil, itemsFrameUI.categoriesDropdown, "NysTDL_DropdownButton_Categories", 0, 0)
+  itemsFrameUI.categoriesDropdownButton:SetScript("OnClick", function(self)
+    LDD:ToggleDropDownMenu(1, nil, itemsFrameUI.categoriesDropdown, self:GetName(), 0, 0)
   end)
-  itemsFrameUI.categoriesDropdownButton:SetScript("OnHide", function()
-    CloseDropDownMenus()
-  end)
+  itemsFrameUI.categoriesDropdownButton:SetScript("OnHide", itemsFrameUI.categoriesDropdown.HideMenu)
+
+  --  // NOLIB version1 - Custom frame style (clean, with wipes): taints click on quests in combat // --
+  -- itemsFrameUI.categoriesDropdown = CreateFrame("Frame", "NysTDL_Frame_CategoriesDropdown")
+  -- itemsFrameUI.categoriesDropdown.displayMode = "MENU"
+  -- itemsFrameUI.categoriesDropdown.info = {}
+  -- itemsFrameUI.categoriesDropdown.initialize = function(self, level)
+  --   if not level then return end
+  --   local info = self.info
+  --   wipe(info)
+  --
+  --   if level == 1 then
+  --     -- the title
+  --     info.isTitle = true
+  --     info.notCheckable = true
+  --     info.text = L["Use an existing category"]
+  --     UIDropDownMenu_AddButton(info, level)
+  --
+  --     -- the categories
+  --     wipe(info)
+  --     info.func = self.SetValue
+  --     local categories = itemsFrame:GetCategoriesOrdered()
+  --     for _, v in pairs(categories) do
+  --       info.text = v
+  --       info.arg1 = v
+  --       info.checked = itemsFrameUI.categoryEditBox:GetText() == v
+  --       UIDropDownMenu_AddButton(info, level)
+  --     end
+  --
+  --     wipe(info)
+  -- 		info.notCheckable = true
+  -- 		info.text = CLOSE
+  -- 		info.func = self.HideMenu
+  -- 		UIDropDownMenu_AddButton(info, level)
+  --   end
+  -- end
+
+  --  // NOLIB version2 - WoW template style (no level check): taints SetFocus and click on quests in combat // --
+  -- itemsFrameUI.categoriesDropdown = CreateFrame("Frame", nil, UIParent, "UIDropDownMenuTemplate")
+  -- UIDropDownMenu_Initialize(itemsFrameUI.categoriesDropdown, function(self)
+  --   local info = UIDropDownMenu_CreateInfo()
+  --
+  --   -- the title
+  --   info.isTitle = true
+  --   info.notCheckable = true
+  --   info.text = L["Use an existing category"]
+  --   UIDropDownMenu_AddButton(info)
+  --
+  --   -- the categories
+  --   info.notCheckable = false
+  --   info.isTitle = false
+  --   info.disabled = false
+  --   local categories = itemsFrame:GetCategoriesOrdered()
+  --   for _, v in pairs(categories) do
+  --     info.func = self.SetValue
+  --     info.arg1 = v
+  --     info.text = info.arg1
+  --     info.checked = itemsFrameUI.categoryEditBox:GetText() == info.arg1
+  --     UIDropDownMenu_AddButton(info)
+  --   end
+  --
+  --   -- the cancel button
+  --   info.func = nil
+  --   info.arg1 = nil
+  --   info.checked = false
+  --   info.notCheckable = true
+  --   info.text = L["Cancel"]
+  --   UIDropDownMenu_AddButton(info)
+  -- end, "MENU")
+
+  -- // NOLIB common code // --
+  -- itemsFrameUI.categoriesDropdown.HideMenu = function()
+  -- 	if UIDROPDOWNMENU_OPEN_MENU == itemsFrameUI.categoriesDropdown then
+  -- 		CloseDropDownMenus()
+  -- 	end
+  -- end
+  -- itemsFrameUI.categoriesDropdown.SetValue = function(self, newValue)
+  --   -- we update the category edit box
+  --   if (itemsFrameUI.categoryEditBox:GetText() == newValue) then
+  --     itemsFrameUI.categoryEditBox:SetText("")
+  --     SetFocusEditBox(itemsFrameUI.categoryEditBox)
+  --   elseif (newValue ~= nil) then
+  --     itemsFrameUI.categoryEditBox:SetText(newValue)
+  --     SetFocusEditBox(itemsFrameUI.nameEditBox)
+  --   end
+  -- end
+  -- itemsFrameUI.categoriesDropdownButton = CreateFrame("Button", "NysTDL_Button_CategoriesDropdown", itemsFrameUI.categoryEditBox, "NysTDL_DropdownButton")
+  -- itemsFrameUI.categoriesDropdownButton:SetPoint("LEFT", itemsFrameUI.categoryEditBox, "RIGHT", 0, -1)
+  -- itemsFrameUI.categoriesDropdownButton:SetScript("OnClick", function(self)
+  --   ToggleDropDownMenu(1, nil, itemsFrameUI.categoriesDropdown, self:GetName(), 0, 0)
+  -- end)
+  -- itemsFrameUI.categoriesDropdownButton:SetScript("OnHide", itemsFrameUI.categoriesDropdown.HideMenu)
 
   --/************************************************/--
 
@@ -2428,7 +2533,7 @@ function itemsFrame:ResetContent()
 end
 
 --Frame init
-function itemsFrame:Init()
+function itemsFrame:Init(profileChanged)
   -- this one is for keeping track of the old itemsList when we reset,
   -- so that we can hide everything when we change profiles
   currentDBItemsList = NysTDL.db.profile.itemsList;
@@ -2466,6 +2571,11 @@ function itemsFrame:Init()
   itemsFrameUI.frameAlphaSlider:SetValue(NysTDL.db.profile.frameAlpha);
   itemsFrameUI.frameContentAlphaSlider:SetValue(NysTDL.db.profile.frameContentAlpha);
   itemsFrameUI.affectDesc:SetChecked(NysTDL.db.profile.affectDesc);
+
+  -- when we're here, the list already exists, we just switched profiles and we need to update the new visibility
+  if (profileChanged) then
+    ItemsFrame_OnVisibilityUpdate()
+  end
 end
 
 ---Creating the main window---
@@ -2575,16 +2685,24 @@ function itemsFrame:CreateItemsFrame()
   end)
   itemsFrameUI.resizeButton:RegisterForClicks("RightButtonUp")
   itemsFrameUI.resizeButton:HookScript("OnClick", function() -- reset size
-    itemsFrameUI:SetSize(340, 400);
+    itemsFrameUI:SetSize(340, 400)
   end)
 
   -- Generating the tabs --
-  AllTab, DailyTab, WeeklyTab = SetTabs(itemsFrameUI, 3, L["All"], L["Daily"], L["Weekly"]);
+  AllTab, DailyTab, WeeklyTab = SetTabs(itemsFrameUI, 3, L["All"], L["Daily"], L["Weekly"])
 
   -- Initializing the frame with the current data
-  itemsFrame:Init();
+  itemsFrame:Init(false)
 
-  itemsFrameUI:Hide();
+  -- when we're here, the list was just created, so it is opened by default already,
+  -- then we decide what we want to do with that
+  if (NysTDL.db.profile.openByDefault) then
+    ItemsFrame_OnVisibilityUpdate()
+  elseif (NysTDL.db.profile.keepOpen) then
+    itemsFrameUI:SetShown(NysTDL.db.profile.lastListVisibility)
+  else
+    itemsFrameUI:Hide()
+  end
 end
 
 --@do-not-package@

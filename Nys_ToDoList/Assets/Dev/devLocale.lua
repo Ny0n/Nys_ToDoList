@@ -4,6 +4,9 @@ addonTable.devLocale = L
 
 -- ============================================ --
 
+L["Open by default"] = true
+L["Keeps the list opened if it was during last session"] = true
+L["Stay opened"] = true
 L["Use an existing category"] = true
 L["Cancel"] = true
 L["Chat Messages"] = true
@@ -74,8 +77,6 @@ L["Enable or disable non-essential chat messages"] = true
 L["Enable or disable the chat warning/reminder system"] = true
 L["Enable warnings for favorite items"] = true
 L["Enable warnings for non-favorite items"] = true
-L["Everything's done for this week!"] = true
-L["Everything's done for today!"] = true
 L["favorites"] = true
 L["Favorites color"] = true
 L["Favorites warning"] = true
@@ -104,7 +105,6 @@ L["Left-click on the category names to expand or shrink their content."] = true
 L["lock minimap button"] = true
 L["minimap button (the default)"] = true
 L["Monday"] = true
-L["Nice job, you did everything on the list!"] = true
 L["No item can be daily and weekly!"] = true
 L["No remove/clear to undo!"] = true
 L["Normal warning"] = true

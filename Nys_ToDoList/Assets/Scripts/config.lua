@@ -11,6 +11,7 @@ config.AceGUI = LibStub("AceGUI-3.0")
 config.L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 config.LDB = LibStub("LibDataBroker-1.1")
 config.LDBIcon = LibStub("LibDBIcon-1.0")
+config.LDD = LibStub:GetLibrary("LibUIDropDownMenu-4.0")
 -- data (from toc file)
 config.toc = {}
 config.toc.title = GetAddOnMetadata(addonName, "Title") -- better than "Nys_ToDoList"
@@ -51,6 +52,23 @@ config.database = {
 
                   -- / options widgets / --
 
+                  keepOpen = {
+                      order = 1.2,
+                      type = "toggle",
+                      name = L["Stay opened"],
+                      desc = L["Keeps the list opened if it was during last session"],
+                      get = "keepOpenGET",
+                      set = "keepOpenSET",
+                      disabled = function() return NysTDL.db.profile.openByDefault end,
+                  }, -- rememberUndo
+                  openByDefault = {
+                      order = 1.3,
+                      type = "toggle",
+                      name = L["Open by default"],
+                      get = "openByDefaultGET",
+                      set = "openByDefaultSET",
+                      hidden = function() return not NysTDL.db.profile.keepOpen end
+                  }, -- openByDefault
                   rememberUndo = {
                       order = 3.7,
                       type = "toggle",
@@ -143,7 +161,7 @@ config.database = {
 
                   -- spacers
                   spacer111 = {
-                    order = 1.11,
+                    order = 1.31,
                     type = "description",
                     width = "full",
                     name = "",
@@ -446,7 +464,7 @@ config.database = {
             childGroups = "tab",
             args = {
               -- importexport = {
-              --   order = 101, -- since the profiles tab will have 100, the default value, when created from AceDBOptions
+              --   order = 101, -- because the profiles tab will have 100, the default value, when created from AceDBOptions
               --   type = "group",
               --   name = "Import/Export",
               --   args = {
@@ -475,6 +493,7 @@ config.database = {
             closedCategories = {},
             undoTable = {},
             lastLoadedTab = "ToDoListUIFrameTab2",
+            lastListVisibility = false,
 
             -- // Frame Options
             framePos = { point = "CENTER", relativePoint = "CENTER", xOffset = 0, yOffset = 0 },
@@ -493,16 +512,11 @@ config.database = {
             favoritesColor = { 1, 0.5, 0.6 },
             rainbow = false,
             rainbowSpeed = 2,
-            weeklyDay = 4,
-            dailyHour = 9,
             autoReset = nil,
-            showChatMessages = true,
-            showWarnings = false,
-            favoritesWarning = true,
-            normalWarning = false,
-            hourlyReminder = false,
             rememberUndo = true,
             highlightOnFocus = true,
+            keepOpen = false,
+            openByDefault = false,
 
             --'Tabs' tab
             instantRefresh = false,
@@ -510,6 +524,17 @@ config.database = {
             showOnlyAllTabItems = false,
             hideDailyTabItems = false,
             hideWeeklyTabItems = false,
+
+            --'Chat Messages' tab
+            showChatMessages = true,
+            showWarnings = false,
+            favoritesWarning = true,
+            normalWarning = false,
+            hourlyReminder = false,
+
+            --'Auto Uncheck' tab
+            weeklyDay = 4,
+            dailyHour = 9,
         }, -- profile
     }, -- defaults
 }

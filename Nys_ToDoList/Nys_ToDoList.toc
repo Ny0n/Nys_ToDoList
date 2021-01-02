@@ -5,18 +5,22 @@
 #@non-retail@
 # ## Interface: 11306
 #@end-non-retail@
-## Version: 5.7
+## Version: 5.7.1
 
 ## Author: Nyony (on Twitch)
 ## Title: Ny's To-Do List
 ## Notes: A simple interface to remember everything you need to do!
-## X-Curse-Project-ID: 320655
-# ## X-WoWI-ID: xxx
+## Notes-frFR: Une interface simple pour se souvenir de tout ce que tu as à faire!
+## Notes-deDE: Einfaches Interface, um dich an alles zu erinnern, was zu tun ist!
+## Notes-ptBR: Uma interface simples para lembrar tudo o que você precisa fazer!
+## Notes-koKR: 간단한 인터페이스로 할일을 모두 기록해 보아요!
 
 ## DefaultState: enabled
 ## SavedVariables: NysToDoListDB
+## X-Curse-Project-ID: 320655
+# ## X-WoWI-ID: xxx
 
-## OptionalDeps: Ace3, LibDBIcon-1.0
-## X-Embeds: Ace3, LibDBIcon-1.0
+## OptionalDeps: Ace3, LibDBIcon-1.0, !LibUIDropDownMenu
+## X-Embeds: Ace3, LibDBIcon-1.0, !LibUIDropDownMenu
 
 Main.xml

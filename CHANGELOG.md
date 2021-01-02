@@ -1,3 +1,10 @@
+#### **5.7.1**
+
+- Added an option to open the list by default
+- Hidden daily/weekly checked items are now also hidden in the 'All' tab
+- Updated localizations + added them in the toc for the displayed addon note
+- Corrected nasty dropdown menu tainting bugs
+
 #### **5.7**
 
 - Added new options for tabs!
