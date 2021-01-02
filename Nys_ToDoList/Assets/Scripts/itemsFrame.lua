@@ -1924,12 +1924,13 @@ local function generateAddACategory()
 
   --/************************************************/--
 
-  itemsFrameUI.categoriesDropdown = CreateFrame("Frame", "NysTDL_Frame_CategoriesDropdown")
-  itemsFrameUI.categoriesDropdown.displayMode = "MENU"
-  itemsFrameUI.categoriesDropdown.info = {}
+  --  // LibUIDropDownMenu version
+
+  itemsFrameUI.categoriesDropdown = LDD:Create_UIDropDownMenu("NysTDL_Frame_CategoriesDropdown", nil)
+
   itemsFrameUI.categoriesDropdown.HideMenu = function()
-  	if UIDROPDOWNMENU_OPEN_MENU == itemsFrameUI.categoriesDropdown then
-  		CloseDropDownMenus()
+  	if L_UIDROPDOWNMENU_OPEN_MENU == itemsFrameUI.categoriesDropdown then
+  		LDD:CloseDropDownMenus()
   	end
   end
 
@@ -1946,9 +1947,9 @@ local function generateAddACategory()
   end
 
   -- Create and bind the initialization function to the dropdown menu
-  itemsFrameUI.categoriesDropdown.initialize = function(self, level)
+  LDD:UIDropDownMenu_Initialize(itemsFrameUI.categoriesDropdown, function(self, level)
     if not level then return end
-    local info = self.info
+    local info = LDD:UIDropDownMenu_CreateInfo()
     wipe(info)
 
     if level == 1 then
@@ -1956,62 +1957,96 @@ local function generateAddACategory()
       info.isTitle = true
       info.notCheckable = true
       info.text = L["Use an existing category"]
-      UIDropDownMenu_AddButton(info, level)
+      LDD:UIDropDownMenu_AddButton(info, level)
 
       -- the categories
       wipe(info)
       info.func = self.SetValue
-      -- info.notCheckable = true
-      -- info.text = "hey"
-      -- -- info.arg1 = "hey2"
-      -- -- info.checked = itemsFrameUI.categoryEditBox:GetText() == "hey2"
-      -- UIDropDownMenu_AddButton(info, level)
       local categories = itemsFrame:GetCategoriesOrdered()
-      -- local test = {
-      --   "hey",
-      --   "ola"
-      -- }
       for _, v in pairs(categories) do
-        info.text = v
         info.arg1 = v
-        info.checked = true
-        UIDropDownMenu_AddButton(info, level)
+        info.text = v
+        info.checked = itemsFrameUI.categoryEditBox:GetText() == v
+        LDD:UIDropDownMenu_AddButton(info, level)
       end
-    -- info.notCheckable = nil
-    -- UIDropDownMenu_AddButton(info, level)
 
-      -- wipe(info)
-      -- info.disabled = true
-      -- info.notCheckable = true
-      -- UIDropDownMenu_AddButton(info, level)
-
-      -- the cancel button
-      -- wipe(info)
-      -- info.notCheckable = true
-      -- info.text = "bla"
-      -- info.arg1 = "bla"
-      -- UIDropDownMenu_AddButton(info, level)
-
-
-      -- wipe(info)
-  		-- info.disabled = 1
-  		-- info.notCheckable = 1
-  		-- UIDropDownMenu_AddButton(info, level)
-  		-- info.disabled = nil
-      --
-  		-- info.text = CLOSE
-  		-- info.func = self.HideMenu
-  		-- UIDropDownMenu_AddButton(info, level)
+      -- the close button
+      wipe(info)
+  		info.notCheckable = true
+  		info.text = CLOSE
+  		info.func = self.HideMenu
+  		LDD:UIDropDownMenu_AddButton(info, level)
     end
-  end
+  end, "MENU")
 
   itemsFrameUI.categoriesDropdownButton = CreateFrame("Button", "NysTDL_Button_CategoriesDropdown", itemsFrameUI.categoryEditBox, "NysTDL_DropdownButton")
   itemsFrameUI.categoriesDropdownButton:SetPoint("LEFT", itemsFrameUI.categoryEditBox, "RIGHT", 0, -1)
   itemsFrameUI.categoriesDropdownButton:SetScript("OnClick", function(self)
-    ToggleDropDownMenu(1, nil, itemsFrameUI.categoriesDropdown, self:GetName(), 0, 0)
+    LDD:ToggleDropDownMenu(1, nil, itemsFrameUI.categoriesDropdown, self:GetName(), 0, 0)
   end)
   itemsFrameUI.categoriesDropdownButton:SetScript("OnHide", itemsFrameUI.categoriesDropdown.HideMenu)
 
+  --  // NOLIB version: taints SetFocus and click on quests in combat
+
+  -- itemsFrameUI.categoriesDropdown = CreateFrame("Frame", "NysTDL_Frame_CategoriesDropdown")
+  -- itemsFrameUI.categoriesDropdown.displayMode = "MENU"
+  -- itemsFrameUI.categoriesDropdown.info = {}
+  -- itemsFrameUI.categoriesDropdown.HideMenu = function()
+  -- 	if UIDROPDOWNMENU_OPEN_MENU == itemsFrameUI.categoriesDropdown then
+  -- 		CloseDropDownMenus()
+  -- 	end
+  -- end
+  --
+  -- -- Implement the function to change the weekly reset day, then refresh
+  -- itemsFrameUI.categoriesDropdown.SetValue = function(self, newValue)
+  --   -- we update the category edit box
+  --   if (itemsFrameUI.categoryEditBox:GetText() == newValue) then
+  --     itemsFrameUI.categoryEditBox:SetText("")
+  --     SetFocusEditBox(itemsFrameUI.categoryEditBox)
+  --   elseif (newValue ~= nil) then
+  --     itemsFrameUI.categoryEditBox:SetText(newValue)
+  --     SetFocusEditBox(itemsFrameUI.nameEditBox)
+  --   end
+  -- end
+  --
+  -- -- Create and bind the initialization function to the dropdown menu
+  -- itemsFrameUI.categoriesDropdown.initialize = function(self, level)
+  --   if not level then return end
+  --   local info = self.info
+  --   wipe(info)
+  --
+  --   if level == 1 then
+  --     -- the title
+  --     info.isTitle = true
+  --     info.notCheckable = true
+  --     info.text = L["Use an existing category"]
+  --     UIDropDownMenu_AddButton(info, level)
+  --
+  --     -- the categories
+  --     wipe(info)
+  --     info.func = self.SetValue
+  --     local categories = itemsFrame:GetCategoriesOrdered()
+  --     for _, v in pairs(categories) do
+  --       info.text = v
+  --       info.arg1 = v
+  --       info.checked = itemsFrameUI.categoryEditBox:GetText() == v
+  --       UIDropDownMenu_AddButton(info, level)
+  --     end
+  --
+  --     wipe(info)
+  -- 		info.notCheckable = true
+  -- 		info.text = CLOSE
+  -- 		info.func = self.HideMenu
+  -- 		UIDropDownMenu_AddButton(info, level)
+  --   end
+  -- end
+  --
+  -- itemsFrameUI.categoriesDropdownButton = CreateFrame("Button", "NysTDL_Button_CategoriesDropdown", itemsFrameUI.categoryEditBox, "NysTDL_DropdownButton")
+  -- itemsFrameUI.categoriesDropdownButton:SetPoint("LEFT", itemsFrameUI.categoryEditBox, "RIGHT", 0, -1)
+  -- itemsFrameUI.categoriesDropdownButton:SetScript("OnClick", function(self)
+  --   ToggleDropDownMenu(1, nil, itemsFrameUI.categoriesDropdown, self:GetName(), 0, 0)
+  -- end)
+  -- itemsFrameUI.categoriesDropdownButton:SetScript("OnHide", itemsFrameUI.categoriesDropdown.HideMenu)
 
   --/************************************************/--
 
