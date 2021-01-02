@@ -11,6 +11,7 @@ config.AceGUI = LibStub("AceGUI-3.0")
 config.L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 config.LDB = LibStub("LibDataBroker-1.1")
 config.LDBIcon = LibStub("LibDBIcon-1.0")
+config.LDD = LibStub:GetLibrary("LibUIDropDownMenu-4.0")
 -- data (from toc file)
 config.toc = {}
 config.toc.title = GetAddOnMetadata(addonName, "Title") -- better than "Nys_ToDoList"

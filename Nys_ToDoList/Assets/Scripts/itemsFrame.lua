@@ -7,6 +7,7 @@ local itemsFrame = tdlTable.itemsFrame;
 
 -- Variables declaration --
 local L = config.L;
+local LDD = config.LDD;
 itemsFrame.tdlButton = 0; -- so we can access it here, even though we create it in init.lua
 
 local itemsFrameUI;
@@ -1923,9 +1924,17 @@ local function generateAddACategory()
 
   --/************************************************/--
 
-  itemsFrameUI.categoriesDropdown = CreateFrame("Frame", nil, UIParent, "UIDropDownMenuTemplate")
+  itemsFrameUI.categoriesDropdown = CreateFrame("Frame", "NysTDL_Frame_CategoriesDropdown")
+  itemsFrameUI.categoriesDropdown.displayMode = "MENU"
+  itemsFrameUI.categoriesDropdown.info = {}
+  itemsFrameUI.categoriesDropdown.HideMenu = function()
+  	if UIDROPDOWNMENU_OPEN_MENU == itemsFrameUI.categoriesDropdown then
+  		CloseDropDownMenus()
+  	end
+  end
+
   -- Implement the function to change the weekly reset day, then refresh
-  function itemsFrameUI.categoriesDropdown:SetValue(newValue)
+  itemsFrameUI.categoriesDropdown.SetValue = function(self, newValue)
     -- we update the category edit box
     if (itemsFrameUI.categoryEditBox:GetText() == newValue) then
       itemsFrameUI.categoryEditBox:SetText("")
@@ -1935,46 +1944,74 @@ local function generateAddACategory()
       SetFocusEditBox(itemsFrameUI.nameEditBox)
     end
   end
+
   -- Create and bind the initialization function to the dropdown menu
-  UIDropDownMenu_Initialize(itemsFrameUI.categoriesDropdown, function(self)
-    local info = UIDropDownMenu_CreateInfo()
+  itemsFrameUI.categoriesDropdown.initialize = function(self, level)
+    if not level then return end
+    local info = self.info
+    wipe(info)
 
-    -- the title
-    info.isTitle = true
-    info.notCheckable = true
-    info.text = L["Use an existing category"]
-    UIDropDownMenu_AddButton(info)
+    if level == 1 then
+      -- the title
+      info.isTitle = true
+      info.notCheckable = true
+      info.text = L["Use an existing category"]
+      UIDropDownMenu_AddButton(info, level)
 
-    -- the categories
-    info.notCheckable = false
-    info.isTitle = false
-    info.disabled = false
-    local categories = itemsFrame:GetCategoriesOrdered()
-    for _, v in pairs(categories) do
+      -- the categories
+      wipe(info)
       info.func = self.SetValue
-      info.arg1 = v
-      info.text = info.arg1
-      info.checked = itemsFrameUI.categoryEditBox:GetText() == info.arg1
-      UIDropDownMenu_AddButton(info)
+      -- info.notCheckable = true
+      -- info.text = "hey"
+      -- -- info.arg1 = "hey2"
+      -- -- info.checked = itemsFrameUI.categoryEditBox:GetText() == "hey2"
+      -- UIDropDownMenu_AddButton(info, level)
+      local categories = itemsFrame:GetCategoriesOrdered()
+      -- local test = {
+      --   "hey",
+      --   "ola"
+      -- }
+      for _, v in pairs(categories) do
+        info.text = v
+        info.arg1 = v
+        info.checked = true
+        UIDropDownMenu_AddButton(info, level)
+      end
+    -- info.notCheckable = nil
+    -- UIDropDownMenu_AddButton(info, level)
+
+      -- wipe(info)
+      -- info.disabled = true
+      -- info.notCheckable = true
+      -- UIDropDownMenu_AddButton(info, level)
+
+      -- the cancel button
+      -- wipe(info)
+      -- info.notCheckable = true
+      -- info.text = "bla"
+      -- info.arg1 = "bla"
+      -- UIDropDownMenu_AddButton(info, level)
+
+
+      -- wipe(info)
+  		-- info.disabled = 1
+  		-- info.notCheckable = 1
+  		-- UIDropDownMenu_AddButton(info, level)
+  		-- info.disabled = nil
+      --
+  		-- info.text = CLOSE
+  		-- info.func = self.HideMenu
+  		-- UIDropDownMenu_AddButton(info, level)
     end
+  end
 
-    -- the cancel button
-    info.func = nil
-    info.arg1 = nil
-    info.checked = false
-    info.notCheckable = true
-    info.text = L["Cancel"]
-    UIDropDownMenu_AddButton(info)
-  end, "MENU")
-
-  itemsFrameUI.categoriesDropdownButton = CreateFrame("Button", "NysTDL_DropdownButton_Categories", itemsFrameUI.categoryEditBox, "NysTDL_DropdownButton")
+  itemsFrameUI.categoriesDropdownButton = CreateFrame("Button", "NysTDL_Button_CategoriesDropdown", itemsFrameUI.categoryEditBox, "NysTDL_DropdownButton")
   itemsFrameUI.categoriesDropdownButton:SetPoint("LEFT", itemsFrameUI.categoryEditBox, "RIGHT", 0, -1)
-  itemsFrameUI.categoriesDropdownButton:SetScript("OnClick", function()
-    ToggleDropDownMenu(1, nil, itemsFrameUI.categoriesDropdown, "NysTDL_DropdownButton_Categories", 0, 0)
+  itemsFrameUI.categoriesDropdownButton:SetScript("OnClick", function(self)
+    ToggleDropDownMenu(1, nil, itemsFrameUI.categoriesDropdown, self:GetName(), 0, 0)
   end)
-  itemsFrameUI.categoriesDropdownButton:SetScript("OnHide", function()
-    CloseDropDownMenus()
-  end)
+  itemsFrameUI.categoriesDropdownButton:SetScript("OnHide", itemsFrameUI.categoriesDropdown.HideMenu)
+
 
   --/************************************************/--
 

@@ -16,7 +16,7 @@
 ## DefaultState: enabled
 ## SavedVariables: NysToDoListDB
 
-## OptionalDeps: Ace3, LibDBIcon-1.0
-## X-Embeds: Ace3, LibDBIcon-1.0
+## OptionalDeps: Ace3, LibDBIcon-1.0, !LibUIDropDownMenu
+## X-Embeds: Ace3, LibDBIcon-1.0, !LibUIDropDownMenu
 
 Main.xml
