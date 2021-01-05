@@ -50,12 +50,7 @@ local itemNameWidthMax = 240;
 local centerXOffset = 165;
 local lineOffset = 120;
 local descFrameLevelDiff = 20;
-local tutoFrameRightDist = 40;
 local cursorX, cursorY, cursorDist = 0, 0, 10; -- for my special drag
-
-local ItemsFrame_Update;
-local ItemsFrame_UpdateTime;
-local Tab_OnClick;
 
 local updateRate = 0.05;
 local refreshRate = 1;
@@ -66,10 +61,10 @@ local refreshRate = 1;
 
 function itemsFrame:Toggle()
   -- changes the visibility of the ToDoList frame
-  if (not itemsFrameUI:IsShown()) then -- We update the frame if we are about to show it
-    ItemsFrame_UpdateTime()
-    ItemsFrame_Update()
-  end
+
+  -- We also update the frame if we are about to show it
+  if (not itemsFrameUI:IsShown()) then itemsFrame:Update() end
+
   itemsFrameUI:SetShown(not itemsFrameUI:IsShown())
 end
 
@@ -96,7 +91,7 @@ function itemsFrame:ReloadTab(tabGlobalWidgetName)
     end
   end
 
-  Tab_OnClick(_G[NysTDL.db.profile.lastLoadedTab])
+  itemsFrame:SetActiveTab(_G[NysTDL.db.profile.lastLoadedTab])
 end
 
 function NysTDL:EditBoxInsertLink(text)
@@ -431,9 +426,9 @@ function itemsFrame:updateCheckButtonsColor()
   end
 end
 
--- Saved variable functions
+-- // Automatic reset
 
-function itemsFrame:autoReset()
+function itemsFrame:checkAutoReset()
   if time() > NysTDL.db.profile.autoReset["Weekly"] then
     NysTDL.db.profile.autoReset["Daily"] = config:GetSecondsToReset().daily;
     NysTDL.db.profile.autoReset["Weekly"] = config:GetSecondsToReset().weekly;
@@ -451,7 +446,7 @@ function itemsFrame:autoResetedThisSessionGET()
   return autoResetedThisSession;
 end
 
--- Items modifications
+-- // Items modifications
 
 local function refreshTab(catName, itemName, action, modif)
   -- if the last tab we were on is getting an update
@@ -1040,16 +1035,13 @@ function itemsFrame:UndoRemove()
   end
 end
 
--- Frame update: --
-ItemsFrame_Update = function()
-  -- updates everything about the frame everytime we call this function
+-- // Frame updates and events
+
+function itemsFrame:Update()
+  -- updates everything about the frame without actually reloading the tab, this is a less intensive version
+  itemsFrame:checkAutoReset()
   itemsFrame:updateRemainingNumber();
   itemsFrame:updateCheckButtonsColor();
-end
-
-ItemsFrame_UpdateTime = function()
-  -- updates things about time
-  itemsFrame:autoReset();
 end
 
 local function ItemsFrame_OnVisibilityUpdate()
@@ -1191,23 +1183,20 @@ local function ItemsFrame_OnUpdate(self, elapsed)
     if (NysTDL.db.profile.rainbow) then
       itemsFrame:ApplyNewRainbowColor(NysTDL.db.profile.rainbowSpeed)
     end
-    self.timeSinceLastUpdate = self.timeSinceLastUpdate - updateRate;
+    self.timeSinceLastUpdate = self.timeSinceLastUpdate - updateRate
   end
 
   while (self.timeSinceLastRefresh > refreshRate) do -- every one second
-    ItemsFrame_UpdateTime();
-    self.timeSinceLastRefresh = self.timeSinceLastRefresh - refreshRate;
+    itemsFrame:checkAutoReset()
+    self.timeSinceLastRefresh = self.timeSinceLastRefresh - refreshRate
   end
 end
 
 ----------------------------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------------------------
 
---------------------------------------
--- frame creation and functions
---------------------------------------
+-- // Some widgets
 
+-- item widget
 function itemsFrame:CreateMovableCheckBtnElems(catName, itemName)
   local data = NysTDL.db.profile.itemsList[catName][itemName];
 
@@ -1239,7 +1228,7 @@ function itemsFrame:CreateMovableCheckBtnElems(catName, itemName)
     if (NysTDL.db.profile.instantRefresh) then
       itemsFrame:ReloadTab()
     else
-      ItemsFrame_Update()
+      itemsFrame:Update()
     end
   end);
   checkBtn[catName][itemName].InteractiveLabel:SetHyperlinksEnabled(true); -- to enable OnHyperlinkClick
@@ -1314,6 +1303,7 @@ function itemsFrame:CreateMovableCheckBtnElems(catName, itemName)
   descBtn[catName][itemName]:Hide();
 end
 
+-- category widget
 function itemsFrame:CreateMovableLabelElems(catName)
   -- category label
   label[catName] = config:CreateNoPointsInteractiveLabel("NysTDL_CatLabel_"..catName, itemsFrameUI, catName, "GameFontHighlightLarge");
@@ -1441,14 +1431,7 @@ function itemsFrame:CreateMovableLabelElems(catName)
   table.insert(hyperlinkEditBoxes, editBox[catName]);
 end
 
-local function loadMovable()
-  for catName, items in pairs(NysTDL.db.profile.itemsList) do
-    itemsFrame:CreateMovableLabelElems(catName) -- Category labels
-    for itemName in pairs(items) do
-      itemsFrame:CreateMovableCheckBtnElems(catName, itemName) -- All items transformed as checkboxes
-    end
-  end
-end
+-- // Creation and loading of the list's items
 
 -- boom
 local function loadCategories(tab, categoryLabel, catName, itemNames, lastData)
@@ -1577,11 +1560,7 @@ local function loadCategories(tab, categoryLabel, catName, itemNames, lastData)
   return lastData;
 end
 
--------------------------------------------------------------------------------------------
--- Contenting:<3 --------------------------------------------------------------------------
--------------------------------------------------------------------------------------------
-
--- generating the list items
+-- generating the list items to load for the tab
 local function generateTab(tab)
   -- We sort all of the categories in alphabetical order
   local tempTable = itemsFrame:GetCategoriesOrdered()
@@ -1634,7 +1613,7 @@ local function generateTab(tab)
   end
 end
 
-----------------------------
+-- // Content loading
 
 local function loadAddACategory(tab)
   itemsFrameUI.categoryButton:SetParent(tab);
@@ -1881,7 +1860,7 @@ local function loadTab(tab)
   end
 end
 
-----------------------------
+-- // Content generation
 
 local function generateAddACategory()
   itemsFrameUI.categoryButton = CreateFrame("Button", "categoryButton", itemsFrameUI, "NysTDL_CategoryButton");
@@ -1930,6 +1909,7 @@ local function generateAddACategory()
 
   --  // LibUIDropDownMenu version // --
 
+  --@retail@
   itemsFrameUI.categoriesDropdown = LDD:Create_UIDropDownMenu("NysTDL_Frame_CategoriesDropdown", nil)
 
   itemsFrameUI.categoriesDropdown.HideMenu = function()
@@ -1989,41 +1969,44 @@ local function generateAddACategory()
     LDD:ToggleDropDownMenu(1, nil, itemsFrameUI.categoriesDropdown, self:GetName(), 0, 0)
   end)
   itemsFrameUI.categoriesDropdownButton:SetScript("OnHide", itemsFrameUI.categoriesDropdown.HideMenu)
+  --@end-retail@
 
   --  // NOLIB version1 - Custom frame style (clean, with wipes): taints click on quests in combat // --
-  -- itemsFrameUI.categoriesDropdown = CreateFrame("Frame", "NysTDL_Frame_CategoriesDropdown")
-  -- itemsFrameUI.categoriesDropdown.displayMode = "MENU"
-  -- itemsFrameUI.categoriesDropdown.info = {}
-  -- itemsFrameUI.categoriesDropdown.initialize = function(self, level)
-  --   if not level then return end
-  --   local info = self.info
-  --   wipe(info)
-  --
-  --   if level == 1 then
-  --     -- the title
-  --     info.isTitle = true
-  --     info.notCheckable = true
-  --     info.text = L["Use an existing category"]
-  --     UIDropDownMenu_AddButton(info, level)
-  --
-  --     -- the categories
-  --     wipe(info)
-  --     info.func = self.SetValue
-  --     local categories = itemsFrame:GetCategoriesOrdered()
-  --     for _, v in pairs(categories) do
-  --       info.text = v
-  --       info.arg1 = v
-  --       info.checked = itemsFrameUI.categoryEditBox:GetText() == v
-  --       UIDropDownMenu_AddButton(info, level)
-  --     end
-  --
-  --     wipe(info)
-  -- 		info.notCheckable = true
-  -- 		info.text = CLOSE
-  -- 		info.func = self.HideMenu
-  -- 		UIDropDownMenu_AddButton(info, level)
-  --   end
-  -- end
+  --[===[@non-retail@
+  itemsFrameUI.categoriesDropdown = CreateFrame("Frame", "NysTDL_Frame_CategoriesDropdown")
+  itemsFrameUI.categoriesDropdown.displayMode = "MENU"
+  itemsFrameUI.categoriesDropdown.info = {}
+  itemsFrameUI.categoriesDropdown.initialize = function(self, level)
+    if not level then return end
+    local info = self.info
+    wipe(info)
+
+    if level == 1 then
+      -- the title
+      info.isTitle = true
+      info.notCheckable = true
+      info.text = L["Use an existing category"]
+      UIDropDownMenu_AddButton(info, level)
+
+      -- the categories
+      wipe(info)
+      info.func = self.SetValue
+      local categories = itemsFrame:GetCategoriesOrdered()
+      for _, v in pairs(categories) do
+        info.text = v
+        info.arg1 = v
+        info.checked = itemsFrameUI.categoryEditBox:GetText() == v
+        UIDropDownMenu_AddButton(info, level)
+      end
+
+      wipe(info)
+  		info.notCheckable = true
+  		info.text = CLOSE
+  		info.func = self.HideMenu
+  		UIDropDownMenu_AddButton(info, level)
+    end
+  end
+  --@end-non-retail@]===]
 
   --  // NOLIB version2 - WoW template style (no level check): taints SetFocus and click on quests in combat // --
   -- itemsFrameUI.categoriesDropdown = CreateFrame("Frame", nil, UIParent, "UIDropDownMenuTemplate")
@@ -2059,27 +2042,29 @@ local function generateAddACategory()
   -- end, "MENU")
 
   -- // NOLIB common code // --
-  -- itemsFrameUI.categoriesDropdown.HideMenu = function()
-  -- 	if UIDROPDOWNMENU_OPEN_MENU == itemsFrameUI.categoriesDropdown then
-  -- 		CloseDropDownMenus()
-  -- 	end
-  -- end
-  -- itemsFrameUI.categoriesDropdown.SetValue = function(self, newValue)
-  --   -- we update the category edit box
-  --   if (itemsFrameUI.categoryEditBox:GetText() == newValue) then
-  --     itemsFrameUI.categoryEditBox:SetText("")
-  --     SetFocusEditBox(itemsFrameUI.categoryEditBox)
-  --   elseif (newValue ~= nil) then
-  --     itemsFrameUI.categoryEditBox:SetText(newValue)
-  --     SetFocusEditBox(itemsFrameUI.nameEditBox)
-  --   end
-  -- end
-  -- itemsFrameUI.categoriesDropdownButton = CreateFrame("Button", "NysTDL_Button_CategoriesDropdown", itemsFrameUI.categoryEditBox, "NysTDL_DropdownButton")
-  -- itemsFrameUI.categoriesDropdownButton:SetPoint("LEFT", itemsFrameUI.categoryEditBox, "RIGHT", 0, -1)
-  -- itemsFrameUI.categoriesDropdownButton:SetScript("OnClick", function(self)
-  --   ToggleDropDownMenu(1, nil, itemsFrameUI.categoriesDropdown, self:GetName(), 0, 0)
-  -- end)
-  -- itemsFrameUI.categoriesDropdownButton:SetScript("OnHide", itemsFrameUI.categoriesDropdown.HideMenu)
+  --[===[@non-retail@
+  itemsFrameUI.categoriesDropdown.HideMenu = function()
+  	if UIDROPDOWNMENU_OPEN_MENU == itemsFrameUI.categoriesDropdown then
+  		CloseDropDownMenus()
+  	end
+  end
+  itemsFrameUI.categoriesDropdown.SetValue = function(self, newValue)
+    -- we update the category edit box
+    if (itemsFrameUI.categoryEditBox:GetText() == newValue) then
+      itemsFrameUI.categoryEditBox:SetText("")
+      SetFocusEditBox(itemsFrameUI.categoryEditBox)
+    elseif (newValue ~= nil) then
+      itemsFrameUI.categoryEditBox:SetText(newValue)
+      SetFocusEditBox(itemsFrameUI.nameEditBox)
+    end
+  end
+  itemsFrameUI.categoriesDropdownButton = CreateFrame("Button", "NysTDL_Button_CategoriesDropdown", itemsFrameUI.categoryEditBox, "NysTDL_DropdownButton")
+  itemsFrameUI.categoriesDropdownButton:SetPoint("LEFT", itemsFrameUI.categoryEditBox, "RIGHT", 0, -1)
+  itemsFrameUI.categoriesDropdownButton:SetScript("OnClick", function(self)
+    ToggleDropDownMenu(1, nil, itemsFrameUI.categoriesDropdown, self:GetName(), 0, 0)
+  end)
+  itemsFrameUI.categoriesDropdownButton:SetScript("OnHide", itemsFrameUI.categoriesDropdown.HideMenu)
+  --@end-non-retail@]===]
 
   --/************************************************/--
 
@@ -2293,110 +2278,55 @@ local function generateFrameContent()
   itemsFrameUI.dummyLabel = config:CreateDummy(itemsFrameUI, itemsFrameUI.lineBottom, 0, 0);
 end
 
--- tutorial
+-- // Tutorial
+
 local function generateTutorialFrames()
   -- TUTO : How to add categories ("addNewCat")
     -- frame
-    local TF_addNewCat = CreateFrame("Frame", "NysTDL_TF_addNewCat", itemsFrameUI, "NysTDL_HelpPlateTooltip")
-    TF_addNewCat:SetSize(190, 50)
-    TF_addNewCat.ArrowDOWN:Show()
-    TF_addNewCat.Text:SetWidth(TF_addNewCat:GetWidth() - tutoFrameRightDist)
-    TF_addNewCat.Text:SetText(L["Start by adding a new category!"]);
-    TF_addNewCat.closeButton = CreateFrame("Button", "closeButton", TF_addNewCat, "UIPanelCloseButton");
-    TF_addNewCat.closeButton:SetPoint("TOPRIGHT", TF_addNewCat, "TOPRIGHT", 6, 6);
-    TF_addNewCat.closeButton:SetScript("onClick", function() NysTDL.db.global.tuto_progression = NysTDL.db.global.tuto_progression + 1; end);
-    tutorialFrames.addNewCat = TF_addNewCat;
-    TF_addNewCat:Hide() -- we hide them by default, we show them only when we need to
+    tutorialFrames.addNewCat = config:CreateTutorialFrame("addNewCat", itemsFrameUI, false, "UP", L["Start by adding a new category!"], 190, 50)
 
     -- targeted frame
-    -- tutorialFramesTarget.addNewCat = itemsFrameUI.categoryButton;
-    -- TF_addNewCat:SetPoint("LEFT", tutorialFramesTarget.addNewCat, "RIGHT", 18, 0);
     tutorialFramesTarget.addNewCat = itemsFrameUI.categoryButton;
-    TF_addNewCat:SetPoint("TOP", tutorialFramesTarget.addNewCat, "BOTTOM", 0, -18);
+    tutorialFrames.addNewCat:SetPoint("TOP", tutorialFramesTarget.addNewCat, "BOTTOM", 0, -18);
 
   -- TUTO : Adding the categories ("addCat")
     -- frame
-    local TF_addCat = CreateFrame("Frame", "NysTDL_TF_addCat", itemsFrameUI, "NysTDL_HelpPlateTooltip")
-    TF_addCat:SetSize(240, 50)
-    TF_addCat.ArrowDOWN:Show()
-    TF_addCat.Text:SetWidth(TF_addCat:GetWidth() - tutoFrameRightDist)
-    TF_addCat.Text:SetText(L["This will add your category and item to the current tab"]);
-    TF_addCat.closeButton = CreateFrame("Button", "closeButton", TF_addCat, "UIPanelCloseButton");
-    TF_addCat.closeButton:SetPoint("TOPRIGHT", TF_addCat, "TOPRIGHT", 6, 6);
-    TF_addCat.closeButton:SetScript("onClick", function() NysTDL.db.global.tuto_progression = NysTDL.db.global.tuto_progression + 1; end);
-    tutorialFrames.addCat = TF_addCat;
-    TF_addCat:Hide()
+    tutorialFrames.addCat = config:CreateTutorialFrame("addCat", itemsFrameUI, true, "UP", L["This will add your category and item to the current tab"], 240, 50)
 
     -- targeted frame
     tutorialFramesTarget.addCat = itemsFrameUI.addBtn;
-    TF_addCat:SetPoint("TOP", tutorialFramesTarget.addCat, "BOTTOM", 0, -22);
+    tutorialFrames.addCat:SetPoint("TOP", tutorialFramesTarget.addCat, "BOTTOM", 0, -22);
 
   -- TUTO : adding an item to a category ("addItem")
     -- frame
-    local TF_addItem = CreateFrame("Frame", "NysTDL_TF_addItem", itemsFrameUI, "NysTDL_HelpPlateTooltip")
-    TF_addItem:SetSize(220, 50)
-    TF_addItem.ArrowLEFT:Show()
-    TF_addItem.Text:SetWidth(TF_addItem:GetWidth() - tutoFrameRightDist)
-    TF_addItem.Text:SetText(L["To add new items to existing categories, just right-click the category names!"]);
-    TF_addItem.closeButton = CreateFrame("Button", "closeButton", TF_addItem, "UIPanelCloseButton");
-    TF_addItem.closeButton:SetPoint("TOPRIGHT", TF_addItem, "TOPRIGHT", 6, 6);
-    TF_addItem.closeButton:SetScript("onClick", function() NysTDL.db.global.tuto_progression = NysTDL.db.global.tuto_progression + 1; end);
-    tutorialFrames.addItem = TF_addItem;
-    TF_addItem:Hide()
+    tutorialFrames.addItem = config:CreateTutorialFrame("addItem", itemsFrameUI, false, "RIGHT", L["To add new items to existing categories, just right-click the category names!"], 220, 50)
 
     -- targeted frame
     -- THIS IS A SPECIAL TARGET THAT GETS UPDATED IN THE LOADCATEGORIES FUNCTION
 
   -- TUTO : getting more information ("getMoreInfo")
     -- frame
-    local TF_getMoreInfo = CreateFrame("Frame", "NysTDL_TF_getMoreInfo", itemsFrameUI, "NysTDL_HelpPlateTooltip")
-    TF_getMoreInfo:SetSize(275, 50)
-    TF_getMoreInfo.ArrowRIGHT:Show()
-    TF_getMoreInfo.Text:SetWidth(TF_getMoreInfo:GetWidth() - tutoFrameRightDist)
-    TF_getMoreInfo.Text:SetText(L["If you're having any problems, or you want more information on systems like favorites or descriptions, you can always click here to print help in the chat!"]);
-    TF_getMoreInfo.closeButton = CreateFrame("Button", "closeButton", TF_getMoreInfo, "UIPanelCloseButton");
-    TF_getMoreInfo.closeButton:SetPoint("TOPRIGHT", TF_getMoreInfo, "TOPRIGHT", 6, 6);
-    TF_getMoreInfo.closeButton:SetScript("onClick", function() NysTDL.db.global.tuto_progression = NysTDL.db.global.tuto_progression + 1; end);
-    tutorialFrames.getMoreInfo = TF_getMoreInfo;
-    TF_getMoreInfo:Hide()
+    tutorialFrames.getMoreInfo = config:CreateTutorialFrame("getMoreInfo", itemsFrameUI, false, "LEFT", L["If you're having any problems, or you want more information on systems like favorites or descriptions, you can always click here to print help in the chat!"], 275, 50)
 
     -- targeted frame
     tutorialFramesTarget.getMoreInfo = itemsFrameUI.helpButton;
-    TF_getMoreInfo:SetPoint("LEFT", tutorialFramesTarget.getMoreInfo, "RIGHT", 18, 0);
+    tutorialFrames.getMoreInfo:SetPoint("LEFT", tutorialFramesTarget.getMoreInfo, "RIGHT", 18, 0);
 
   -- TUTO : accessing the options ("accessOptions")
     -- frame
-    local TF_accessOptions = CreateFrame("Frame", "NysTDL_TF_accessOptions", itemsFrameUI, "NysTDL_HelpPlateTooltip")
-    TF_accessOptions:SetSize(220, 50)
-    TF_accessOptions.ArrowUP:Show()
-    TF_accessOptions.Text:SetWidth(TF_accessOptions:GetWidth() - tutoFrameRightDist)
-    TF_accessOptions.Text:SetText(L["You can access the options from here"]);
-    TF_accessOptions.closeButton = CreateFrame("Button", "closeButton", TF_accessOptions, "UIPanelCloseButton");
-    TF_accessOptions.closeButton:SetPoint("TOPRIGHT", TF_accessOptions, "TOPRIGHT", 6, 6);
-    TF_accessOptions.closeButton:SetScript("onClick", function() NysTDL.db.global.tuto_progression = NysTDL.db.global.tuto_progression + 1; end);
-    tutorialFrames.accessOptions = TF_accessOptions;
-    TF_accessOptions:Hide()
+    tutorialFrames.accessOptions = config:CreateTutorialFrame("accessOptions", itemsFrameUI, false, "DOWN", L["You can access the options from here"], 220, 50)
 
     -- targeted frame
     tutorialFramesTarget.accessOptions = itemsFrameUI.frameOptionsButton;
-    TF_accessOptions:SetPoint("BOTTOM", tutorialFramesTarget.accessOptions, "TOP", 0, 18);
+    tutorialFrames.accessOptions:SetPoint("BOTTOM", tutorialFramesTarget.accessOptions, "TOP", 0, 18);
 
   -- TUTO : what does holding ALT do? ("ALTkey")
     -- frame
-    local TF_ALTkey = CreateFrame("Frame", "NysTDL_TF_ALTkey", itemsFrameUI, "NysTDL_HelpPlateTooltip")
-    TF_ALTkey:SetSize(220, 50)
-    TF_ALTkey.ArrowUP:Show()
-    TF_ALTkey.Text:SetWidth(TF_ALTkey:GetWidth() - tutoFrameRightDist)
-    TF_ALTkey.Text:SetText(L["One more thing: if you hold ALT while the list is opened, some interesting buttons will appear!"]);
-    TF_ALTkey.closeButton = CreateFrame("Button", "closeButton", TF_ALTkey, "UIPanelCloseButton");
-    TF_ALTkey.closeButton:SetPoint("TOPRIGHT", TF_ALTkey, "TOPRIGHT", 6, 6);
-    TF_ALTkey.closeButton:SetScript("onClick", function() NysTDL.db.global.tuto_progression = NysTDL.db.global.tuto_progression + 1; end);
-    tutorialFrames.ALTkey = TF_ALTkey;
-    TF_ALTkey:Hide()
+    tutorialFrames.ALTkey = config:CreateTutorialFrame("ALTkey", itemsFrameUI, false, "DOWN", L["One more thing: if you hold ALT while the list is opened, some interesting buttons will appear!"], 220, 50)
 
     -- targeted frame
     tutorialFramesTarget.ALTkey = itemsFrameUI;
-    TF_ALTkey:SetPoint("BOTTOM", tutorialFramesTarget.ALTkey, "TOP", 0, 18);
+    tutorialFrames.ALTkey:SetPoint("BOTTOM", tutorialFramesTarget.ALTkey, "TOP", 0, 18);
 end
 
 function itemsFrame:ValidateTutorial(tuto_name)
@@ -2415,25 +2345,23 @@ function itemsFrame:RedoTutorial()
   itemsFrameUI.ScrollFrame:SetVerticalScroll(0);
 end
 
-----------------------------------
--- Creating the frame and tabs
-----------------------------------
+-- // Creating the frame and tabs
 
 --Selecting the tab
-Tab_OnClick = function(self)
-  PanelTemplates_SetTab(self:GetParent(), self:GetID());
+function itemsFrame:SetActiveTab(self)
+  PanelTemplates_SetTab(self:GetParent(), self:GetID())
 
-  local scrollChild = itemsFrameUI.ScrollFrame:GetScrollChild();
+  local scrollChild = itemsFrameUI.ScrollFrame:GetScrollChild()
   if (scrollChild) then
-    scrollChild:Hide();
+    scrollChild:Hide()
   end
 
-  itemsFrameUI.ScrollFrame:SetScrollChild(self.content);
+  itemsFrameUI.ScrollFrame:SetScrollChild(self.content)
 
   -- we update the frame before loading the tab if there are changes pending
-  ItemsFrame_Update();
+  itemsFrame:Update()
 
-  CurrentTab = self.content; -- for an easier access to the currently selected tab, in any function
+  CurrentTab = self.content -- for an easier access to the currently selected tab, in any function
 
   -- Loading the good tab
   if (self:GetName() == "ToDoListUIFrameTab1") then loadTab(AllTab) end
@@ -2441,9 +2369,9 @@ Tab_OnClick = function(self)
   if (self:GetName() == "ToDoListUIFrameTab3") then loadTab(WeeklyTab) end
 
   -- we update the frame after loading the tab to refresh the display
-  ItemsFrame_Update();
+  itemsFrame:Update()
 
-  self.content:Show();
+  self.content:Show()
 end
 
 --Creating the tabs
@@ -2490,6 +2418,8 @@ local function SetTabs(frame, numTabs, ...)
   return unpack(contents);
 end
 
+-- // Profile init & change
+
 function itemsFrame:ResetContent()
   -- considering I don't want to reload the UI when we change the current profile,
   -- we have to reset all the frame ourserves, so that means:
@@ -2532,7 +2462,6 @@ function itemsFrame:ResetContent()
   autoResetedThisSession = false;
 end
 
---Frame init
 function itemsFrame:Init(profileChanged)
   -- this one is for keeping track of the old itemsList when we reset,
   -- so that we can hide everything when we change profiles
@@ -2548,8 +2477,13 @@ function itemsFrame:Init(profileChanged)
   FrameAlphaSlider_OnValueChanged(nil, NysTDL.db.profile.frameAlpha);
   FrameContentAlphaSlider_OnValueChanged(nil, NysTDL.db.profile.frameContentAlpha);
 
-  -- Generating the core --
-  loadMovable();
+  -- Generating the core once --
+  for catName, items in pairs(NysTDL.db.profile.itemsList) do
+    itemsFrame:CreateMovableLabelElems(catName) -- Category labels
+    for itemName in pairs(items) do
+      itemsFrame:CreateMovableCheckBtnElems(catName, itemName) -- All items transformed as checkboxes
+    end
+  end
 
   -- IMPORTANT: this code is to activate hyperlink clicks in edit boxes such as the ones for adding new items in categories,
   -- I disabled this for practical reasons: it's easier to write new item names in them if we can click on the links without triggering the hyperlink (and it's not very useful anyways :D).
@@ -2564,7 +2498,6 @@ function itemsFrame:Init(profileChanged)
   -- end
 
   -- then we update everything
-  ItemsFrame_UpdateTime(); -- for the auto reset check (we could wait 1 sec, but nah we don't have the time man)
   itemsFrame:ReloadTab() -- We load the good tab
 
   -- and we reload the saved variables needing an update
@@ -2578,34 +2511,36 @@ function itemsFrame:Init(profileChanged)
   end
 end
 
----Creating the main window---
+-- // Creating the main frame
+
 function itemsFrame:CreateItemsFrame()
   -- local btn = CreateFrame("Frame", nil, UIParent, "LargeUIDropDownMenuTemplate")
   -- btn:SetPoint("CENTER")
   -- UIDropDownMenu_SetWidth(btn, 200)
   -- if (true) then return; end
-  -- as of wow 9.0, we need to import the backdrop template into our frames if we want to use it in them, it is not set by default, so that's what we are doing here:
-  itemsFrameUI = CreateFrame("Frame", "ToDoListUIFrame", UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil);
+
+  -- as of wow 9.0, we need to import the backdrop template into our frames if we want to use it in them, it is not set by default, so that's what we are doing here
+  itemsFrameUI = CreateFrame("Frame", "ToDoListUIFrame", UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil)
 
   -- background
-  itemsFrameUI:SetBackdrop({bgFile = "Interface\\Tooltips\\UI-Tooltip-Background", edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", tile = false, tileSize = 1, edgeSize = 10, insets = { left = 1, right = 1, top = 1, bottom = 1 }});
+  itemsFrameUI:SetBackdrop({bgFile = "Interface\\Tooltips\\UI-Tooltip-Background", edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", tile = false, tileSize = 1, edgeSize = 10, insets = { left = 1, right = 1, top = 1, bottom = 1 }})
 
   -- properties
-  itemsFrameUI:SetResizable(true);
-  itemsFrameUI:SetMinResize(240, 284);
-  itemsFrameUI:SetMaxResize(600, 1000);
-  itemsFrameUI:SetFrameLevel(200);
-  itemsFrameUI:SetMovable(true);
-  itemsFrameUI:SetClampedToScreen(true);
-  itemsFrameUI:EnableMouse(true);
-  -- itemsFrameUI:SetHyperlinksEnabled(true); -- to enable OnHyperlinkClick
+  itemsFrameUI:SetResizable(true)
+  itemsFrameUI:SetMinResize(240, 284)
+  itemsFrameUI:SetMaxResize(600, 1000)
+  itemsFrameUI:SetFrameLevel(200)
+  itemsFrameUI:SetMovable(true)
+  itemsFrameUI:SetClampedToScreen(true)
+  itemsFrameUI:EnableMouse(true)
+  -- itemsFrameUI:SetHyperlinksEnabled(true) -- to enable OnHyperlinkClick
   -- itemsFrameUI:SetScript("OnHyperlinkClick", function(_, linkData, link, button)
   --   ChatFrame_OnHyperlinkShow(ChatFrame1, linkData, link, button)
-  -- end);
+  -- end)
 
-  itemsFrameUI:HookScript("OnUpdate", ItemsFrame_OnUpdate);
-  itemsFrameUI:HookScript("OnShow", ItemsFrame_OnVisibilityUpdate);
-  itemsFrameUI:HookScript("OnHide", ItemsFrame_OnVisibilityUpdate);
+  itemsFrameUI:HookScript("OnUpdate", ItemsFrame_OnUpdate)
+  itemsFrameUI:HookScript("OnShow", ItemsFrame_OnVisibilityUpdate)
+  itemsFrameUI:HookScript("OnHide", ItemsFrame_OnVisibilityUpdate)
   itemsFrameUI:HookScript("OnSizeChanged", function(self)
     NysTDL.db.profile.frameSize.width = self:GetWidth()
     NysTDL.db.profile.frameSize.height = self:GetHeight()
@@ -2635,9 +2570,9 @@ function itemsFrame:CreateItemsFrame()
 
   -- // CONTENT OF THE FRAME // --
 
-  -- random variables
-  itemsFrameUI.timeSinceLastUpdate = 0;
-  itemsFrameUI.timeSinceLastRefresh = 0;
+  -- frame variables
+  itemsFrameUI.timeSinceLastUpdate = 0
+  itemsFrameUI.timeSinceLastRefresh = 0
 
   -- generating the fixed content shared between the 3 tabs
   generateFrameContent();
@@ -2650,9 +2585,9 @@ function itemsFrame:CreateItemsFrame()
   itemsFrameUI.ScrollFrame:SetPoint("TOPLEFT", itemsFrameUI, "TOPLEFT", 4, - 4);
   itemsFrameUI.ScrollFrame:SetPoint("BOTTOMRIGHT", itemsFrameUI, "BOTTOMRIGHT", - 4, 4);
   itemsFrameUI.ScrollFrame:SetClipsChildren(true);
-
   itemsFrameUI.ScrollFrame:SetScript("OnMouseWheel", ScrollFrame_OnMouseWheel);
 
+  -- scroll bar
   itemsFrameUI.ScrollFrame.ScrollBar:ClearAllPoints();
   itemsFrameUI.ScrollFrame.ScrollBar:SetPoint("TOPLEFT", itemsFrameUI.ScrollFrame, "TOPRIGHT", - 12, - 38); -- the bottomright is updated in the OnUpdate (to manage the resize button)
 
@@ -2688,7 +2623,7 @@ function itemsFrame:CreateItemsFrame()
     itemsFrameUI:SetSize(340, 400)
   end)
 
-  -- Generating the tabs --
+  -- // Generating the tabs
   AllTab, DailyTab, WeeklyTab = SetTabs(itemsFrameUI, 3, L["All"], L["Daily"], L["Weekly"])
 
   -- Initializing the frame with the current data

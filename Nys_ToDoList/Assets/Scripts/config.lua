@@ -207,7 +207,7 @@ config.database = {
                   header1 = {
                     order = 1,
                     type = "header",
-                    name = L["Key Binding"],
+                    name = "List",
                   }, -- header1
                   header2 = {
                     order = 2,
@@ -494,6 +494,8 @@ config.database = {
             undoTable = {},
             lastLoadedTab = "ToDoListUIFrameTab2",
             lastListVisibility = false,
+            lockList = false,
+            lockButton = false,
 
             -- // Frame Options
             framePos = { point = "CENTER", relativePoint = "CENTER", xOffset = 0, yOffset = 0 },
@@ -778,6 +780,27 @@ function config:GetSecondsToReset()
 end
 
 -- Widget creation functions:--
+function config:CreateTutorialFrame(tutoName, parent, showCloseButton, arrowSide, text, width, height)
+  local tutoFrame = CreateFrame("Frame", "NysTDL_tutoFrame_"..tutoName, parent, "NysTDL_HelpPlateTooltip")
+  tutoFrame:SetSize(width, height)
+  if (arrowSide == "UP") then tutoFrame.ArrowDOWN:Show()
+  elseif (arrowSide == "DOWN") then tutoFrame.ArrowUP:Show()
+  elseif (arrowSide == "LEFT") then tutoFrame.ArrowRIGHT:Show()
+  elseif (arrowSide == "RIGHT") then tutoFrame.ArrowLEFT:Show() end
+  local tutoFrameRightDist = 10
+  if (showCloseButton) then
+    tutoFrameRightDist = 40
+    tutoFrame.closeButton = CreateFrame("Button", "closeButton", tutoFrame, "UIPanelCloseButton")
+    tutoFrame.closeButton:SetPoint("TOPRIGHT", tutoFrame, "TOPRIGHT", 6, 6)
+    tutoFrame.closeButton:SetScript("OnClick", function() NysTDL.db.global.tuto_progression = NysTDL.db.global.tuto_progression + 1; end)
+  end
+  tutoFrame.Text:SetWidth(tutoFrame:GetWidth() - tutoFrameRightDist)
+  tutoFrame.Text:SetText(text)
+  tutoFrame:Hide() -- we hide them by default, we show them only when we need to
+
+  return tutoFrame
+end
+
 function config:CreateNoPointsLabel(relativeFrame, name, text)
   local label = relativeFrame:CreateFontString(name);
   label:SetFontObject("GameFontHighlightLarge");
