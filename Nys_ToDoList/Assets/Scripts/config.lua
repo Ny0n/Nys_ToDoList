@@ -550,25 +550,27 @@ function config:Print(...)
   config:PrintForced(...);
 end
 
+local T_PrintForced = {}
 function config:PrintForced(...)
   if (... == nil) then return; end
 
   local hex = self:RGBToHex(self.database.theme);
   local prefix = string.format("|cff%s%s|r", hex, config.toc.title..':');
 
-  local tab = {}
+  wipe(T_PrintForced)
+  local message = T_PrintForced
   for i = 1, select("#", ...) do
     local s = (select(i, ...))
     if type(s) == "table" then
       for j = 1, #s do
-        table.insert(tab, (select(j, unpack(s))))
+        table.insert(message, (select(j, unpack(s))))
       end
     else
-      table.insert(tab, s)
+      table.insert(message, s)
     end
   end
 
-  DEFAULT_CHAT_FRAME:AddMessage(string.join(' ', prefix, unpack(tab)))
+  DEFAULT_CHAT_FRAME:AddMessage(string.join(' ', prefix, unpack(message)))
 end
 
 function config:RGBToHex(rgb)
@@ -596,14 +598,28 @@ function config:RGBToHex(rgb)
 	return hexadecimal
 end
 
+local T_ThemeDownTo01 = {}
 function config:ThemeDownTo01(theme)
   local r, g, b = unpack(theme)
-  return { r/255, g/255, b/255 }
+
+  wipe(T_ThemeDownTo01)
+  table.insert(T_ThemeDownTo01, r/255)
+  table.insert(T_ThemeDownTo01, g/255)
+  table.insert(T_ThemeDownTo01, b/255)
+
+  return T_ThemeDownTo01
 end
 
+local T_DimTheme = {}
 function config:DimTheme(theme, dim)
   local r, g, b = unpack(theme)
-  return { r*dim, g*dim, b*dim }
+
+  wipe(T_DimTheme)
+  table.insert(T_DimTheme, r*dim)
+  table.insert(T_DimTheme, g*dim)
+  table.insert(T_DimTheme, b*dim)
+
+  return T_DimTheme
 end
 
 function config:Deepcopy(orig, copies)
@@ -704,9 +720,9 @@ function config:GetKeyFromValue(tabSource, value)
   return nil
 end
 
-local function getHoursUntilReset()
-  local dateValue = date("*t");
+-- // Automatic reset calculations
 
+local function getHoursUntilReset(dateValue)
   local n = 0;
   local value = dateValue.hour;
 
@@ -725,9 +741,7 @@ local function getHoursUntilReset()
   return n - 1; -- because it's a countdown (it's like min and sec are also displayed)
 end
 
-local function getDaysUntilReset()
-  local dateValue = date("*t");
-
+local function getDaysUntilReset(dateValue)
   local n = 0;
   local value = dateValue.wday;
 
@@ -749,34 +763,37 @@ local function getDaysUntilReset()
   return n; -- same, but a bit more complicated since it depends on the daily reset hour
 end
 
+local T_GetTimeUntilReset = {}
 function config:GetTimeUntilReset()
-  local dateValue = date("*t");
+  local dateValue = date("*t")
 
-  local timeUntil = {
-    days = getDaysUntilReset(),
-    hour = getHoursUntilReset(),
-    min = math.abs(dateValue.min - 59),
-    sec = math.abs(dateValue.sec - 59),
-  }
+  wipe(T_GetTimeUntilReset)
+  T_GetTimeUntilReset.days = getDaysUntilReset(dateValue)
+  T_GetTimeUntilReset.hour = getHoursUntilReset(dateValue)
+  T_GetTimeUntilReset.min = math.abs(dateValue.min - 59)
+  T_GetTimeUntilReset.sec = math.abs(dateValue.sec - 59)
 
-  return timeUntil;
+  return T_GetTimeUntilReset
 end
 
+local T_GetSecondsToReset = {}
 function config:GetSecondsToReset()
-  local secondsUntil = {
-    weekly = config:GetTimeUntilReset().days * 24 * 60 * 60
-     + config:GetTimeUntilReset().hour * 60 * 60
-     + config:GetTimeUntilReset().min * 60
-     + config:GetTimeUntilReset().sec
-     + time(),
+  local timeUntil = config:GetTimeUntilReset()
 
-    daily = config:GetTimeUntilReset().hour * 60 * 60
-     + config:GetTimeUntilReset().min * 60
-     + config:GetTimeUntilReset().sec
-     + time(),
-  }
+  wipe(T_GetSecondsToReset)
+  T_GetSecondsToReset.weekly =
+       timeUntil.days * 24 * 60 * 60
+     + timeUntil.hour * 60 * 60
+     + timeUntil.min * 60
+     + timeUntil.sec
+     + time()
+  T_GetSecondsToReset.daily =
+       timeUntil.hour * 60 * 60
+     + timeUntil.min * 60
+     + timeUntil.sec
+     + time()
 
-  return secondsUntil;
+  return T_GetSecondsToReset
 end
 
 -- Widget creation functions:--

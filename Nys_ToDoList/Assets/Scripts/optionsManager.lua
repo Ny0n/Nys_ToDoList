@@ -37,6 +37,8 @@ function NysTDL:ToggleOptions(fromFrame)
   end
 end
 
+-- // Warning function
+
 function NysTDL:Warn()
   if (not itemsFrame:autoResetedThisSessionGET()) then -- we don't want to show this warning if it's the first log in of the day, only if it is the next ones
     if (NysTDL.db.profile.showWarnings) then
@@ -44,7 +46,7 @@ function NysTDL:Warn()
       local warn = "--------------| |cffff0000"..L["WARNING"].."|r |--------------"
 
       if (NysTDL.db.profile.favoritesWarning) then -- and the user allowed this functionnality
-        local _, _, _, ucFavs = itemsFrame:updateRemainingNumber()
+        local _, _, _, ucFavs = itemsFrame:updateRemainingNumbers()
         local daily, weekly = ucFavs.Daily, ucFavs.Weekly
         if ((daily + weekly) > 0) then -- and there is at least one daily or weekly favorite left to do
           local str = ""
@@ -76,7 +78,7 @@ function NysTDL:Warn()
       end
 
       if (NysTDL.db.profile.normalWarning) then
-        local _, _, uc = itemsFrame:updateRemainingNumber()
+        local _, _, uc = itemsFrame:updateRemainingNumbers()
         local daily, weekly = uc.Daily, uc.Weekly
         if ((daily + weekly) > 0) then -- and there is at least one daily or weekly item left to do (favorite or not)
           local total = 0
@@ -111,6 +113,8 @@ function NysTDL:Warn()
   end
 end
 
+-- // TDL button
+
 function NysTDL:CreateTDLButton()
   -- Creating the big button to easily toggle the frame
   itemsFrame.tdlButton = config:CreateButton("tdlButton", UIParent, string.gsub(config.toc.title, "Ny's ", ""));
@@ -119,7 +123,11 @@ function NysTDL:CreateTDLButton()
   itemsFrame.tdlButton:EnableMouse(true);
   itemsFrame.tdlButton:SetClampedToScreen(true);
   itemsFrame.tdlButton:RegisterForDrag("LeftButton");
-  itemsFrame.tdlButton:SetScript("OnDragStart", itemsFrame.tdlButton.StartMoving);
+  itemsFrame.tdlButton:SetScript("OnDragStart", function()
+    if (not self.db.profile.lockButton) then
+      itemsFrame.tdlButton:StartMoving()
+    end
+  end);
   itemsFrame.tdlButton:SetScript("OnDragStop", function() -- we save its position
     itemsFrame.tdlButton:StopMovingOrSizing()
     local points, _ = self.db.profile.tdlButton.points, nil
@@ -135,6 +143,8 @@ function NysTDL:RefreshTDLButton()
   itemsFrame.tdlButton:SetPoint(points.point, nil, points.relativePoint, points.xOffset, points.yOffset); -- relativeFrame = nil -> entire screen
   itemsFrame.tdlButton:SetShown(self.db.profile.tdlButton.show);
 end
+
+-- // Minimap & Databroker button
 
 local function draw_tooltip(tooltip)
   if (not NysTDL.db.profile.minimap.tooltip) then
@@ -210,6 +220,8 @@ function NysTDL:CreateMinimapButton()
     end
   end, delay)
 end
+
+-- // DB init & change
 
 -- this func is called once in init, on the addon load
 -- and also every time we switch profiles
@@ -361,7 +373,7 @@ end
 function NysTDL:favoritesColorSET(info, ...)
   NysTDL.db.profile.favoritesColor = { select(1, ...), select(2, ...), select(3, ...), select(4, ...) };
   itemsFrame:updateCheckButtonsColor()
-  itemsFrame:updateRemainingNumber()
+  itemsFrame:updateFavsRemainingNumbersColor()
 end
 
 --rainbow
@@ -403,7 +415,7 @@ end
 
 function NysTDL:tdlButtonRedSET(info, newValue)
   NysTDL.db.profile.tdlButton.red = newValue;
-  itemsFrame:updateRemainingNumber() -- we update the color depending on the new frame's data
+  itemsFrame:updateRemainingNumbers() -- we update the color depending on the new frame's data
 end
 
 -- minimapButtonHide

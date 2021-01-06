@@ -8,7 +8,6 @@ local itemsFrame = tdlTable.itemsFrame;
 -- Variables declaration --
 local L = config.L;
 local LDD = config.LDD;
-itemsFrame.tdlButton = 0; -- so we can access it here, even though we create it in init.lua
 
 local itemsFrameUI;
 local AllTab, DailyTab, WeeklyTab, CurrentTab;
@@ -137,8 +136,8 @@ end
 
 -- actions
 local function ScrollFrame_OnMouseWheel(self, delta)
-  -- defines how fast we can scroll throught the tabs (here: 35)
-  local newValue = self:GetVerticalScroll() - (delta * 35);
+  -- defines how fast we can scroll throught the tabs (here: 30)
+  local newValue = self:GetVerticalScroll() - (delta * 30);
 
   if (newValue < 0) then
     newValue = 0;
@@ -283,7 +282,19 @@ function itemsFrame:CheckBtns(tabName)
   end
 end
 
-function itemsFrame:updateRemainingNumber()
+function itemsFrame:updateFavsRemainingNumbersColor()
+  -- this updates the favorite color for every favorites remaining number label
+  itemsFrameUI.remainingFavsNumber:SetTextColor(unpack(NysTDL.db.profile.favoritesColor))
+  for catName in pairs(label) do -- for every category labels
+    categoryLabelFavsRemaining[catName]:SetTextColor(unpack(NysTDL.db.profile.favoritesColor))
+  end
+end
+
+local T_updateRemainingNumbers_1 = {}
+local T_updateRemainingNumbers_2 = {}
+local T_updateRemainingNumbers_3 = {}
+local T_updateRemainingNumbers_4 = {}
+function itemsFrame:updateRemainingNumbers()
   -- we get how many things there is left to do in every tab,
   -- it's the big important function that gives us every number, checked and unchecked, favs or not
   local tab = itemsFrameUI.remainingNumber:GetParent();
@@ -339,15 +350,18 @@ function itemsFrame:updateRemainingNumber()
     end
   end
 
-  -- we update the number of remaining things to do for the current tab
-  local hex = config:RGBToHex({ NysTDL.db.profile.favoritesColor[1]*255, NysTDL.db.profile.favoritesColor[2]*255, NysTDL.db.profile.favoritesColor[3]*255} );
+  -- we update the numbers of remaining things to do for the current tab
   if (tab == AllTab) then
-    itemsFrameUI.remainingNumber:SetText(((numberUncheckedAll > 0) and "|cffffffff" or "|cff00ff00")..numberUncheckedAll.."|r "..((numberUncheckedFavAll > 0) and string.format("|cff%s%s|r", hex, "("..numberUncheckedFavAll..")") or ""));
+    itemsFrameUI.remainingNumber:SetText(((numberUncheckedAll > 0) and "|cffffffff" or "|cff00ff00")..numberUncheckedAll.."|r")
+    itemsFrameUI.remainingFavsNumber:SetText(((numberUncheckedFavAll > 0) and "("..numberUncheckedFavAll..")" or ""))
   elseif (tab == DailyTab) then
-    itemsFrameUI.remainingNumber:SetText(((numberUncheckedDaily > 0) and "|cffffffff" or "|cff00ff00")..numberUncheckedDaily.."|r "..((numberUncheckedFavDaily > 0) and string.format("|cff%s%s|r", hex, "("..numberUncheckedFavDaily..")") or ""));
+    itemsFrameUI.remainingNumber:SetText(((numberUncheckedDaily > 0) and "|cffffffff" or "|cff00ff00")..numberUncheckedDaily.."|r")
+    itemsFrameUI.remainingFavsNumber:SetText(((numberUncheckedFavDaily > 0) and "("..numberUncheckedFavDaily..")" or ""))
   elseif (tab == WeeklyTab) then
-    itemsFrameUI.remainingNumber:SetText(((numberUncheckedWeekly > 0) and "|cffffffff" or "|cff00ff00")..numberUncheckedWeekly.."|r "..((numberUncheckedFavWeekly > 0) and string.format("|cff%s%s|r", hex, "("..numberUncheckedFavWeekly..")") or ""));
+    itemsFrameUI.remainingNumber:SetText(((numberUncheckedWeekly > 0) and "|cffffffff" or "|cff00ff00")..numberUncheckedWeekly.."|r")
+    itemsFrameUI.remainingFavsNumber:SetText(((numberUncheckedFavWeekly > 0) and "("..numberUncheckedFavWeekly..")" or ""))
   end
+
   -- same for the category label ones
   for catName in pairs(label) do -- for every category labels
     local nbFavCat = 0
@@ -361,9 +375,12 @@ function itemsFrame:updateRemainingNumber()
       end
     end
     categoryLabelFavsRemaining[catName]:SetText((nbFavCat > 0) and "("..nbFavCat..")" or "")
-    categoryLabelFavsRemaining[catName]:SetTextColor(unpack(NysTDL.db.profile.favoritesColor))
   end
 
+  -- we also update the favs colors
+  itemsFrame:updateFavsRemainingNumbersColor()
+
+  -- TDL button red option
   itemsFrame.tdlButton:SetNormalFontObject("GameFontNormalLarge"); -- by default, we reset the color of the TDL button to yellow
   if (NysTDL.db.profile.tdlButton.red) then -- we check here if we need to color it red here
     local red = false
@@ -390,19 +407,23 @@ function itemsFrame:updateRemainingNumber()
     end
   end
 
-  local checked = {}
+  wipe(T_updateRemainingNumbers_1)
+  wipe(T_updateRemainingNumbers_2)
+  wipe(T_updateRemainingNumbers_3)
+  wipe(T_updateRemainingNumbers_4)
+  local checked = T_updateRemainingNumbers_1
   checked.All = numberCheckedAll
   checked.Daily = numberCheckedDaily
   checked.Weekly = numberCheckedWeekly
-  local checkedFavs = {}
+  local checkedFavs = T_updateRemainingNumbers_2
   checkedFavs.All = numberCheckedFavAll
   checkedFavs.Daily = numberCheckedFavDaily
   checkedFavs.Weekly = numberCheckedFavWeekly
-  local unchecked = {}
+  local unchecked = T_updateRemainingNumbers_3
   unchecked.All = numberUncheckedAll
   unchecked.Daily = numberUncheckedDaily
   unchecked.Weekly = numberUncheckedWeekly
-  local uncheckedFavs = {}
+  local uncheckedFavs = T_updateRemainingNumbers_4
   uncheckedFavs.All = numberUncheckedFavAll
   uncheckedFavs.Daily = numberUncheckedFavDaily
   uncheckedFavs.Weekly = numberUncheckedFavWeekly
@@ -785,9 +806,13 @@ function itemsFrame:ApplyNewRainbowColor(i)
   end
 
   -- we apply the new color
-  NysTDL.db.profile.favoritesColor = { r, g, b }
+  local var = NysTDL.db.profile.favoritesColor
+  wipe(var)
+  table.insert(var, r)
+  table.insert(var, g)
+  table.insert(var, b)
   itemsFrame:updateCheckButtonsColor()
-  itemsFrame:updateRemainingNumber()
+  itemsFrame:updateFavsRemainingNumbersColor()
 end
 
 function itemsFrame:descriptionFrameHide(name)
@@ -1040,7 +1065,7 @@ end
 function itemsFrame:Update()
   -- updates everything about the frame without actually reloading the tab, this is a less intensive version
   itemsFrame:checkAutoReset()
-  itemsFrame:updateRemainingNumber();
+  itemsFrame:updateRemainingNumbers();
   itemsFrame:updateCheckButtonsColor();
 end
 
@@ -1078,6 +1103,7 @@ local function ItemsFrame_OnUpdate(self, elapsed)
   --   itemsFrameUI.ScrollFrame.ScrollBar:Hide()
   -- end
 
+  -- dragging
   if (self.isMouseDown and not self.hasMoved) then
     local x, y = GetCursorPosition()
     if ((x > cursorX + cursorDist) or (x < cursorX - cursorDist) or (y > cursorY + cursorDist) or (y < cursorY - cursorDist)) then  -- we start dragging the frame
@@ -1086,78 +1112,80 @@ local function ItemsFrame_OnUpdate(self, elapsed)
     end
   end
 
-  -- testing and showing the right button next to each items
-  if (IsShiftKeyDown()) then
-    for catName, items in pairs(NysTDL.db.profile.itemsList) do
-      for itemName in pairs(items) do
-        -- we show every star icons
-        removeBtn[catName][itemName]:Hide()
-        descBtn[catName][itemName]:Hide();
-        favoriteBtn[catName][itemName]:Show();
-      end
-    end
-  elseif (IsControlKeyDown()) then
-    for catName, items in pairs(NysTDL.db.profile.itemsList) do
-      for itemName in pairs(items) do
-        -- we show every paper icons
-        removeBtn[catName][itemName]:Hide()
-        favoriteBtn[catName][itemName]:Hide();
-        descBtn[catName][itemName]:Show();
-      end
-    end
-  else
-    for catName, items in pairs(NysTDL.db.profile.itemsList) do
-      for itemName, data in pairs(items) do
-        if (data.description) then
-          -- if current item has a description, the paper icon takes the lead
-          favoriteBtn[catName][itemName]:Hide();
+  if (false) then
+    -- testing and showing the right button next to each items
+    if (IsShiftKeyDown()) then
+      for catName, items in pairs(NysTDL.db.profile.itemsList) do
+        for itemName in pairs(items) do
+          -- we show every star icons
           removeBtn[catName][itemName]:Hide()
-          descBtn[catName][itemName]:Show();
-        elseif (data.favorite) then
-          -- or else if current item is a favorite
           descBtn[catName][itemName]:Hide();
-          removeBtn[catName][itemName]:Hide()
           favoriteBtn[catName][itemName]:Show();
-        else
-          -- default
+        end
+      end
+    elseif (IsControlKeyDown()) then
+      for catName, items in pairs(NysTDL.db.profile.itemsList) do
+        for itemName in pairs(items) do
+          -- we show every paper icons
+          removeBtn[catName][itemName]:Hide()
           favoriteBtn[catName][itemName]:Hide();
-          descBtn[catName][itemName]:Hide();
-          removeBtn[catName][itemName]:Show()
+          descBtn[catName][itemName]:Show();
+        end
+      end
+    else
+      for catName, items in pairs(NysTDL.db.profile.itemsList) do
+        for itemName, data in pairs(items) do
+          if (data.description) then
+            -- if current item has a description, the paper icon takes the lead
+            favoriteBtn[catName][itemName]:Hide();
+            removeBtn[catName][itemName]:Hide()
+            descBtn[catName][itemName]:Show();
+          elseif (data.favorite) then
+            -- or else if current item is a favorite
+            descBtn[catName][itemName]:Hide();
+            removeBtn[catName][itemName]:Hide()
+            favoriteBtn[catName][itemName]:Show();
+          else
+            -- default
+            favoriteBtn[catName][itemName]:Hide();
+            descBtn[catName][itemName]:Hide();
+            removeBtn[catName][itemName]:Show()
+          end
         end
       end
     end
-  end
 
-  if (IsAltKeyDown()) then
-    itemsFrame:ValidateTutorial("ALTkey"); -- tutorial
-    -- we switch the category and frame options buttons for the undo and frame action ones and vice versa
-    itemsFrameUI.categoryButton:Hide()
-    itemsFrameUI.undoButton:Show()
-    itemsFrameUI.frameOptionsButton:Hide()
-    itemsFrameUI.tabActionsButton:Show()
-    -- resize button
-    itemsFrameUI.ScrollFrame.ScrollBar:SetPoint("BOTTOMRIGHT", itemsFrameUI.ScrollFrame, "BOTTOMRIGHT", - 7, 32);
-    itemsFrameUI.resizeButton:Show()
-  else
-    itemsFrameUI.undoButton:Hide()
-    itemsFrameUI.categoryButton:Show()
-    itemsFrameUI.tabActionsButton:Hide()
-    itemsFrameUI.frameOptionsButton:Show()
-    -- resize button
-    itemsFrameUI.ScrollFrame.ScrollBar:SetPoint("BOTTOMRIGHT", itemsFrameUI.ScrollFrame, "BOTTOMRIGHT", - 7, 17);
-    itemsFrameUI.resizeButton:Hide()
-  end
+    if (IsAltKeyDown()) then
+      itemsFrame:ValidateTutorial("ALTkey"); -- tutorial
+      -- we switch the category and frame options buttons for the undo and frame action ones and vice versa
+      itemsFrameUI.categoryButton:Hide()
+      itemsFrameUI.undoButton:Show()
+      itemsFrameUI.frameOptionsButton:Hide()
+      itemsFrameUI.tabActionsButton:Show()
+      -- resize button
+      itemsFrameUI.ScrollFrame.ScrollBar:SetPoint("BOTTOMRIGHT", itemsFrameUI.ScrollFrame, "BOTTOMRIGHT", - 7, 32);
+      itemsFrameUI.resizeButton:Show()
+    else
+      itemsFrameUI.undoButton:Hide()
+      itemsFrameUI.categoryButton:Show()
+      itemsFrameUI.tabActionsButton:Hide()
+      itemsFrameUI.frameOptionsButton:Show()
+      -- resize button
+      itemsFrameUI.ScrollFrame.ScrollBar:SetPoint("BOTTOMRIGHT", itemsFrameUI.ScrollFrame, "BOTTOMRIGHT", - 7, 17);
+      itemsFrameUI.resizeButton:Hide()
+    end
 
-  -- we also update their color, if one of the button menus is opened
-  itemsFrameUI.categoryButton.Icon:SetDesaturated(nil) itemsFrameUI.categoryButton.Icon:SetVertexColor(0.85, 1, 1) -- here we change the vertex color because the original icon is a bit reddish
-  itemsFrameUI.frameOptionsButton.Icon:SetDesaturated(nil)
-  itemsFrameUI.tabActionsButton.Icon:SetDesaturated(nil)
-  if (not addACategoryClosed) then
-  itemsFrameUI.categoryButton.Icon:SetDesaturated(1) itemsFrameUI.categoryButton.Icon:SetVertexColor(1, 1, 1)
-  elseif (not optionsClosed) then
-    itemsFrameUI.frameOptionsButton.Icon:SetDesaturated(1)
-  elseif (not tabActionsClosed) then
-    itemsFrameUI.tabActionsButton.Icon:SetDesaturated(1)
+    -- we also update their color, if one of the button menus is opened
+    itemsFrameUI.categoryButton.Icon:SetDesaturated(nil) itemsFrameUI.categoryButton.Icon:SetVertexColor(0.85, 1, 1) -- here we change the vertex color because the original icon is a bit reddish
+    itemsFrameUI.frameOptionsButton.Icon:SetDesaturated(nil)
+    itemsFrameUI.tabActionsButton.Icon:SetDesaturated(nil)
+    if (not addACategoryClosed) then
+    itemsFrameUI.categoryButton.Icon:SetDesaturated(1) itemsFrameUI.categoryButton.Icon:SetVertexColor(1, 1, 1)
+    elseif (not optionsClosed) then
+      itemsFrameUI.frameOptionsButton.Icon:SetDesaturated(1)
+    elseif (not tabActionsClosed) then
+      itemsFrameUI.tabActionsButton.Icon:SetDesaturated(1)
+    end
   end
 
   -- here we manage the visibility of the tutorial frames, showing them if their corresponding buttons is shown, their tuto has not been completed (false) and the previous one is true.
@@ -1720,6 +1748,8 @@ local function loadTab(tab)
   itemsFrameUI.remaining:SetPoint("TOPLEFT", itemsFrameUI.title, "TOP", - 140, - 30);
   itemsFrameUI.remainingNumber:SetParent(tab);
   itemsFrameUI.remainingNumber:SetPoint("LEFT", itemsFrameUI.remaining, "RIGHT", 6, 0);
+  itemsFrameUI.remainingFavsNumber:SetParent(tab);
+  itemsFrameUI.remainingFavsNumber:SetPoint("LEFT", itemsFrameUI.remainingNumber, "RIGHT", 3, 0);
 
   itemsFrameUI.helpButton:SetParent(tab);
   itemsFrameUI.helpButton:SetPoint("TOPRIGHT", itemsFrameUI.title, "TOP", 140, - 23);
@@ -1840,7 +1870,7 @@ local function loadTab(tab)
 
   -- Nothing label
   -- first, we get how many items there are shown in the tab
-  local checked, _, unchecked = itemsFrame:updateRemainingNumber()
+  local checked, _, unchecked = itemsFrame:updateRemainingNumbers()
 
   -- then we show/hide the nothing label depending on the result and shownInTab
   itemsFrameUI.nothingLabel:SetParent(tab)
@@ -2244,6 +2274,8 @@ local function generateFrameContent()
   itemsFrameUI.remaining:SetFontObject("GameFontNormalLarge");
   itemsFrameUI.remainingNumber = config:CreateNoPointsLabel(itemsFrameUI, nil, "...");
   itemsFrameUI.remainingNumber:SetFontObject("GameFontNormalLarge");
+  itemsFrameUI.remainingFavsNumber = config:CreateNoPointsLabel(itemsFrameUI, nil, "...");
+  itemsFrameUI.remainingFavsNumber:SetFontObject("GameFontNormalLarge");
 
   -- help button
   itemsFrameUI.helpButton = config:CreateHelpButton(itemsFrameUI);
@@ -2560,9 +2592,11 @@ function itemsFrame:CreateItemsFrame()
     end
   end
   itemsFrameUI:HookScript("OnMouseDown", function(self, button)
-    if (button == "LeftButton") then
-      self.isMouseDown = true
-      cursorX, cursorY = GetCursorPosition()
+    if (not NysTDL.db.profile.lockList) then
+      if (button == "LeftButton") then
+        self.isMouseDown = true
+        cursorX, cursorY = GetCursorPosition()
+      end
     end
   end)
   itemsFrameUI:HookScript("OnMouseUp", StopMoving)
@@ -2642,6 +2676,36 @@ end
 
 --@do-not-package@
 
+  local f = CreateFrame("CheckButton", "dfgrftghtyh", UIParent, "UICheckButtonTemplate");
+  f:SetSize(35, 35)
+  f:SetPoint("CENTER", UIParent, "CENTER", 100, 100)
+  local ag = f:CreateAnimationGroup()
+  local a1 = ag:CreateAnimation("Translation")
+  a1:SetOffset(100, 0)
+  a1:SetDuration(1)
+  -- a1:SetEndDelay(2)
+  a1:SetSmoothing("OUT")
+
+  local a2 = ag:CreateAnimation("Translation")
+  a2:SetOffset(-100, 0)
+  a2:SetDuration(0)
+  -- a1:SetEndDelay(2)
+
+  -- local a2 = ag:CreateAnimation("Scale")
+  -- a2:SetToScale(2, 2)
+  -- a2:SetDuration(3)
+  -- a2:SetSmoothing("OUT")
+
+  local a3 = ag:CreateAnimation("Rotation")
+  a3:SetDegrees(-360)
+  a3:SetDuration(1)
+  a3:SetSmoothing("OUT")
+
+  local a4 = ag:CreateAnimation("Alpha")
+  a4:SetFromAlpha(0)
+  a4:SetToAlpha(1)
+  a4:SetDuration(1)
+  a4:SetSmoothing("OUT")
 -- Tests function (for me :p)
 function Nys_Tests(yes)
   if (yes == 1) then -- tests profile
@@ -2680,58 +2744,12 @@ function Nys_Tests(yes)
   elseif (yes == 2) then
     LibStub("AceConfigDialog-3.0"):Open("Nys_ToDoListWIP")
   elseif (yes == 3) then
-    local table = {
-      ["cat1"] = {
-        ["itemname1"] = {
-          tabName = "Daily",
-          checked = false,
-          favorite = false,
-          description = "",
-        },
-        ["itemname2"] = {
-          tab = "All",
-          favorite = false,
-          checked = false,
-        }
-      },
-      ["cat2"] = {
-        ["itemname1"] = {
-          tab = "Weekly",
-          checked = false,
-        },
-        ["itemname2"] = {
-          tabName = "All",
-          checked = false,
-          favorite = false,
-          description = "",
-        }
-      },
-    }
-    local function hey()
-      local t = {
-        tabName = "Daily",
-        checked = false,
-        favorite = false,
-        description = "blabla",
-      }
-      table["cat2"]["itemname3"] = t
+    UIFrameFadeOut(itemsFrameUI, 2);
+      print(itemsFrameUI.fadeInfo.finishedFunc)
+    itemsFrameUI.fadeInfo.finishedFunc = function(arg1)
+      print("hey")
     end
-    hey()
-    local bsr = "bla"
-    if (bsr) then
-      print("olala")
-    end
-    -- print(table["cat2"]["itemname3"].description)
-
-    -- for catName, items in pairs(table) do
-    --   print("-------------------------")
-    --   print(catName)
-    --   for itemName, data in pairs(items) do
-    --     print(itemName)
-    --     print(data.checked)
-    --   end
-    -- end
-    -- print(config.database.options.args.general.args.toggleBind.obj.msgframe.msg:GetText())
+    print(itemsFrameUI.fadeInfo.finishedFunc)
   elseif (yes == 5) then -- EXPLOSION
     if (not NysTDL.db.profile.itemsList["EXPLOSION"]) then
     itemsFrame:AddItem("", {
@@ -2762,15 +2780,22 @@ function Nys_Tests(yes)
     })
     end
   elseif (yes == 4) then
-    local s = "oua"
-    local function test(str)
-      str = "slt"
+    f:Show()
+
+
+
+    print(ag:IsPlaying())
+    if (not ag:IsPlaying()) then
+      ag:Play(true)
+    else
+      -- ag:Stop()
+      ag:Restart();
     end
-    test(s)
-    print(s)
     -- print("Daily:    "..tostringall(NysTDL.db.profile.autoReset["Daily"]))
     -- print("Weekly: "..tostringall(NysTDL.db.profile.autoReset["Weekly"]))
     -- print("Time:    "..tostringall(time()))
+    -- local timeUntil = config:GetSecondsToReset()
+    -- print(timeUntil.hour, timeUntil.min + 1)
   end
   print("--Nys_Tests--")
 end

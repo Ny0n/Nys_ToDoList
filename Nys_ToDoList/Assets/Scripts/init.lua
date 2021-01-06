@@ -111,7 +111,7 @@ local function HandleSlashCommands(str)
     return;
   end
 
-  local args = {string.split(' ', str)};
+  local args = {string.split(' ', str)}
 
   local deep = 1;
   for id, arg in pairs(args) do
