@@ -1112,7 +1112,7 @@ local function ItemsFrame_OnUpdate(self, elapsed)
     end
   end
 
-  if (false) then
+  if (true) then
     -- testing and showing the right button next to each items
     if (IsShiftKeyDown()) then
       for catName, items in pairs(NysTDL.db.profile.itemsList) do
@@ -1223,14 +1223,17 @@ end
 ----------------------------------------------------------------------------------------------------------
 
 -- // Some widgets
-
+local parent = {}
 -- item widget
 function itemsFrame:CreateMovableCheckBtnElems(catName, itemName)
   local data = NysTDL.db.profile.itemsList[catName][itemName];
-
+  if (not config:HasKey(parent, catName)) then parent[catName] = {} end
+  parent[catName][itemName] = CreateFrame("Frame", "NysTDL_ParentCheckBtn_"..catName.."_"..itemName, itemsFrameUI, nil)
+  parent[catName][itemName]:SetSize(1, 1)
   if (not config:HasKey(checkBtn, catName)) then checkBtn[catName] = {} end
-  checkBtn[catName][itemName] = CreateFrame("CheckButton", "NysTDL_CheckBtn_"..catName.."_"..itemName, itemsFrameUI, "UICheckButtonTemplate");
-  checkBtn[catName][itemName].InteractiveLabel = config:CreateNoPointsInteractiveLabel(checkBtn[catName][itemName]:GetName().."_InteractiveLabel", checkBtn[catName][itemName], itemName, "GameFontNormalLarge");
+  checkBtn[catName][itemName] = CreateFrame("CheckButton", "NysTDL_CheckBtn_"..catName.."_"..itemName, parent[catName][itemName], "UICheckButtonTemplate");
+  checkBtn[catName][itemName]:SetPoint("TOPLEFT", parent[catName][itemName], "TOPLEFT", 0, 0);
+  checkBtn[catName][itemName].InteractiveLabel = config:CreateNoPointsInteractiveLabel(checkBtn[catName][itemName]:GetName().."_InteractiveLabel", parent[catName][itemName], itemName, "GameFontNormalLarge");
   checkBtn[catName][itemName].InteractiveLabel:SetPoint("LEFT", checkBtn[catName][itemName], "RIGHT")
   checkBtn[catName][itemName].InteractiveLabel.Text:SetPoint("LEFT", checkBtn[catName][itemName], "RIGHT", 20, 0)
   checkBtn[catName][itemName].catName = catName -- easy access to the catName this button is in
@@ -1318,19 +1321,112 @@ function itemsFrame:CreateMovableCheckBtnElems(catName, itemName)
 
   if (not config:HasKey(removeBtn, catName)) then removeBtn[catName] = {} end
   removeBtn[catName][itemName] = config:CreateRemoveButton(checkBtn[catName][itemName]);
+  removeBtn[catName][itemName]:SetParent(parent[catName][itemName])
   removeBtn[catName][itemName]:SetScript("OnClick", function(self) itemsFrame:RemoveItem(self) end);
 
   if (not config:HasKey(favoriteBtn, catName)) then favoriteBtn[catName] = {} end
   favoriteBtn[catName][itemName] = config:CreateFavoriteButton(checkBtn[catName][itemName], catName, itemName);
   favoriteBtn[catName][itemName]:SetScript("OnClick", function(self) itemsFrame:FavoriteClick(self) end);
+  favoriteBtn[catName][itemName]:SetParent(parent[catName][itemName])
   favoriteBtn[catName][itemName]:Hide();
 
   if (not config:HasKey(descBtn, catName)) then descBtn[catName] = {} end
   descBtn[catName][itemName] = config:CreateDescButton(checkBtn[catName][itemName], catName, itemName);
   descBtn[catName][itemName]:SetScript("OnClick", function(self) itemsFrame:DescriptionClick(self) end);
+  descBtn[catName][itemName]:SetParent(parent[catName][itemName])
   descBtn[catName][itemName]:Hide();
+
+  local animDuration = 1
+  local animDist = 70
+  local animRotation = -360
+  local animSmooth = "OUT"
+
+  parent[catName][itemName].ag1 = checkBtn[catName][itemName].InteractiveLabel:CreateAnimationGroup()
+  local ag1_1 = parent[catName][itemName].ag1:CreateAnimation("Translation")
+  ag1_1:SetOffset(-animDist, 0)
+  ag1_1:SetDuration(0)
+  local ag1_2 = parent[catName][itemName].ag1:CreateAnimation("Translation")
+  ag1_2:SetOffset(animDist, 0)
+  ag1_2:SetDuration(animDuration)
+  ag1_2:SetSmoothing(animSmooth)
+  local ag1_3 = parent[catName][itemName].ag1:CreateAnimation("Alpha")
+  ag1_3:SetFromAlpha(0)
+  ag1_3:SetToAlpha(1)
+  ag1_3:SetDuration(animDuration)
+  ag1_3:SetSmoothing(animSmooth)
+
+  parent[catName][itemName].ag2 = checkBtn[catName][itemName]:CreateAnimationGroup()
+  local ag2_1 = parent[catName][itemName].ag2:CreateAnimation("Translation")
+  ag2_1:SetOffset(-animDist, 0)
+  ag2_1:SetDuration(0)
+  local ag2_2 = parent[catName][itemName].ag2:CreateAnimation("Translation")
+  ag2_2:SetOffset(animDist, 0)
+  ag2_2:SetDuration(animDuration)
+  ag2_2:SetSmoothing(animSmooth)
+  local ag2_3 = parent[catName][itemName].ag2:CreateAnimation("Alpha")
+  ag2_3:SetFromAlpha(0)
+  ag2_3:SetToAlpha(1)
+  ag2_3:SetDuration(animDuration)
+  ag2_3:SetSmoothing(animSmooth)
+  -- local ag2_4 = parent[catName][itemName].ag2:CreateAnimation("Rotation")
+  -- ag2_4:SetDegrees(animRotation)
+  -- ag2_4:SetDuration(animDuration)
+  -- ag2_4:SetSmoothing(animSmooth)
+
+  parent[catName][itemName].ag3 = removeBtn[catName][itemName]:CreateAnimationGroup()
+  local ag3_1 = parent[catName][itemName].ag3:CreateAnimation("Translation")
+  ag3_1:SetOffset(-animDist, 0)
+  ag3_1:SetDuration(0)
+  local ag3_2 = parent[catName][itemName].ag3:CreateAnimation("Translation")
+  ag3_2:SetOffset(animDist, 0)
+  ag3_2:SetDuration(animDuration)
+  ag3_2:SetSmoothing(animSmooth)
+  local ag3_3 = parent[catName][itemName].ag3:CreateAnimation("Alpha")
+  ag3_3:SetFromAlpha(0)
+  ag3_3:SetToAlpha(1)
+  ag3_3:SetDuration(animDuration)
+  ag3_3:SetSmoothing(animSmooth)
+  -- local ag3_4 = parent[catName][itemName].ag3:CreateAnimation("Rotation")
+  -- ag3_4:SetDegrees(animRotation)
+  -- ag3_4:SetDuration(animDuration)
+  -- ag3_4:SetSmoothing(animSmooth)
+  parent[catName][itemName].ag4 = favoriteBtn[catName][itemName]:CreateAnimationGroup()
+  local ag4_1 = parent[catName][itemName].ag4:CreateAnimation("Translation")
+  ag4_1:SetOffset(-animDist, 0)
+  ag4_1:SetDuration(0)
+  local ag4_2 = parent[catName][itemName].ag4:CreateAnimation("Translation")
+  ag4_2:SetOffset(animDist, 0)
+  ag4_2:SetDuration(animDuration)
+  ag4_2:SetSmoothing(animSmooth)
+  local ag4_3 = parent[catName][itemName].ag4:CreateAnimation("Alpha")
+  ag4_3:SetFromAlpha(0)
+  ag4_3:SetToAlpha(1)
+  ag4_3:SetDuration(animDuration)
+  ag4_3:SetSmoothing(animSmooth)
+  -- local ag4_4 = parent[catName][itemName].ag4:CreateAnimation("Rotation")
+  -- ag4_4:SetDegrees(animRotation)
+  -- ag4_4:SetDuration(animDuration)
+  -- ag4_4:SetSmoothing(animSmooth)
+  parent[catName][itemName].ag5 = descBtn[catName][itemName]:CreateAnimationGroup()
+  local ag5_1 = parent[catName][itemName].ag5:CreateAnimation("Translation")
+  ag5_1:SetOffset(-animDist, 0)
+  ag5_1:SetDuration(0)
+  local ag5_2 = parent[catName][itemName].ag5:CreateAnimation("Translation")
+  ag5_2:SetOffset(animDist, 0)
+  ag5_2:SetDuration(animDuration)
+  ag5_2:SetSmoothing(animSmooth)
+  local ag5_3 = parent[catName][itemName].ag5:CreateAnimation("Alpha")
+  ag5_3:SetFromAlpha(0)
+  ag5_3:SetToAlpha(1)
+  ag5_3:SetDuration(animDuration)
+  ag5_3:SetSmoothing(animSmooth)
+  -- local ag5_4 = parent[catName][itemName].ag5:CreateAnimation("Rotation")
+  -- ag5_4:SetDegrees(animRotation)
+  -- ag5_4:SetDuration(animDuration)
+  -- ag5_4:SetSmoothing(animSmooth)
 end
 
+local justOpenedCategory
 -- category widget
 function itemsFrame:CreateMovableLabelElems(catName)
   -- category label
@@ -1350,6 +1446,7 @@ function itemsFrame:CreateMovableLabelElems(catName)
       if (config:HasKey(NysTDL.db.profile.closedCategories, catName) and NysTDL.db.profile.closedCategories[catName] ~= nil) then -- if this is a category that is closed in certain tabs
         local isPresent, pos = config:HasItem(NysTDL.db.profile.closedCategories[catName], CurrentTab:GetName()); -- we get if it is closed in the current tab
         if (isPresent) then -- if it is
+          justOpenedCategory = catName
           table.remove(NysTDL.db.profile.closedCategories[catName], pos); -- then we remove it from the saved variable
           if (#NysTDL.db.profile.closedCategories[catName] == 0) then -- and btw check if it was the only tab remaining where it was closed
             NysTDL.db.profile.closedCategories[catName] = nil; -- in which case we nil the table variable for that category
@@ -1370,6 +1467,7 @@ function itemsFrame:CreateMovableLabelElems(catName)
         editBox[catName]:SetShown(not editBox[catName]:IsShown());
 
         if (editBox[catName]:IsShown()) then
+          editBox[catName].ag1:Restart()
           -- tutorial
           itemsFrame:ValidateTutorial("addItem");
 
@@ -1457,6 +1555,25 @@ function itemsFrame:CreateMovableLabelElems(catName)
     self:GetScript("OnEscapePressed")(self)
   end)
   table.insert(hyperlinkEditBoxes, editBox[catName]);
+
+  local animDuration = 0.9
+  local animDist = -70
+  local animRotation = -360
+  local animSmooth = "OUT"
+
+  editBox[catName].ag1 = editBox[catName]:CreateAnimationGroup()
+  local ag1_1 = editBox[catName].ag1:CreateAnimation("Translation")
+  ag1_1:SetOffset(-animDist, 0)
+  ag1_1:SetDuration(0)
+  local ag1_2 = editBox[catName].ag1:CreateAnimation("Translation")
+  ag1_2:SetOffset(animDist, 0)
+  ag1_2:SetDuration(animDuration)
+  ag1_2:SetSmoothing(animSmooth)
+  local ag1_3 = editBox[catName].ag1:CreateAnimation("Alpha")
+  ag1_3:SetFromAlpha(0)
+  ag1_3:SetToAlpha(1)
+  ag1_3:SetDuration(animDuration)
+  ag1_3:SetSmoothing(animSmooth)
 end
 
 -- // Creation and loading of the list's items
@@ -1515,20 +1632,32 @@ local function loadCategories(tab, categoryLabel, catName, itemNames, lastData)
     if (not config:HasKey(NysTDL.db.profile.closedCategories, catName) or not config:HasItem(NysTDL.db.profile.closedCategories[catName], tab:GetName())) then
       -- checkboxes
       local buttonsLength = 0;
+      local blablaaaa = false
       for _, itemName in pairs(itemNames) do -- for every item to load
           buttonsLength = buttonsLength + 1;
 
-          checkBtn[catName][itemName]:SetParent(tab);
-          checkBtn[catName][itemName]:SetPoint("TOPLEFT", categoryLabel, "TOPLEFT", 30, - 22 * buttonsLength + 5);
-          checkBtn[catName][itemName]:Show();
+          parent[catName][itemName]:SetParent(tab);
+          parent[catName][itemName]:SetPoint("TOPLEFT", categoryLabel, "TOPLEFT", 30, - 22 * buttonsLength + 5);
+          parent[catName][itemName]:Show();
+          if (justOpenedCategory == catName) then
+            blablaaaa = true
+            parent[catName][itemName].ag1:Restart()
+            parent[catName][itemName].ag2:Restart()
+            parent[catName][itemName].ag3:Restart()
+            parent[catName][itemName].ag4:Restart()
+            parent[catName][itemName].ag5:Restart()
+          end
+      end
+      if (blablaaaa) then
+        justOpenedCategory = ""
       end
       categoryLabelFavsRemaining[catName]:Hide(); -- the only thing is that we hide it if the category is opened
     else
       -- if not, we still need to put them at their right place, anchors and parents (but we keep them hidden)
       -- especially for when we load the All tab, for the clearing
       for _, itemName in pairs(itemNames) do -- for every item to load but hidden
-        checkBtn[catName][itemName]:SetParent(tab);
-        checkBtn[catName][itemName]:SetPoint("TOPLEFT", categoryLabel, "TOPLEFT");
+        parent[catName][itemName]:SetParent(tab);
+        parent[catName][itemName]:SetPoint("TOPLEFT", categoryLabel, "TOPLEFT");
       end
       categoryLabelFavsRemaining[catName]:Show(); -- bc we only see him when the cat is closed
     end
@@ -1597,9 +1726,9 @@ local function generateTab(tab)
   -- before we reload the entire tab and items, we hide every checkboxes
   for catName, items in pairs(NysTDL.db.profile.itemsList) do -- for every item
     for itemName in pairs(items) do
-      checkBtn[catName][itemName]:Hide()
-      checkBtn[catName][itemName]:SetParent(tab)
-      checkBtn[catName][itemName]:ClearAllPoints()
+      parent[catName][itemName]:Hide()
+      parent[catName][itemName]:SetParent(tab)
+      parent[catName][itemName]:ClearAllPoints()
     end
   end
 
@@ -2676,36 +2805,6 @@ end
 
 --@do-not-package@
 
-  local f = CreateFrame("CheckButton", "dfgrftghtyh", UIParent, "UICheckButtonTemplate");
-  f:SetSize(35, 35)
-  f:SetPoint("CENTER", UIParent, "CENTER", 100, 100)
-  local ag = f:CreateAnimationGroup()
-  local a1 = ag:CreateAnimation("Translation")
-  a1:SetOffset(100, 0)
-  a1:SetDuration(1)
-  -- a1:SetEndDelay(2)
-  a1:SetSmoothing("OUT")
-
-  local a2 = ag:CreateAnimation("Translation")
-  a2:SetOffset(-100, 0)
-  a2:SetDuration(0)
-  -- a1:SetEndDelay(2)
-
-  -- local a2 = ag:CreateAnimation("Scale")
-  -- a2:SetToScale(2, 2)
-  -- a2:SetDuration(3)
-  -- a2:SetSmoothing("OUT")
-
-  local a3 = ag:CreateAnimation("Rotation")
-  a3:SetDegrees(-360)
-  a3:SetDuration(1)
-  a3:SetSmoothing("OUT")
-
-  local a4 = ag:CreateAnimation("Alpha")
-  a4:SetFromAlpha(0)
-  a4:SetToAlpha(1)
-  a4:SetDuration(1)
-  a4:SetSmoothing("OUT")
 -- Tests function (for me :p)
 function Nys_Tests(yes)
   if (yes == 1) then -- tests profile
@@ -2780,17 +2879,7 @@ function Nys_Tests(yes)
     })
     end
   elseif (yes == 4) then
-    f:Show()
-
-
-
-    print(ag:IsPlaying())
-    if (not ag:IsPlaying()) then
-      ag:Play(true)
-    else
-      -- ag:Stop()
-      ag:Restart();
-    end
+    print(parent["Mechagon"]["Beastbot"].ag3:IsPlaying())
     -- print("Daily:    "..tostringall(NysTDL.db.profile.autoReset["Daily"]))
     -- print("Weekly: "..tostringall(NysTDL.db.profile.autoReset["Weekly"]))
     -- print("Time:    "..tostringall(time()))
