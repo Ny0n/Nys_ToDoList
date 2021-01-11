@@ -297,6 +297,10 @@ local T_updateRemainingNumbers_4 = {}
 function itemsFrame:updateRemainingNumbers()
   -- we get how many things there is left to do in every tab,
   -- it's the big important function that gives us every number, checked and unchecked, favs or not
+
+  -- // this function is a bit horrible, but i'm planning to redo it entirely in the future when i'll want to look into sub-categories,
+  -- but it does the job for now
+
   local tab = itemsFrameUI.remainingNumber:GetParent();
 
   local numberCheckedAll, numberCheckedDaily, numberCheckedWeekly = 0, 0, 0;
@@ -407,6 +411,7 @@ function itemsFrame:updateRemainingNumbers()
     end
   end
 
+  -- and finally we put our variables in tables so they are easier to access on the other end
   wipe(T_updateRemainingNumbers_1)
   wipe(T_updateRemainingNumbers_2)
   wipe(T_updateRemainingNumbers_3)
@@ -1112,7 +1117,7 @@ local function ItemsFrame_OnUpdate(self, elapsed)
     end
   end
 
-  if (false) then
+  if (true) then
     -- testing and showing the right button next to each items
     if (IsShiftKeyDown()) then
       for catName, items in pairs(NysTDL.db.profile.itemsList) do
@@ -2676,36 +2681,6 @@ end
 
 --@do-not-package@
 
-  local f = CreateFrame("CheckButton", "dfgrftghtyh", UIParent, "UICheckButtonTemplate");
-  f:SetSize(35, 35)
-  f:SetPoint("CENTER", UIParent, "CENTER", 100, 100)
-  local ag = f:CreateAnimationGroup()
-  local a1 = ag:CreateAnimation("Translation")
-  a1:SetOffset(100, 0)
-  a1:SetDuration(1)
-  -- a1:SetEndDelay(2)
-  a1:SetSmoothing("OUT")
-
-  local a2 = ag:CreateAnimation("Translation")
-  a2:SetOffset(-100, 0)
-  a2:SetDuration(0)
-  -- a1:SetEndDelay(2)
-
-  -- local a2 = ag:CreateAnimation("Scale")
-  -- a2:SetToScale(2, 2)
-  -- a2:SetDuration(3)
-  -- a2:SetSmoothing("OUT")
-
-  local a3 = ag:CreateAnimation("Rotation")
-  a3:SetDegrees(-360)
-  a3:SetDuration(1)
-  a3:SetSmoothing("OUT")
-
-  local a4 = ag:CreateAnimation("Alpha")
-  a4:SetFromAlpha(0)
-  a4:SetToAlpha(1)
-  a4:SetDuration(1)
-  a4:SetSmoothing("OUT")
 -- Tests function (for me :p)
 function Nys_Tests(yes)
   if (yes == 1) then -- tests profile
@@ -2780,17 +2755,6 @@ function Nys_Tests(yes)
     })
     end
   elseif (yes == 4) then
-    f:Show()
-
-
-
-    print(ag:IsPlaying())
-    if (not ag:IsPlaying()) then
-      ag:Play(true)
-    else
-      -- ag:Stop()
-      ag:Restart();
-    end
     -- print("Daily:    "..tostringall(NysTDL.db.profile.autoReset["Daily"]))
     -- print("Weekly: "..tostringall(NysTDL.db.profile.autoReset["Weekly"]))
     -- print("Time:    "..tostringall(time()))
