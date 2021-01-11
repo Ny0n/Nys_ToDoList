@@ -947,7 +947,6 @@ function itemsFrame:DescriptionClick(self)
   descFrame.clearButton:SetScript("OnClick", function(self)
       local eb = self:GetParent().descriptionEditBox.EditBox
       eb:SetText("")
-      eb:GetScript("OnKeyUp")(eb)
   end);
 
   -- item label
@@ -973,11 +972,14 @@ function itemsFrame:DescriptionClick(self)
   if (NysTDL.db.profile.itemsList[catName][itemName].description) then -- if there is already a description for this item, we write it on frame creation
     descFrame.descriptionEditBox.EditBox:SetText(NysTDL.db.profile.itemsList[catName][itemName].description)
   end
-  descFrame.descriptionEditBox.EditBox:SetScript("OnKeyUp", function(self)
-    -- and here we save the description everytime we lift a finger (best auto-save possible I think)
-    NysTDL.db.profile.itemsList[catName][itemName].description = (self:GetText() ~= "") and self:GetText() or nil;
+  descFrame.descriptionEditBox.EditBox:HookScript("OnTextChanged", function(self, userInput)
+    -- and here we save the description everytime the text is updated (best auto-save possible I think)
+    NysTDL.db.profile.itemsList[catName][itemName].description = (self:GetText() ~= "") and self:GetText() or nil
     if (IsControlKeyDown()) then -- just in case we are ctrling-v, to color the icon
       descBtn[catName][itemName]:GetScript("OnShow")(descBtn[catName][itemName])
+    elseif (NysTDL.db.profile.itemsList[catName][itemName].description ~= nil and not descBtn[catName][itemName]:IsShown()
+      or NysTDL.db.profile.itemsList[catName][itemName].description == nil and descBtn[catName][itemName]:IsShown()) then
+        itemsFrame:UpdateItemButtons(catName, itemName) -- we update the desc button is there is a worthy change
     end
   end)
   descFrame.descriptionEditBox.EditBox:SetHyperlinksEnabled(true); -- to enable OnHyperlinkClick
@@ -991,7 +993,7 @@ function itemsFrame:DescriptionClick(self)
   -- we update the alpha if it needs to be
   FrameAlphaSlider_OnValueChanged(nil, NysTDL.db.profile.frameAlpha);
   FrameContentAlphaSlider_OnValueChanged(nil, NysTDL.db.profile.frameContentAlpha);
-
+print("22222222")
   itemsFrame:ReloadTab() -- we reload the tab to instantly display the changes
 end
 
@@ -1074,6 +1076,28 @@ function itemsFrame:Update()
   itemsFrame:updateCheckButtonsColor();
 end
 
+function itemsFrame:UpdateItemButtons(catName, itemName)
+  if (not NysTDL.db.profile.itemsList[catName] or not NysTDL.db.profile.itemsList[catName][itemName]) then return end
+  local data = NysTDL.db.profile.itemsList[catName][itemName]
+  -- shows the right button at the left of every item
+  if (data.description) then
+    -- if current item has a description, the paper icon takes the lead
+    favoriteBtn[catName][itemName]:Hide()
+    removeBtn[catName][itemName]:Hide()
+    descBtn[catName][itemName]:Show()
+  elseif (data.favorite) then
+    -- or else if current item is a favorite
+    descBtn[catName][itemName]:Hide()
+    removeBtn[catName][itemName]:Hide()
+    favoriteBtn[catName][itemName]:Show()
+  else
+    -- default
+    favoriteBtn[catName][itemName]:Hide()
+    descBtn[catName][itemName]:Hide()
+    removeBtn[catName][itemName]:Show()
+  end
+end
+
 local function ItemsFrame_OnVisibilityUpdate()
   -- things to do when we hide/show the list
   addACategoryClosed = true;
@@ -1097,6 +1121,30 @@ local function ItemsFrame_Scale()
   end
 end
 
+local T_ItemsFrame_OnUpdate = {
+  other = function(self, x) -- returns true if an other argument than the given one or 'nothing' is true
+    for k,v in pairs(self) do
+      if (type(v) == "boolean") then
+        if ((k ~= "nothing") and (k ~= x) and v) then
+          return true
+        end
+      end
+    end
+    return false
+  end,
+  something = function(self, x) -- sets to true only the given argument
+    for k,v in pairs(self) do
+      if (type(v) == "boolean") then
+        self[k] = false
+      end
+    end
+    self[x] = true
+  end,
+  nothing = false,
+  shift = false,
+  ctrl = false,
+  alt = false,
+} -- this is to only update once the things concerned by the special key inputs instead of every frame
 local function ItemsFrame_OnUpdate(self, elapsed)
   -- called every frame
   self.timeSinceLastUpdate = self.timeSinceLastUpdate + elapsed;
@@ -1117,60 +1165,59 @@ local function ItemsFrame_OnUpdate(self, elapsed)
     end
   end
 
-  if (true) then
-    -- testing and showing the right button next to each items
-    if (IsShiftKeyDown()) then
-      for catName, items in pairs(NysTDL.db.profile.itemsList) do
-        for itemName in pairs(items) do
-          -- we show every star icons
-          removeBtn[catName][itemName]:Hide()
-          descBtn[catName][itemName]:Hide();
-          favoriteBtn[catName][itemName]:Show();
-        end
+  if (true) then -- for ez CPU testing
+    -- testing and showing the right buttons depending on our inputs
+    if IsAltKeyDown() and not T_ItemsFrame_OnUpdate:other("alt") then
+      if (not T_ItemsFrame_OnUpdate.alt) then
+        T_ItemsFrame_OnUpdate:something("alt")
+
+        itemsFrame:ValidateTutorial("ALTkey"); -- tutorial
+        -- we switch the category and frame options buttons for the undo and frame action ones and vice versa
+        itemsFrameUI.categoryButton:Hide()
+        itemsFrameUI.undoButton:Show()
+        itemsFrameUI.frameOptionsButton:Hide()
+        itemsFrameUI.tabActionsButton:Show()
+        -- resize button
+        itemsFrameUI.ScrollFrame.ScrollBar:SetPoint("BOTTOMRIGHT", itemsFrameUI.ScrollFrame, "BOTTOMRIGHT", - 7, 32);
+        itemsFrameUI.resizeButton:Show()
       end
-    elseif (IsControlKeyDown()) then
-      for catName, items in pairs(NysTDL.db.profile.itemsList) do
-        for itemName in pairs(items) do
-          -- we show every paper icons
-          removeBtn[catName][itemName]:Hide()
-          favoriteBtn[catName][itemName]:Hide();
-          descBtn[catName][itemName]:Show();
-        end
-      end
-    else
-      for catName, items in pairs(NysTDL.db.profile.itemsList) do
-        for itemName, data in pairs(items) do
-          if (data.description) then
-            -- if current item has a description, the paper icon takes the lead
-            favoriteBtn[catName][itemName]:Hide();
+    elseif IsShiftKeyDown() and not T_ItemsFrame_OnUpdate:other("shift") then
+      if (not T_ItemsFrame_OnUpdate.shift) then
+        T_ItemsFrame_OnUpdate:something("shift")
+
+        for catName, items in pairs(NysTDL.db.profile.itemsList) do
+          for itemName in pairs(items) do
+            -- we show every star icons
             removeBtn[catName][itemName]:Hide()
-            descBtn[catName][itemName]:Show();
-          elseif (data.favorite) then
-            -- or else if current item is a favorite
-            descBtn[catName][itemName]:Hide();
-            removeBtn[catName][itemName]:Hide()
-            favoriteBtn[catName][itemName]:Show();
-          else
-            -- default
-            favoriteBtn[catName][itemName]:Hide();
-            descBtn[catName][itemName]:Hide();
-            removeBtn[catName][itemName]:Show()
+            descBtn[catName][itemName]:Hide()
+            favoriteBtn[catName][itemName]:Show()
           end
         end
       end
-    end
+    elseif IsControlKeyDown() and not T_ItemsFrame_OnUpdate:other("ctrl") then
+      if (not T_ItemsFrame_OnUpdate.ctrl) then
+        T_ItemsFrame_OnUpdate:something("ctrl")
 
-    if (IsAltKeyDown()) then
-      itemsFrame:ValidateTutorial("ALTkey"); -- tutorial
-      -- we switch the category and frame options buttons for the undo and frame action ones and vice versa
-      itemsFrameUI.categoryButton:Hide()
-      itemsFrameUI.undoButton:Show()
-      itemsFrameUI.frameOptionsButton:Hide()
-      itemsFrameUI.tabActionsButton:Show()
-      -- resize button
-      itemsFrameUI.ScrollFrame.ScrollBar:SetPoint("BOTTOMRIGHT", itemsFrameUI.ScrollFrame, "BOTTOMRIGHT", - 7, 32);
-      itemsFrameUI.resizeButton:Show()
-    else
+        for catName, items in pairs(NysTDL.db.profile.itemsList) do
+          for itemName in pairs(items) do
+            -- we show every paper icons
+            removeBtn[catName][itemName]:Hide()
+            favoriteBtn[catName][itemName]:Hide()
+            descBtn[catName][itemName]:Show()
+          end
+        end
+      end
+    elseif (not T_ItemsFrame_OnUpdate.nothing) then
+      T_ItemsFrame_OnUpdate:something("nothing")
+
+      -- item icons
+      for catName, items in pairs(NysTDL.db.profile.itemsList) do
+        for itemName in pairs(items) do
+          itemsFrame:UpdateItemButtons(catName, itemName)
+        end
+      end
+
+      -- buttons
       itemsFrameUI.undoButton:Hide()
       itemsFrameUI.categoryButton:Show()
       itemsFrameUI.tabActionsButton:Hide()
@@ -1179,7 +1226,9 @@ local function ItemsFrame_OnUpdate(self, elapsed)
       itemsFrameUI.ScrollFrame.ScrollBar:SetPoint("BOTTOMRIGHT", itemsFrameUI.ScrollFrame, "BOTTOMRIGHT", - 7, 17);
       itemsFrameUI.resizeButton:Hide()
     end
+  end
 
+  if (true) then -- same
     -- we also update their color, if one of the button menus is opened
     itemsFrameUI.categoryButton.Icon:SetDesaturated(nil) itemsFrameUI.categoryButton.Icon:SetVertexColor(0.85, 1, 1) -- here we change the vertex color because the original icon is a bit reddish
     itemsFrameUI.frameOptionsButton.Icon:SetDesaturated(nil)
