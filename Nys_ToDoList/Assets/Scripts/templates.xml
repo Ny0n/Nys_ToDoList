@@ -24,36 +24,36 @@
     <Scripts>
       <OnMouseDown>
         <!-- nudge and dim the icon down a little -->
-        local xOffset = -1;
-        if (self.name == "UndoButton") then xOffset = -2; end
+        local xOffset = -1
+        if (self.name == "UndoButton") then xOffset = -2 end
 
-        local yOffset = -2;
-        if (self.name == "UndoButton") then yOffset = -3; end
-        if (self.name == "CategoryButton") then yOffset = -3; end
+        local yOffset = -2
+        if (self.name == "UndoButton") then yOffset = -3 end
+        if (self.name == "CategoryButton") then yOffset = -3 end
 
         self.Icon:SetPoint("CENTER", xOffset, yOffset) self.Icon:SetAlpha(0.5)
       </OnMouseDown>
       <OnMouseUp>
         <!-- reset the icon's position and opacity -->
-        local xOffset = 0;
-        if (self.name == "UndoButton") then xOffset = -0.5; end
-        if (self.name == "CategoryButton") then xOffset = 0.5; end
+        local xOffset = 0
+        if (self.name == "UndoButton") then xOffset = -0.5 end
+        if (self.name == "CategoryButton") then xOffset = 0.5 end
 
-        local yOffset = 0;
-        if (self.name == "UndoButton") then yOffset = -0.5; end
-        if (self.name == "CategoryButton") then yOffset = -1; end
+        local yOffset = 0
+        if (self.name == "UndoButton") then yOffset = -0.5 end
+        if (self.name == "CategoryButton") then yOffset = -1 end
 
         self.Icon:SetPoint("CENTER", xOffset, yOffset) self.Icon:SetAlpha(1)
       </OnMouseUp>
       <OnShow>
         <!-- reset the icon's position and opacity -->
-        local xOffset = 0;
-        if (self.name == "UndoButton") then xOffset = -0.5; end
-        if (self.name == "CategoryButton") then xOffset = 0.5; end
+        local xOffset = 0
+        if (self.name == "UndoButton") then xOffset = -0.5 end
+        if (self.name == "CategoryButton") then xOffset = 0.5 end
 
-        local yOffset = 0;
-        if (self.name == "UndoButton") then yOffset = -0.5; end
-        if (self.name == "CategoryButton") then yOffset = -1; end
+        local yOffset = 0
+        if (self.name == "UndoButton") then yOffset = -0.5 end
+        if (self.name == "CategoryButton") then yOffset = -1 end
 
         self.Icon:SetPoint("CENTER", xOffset, yOffset) self.Icon:SetAlpha(1)
       </OnShow>
@@ -424,25 +424,25 @@
 		<Scripts>
 			<OnMouseDown>
 				if ( self:IsEnabled() ) then
-					local name = self:GetName();
-					_G[name.."Left"]:SetTexture("Interface\\Buttons\\UI-SilverButtonLG-Left-Down");
-					_G[name.."Middle"]:SetTexture("Interface\\Buttons\\UI-SilverButtonLG-Mid-Down");
-					_G[name.."Right"]:SetTexture("Interface\\Buttons\\UI-SilverButtonLG-Right-Down");
-					local contentsFrame = _G[name.."ContentsFrame"];
+					local name = self:GetName()
+					_G[name.."Left"]:SetTexture("Interface\\Buttons\\UI-SilverButtonLG-Left-Down")
+					_G[name.."Middle"]:SetTexture("Interface\\Buttons\\UI-SilverButtonLG-Mid-Down")
+					_G[name.."Right"]:SetTexture("Interface\\Buttons\\UI-SilverButtonLG-Right-Down")
+					local contentsFrame = _G[name.."ContentsFrame"]
 					if ( contentsFrame ) then
-						contentsFrame:SetPoint("TOPLEFT", -2, -1);
+						contentsFrame:SetPoint("TOPLEFT", -2, -1)
 					end
 				end
 			</OnMouseDown>
 			<OnMouseUp>
 				if ( self:IsEnabled() ) then
-					local name = self:GetName();
-					_G[name.."Left"]:SetTexture("Interface\\Buttons\\UI-SilverButtonLG-Left-Up");
-					_G[name.."Middle"]:SetTexture("Interface\\Buttons\\UI-SilverButtonLG-Mid-Up");
-					_G[name.."Right"]:SetTexture("Interface\\Buttons\\UI-SilverButtonLG-Right-Up");
-					local contentsFrame = _G[name.."ContentsFrame"];
+					local name = self:GetName()
+					_G[name.."Left"]:SetTexture("Interface\\Buttons\\UI-SilverButtonLG-Left-Up")
+					_G[name.."Middle"]:SetTexture("Interface\\Buttons\\UI-SilverButtonLG-Mid-Up")
+					_G[name.."Right"]:SetTexture("Interface\\Buttons\\UI-SilverButtonLG-Right-Up")
+					local contentsFrame = _G[name.."ContentsFrame"]
 					if ( contentsFrame ) then
-						contentsFrame:SetPoint("TOPLEFT", 0, 0);
+						contentsFrame:SetPoint("TOPLEFT", 0, 0)
 					end
 				end
 			</OnMouseUp>
@@ -514,14 +514,14 @@
 		</Layers>
 		<Scripts>
 			<OnLoad>
-				self.Text:SetSpacing(4);
-				SetClampedTextureRotation(self.ArrowLEFT, 270);
-				SetClampedTextureRotation(self.ArrowRIGHT, 90);
-				SetClampedTextureRotation(self.ArrowGlowLEFT, 270);
-				SetClampedTextureRotation(self.ArrowGlowRIGHT, 90);
+				self.Text:SetSpacing(4)
+				SetClampedTextureRotation(self.ArrowLEFT, 270)
+				SetClampedTextureRotation(self.ArrowRIGHT, 90)
+				SetClampedTextureRotation(self.ArrowGlowLEFT, 270)
+				SetClampedTextureRotation(self.ArrowGlowRIGHT, 90)
 			</OnLoad>
 			<OnShow>
-				self:SetHeight(self.Text:GetHeight()+30);
+				self:SetHeight(self.Text:GetHeight()+30)
 			</OnShow>
 		</Scripts>
 	</Frame>

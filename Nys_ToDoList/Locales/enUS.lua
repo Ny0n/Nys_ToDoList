@@ -1,4 +1,4 @@
-local addonName = ...;
+local addonName = ...
 
 -- default language
 local L = LibStub("AceLocale-3.0"):NewLocale(addonName, "enUS", true)

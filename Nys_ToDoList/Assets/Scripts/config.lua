@@ -1,8 +1,8 @@
 -- Namespaces
-local addonName, tdlTable = ...;
-tdlTable.config = {}; -- adds config table to addon namespace
+local addonName, tdlTable = ...
+tdlTable.config = {} -- adds config table to addon namespace
 
-local config = tdlTable.config;
+local config = tdlTable.config
 
 --/*******************/ ADDON LIBS AND DATA HANDLER /*************************/--
 -- libs
@@ -141,7 +141,7 @@ config.database = {
                   }, -- minimapButtonHide
                   minimapButtonTooltip = {
                       order = 2.2,
-                      -- disabled = function() return NysTDL.db.profile.minimap.hide; end,
+                      -- disabled = function() return NysTDL.db.profile.minimap.hide end,
                       type = "toggle",
                       name = L["Show tooltip"],
                       desc = L["Show the tooltip of the minimap/databroker button"],
@@ -546,16 +546,16 @@ config.database = {
 --------------------------------------
 
 function config:Print(...)
-  if (not NysTDL.db.profile.showChatMessages) then return; end -- we don't print anything if the user chose to deactivate this
-  config:PrintForced(...);
+  if (not NysTDL.db.profile.showChatMessages) then return end -- we don't print anything if the user chose to deactivate this
+  config:PrintForced(...)
 end
 
 local T_PrintForced = {}
 function config:PrintForced(...)
-  if (... == nil) then return; end
+  if (... == nil) then return end
 
-  local hex = self:RGBToHex(self.database.theme);
-  local prefix = string.format("|cff%s%s|r", hex, config.toc.title..':');
+  local hex = self:RGBToHex(self.database.theme)
+  local prefix = string.format("|cff%s%s|r", hex, config.toc.title..':')
 
   wipe(T_PrintForced)
   local message = T_PrintForced
@@ -674,32 +674,32 @@ end
 
 function config:HasItem(table, item)
   if type(table) ~= "table" then -- just in case
-    return false, 0;
+    return false, 0
   end
 
-  local isPresent = false;
-  local pos = 0;
+  local isPresent = false
+  local pos = 0
   for key, value in pairs(table) do
     if (value == item) then
-      isPresent = true;
-      pos = key;
-      break;
+      isPresent = true
+      pos = key
+      break
     end
   end
-  return isPresent, pos;
+  return isPresent, pos
 end
 
 function config:HasKey(table, key)
   if type(table) ~= "table" then -- just in case
-    return false;
+    return false
   end
 
   for k, _ in pairs(table) do
     if (k == key) then
-      return true;
+      return true
     end
   end
-  return false;
+  return false
 end
 
 function config:DoesItemStillExists(catName, itemName)
@@ -723,44 +723,44 @@ end
 -- // Automatic reset calculations
 
 local function getHoursUntilReset(dateValue)
-  local n = 0;
-  local value = dateValue.hour;
+  local n = 0
+  local value = dateValue.hour
 
   while (value ~= NysTDL.db.profile.dailyHour) do
-    n = n + 1;
-    value = value + 1;
+    n = n + 1
+    value = value + 1
     if (value == 24) then
-      value = 0;
+      value = 0
     end
   end
 
   if (n == 0) then
-    n = 24;
+    n = 24
   end
 
-  return n - 1; -- because it's a countdown (it's like min and sec are also displayed)
+  return n - 1 -- because it's a countdown (it's like min and sec are also displayed)
 end
 
 local function getDaysUntilReset(dateValue)
-  local n = 0;
-  local value = dateValue.wday;
+  local n = 0
+  local value = dateValue.wday
 
   if (dateValue.hour >= NysTDL.db.profile.dailyHour) then
-    value = value + 1;
+    value = value + 1
     if (value == 8) then
-      value = 1;
+      value = 1
     end
   end
 
   while (value ~= NysTDL.db.profile.weeklyDay) do
-    n = n + 1;
-    value = value + 1;
+    n = n + 1
+    value = value + 1
     if (value == 8) then
-      value = 1;
+      value = 1
     end
   end
 
-  return n; -- same, but a bit more complicated since it depends on the daily reset hour
+  return n -- same, but a bit more complicated since it depends on the daily reset hour
 end
 
 local T_GetTimeUntilReset = {}
@@ -809,7 +809,7 @@ function config:CreateTutorialFrame(tutoName, parent, showCloseButton, arrowSide
     tutoFrameRightDist = 40
     tutoFrame.closeButton = CreateFrame("Button", "closeButton", tutoFrame, "UIPanelCloseButton")
     tutoFrame.closeButton:SetPoint("TOPRIGHT", tutoFrame, "TOPRIGHT", 6, 6)
-    tutoFrame.closeButton:SetScript("OnClick", function() NysTDL.db.global.tuto_progression = NysTDL.db.global.tuto_progression + 1; end)
+    tutoFrame.closeButton:SetScript("OnClick", function() NysTDL.db.global.tuto_progression = NysTDL.db.global.tuto_progression + 1 end)
   end
   tutoFrame.Text:SetWidth(tutoFrame:GetWidth() - tutoFrameRightDist)
   tutoFrame.Text:SetText(text)
@@ -819,43 +819,43 @@ function config:CreateTutorialFrame(tutoName, parent, showCloseButton, arrowSide
 end
 
 function config:CreateNoPointsLabel(relativeFrame, name, text)
-  local label = relativeFrame:CreateFontString(name);
-  label:SetFontObject("GameFontHighlightLarge");
-  label:SetText(text);
-  return label;
+  local label = relativeFrame:CreateFontString(name)
+  label:SetFontObject("GameFontHighlightLarge")
+  label:SetText(text)
+  return label
 end
 
 function config:CreateNoPointsInteractiveLabel(name, relativeFrame, text, fontObjectString)
   local label = CreateFrame("Frame", name, relativeFrame, "NysTDL_InteractiveLabel")
-  label.Text:SetFontObject(fontObjectString);
+  label.Text:SetFontObject(fontObjectString)
   label.Text:SetText(text)
   label:SetSize(label.Text:GetWidth(), label.Text:GetHeight()) -- we init the size to the text's size
 
   -- this updates the frame's size each time the text's size is changed
   label.Button:SetScript("OnSizeChanged", function(self, width, height)
     self:GetParent():SetSize(width, height)
-  end);
+  end)
 
-  return label;
+  return label
 end
 
 function config:CreateNothingLabel(relativeFrame)
-  local label = relativeFrame:CreateFontString(nil);
-  label:SetFontObject("GameFontHighlightLarge");
-  label:SetTextColor(0.5, 0.5, 0.5, 0.5);
-  return label;
+  local label = relativeFrame:CreateFontString(nil)
+  label:SetFontObject("GameFontHighlightLarge")
+  label:SetTextColor(0.5, 0.5, 0.5, 0.5)
+  return label
 end
 
 function config:CreateButton(name, relativeFrame, text, iconPath, fc)
   fc = fc or false
   iconPath = (type(iconPath) == "string") and iconPath or nil
-  local btn = CreateFrame("Button", name, relativeFrame, "NysTDL_NormalButton");
-  local w = config:CreateNoPointsLabel(relativeFrame, nil, text):GetWidth();
-  btn:SetText(text);
-  btn:SetNormalFontObject("GameFontNormalLarge");
-  if (fc == true) then btn:SetHighlightFontObject("GameFontHighlightLarge"); end
+  local btn = CreateFrame("Button", name, relativeFrame, "NysTDL_NormalButton")
+  local w = config:CreateNoPointsLabel(relativeFrame, nil, text):GetWidth()
+  btn:SetText(text)
+  btn:SetNormalFontObject("GameFontNormalLarge")
+  if (fc == true) then btn:SetHighlightFontObject("GameFontHighlightLarge") end
   if (iconPath ~= nil) then
-    w = w + 23;
+    w = w + 23
     btn.Icon = btn:CreateTexture(nil, "ARTWORK")
     btn.Icon:SetPoint("LEFT", btn, "LEFT", 10, 0)
     btn.Icon:SetTexture(iconPath)
@@ -864,68 +864,68 @@ function config:CreateButton(name, relativeFrame, text, iconPath, fc)
     btn:HookScript("OnMouseDown", function(self) self.Icon:SetPoint("LEFT", self, "LEFT", 12, -2) end)
     btn:HookScript("OnMouseUp", function(self) self.Icon:SetPoint("LEFT", self, "LEFT", 10, 0) end)
   end
-  btn:SetWidth(w + 20);
-  return btn;
+  btn:SetWidth(w + 20)
+  return btn
 end
 
 function config:CreateHelpButton(relativeFrame)
-  local btn = CreateFrame("Button", nil, relativeFrame, "NysTDL_HelpButton");
-  btn.tooltip = L["Information"];
+  local btn = CreateFrame("Button", nil, relativeFrame, "NysTDL_HelpButton")
+  btn.tooltip = L["Information"]
 
   -- these are for changing the color depending on the mouse actions (since they are custom xml)
   btn:HookScript("OnEnter", function(self)
     self:SetAlpha(1)
-  end);
+  end)
   btn:HookScript("OnLeave", function(self)
     self:SetAlpha(0.7)
-  end);
+  end)
   btn:HookScript("OnShow", function(self)
     self:SetAlpha(0.7)
-  end);
-  return btn;
+  end)
+  return btn
 end
 
 function config:CreateRemoveButton(relativeCheckButton)
-  local btn = CreateFrame("Button", nil, relativeCheckButton, "NysTDL_RemoveButton");
-  btn:SetPoint("LEFT", relativeCheckButton, "LEFT", - 20, 0);
+  local btn = CreateFrame("Button", nil, relativeCheckButton, "NysTDL_RemoveButton")
+  btn:SetPoint("LEFT", relativeCheckButton, "LEFT", - 20, 0)
 
   -- these are for changing the color depending on the mouse actions (since they are custom xml)
   btn:HookScript("OnEnter", function(self)
     self.Icon:SetVertexColor(0.8, 0.2, 0.2)
-  end);
+  end)
   btn:HookScript("OnLeave", function(self)
     if (tonumber(string.format("%.1f", self.Icon:GetAlpha())) ~= 0.5) then
       self.Icon:SetVertexColor(1, 1, 1)
     end
-  end);
+  end)
   btn:HookScript("OnMouseUp", function(self)
     if (self.name == "RemoveButton") then
       self.Icon:SetVertexColor(1, 1, 1)
     end
-  end);
+  end)
   btn:HookScript("OnShow", function(self)
     self.Icon:SetVertexColor(1, 1, 1)
-  end);
-  return btn;
+  end)
+  return btn
 end
 
 function config:CreateFavoriteButton(relativeCheckButton, catName, itemName)
-  local btn = CreateFrame("Button", nil, relativeCheckButton, "NysTDL_FavoriteButton");
-  btn:SetPoint("LEFT", relativeCheckButton, "LEFT", - 20, -2);
+  local btn = CreateFrame("Button", nil, relativeCheckButton, "NysTDL_FavoriteButton")
+  btn:SetPoint("LEFT", relativeCheckButton, "LEFT", - 20, -2)
 
   -- these are for changing the color depending on the mouse actions (since they are custom xml)
   -- and yea, this one's a bit complicated because I wanted its look to be really precise...
   btn:HookScript("OnEnter", function(self)
-    if (not config:DoesItemStillExists(catName, itemName)) then return; end
+    if (not config:DoesItemStillExists(catName, itemName)) then return end
     if (not NysTDL.db.profile.itemsList[catName][itemName].favorite) then -- not favorited
       self.Icon:SetDesaturated(nil)
       self.Icon:SetVertexColor(1, 1, 1)
     else
       self:SetAlpha(0.6)
     end
-  end);
+  end)
   btn:HookScript("OnLeave", function(self)
-    if (not config:DoesItemStillExists(catName, itemName)) then return; end
+    if (not config:DoesItemStillExists(catName, itemName)) then return end
     if (not NysTDL.db.profile.itemsList[catName][itemName].favorite) then
       if (tonumber(string.format("%.1f", self.Icon:GetAlpha())) ~= 0.5) then -- if we are currently clicking on the button
         self.Icon:SetDesaturated(1)
@@ -934,9 +934,9 @@ function config:CreateFavoriteButton(relativeCheckButton, catName, itemName)
     else
       self:SetAlpha(1)
     end
-   end);
+   end)
    btn:HookScript("OnMouseUp", function(self)
-     if (not config:DoesItemStillExists(catName, itemName)) then return; end
+     if (not config:DoesItemStillExists(catName, itemName)) then return end
      if (self.name == "FavoriteButton") then
        self:SetAlpha(1)
        if (not NysTDL.db.profile.itemsList[catName][itemName].favorite) then
@@ -944,14 +944,14 @@ function config:CreateFavoriteButton(relativeCheckButton, catName, itemName)
          self.Icon:SetVertexColor(0.4, 0.4, 0.4)
        end
      end
-   end);
+   end)
    btn:HookScript("PostClick", function(self)
      if (self.name == "FavoriteButton") then
        self:GetScript("OnShow")(self)
      end
-   end);
+   end)
   btn:HookScript("OnShow", function(self)
-    if (not config:DoesItemStillExists(catName, itemName)) then return; end
+    if (not config:DoesItemStillExists(catName, itemName)) then return end
     self:SetAlpha(1)
     if (not NysTDL.db.profile.itemsList[catName][itemName].favorite) then
       self.Icon:SetDesaturated(1)
@@ -960,27 +960,27 @@ function config:CreateFavoriteButton(relativeCheckButton, catName, itemName)
       self.Icon:SetDesaturated(nil)
       self.Icon:SetVertexColor(1, 1, 1)
     end
-  end);
-  return btn;
+  end)
+  return btn
 end
 
 function config:CreateDescButton(relativeCheckButton, catName, itemName)
-  local btn = CreateFrame("Button", nil, relativeCheckButton, "NysTDL_DescButton");
-  btn:SetPoint("LEFT", relativeCheckButton, "LEFT", - 20, 0);
+  local btn = CreateFrame("Button", nil, relativeCheckButton, "NysTDL_DescButton")
+  btn:SetPoint("LEFT", relativeCheckButton, "LEFT", - 20, 0)
 
   -- these are for changing the color depending on the mouse actions (since they are custom xml)
   -- and yea, this one's a bit complicated too because it works in very specific ways
   btn:HookScript("OnEnter", function(self)
-    if (not config:DoesItemStillExists(catName, itemName)) then return; end
+    if (not config:DoesItemStillExists(catName, itemName)) then return end
     if (not NysTDL.db.profile.itemsList[catName][itemName].description) then -- no description
       self.Icon:SetDesaturated(nil)
       self.Icon:SetVertexColor(1, 1, 1)
     else
       self:SetAlpha(0.6)
     end
-  end);
+  end)
   btn:HookScript("OnLeave", function(self)
-    if (not config:DoesItemStillExists(catName, itemName)) then return; end
+    if (not config:DoesItemStillExists(catName, itemName)) then return end
     if (not NysTDL.db.profile.itemsList[catName][itemName].description) then
       if (tonumber(string.format("%.1f", self.Icon:GetAlpha())) ~= 0.5) then -- if we are currently clicking on the button
         self.Icon:SetDesaturated(1)
@@ -989,9 +989,9 @@ function config:CreateDescButton(relativeCheckButton, catName, itemName)
     else
       self:SetAlpha(1)
     end
-   end);
+   end)
    btn:HookScript("OnMouseUp", function(self)
-     if (not config:DoesItemStillExists(catName, itemName)) then return; end
+     if (not config:DoesItemStillExists(catName, itemName)) then return end
      if (self.name == "DescButton") then
        self:SetAlpha(1)
        if (not NysTDL.db.profile.itemsList[catName][itemName].description) then
@@ -999,14 +999,14 @@ function config:CreateDescButton(relativeCheckButton, catName, itemName)
          self.Icon:SetVertexColor(0.4, 0.4, 0.4)
        end
      end
-   end);
+   end)
    btn:HookScript("PostClick", function(self)
      if (self.name == "DescButton") then
        self:GetScript("OnShow")(self)
      end
-   end);
+   end)
   btn:HookScript("OnShow", function(self)
-    if (not config:DoesItemStillExists(catName, itemName)) then return; end
+    if (not config:DoesItemStillExists(catName, itemName)) then return end
     self:SetAlpha(1)
     if (not NysTDL.db.profile.itemsList[catName][itemName].description) then
       self.Icon:SetDesaturated(1)
@@ -1015,8 +1015,8 @@ function config:CreateDescButton(relativeCheckButton, catName, itemName)
       self.Icon:SetDesaturated(nil)
       self.Icon:SetVertexColor(1, 1, 1)
     end
-  end);
-  return btn;
+  end)
+  return btn
 end
 
 function config:CreateNoPointsRenameEditBox(relativeFrame, text, width, height)
@@ -1036,33 +1036,33 @@ function config:CreateNoPointsRenameEditBox(relativeFrame, text, width, height)
 end
 
 function config:CreateNoPointsLabelEditBox(name)
-  local edb = CreateFrame("EditBox", name, nil, "InputBoxTemplate");
-  edb:SetAutoFocus(false);
-  -- edb:SetTextInsets(0, 15, 0, 0);
-  -- local btn = CreateFrame("Button", nil, edb, "NysTDL_AddButton");
-  -- btn.tooltip = L["Press enter to add the item"];
-  -- btn:SetPoint("RIGHT", edb, "RIGHT", -4, -1.2);
+  local edb = CreateFrame("EditBox", name, nil, "InputBoxTemplate")
+  edb:SetAutoFocus(false)
+  -- edb:SetTextInsets(0, 15, 0, 0)
+  -- local btn = CreateFrame("Button", nil, edb, "NysTDL_AddButton")
+  -- btn.tooltip = L["Press enter to add the item"]
+  -- btn:SetPoint("RIGHT", edb, "RIGHT", -4, -1.2)
   -- btn:EnableMouse(true)
   --
   -- -- these are for changing the color depending on the mouse actions (since they are custom xml)
   -- btn:HookScript("OnEnter", function(self)
-  --   self.Icon:SetTextColor(1, 1, 0, 0.6);
-  -- end);
+  --   self.Icon:SetTextColor(1, 1, 0, 0.6)
+  -- end)
   -- btn:HookScript("OnLeave", function(self)
-  --   self.Icon:SetTextColor(1, 1, 1, 0.4);
-  -- end);
+  --   self.Icon:SetTextColor(1, 1, 1, 0.4)
+  -- end)
   -- btn:HookScript("OnShow", function(self)
-  --   self.Icon:SetTextColor(1, 1, 1, 0.4);
-  -- end);
-  return edb;
+  --   self.Icon:SetTextColor(1, 1, 1, 0.4)
+  -- end)
+  return edb
 end
 
 function config:CreateDummy(parentFrame, relativeFrame, xOffset, yOffset)
-  local dummy = CreateFrame("Frame", nil, parentFrame, nil);
-  dummy:SetPoint("TOPLEFT", relativeFrame, "TOPLEFT", xOffset, yOffset);
-  dummy:SetSize(1, 1);
-  dummy:Show();
-  return dummy;
+  local dummy = CreateFrame("Frame", nil, parentFrame, nil)
+  dummy:SetPoint("TOPLEFT", relativeFrame, "TOPLEFT", xOffset, yOffset)
+  dummy:SetSize(1, 1)
+  dummy:Show()
+  return dummy
 end
 
 function config:CreateNoPointsLine(relativeFrame, thickness, r, g, b, a)
@@ -1070,5 +1070,5 @@ function config:CreateNoPointsLine(relativeFrame, thickness, r, g, b, a)
   local line = relativeFrame:CreateLine()
   line:SetThickness(thickness)
   if (r and g and b and a) then line:SetColorTexture(r, g, b, a) end
-  return line;
+  return line
 end

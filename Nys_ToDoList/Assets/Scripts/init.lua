@@ -1,16 +1,16 @@
 -- Namespaces
-local addonName, tdlTable = ...;
-tdlTable.init = {}; -- adds init table to addon namespace
+local addonName, tdlTable = ...
+tdlTable.init = {} -- adds init table to addon namespace
 
-local config = tdlTable.config;
-local itemsFrame = tdlTable.itemsFrame;
-local init = tdlTable.init;
+local config = tdlTable.config
+local itemsFrame = tdlTable.itemsFrame
+local init = tdlTable.init
 
 -- Variables
 
-local L = config.L;
-local addonLoaded = false;
-local warnTimerTime = 3600; -- in seconds (1 hour)
+local L = config.L
+local addonLoaded = false
+local warnTimerTime = 3600 -- in seconds (1 hour)
 
 --/*******************/ EVENTS /*************************/--
 -- we need to put them here so they have acces to every function in every file of the addon
@@ -31,7 +31,7 @@ function NysTDL:PLAYER_LOGIN()
           end
         end, warnTimerTime)
       end, NysTDL.db.global.warnTimerRemaining)
-      return;
+      return
     end
   end
 
@@ -103,37 +103,37 @@ init.commands = {
 
 -- Command catcher:
 local function HandleSlashCommands(str)
-  local path = init.commands; -- easier to read
+  local path = init.commands -- easier to read
 
   if (#str == 0) then
     -- we just entered "/tdl" with no additional args.
-    path[""]();
-    return;
+    path[""]()
+    return
   end
 
   local args = {string.split(' ', str)}
 
-  local deep = 1;
+  local deep = 1
   for id, arg in pairs(args) do
     if (path[arg]) then
       if (type(path[arg]) == "function") then
         -- all remaining args passed to our function!
         path[arg](select(id + 1, unpack(args)))
-        return;
+        return
       elseif (type(path[arg]) == "table") then
-        deep = deep + 1;
-        path = path[arg]; -- another sub-table found!
+        deep = deep + 1
+        path = path[arg] -- another sub-table found!
 
         if ((select(deep, unpack(args))) == nil) then
           -- here we just entered into a sub table, with no additional args
-          path[""]();
-          return;
+          path[""]()
+          return
         end
       end
     else
       -- does not exist!
-      init.commands[L["info"]]();
-      return;
+      init.commands[L["info"]]()
+      return
     end
   end
 end
@@ -144,12 +144,12 @@ function NysTDL:OnInitialize()
     -- Called when the addon is loaded
 
     -- Register new Slash Command
-    SLASH_NysToDoList1 = "/tdl";
-    SlashCmdList.NysToDoList = HandleSlashCommands;
+    SLASH_NysToDoList1 = "/tdl"
+    SlashCmdList.NysToDoList = HandleSlashCommands
 
     -- Saved variable database
     self.db = LibStub("AceDB-3.0"):New("NysToDoListDB", config.database.defaults)
-    self:DBInit(); -- initialization for some elements of the db that need specific functions
+    self:DBInit() -- initialization for some elements of the db that need specific functions
 
     -- callbacks for database changes
     self.db.RegisterCallback(self, "OnProfileChanged", "ProfileChanged")
@@ -192,11 +192,11 @@ function NysTDL:OnInitialize()
     -- / ********************** / --
 
     -- we create the 2 buttons
-    NysTDL:CreateTDLButton();
-    NysTDL:CreateMinimapButton();
+    NysTDL:CreateTDLButton()
+    NysTDL:CreateMinimapButton()
 
     -- we create the frame
-    itemsFrame:CreateItemsFrame();
+    itemsFrame:CreateItemsFrame()
 
     -- addon fully loaded!
 
@@ -206,9 +206,9 @@ function NysTDL:OnInitialize()
       self.db.global.addonUpdated = false
     end
 
-    local hex = config:RGBToHex(config.database.theme2);
-    config:Print(L["addon loaded!"]..' ('..string.format("|cff%s%s|r", hex, "/tdl "..L["info"])..')');
-    addonLoaded = true;
+    local hex = config:RGBToHex(config.database.theme2)
+    config:Print(L["addon loaded!"]..' ('..string.format("|cff%s%s|r", hex, "/tdl "..L["info"])..')')
+    addonLoaded = true
 end
 
 function NysTDL:AddonUpdated()

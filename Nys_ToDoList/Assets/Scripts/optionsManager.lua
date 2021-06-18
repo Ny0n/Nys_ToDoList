@@ -1,14 +1,14 @@
 -- Namespaces
-local addonName, tdlTable = ...;
+local addonName, tdlTable = ...
 
-local config = tdlTable.config;
-local itemsFrame = tdlTable.itemsFrame;
+local config = tdlTable.config
+local itemsFrame = tdlTable.itemsFrame
 
 -- Variables
 
-local L = config.L;
-local LDB = config.LDB;
-local LDBIcon = config.LDBIcon;
+local L = config.L
+local LDB = config.LDB
+local LDBIcon = config.LDBIcon
 
 -- we need to put all of this in a file that loads just before the init so they have acces to every function in every other file of the addon
 
@@ -16,16 +16,16 @@ local LDBIcon = config.LDBIcon;
 
 function NysTDL:ToggleFrame()
   -- Bindings.xml access
-  itemsFrame:Toggle();
+  itemsFrame:Toggle()
 end
 
 function NysTDL:ToggleOptions(fromFrame)
   if (InterfaceOptionsFrame:IsShown()) then -- if the interface options frame is currently opened
     if (InterfaceOptionsFrameAddOns.selection ~= nil) then -- then we check if we're currently in the AddOns tab and if we are currently selecting an addon
       if (InterfaceOptionsFrameAddOns.selection.name == config.toc.title) then -- and if we are, we check if we're looking at this addon
-        if (fromFrame) then return true; end
-        InterfaceOptionsFrame:Hide(); -- and only if we are and we click again on the button, we close the interface options frame.
-        return;
+        if (fromFrame) then return true end
+        InterfaceOptionsFrame:Hide() -- and only if we are and we click again on the button, we close the interface options frame.
+        return
       end
     end
     InterfaceOptionsFrame_OpenToCategory(self.optionsFrame)
@@ -117,39 +117,39 @@ end
 
 function NysTDL:CreateTDLButton()
   -- Creating the big button to easily toggle the frame
-  itemsFrame.tdlButton = config:CreateButton("tdlButton", UIParent, string.gsub(config.toc.title, "Ny's ", ""));
-  itemsFrame.tdlButton:SetFrameLevel(100);
-  itemsFrame.tdlButton:SetMovable(true);
-  itemsFrame.tdlButton:EnableMouse(true);
-  itemsFrame.tdlButton:SetClampedToScreen(true);
-  itemsFrame.tdlButton:RegisterForDrag("LeftButton");
+  itemsFrame.tdlButton = config:CreateButton("tdlButton", UIParent, string.gsub(config.toc.title, "Ny's ", ""))
+  itemsFrame.tdlButton:SetFrameLevel(100)
+  itemsFrame.tdlButton:SetMovable(true)
+  itemsFrame.tdlButton:EnableMouse(true)
+  itemsFrame.tdlButton:SetClampedToScreen(true)
+  itemsFrame.tdlButton:RegisterForDrag("LeftButton")
   itemsFrame.tdlButton:SetScript("OnDragStart", function()
     if (not self.db.profile.lockButton) then
       itemsFrame.tdlButton:StartMoving()
     end
-  end);
+  end)
   itemsFrame.tdlButton:SetScript("OnDragStop", function() -- we save its position
     itemsFrame.tdlButton:StopMovingOrSizing()
     local points, _ = self.db.profile.tdlButton.points, nil
     points.point, _, points.relativePoint, points.xOffset, points.yOffset = itemsFrame.tdlButton:GetPoint()
-  end);
-  itemsFrame.tdlButton:SetScript("OnClick", itemsFrame.Toggle); -- the function the button calls when pressed
-  NysTDL:RefreshTDLButton();
+  end)
+  itemsFrame.tdlButton:SetScript("OnClick", itemsFrame.Toggle) -- the function the button calls when pressed
+  NysTDL:RefreshTDLButton()
 end
 
 function NysTDL:RefreshTDLButton()
-  local points = self.db.profile.tdlButton.points;
-  itemsFrame.tdlButton:ClearAllPoints();
-  itemsFrame.tdlButton:SetPoint(points.point, nil, points.relativePoint, points.xOffset, points.yOffset); -- relativeFrame = nil -> entire screen
-  itemsFrame.tdlButton:SetShown(self.db.profile.tdlButton.show);
+  local points = self.db.profile.tdlButton.points
+  itemsFrame.tdlButton:ClearAllPoints()
+  itemsFrame.tdlButton:SetPoint(points.point, nil, points.relativePoint, points.xOffset, points.yOffset) -- relativeFrame = nil -> entire screen
+  itemsFrame.tdlButton:SetShown(self.db.profile.tdlButton.show)
 end
 
 -- // Minimap & Databroker button
 
 local function draw_tooltip(tooltip)
   if (not NysTDL.db.profile.minimap.tooltip) then
-    tooltip:Hide();
-    return;
+    tooltip:Hide()
+    return
   end
 
   if tooltip and tooltip.AddLine then
@@ -157,8 +157,8 @@ local function draw_tooltip(tooltip)
       local hex = config:RGBToHex(config.database.theme)
 
       -- then we create each line
-      tooltip:ClearLines();
-      tooltip:AddDoubleLine(config.toc.title, config.toc.version);
+      tooltip:ClearLines()
+      tooltip:AddDoubleLine(config.toc.title, config.toc.version)
       tooltip:AddLine(string.format("|cff%s%s|r", hex, L["Click"])..' - '..string.format("|cff%s%s|r", "FFFFFF", L["toggle the list"]))
       tooltip:AddLine(string.format("|cff%s%s|r", hex, L["Shift-Click"])..' - '..string.format("|cff%s%s|r", "FFFFFF", L["toggle addon options"]))
       tooltip:AddLine(string.format("|cff%s%s|r", hex, L["Ctrl-Click"])..' - '..string.format("|cff%s%s|r", "FFFFFF", NysTDL.db.profile.minimap.lock and L["unlock minimap button"] or L["lock minimap button"]))
@@ -169,7 +169,7 @@ end
 function NysTDL:CreateMinimapButton()
   -- creating the data object to store the button infos
 
-  local tooltipObject; -- we get the tooltip on the first draw_tooltip call from OnTooltipShow
+  local tooltipObject -- we get the tooltip on the first draw_tooltip call from OnTooltipShow
 
   local LDB_o_minimap = LDB:NewDataObject(addonName, {
     type = "launcher",
@@ -204,9 +204,9 @@ function NysTDL:CreateMinimapButton()
   -- and this is the secret to correctly update the button position, (since we can't update it in the init code)
   -- so that the first time that we click on it, it doesn't go somewhere else like so many do,
   -- we just delay its update :D (a number of times to be sure, considering some ppl take longer times to load the UI)
-  self.iconTimerCount = 0;
-  self.iconTimerCountMax = 7;
-  local delay = 1.2; -- in seconds
+  self.iconTimerCount = 0
+  self.iconTimerCountMax = 7
+  local delay = 1.2 -- in seconds
 
   -- so here, we are, each delay for max self.iconTimerCountMax seconds calling this function
   self.iconTimer = self:ScheduleRepeatingTimer(function()
@@ -214,7 +214,7 @@ function NysTDL:CreateMinimapButton()
     LDBIcon:Refresh(addonName, self.db.profile.minimap)
 
     -- and here we check and stop the timer when we're done
-    self.iconTimerCount = self.iconTimerCount + 1;
+    self.iconTimerCount = self.iconTimerCount + 1
     if self.iconTimerCount == self.iconTimerCountMax then
       self:CancelTimer(self.iconTimer)
     end
@@ -261,7 +261,7 @@ function NysTDL:GlobalNewVersion() -- global
 
   if (NysTDL.db.global.tuto_progression > 0) then -- if we already completed the tutorial
     -- since i added in the update a new tutorial frame that i want ppl to see, i just go back step in the tuto progression
-    NysTDL.db.global.tuto_progression = NysTDL.db.global.tuto_progression - 1;
+    NysTDL.db.global.tuto_progression = NysTDL.db.global.tuto_progression - 1
   end
 end
 
@@ -291,7 +291,7 @@ function NysTDL:ProfileNewVersion() -- profile
           favorite = true
         end
         -- / description
-        local description = nil;
+        local description = nil
         if (config:HasKey(self.db.profile.itemsDesc, itemName)) then
           description = self.db.profile.itemsDesc[itemName]
         end
@@ -307,11 +307,11 @@ function NysTDL:ProfileNewVersion() -- profile
     end
 
     -- bye bye
-    self.db.profile.itemsDaily = nil;
-    self.db.profile.itemsWeekly = nil;
-    self.db.profile.itemsFavorite = nil;
-    self.db.profile.itemsDesc = nil;
-    self.db.profile.checkedButtons = nil;
+    self.db.profile.itemsDaily = nil
+    self.db.profile.itemsWeekly = nil
+    self.db.profile.itemsFavorite = nil
+    self.db.profile.itemsDesc = nil
+    self.db.profile.checkedButtons = nil
   end
 end
 
@@ -334,9 +334,9 @@ function NysTDL:CallAllGETTERS()
     else
       if (arg.type ~= "description" and arg.type ~= "header") then
         if (type(arg.get) == "string") then
-          NysTDL[arg.get]();
+          NysTDL[arg.get]()
         elseif(type(arg.get) == "function") then
-          arg:get();
+          arg:get()
         end
       end
     end
@@ -352,11 +352,11 @@ function NysTDL:InitializeOptionsWidthRecursive(table, wDef)
     if (v.type == "group") then
       NysTDL:InitializeOptionsWidthRecursive(v.args, wDef)
     elseif (v.type ~= "description" and v.type ~= "header") then -- for every widget (except the descriptions and the headers), we keep their min normal width, we change it only if their name is bigger than the default width
-      local w = config:CreateNoPointsLabel(UIParent, nil, v.name):GetWidth();
+      local w = config:CreateNoPointsLabel(UIParent, nil, v.name):GetWidth()
       -- print (v.name.."_"..w)
-      w = tonumber(string.format("%.3f", w/wDef[v.type]));
+      w = tonumber(string.format("%.3f", w/wDef[v.type]))
       if (w > 1) then
-        v.width = w;
+        v.width = w
       end
     end
   end
@@ -367,123 +367,123 @@ end
 --favoritesColor
 function NysTDL:favoritesColorGET(info)
   NysTDL:favoritesColorSET(info, unpack(NysTDL.db.profile.favoritesColor))
-  return unpack(NysTDL.db.profile.favoritesColor);
+  return unpack(NysTDL.db.profile.favoritesColor)
 end
 
 function NysTDL:favoritesColorSET(info, ...)
-  NysTDL.db.profile.favoritesColor = { select(1, ...), select(2, ...), select(3, ...), select(4, ...) };
+  NysTDL.db.profile.favoritesColor = { select(1, ...), select(2, ...), select(3, ...), select(4, ...) }
   itemsFrame:updateCheckButtonsColor()
   itemsFrame:updateFavsRemainingNumbersColor()
 end
 
 --rainbow
 function NysTDL:rainbowGET(info)
-  NysTDL:rainbowSET(info, NysTDL.db.profile.rainbow);
-  return NysTDL.db.profile.rainbow;
+  NysTDL:rainbowSET(info, NysTDL.db.profile.rainbow)
+  return NysTDL.db.profile.rainbow
 end
 
 function NysTDL:rainbowSET(info, newValue)
-  NysTDL.db.profile.rainbow = newValue;
+  NysTDL.db.profile.rainbow = newValue
 end
 
 --rainbowSpeed
 function NysTDL:rainbowSpeedGET(info)
-  NysTDL:rainbowSpeedSET(info, NysTDL.db.profile.rainbowSpeed);
-  return NysTDL.db.profile.rainbowSpeed;
+  NysTDL:rainbowSpeedSET(info, NysTDL.db.profile.rainbowSpeed)
+  return NysTDL.db.profile.rainbowSpeed
 end
 
 function NysTDL:rainbowSpeedSET(info, newValue)
-  NysTDL.db.profile.rainbowSpeed = newValue;
+  NysTDL.db.profile.rainbowSpeed = newValue
 end
 
 -- tdlButtonShow
 function NysTDL:tdlButtonShowGET(info)
   NysTDL:tdlButtonShowSET(info, NysTDL.db.profile.tdlButton.show)
-  return NysTDL.db.profile.tdlButton.show;
+  return NysTDL.db.profile.tdlButton.show
 end
 
 function NysTDL:tdlButtonShowSET(info, newValue)
-  NysTDL.db.profile.tdlButton.show = newValue;
-  NysTDL:RefreshTDLButton();
+  NysTDL.db.profile.tdlButton.show = newValue
+  NysTDL:RefreshTDLButton()
 end
 
 -- tdlButtonRed
 function NysTDL:tdlButtonRedGET(info)
   NysTDL:tdlButtonRedSET(info, NysTDL.db.profile.tdlButton.red)
-  return NysTDL.db.profile.tdlButton.red;
+  return NysTDL.db.profile.tdlButton.red
 end
 
 function NysTDL:tdlButtonRedSET(info, newValue)
-  NysTDL.db.profile.tdlButton.red = newValue;
+  NysTDL.db.profile.tdlButton.red = newValue
   itemsFrame:updateRemainingNumbers() -- we update the color depending on the new frame's data
 end
 
 -- minimapButtonHide
 function NysTDL:minimapButtonHideGET(info)
   NysTDL:minimapButtonHideSET(info, NysTDL.db.profile.minimap.hide)
-  return NysTDL.db.profile.minimap.hide;
+  return NysTDL.db.profile.minimap.hide
 end
 
 function NysTDL:minimapButtonHideSET(info, newValue)
-  NysTDL.db.profile.minimap.hide = newValue;
+  NysTDL.db.profile.minimap.hide = newValue
   LDBIcon:Refresh(addonName, NysTDL.db.profile.minimap)
 end
 
 -- minimapButtonTooltip
 function NysTDL:minimapButtonTooltipGET(info)
   NysTDL:minimapButtonTooltipSET(info, NysTDL.db.profile.minimap.tooltip)
-  return NysTDL.db.profile.minimap.tooltip;
+  return NysTDL.db.profile.minimap.tooltip
 end
 
 function NysTDL:minimapButtonTooltipSET(info, newValue)
-  NysTDL.db.profile.minimap.tooltip = newValue;
+  NysTDL.db.profile.minimap.tooltip = newValue
   LDBIcon:Refresh(addonName, NysTDL.db.profile.minimap)
 end
 
 -- rememberUndo
 function NysTDL:rememberUndoGET(info)
   NysTDL:rememberUndoSET(info, NysTDL.db.profile.rememberUndo)
-  return NysTDL.db.profile.rememberUndo;
+  return NysTDL.db.profile.rememberUndo
 end
 
 function NysTDL:rememberUndoSET(info, newValue)
-  NysTDL.db.profile.rememberUndo = newValue;
+  NysTDL.db.profile.rememberUndo = newValue
 end
 
 -- keepOpen
 function NysTDL:keepOpenGET(info)
   NysTDL:keepOpenSET(info, NysTDL.db.profile.keepOpen)
-  return NysTDL.db.profile.keepOpen;
+  return NysTDL.db.profile.keepOpen
 end
 
 function NysTDL:keepOpenSET(info, newValue)
-  NysTDL.db.profile.keepOpen = newValue;
+  NysTDL.db.profile.keepOpen = newValue
 end
 
 -- openByDefault
 function NysTDL:openByDefaultGET(info)
   NysTDL:openByDefaultSET(info, NysTDL.db.profile.openByDefault)
-  return NysTDL.db.profile.openByDefault;
+  return NysTDL.db.profile.openByDefault
 end
 
 function NysTDL:openByDefaultSET(info, newValue)
-  NysTDL.db.profile.openByDefault = newValue;
+  NysTDL.db.profile.openByDefault = newValue
 end
 
 -- highlightOnFocus
 function NysTDL:highlightOnFocusGET(info)
   NysTDL:highlightOnFocusSET(info, NysTDL.db.profile.highlightOnFocus)
-  return NysTDL.db.profile.highlightOnFocus;
+  return NysTDL.db.profile.highlightOnFocus
 end
 
 function NysTDL:highlightOnFocusSET(info, newValue)
-  NysTDL.db.profile.highlightOnFocus = newValue;
+  NysTDL.db.profile.highlightOnFocus = newValue
 end
 
 -- keyBind
 function NysTDL:keyBindGET(info)
   -- here we don't need to call the SET since the key binding is independant of profiles
-  return GetBindingKey("NysTDL");
+  return GetBindingKey("NysTDL")
 end
 
 function NysTDL:keyBindSET(info, newKey)
@@ -514,55 +514,55 @@ end
 -- instantRefresh
 function NysTDL:instantRefreshGET(info)
   NysTDL:instantRefreshSET(info, NysTDL.db.profile.instantRefresh)
-  return NysTDL.db.profile.instantRefresh;
+  return NysTDL.db.profile.instantRefresh
 end
 
 function NysTDL:instantRefreshSET(info, newValue)
-  NysTDL.db.profile.instantRefresh = newValue;
+  NysTDL.db.profile.instantRefresh = newValue
   itemsFrame:ReloadTab()
 end
 
 -- deleteAllTabItems
 function NysTDL:deleteAllTabItemsGET(info)
   NysTDL:deleteAllTabItemsSET(info, NysTDL.db.profile.deleteAllTabItems)
-  return NysTDL.db.profile.deleteAllTabItems;
+  return NysTDL.db.profile.deleteAllTabItems
 end
 
 function NysTDL:deleteAllTabItemsSET(info, newValue)
-  NysTDL.db.profile.deleteAllTabItems = newValue;
+  NysTDL.db.profile.deleteAllTabItems = newValue
   itemsFrame:ReloadTab()
 end
 
 -- showOnlyAllTabItems
 function NysTDL:showOnlyAllTabItemsGET(info)
   NysTDL:showOnlyAllTabItemsSET(info, NysTDL.db.profile.showOnlyAllTabItems)
-  return NysTDL.db.profile.showOnlyAllTabItems;
+  return NysTDL.db.profile.showOnlyAllTabItems
 end
 
 function NysTDL:showOnlyAllTabItemsSET(info, newValue)
-  NysTDL.db.profile.showOnlyAllTabItems = newValue;
+  NysTDL.db.profile.showOnlyAllTabItems = newValue
   itemsFrame:ReloadTab()
 end
 
 -- hideDailyTabItems
 function NysTDL:hideDailyTabItemsGET(info)
   NysTDL:hideDailyTabItemsSET(info, NysTDL.db.profile.hideDailyTabItems)
-  return NysTDL.db.profile.hideDailyTabItems;
+  return NysTDL.db.profile.hideDailyTabItems
 end
 
 function NysTDL:hideDailyTabItemsSET(info, newValue)
-  NysTDL.db.profile.hideDailyTabItems = newValue;
+  NysTDL.db.profile.hideDailyTabItems = newValue
   itemsFrame:ReloadTab()
 end
 
 -- hideWeeklyTabItems
 function NysTDL:hideWeeklyTabItemsGET(info)
   NysTDL:hideWeeklyTabItemsSET(info, NysTDL.db.profile.hideWeeklyTabItems)
-  return NysTDL.db.profile.hideWeeklyTabItems;
+  return NysTDL.db.profile.hideWeeklyTabItems
 end
 
 function NysTDL:hideWeeklyTabItemsSET(info, newValue)
-  NysTDL.db.profile.hideWeeklyTabItems = newValue;
+  NysTDL.db.profile.hideWeeklyTabItems = newValue
   itemsFrame:ReloadTab()
 end
 
@@ -571,51 +571,51 @@ end
 --showChatMessages
 function NysTDL:showChatMessagesGET(info)
   NysTDL:showChatMessagesSET(info, NysTDL.db.profile.showChatMessages)
-  return NysTDL.db.profile.showChatMessages;
+  return NysTDL.db.profile.showChatMessages
 end
 
 function NysTDL:showChatMessagesSET(info, newValue)
-  NysTDL.db.profile.showChatMessages = newValue;
+  NysTDL.db.profile.showChatMessages = newValue
 end
 
 --showWarnings
 function NysTDL:showWarningsGET(info)
   NysTDL:showWarningsSET(info, NysTDL.db.profile.showWarnings)
-  return NysTDL.db.profile.showWarnings;
+  return NysTDL.db.profile.showWarnings
 end
 
 function NysTDL:showWarningsSET(info, newValue)
-  NysTDL.db.profile.showWarnings = newValue;
+  NysTDL.db.profile.showWarnings = newValue
 end
 
 --favoritesWarning
 function NysTDL:favoritesWarningGET(info)
   NysTDL:favoritesWarningSET(info, NysTDL.db.profile.favoritesWarning)
-  return NysTDL.db.profile.favoritesWarning;
+  return NysTDL.db.profile.favoritesWarning
 end
 
 function NysTDL:favoritesWarningSET(info, newValue)
-  NysTDL.db.profile.favoritesWarning = newValue;
+  NysTDL.db.profile.favoritesWarning = newValue
 end
 
 --normalWarning
 function NysTDL:normalWarningGET(info)
   NysTDL:normalWarningSET(info, NysTDL.db.profile.normalWarning)
-  return NysTDL.db.profile.normalWarning;
+  return NysTDL.db.profile.normalWarning
 end
 
 function NysTDL:normalWarningSET(info, newValue)
-  NysTDL.db.profile.normalWarning = newValue;
+  NysTDL.db.profile.normalWarning = newValue
 end
 
 --hourlyReminder
 function NysTDL:hourlyReminderGET(info)
   NysTDL:hourlyReminderSET(info, NysTDL.db.profile.hourlyReminder)
-  return NysTDL.db.profile.hourlyReminder;
+  return NysTDL.db.profile.hourlyReminder
 end
 
 function NysTDL:hourlyReminderSET(info, newValue)
-  NysTDL.db.profile.hourlyReminder = newValue;
+  NysTDL.db.profile.hourlyReminder = newValue
 end
 
 -- // 'Auto Uncheck' tab // --
@@ -623,22 +623,22 @@ end
 -- weeklyDay
 function NysTDL:weeklyDayGET(info)
   NysTDL:weeklyDaySET(info, NysTDL.db.profile.weeklyDay)
-  return NysTDL.db.profile.weeklyDay;
+  return NysTDL.db.profile.weeklyDay
 end
 
 function NysTDL:weeklyDaySET(info, newValue)
-  NysTDL.db.profile.weeklyDay = newValue;
-  NysTDL.db.profile.autoReset["Weekly"] = config:GetSecondsToReset().weekly;
+  NysTDL.db.profile.weeklyDay = newValue
+  NysTDL.db.profile.autoReset["Weekly"] = config:GetSecondsToReset().weekly
 end
 
 -- dailyHour
 function NysTDL:dailyHourGET(info)
   NysTDL:dailyHourSET(info, NysTDL.db.profile.dailyHour)
-  return NysTDL.db.profile.dailyHour;
+  return NysTDL.db.profile.dailyHour
 end
 
 function NysTDL:dailyHourSET(info, newValue)
-  NysTDL.db.profile.dailyHour = newValue;
+  NysTDL.db.profile.dailyHour = newValue
   NysTDL.db.profile.autoReset["Daily"] = config:GetSecondsToReset().daily
   NysTDL.db.profile.autoReset["Weekly"] = config:GetSecondsToReset().weekly
 end
