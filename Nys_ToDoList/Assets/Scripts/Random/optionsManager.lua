@@ -1,8 +1,12 @@
 -- Namespaces
-local addonName, tdlTable = ...
+local addonName, addonTable = ...
 
-local config = tdlTable.config
-local itemsFrame = tdlTable.itemsFrame
+local config = addonTable.config
+local utils = addonTable.utils
+local autoReset = addonTable.autoReset
+local widgets = addonTable.widgets
+local itemsFrame = addonTable.itemsFrame
+local init = addonTable.init
 
 -- Variables
 
@@ -69,10 +73,10 @@ function NysTDL:Warn()
           end
 
           if (str ~= "") then
-            local hex = config:RGBToHex({ NysTDL.db.profile.favoritesColor[1]*255, NysTDL.db.profile.favoritesColor[2]*255, NysTDL.db.profile.favoritesColor[3]*255} )
+            local hex = utils.RGBToHex({ NysTDL.db.profile.favoritesColor[1]*255, NysTDL.db.profile.favoritesColor[2]*255, NysTDL.db.profile.favoritesColor[3]*255} )
             str = string.format("|cff%s%s|r", hex, str)
-            if (not haveWarned) then config:PrintForced(warn) haveWarned = true end
-            config:PrintForced(config:SafeStringFormat(L["You still have %s favorite item(s) to do before the next reset, don't forget them!"], str))
+            if (not haveWarned) then utils.printForced(warn) haveWarned = true end
+            utils.printForced(utils.safeStringFormat(L["You still have %s favorite item(s) to do before the next reset, don't forget them!"], str))
           end
         end
       end
@@ -98,16 +102,16 @@ function NysTDL:Warn()
           end
 
           if (total ~= 0) then
-            if (not haveWarned) then config:PrintForced(warn) haveWarned = true end
-            config:PrintForced(L["Total number of items left to do before tomorrow:"]..' '..tostring(total))
+            if (not haveWarned) then utils.printForced(warn) haveWarned = true end
+            utils.printForced(L["Total number of items left to do before tomorrow:"]..' '..tostring(total))
           end
         end
       end
 
       if (haveWarned) then
-        local timeUntil = config:GetTimeUntilReset()
-        local str2 = config:SafeStringFormat(L["Time remaining: %i hours %i min"], timeUntil.hour, timeUntil.min + 1)
-        config:PrintForced(str2)
+        local timeUntil = autoReset.getTimeUntilReset()
+        local str2 = utils.safeStringFormat(L["Time remaining: %i hours %i min"], timeUntil.hour, timeUntil.min + 1)
+        utils.printForced(str2)
       end
     end
   end
@@ -117,7 +121,7 @@ end
 
 function NysTDL:CreateTDLButton()
   -- Creating the big button to easily toggle the frame
-  itemsFrame.tdlButton = config:CreateButton("tdlButton", UIParent, string.gsub(config.toc.title, "Ny's ", ""))
+  itemsFrame.tdlButton = widgets.button("tdlButton", UIParent, string.gsub(config.toc.title, "Ny's ", ""))
   itemsFrame.tdlButton:SetFrameLevel(100)
   itemsFrame.tdlButton:SetMovable(true)
   itemsFrame.tdlButton:EnableMouse(true)
@@ -154,7 +158,7 @@ local function draw_tooltip(tooltip)
 
   if tooltip and tooltip.AddLine then
       -- we get the color theme
-      local hex = config:RGBToHex(config.database.theme)
+      local hex = utils.RGBToHex(config.database.theme)
 
       -- then we create each line
       tooltip:ClearLines()
@@ -240,7 +244,7 @@ function NysTDL:DBInit()
   end
 
   -- initialization of elements that need access to other files functions or need to be updated correctly when the profile changes
-  if (self.db.profile.autoReset == nil) then self.db.profile.autoReset = { ["Daily"] = config:GetSecondsToReset().daily, ["Weekly"] = config:GetSecondsToReset().weekly } end
+  if (self.db.profile.autoReset == nil) then self.db.profile.autoReset = { ["Daily"] = autoReset.getSecondsToReset().daily, ["Weekly"] = autoReset.getSecondsToReset().weekly } end
   if (not self.db.profile.rememberUndo) then self.db.profile.undoTable = {} end
 end
 
@@ -269,7 +273,7 @@ function NysTDL:ProfileNewVersion() -- profile
   -- if we're loading this profile for the first time after updating to 5.5+ from 5.4-
   if (self.db.profile.itemsDaily or self.db.profile.itemsWeekly or self.db.profile.itemsFavorite or self.db.profile.itemsDesc or self.db.profile.checkedButtons) then
     -- we need to change the saved variables to the new format
-    local oldItemsList = config:Deepcopy(self.db.profile.itemsList)
+    local oldItemsList = utils.deepcopy(self.db.profile.itemsList)
     self.db.profile.itemsList = {}
 
     for catName, itemNames in pairs(oldItemsList) do -- for every cat we had
@@ -278,21 +282,21 @@ function NysTDL:ProfileNewVersion() -- profile
         -- first we get the previous data elements from the item
         -- / tabName
         local tabName = "All"
-        if (config:HasItem(self.db.profile.itemsDaily, itemName)) then
+        if (utils.hasItem(self.db.profile.itemsDaily, itemName)) then
           tabName = "Daily"
-        elseif (config:HasItem(self.db.profile.itemsWeekly, itemName)) then
+        elseif (utils.hasItem(self.db.profile.itemsWeekly, itemName)) then
           tabName = "Weekly"
         end
         -- / checked
-        local checked = config:HasItem(self.db.profile.checkedButtons, itemName)
+        local checked = utils.hasItem(self.db.profile.checkedButtons, itemName)
         -- / favorite
         local favorite = nil
-        if (config:HasItem(self.db.profile.itemsFavorite, itemName)) then
+        if (utils.hasItem(self.db.profile.itemsFavorite, itemName)) then
           favorite = true
         end
         -- / description
         local description = nil
-        if (config:HasKey(self.db.profile.itemsDesc, itemName)) then
+        if (utils.hasKey(self.db.profile.itemsDesc, itemName)) then
           description = self.db.profile.itemsDesc[itemName]
         end
 
@@ -352,7 +356,7 @@ function NysTDL:InitializeOptionsWidthRecursive(table, wDef)
     if (v.type == "group") then
       NysTDL:InitializeOptionsWidthRecursive(v.args, wDef)
     elseif (v.type ~= "description" and v.type ~= "header") then -- for every widget (except the descriptions and the headers), we keep their min normal width, we change it only if their name is bigger than the default width
-      local w = config:CreateNoPointsLabel(UIParent, nil, v.name):GetWidth()
+      local w = widgets.noPointsLabel(UIParent, nil, v.name):GetWidth()
       -- print (v.name.."_"..w)
       w = tonumber(string.format("%.3f", w/wDef[v.type]))
       if (w > 1) then
@@ -628,7 +632,7 @@ end
 
 function NysTDL:weeklyDaySET(info, newValue)
   NysTDL.db.profile.weeklyDay = newValue
-  NysTDL.db.profile.autoReset["Weekly"] = config:GetSecondsToReset().weekly
+  NysTDL.db.profile.autoReset["Weekly"] = autoReset.getSecondsToReset().weekly
 end
 
 -- dailyHour
@@ -639,6 +643,6 @@ end
 
 function NysTDL:dailyHourSET(info, newValue)
   NysTDL.db.profile.dailyHour = newValue
-  NysTDL.db.profile.autoReset["Daily"] = config:GetSecondsToReset().daily
-  NysTDL.db.profile.autoReset["Weekly"] = config:GetSecondsToReset().weekly
+  NysTDL.db.profile.autoReset["Daily"] = autoReset.getSecondsToReset().daily
+  NysTDL.db.profile.autoReset["Weekly"] = autoReset.getSecondsToReset().weekly
 end

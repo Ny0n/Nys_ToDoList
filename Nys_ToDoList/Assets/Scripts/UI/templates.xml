@@ -527,7 +527,7 @@
 	</Frame>
 
   <Frame name="NysTDL_InteractiveLabel" virtual="true">
-    <!-- the size is set everytime the text changes, see the config file (func: CreateNoPointsInteractiveLabel) -->
+    <!-- the size is set everytime the text changes, see the widgets.lua file (func: widgets.noPointsInteractiveLabel) -->
 		<Layers>
 			<Layer level="OVERLAY">
 				<FontString name="$parentText" parentKey="Text">

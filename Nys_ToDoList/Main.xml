@@ -10,10 +10,16 @@
   <Include file="Locales\locales.xml"/>
 
   <!-- **************** ASSETS *********************** -->
-  <Include file="Assets\Scripts\templates.xml"/>
-  <Script file="Assets\Scripts\config.lua"/>
-  <Script file="Assets\Scripts\itemsFrame.lua"/>
-  <Script file="Assets\Scripts\optionsManager.lua"/>
+  <Script file="Assets\Scripts\config.lua"/> <!-- #1 to be loaded -->
   <Script file="Assets\Scripts\init.lua"/>
+  <!-- frame -->
+  <Script file="Assets\Scripts\Frame\itemsFrame.lua"/>
+  <!-- random -->
+  <Script file="Assets\Scripts\Random\autoReset.lua"/>
+  <Script file="Assets\Scripts\Random\optionsManager.lua"/>
+  <Script file="Assets\Scripts\Random\utils.lua"/>
+  <!-- ui -->
+  <Script file="Assets\Scripts\UI\widgets.lua"/>
+  <Include file="Assets\Scripts\UI\templates.xml"/>
 
 </Ui>

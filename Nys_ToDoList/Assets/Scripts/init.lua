@@ -1,10 +1,12 @@
 -- Namespaces
-local addonName, tdlTable = ...
-tdlTable.init = {} -- adds init table to addon namespace
+local addonName, addonTable = ...
 
-local config = tdlTable.config
-local itemsFrame = tdlTable.itemsFrame
-local init = tdlTable.init
+local config = addonTable.config
+local utils = addonTable.utils
+local autoReset = addonTable.autoReset
+local widgets = addonTable.widgets
+local itemsFrame = addonTable.itemsFrame
+local init = addonTable.init
 
 -- Variables
 
@@ -48,6 +50,10 @@ function NysTDL:PLAYER_LOGIN()
   end, 20)
 end
 
+function init.ola(...)
+  print(...)
+end
+
 --/*******************/ CHAT COMMANDS /*************************/--
 -- we need to put them here so they have acces to every function in every file of the addon
 
@@ -58,7 +64,7 @@ init.commands = {
   end,
 
   [L["info"]] = function()
-    local hex = config:RGBToHex(config.database.theme2)
+    local hex = utils.RGBToHex(config.database.theme2)
     local str = L["Here are a few commands to help you:"].."\n"
     str = str.." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["toggle"])
     str = str.." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["categories"])
@@ -67,37 +73,37 @@ init.commands = {
     str = str.." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["hyperlinks"])
     str = str.." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["rename"])
     str = str.." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["tutorial"])
-    config:PrintForced(str)
+    utils.printForced(str)
   end,
 
   [L["toggle"]] = function()
-    config:PrintForced(L["To toggle the list, you have several ways:"]..'\n- '..L["minimap button (the default)"]..'\n- '..L["a normal TDL button"]..'\n- '..L["databroker plugin (eg. titan panel)"]..'\n- '..L["the '/tdl' command"]..'\n- '..L["key binding"]..'\n'..L["You can go to the addon options in the game's interface settings to customize this."])
+    utils.printForced(L["To toggle the list, you have several ways:"]..'\n- '..L["minimap button (the default)"]..'\n- '..L["a normal TDL button"]..'\n- '..L["databroker plugin (eg. titan panel)"]..'\n- '..L["the '/tdl' command"]..'\n- '..L["key binding"]..'\n'..L["You can go to the addon options in the game's interface settings to customize this."])
   end,
 
   [L["categories"]] = function()
-    config:PrintForced(L["Information on categories:"].."\n- "..L["The same category can be present in multiple tabs, as long as there are items for each of those tabs."].."\n- "..L["A category cannot be empty, if it is, it will just get deleted from the tab."].."\n- "..L["Left-click on the category names to expand or shrink their content."].."\n- "..L["Right-click on the category names to add new items."])
+    utils.printForced(L["Information on categories:"].."\n- "..L["The same category can be present in multiple tabs, as long as there are items for each of those tabs."].."\n- "..L["A category cannot be empty, if it is, it will just get deleted from the tab."].."\n- "..L["Left-click on the category names to expand or shrink their content."].."\n- "..L["Right-click on the category names to add new items."])
   end,
 
   [L["favorites"]] = function()
-    config:PrintForced(L["You can favorite items!"].."\n"..L["To do so, hold the SHIFT key when the list is opened, then click on the star icons to favorite the items that you want!"])
-    config:PrintForced(L["Perks of favorite items:"].."\n- "..L["cannot be deleted"].."\n- "..L["customizable color"].."\n- "..L["sorted first in categories"].."\n- "..L["have their own more visible remaining numbers"].."\n- "..L["have an auto chat warning/reminder system!"])
+    utils.printForced(L["You can favorite items!"].."\n"..L["To do so, hold the SHIFT key when the list is opened, then click on the star icons to favorite the items that you want!"])
+    utils.printForced(L["Perks of favorite items:"].."\n- "..L["cannot be deleted"].."\n- "..L["customizable color"].."\n- "..L["sorted first in categories"].."\n- "..L["have their own more visible remaining numbers"].."\n- "..L["have an auto chat warning/reminder system!"])
   end,
 
   [L["descriptions"]] = function()
-    config:PrintForced(L["You can add descriptions on items!"].."\n"..L["To do so, hold the CTRL key when the list is opened, then click on the page icons to open a description frame!"].."\n- "..L["they are auto-saved and have no length limitations"].."\n- "..L["if an item has a description, he cannot be deleted (empty the description if you want to do so)"])
+    utils.printForced(L["You can add descriptions on items!"].."\n"..L["To do so, hold the CTRL key when the list is opened, then click on the page icons to open a description frame!"].."\n- "..L["they are auto-saved and have no length limitations"].."\n- "..L["if an item has a description, he cannot be deleted (empty the description if you want to do so)"])
   end,
 
   [L["hyperlinks"]] = function()
-    config:PrintForced(L["You can add hyperlinks in the list!"]..' '..L["It works the same way as when you link items or other things in the chat, just shift-click!"])
+    utils.printForced(L["You can add hyperlinks in the list!"]..' '..L["It works the same way as when you link items or other things in the chat, just shift-click!"])
   end,
 
   [L["rename"]] = function()
-    config:PrintForced(L["For items: just double click on them."].."\n"..L["For categories, and items with hyperlinks in them: hold ALT then double click on them."])
+    utils.printForced(L["For items: just double click on them."].."\n"..L["For categories, and items with hyperlinks in them: hold ALT then double click on them."])
   end,
 
   [L["tutorial"]] = function()
     itemsFrame:RedoTutorial()
-    config:PrintForced(L["The tutorial has been reset!"])
+    utils.printForced(L["The tutorial has been reset!"])
   end,
 }
 
@@ -178,7 +184,7 @@ function NysTDL:OnInitialize()
     -- then we add the profiles management, using AceDBOptions
     config.database.options.args.child_profiles.args.profiles = LibStub("AceDBOptions-3.0"):GetOptionsTable(self.db)
     -- we also modify it a bit to better fit our needs (by adding some confirm pop-ups)
-    local args = config:Deepcopy(config.database.options.args.child_profiles.args.profiles.args)
+    local args = utils.deepcopy(config.database.options.args.child_profiles.args.profiles.args)
     args.reset.confirm = true
     args.reset.confirmText = L["WARNING"]..'\n\n'..L["Resetting this profile will also clear the list."]..'\n'..L["Are you sure?"]..'\n'
     args.copyfrom.confirm = true
@@ -206,8 +212,8 @@ function NysTDL:OnInitialize()
       self.db.global.addonUpdated = false
     end
 
-    local hex = config:RGBToHex(config.database.theme2)
-    config:Print(L["addon loaded!"]..' ('..string.format("|cff%s%s|r", hex, "/tdl "..L["info"])..')')
+    local hex = utils.RGBToHex(config.database.theme2)
+    utils.print(L["addon loaded!"]..' ('..string.format("|cff%s%s|r", hex, "/tdl "..L["info"])..')')
     addonLoaded = true
 end
 

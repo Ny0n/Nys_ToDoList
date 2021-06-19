@@ -1,11 +1,15 @@
 -- Namespaces
-local _, tdlTable = ...
-tdlTable.itemsFrame = {} -- adds itemsFrame table to addon namespace
+local _, addonTable = ...
 
-local config = tdlTable.config
-local itemsFrame = tdlTable.itemsFrame
+local config = addonTable.config
+local utils = addonTable.utils
+local autoReset = addonTable.autoReset
+local widgets = addonTable.widgets
+local itemsFrame = addonTable.itemsFrame
+local init = addonTable.init
 
--- Variables declaration --
+-- Variables
+
 local L = config.L
 local LDD = config.LDD
 
@@ -243,13 +247,13 @@ function itemsFrame:ResetBtns(tabName, auto)
 
   if (uncheckedSomething) then -- so that we print this message only if there was checked items before the uncheck
     if (tabName == "All") then
-      config:Print(L["Unchecked everything!"])
+      utils.print(L["Unchecked everything!"])
     else
-      config:Print(config:SafeStringFormat(L["Unchecked %s tab!"], L[tabName]))
+      utils.print(utils.safeStringFormat(L["Unchecked %s tab!"], L[tabName]))
     end
     itemsFrame:ReloadTab()
   elseif (not auto) then -- we print this message only if it was the user's action that triggered this function (not the auto reset)
-    config:Print(L["Nothing to uncheck here!"])
+    utils.print(L["Nothing to uncheck here!"])
   end
 end
 
@@ -272,13 +276,13 @@ function itemsFrame:CheckBtns(tabName)
 
   if (checkedSomething) then -- so that we print this message only if there was checked items before the uncheck
     if (tabName == "All") then
-      config:Print(L["Checked everything!"])
+      utils.print(L["Checked everything!"])
     else
-      config:Print(config:SafeStringFormat(L["Checked %s tab!"], L[tabName]))
+      utils.print(utils.safeStringFormat(L["Checked %s tab!"], L[tabName]))
     end
     itemsFrame:ReloadTab()
   else
-    config:Print(L["Nothing to check here!"])
+    utils.print(L["Nothing to check here!"])
   end
 end
 
@@ -445,7 +449,7 @@ function itemsFrame:updateCheckButtonsColor()
         if (data.favorite) then
           checkBtn[catName][itemName].InteractiveLabel.Text:SetTextColor(unpack(NysTDL.db.profile.favoritesColor))
         else
-          checkBtn[catName][itemName].InteractiveLabel.Text:SetTextColor(unpack(config:ThemeDownTo01(config.database.theme_yellow)))
+          checkBtn[catName][itemName].InteractiveLabel.Text:SetTextColor(unpack(utils.themeDownTo01(config.database.theme_yellow)))
         end
       end
     end
@@ -456,13 +460,13 @@ end
 
 function itemsFrame:checkAutoReset()
   if time() > NysTDL.db.profile.autoReset["Weekly"] then
-    NysTDL.db.profile.autoReset["Daily"] = config:GetSecondsToReset().daily
-    NysTDL.db.profile.autoReset["Weekly"] = config:GetSecondsToReset().weekly
+    NysTDL.db.profile.autoReset["Daily"] = autoReset.getSecondsToReset().daily
+    NysTDL.db.profile.autoReset["Weekly"] = autoReset.getSecondsToReset().weekly
     itemsFrame:ResetBtns("Daily", true)
     itemsFrame:ResetBtns("Weekly", true)
     autoResetedThisSession = true
   elseif time() > NysTDL.db.profile.autoReset["Daily"] then
-    NysTDL.db.profile.autoReset["Daily"] = config:GetSecondsToReset().daily
+    NysTDL.db.profile.autoReset["Daily"] = autoReset.getSecondsToReset().daily
     itemsFrame:ResetBtns("Daily", true)
     autoResetedThisSession = true
   end
@@ -511,29 +515,29 @@ local function addCategory()
 
 
   if (db.catName == "") then
-    config:PrintForced(L["Please enter a category name!"])
+    utils.printForced(L["Please enter a category name!"])
     SetFocusEditBox(itemsFrameUI.categoryEditBox)
     return
   end
 
-  local l = config:CreateNoPointsLabel(itemsFrameUI, nil, db.catName)
+  local l = widgets.noPointsLabel(itemsFrameUI, nil, db.catName)
   if (l:GetWidth() > categoryNameWidthMax) then
-    config:PrintForced(L["This categoty name is too big!"])
+    utils.printForced(L["This categoty name is too big!"])
     SetFocusEditBox(itemsFrameUI.categoryEditBox)
     return
   end
 
   db.itemName = itemsFrameUI.nameEditBox:GetText()
   if (db.itemName == "") then
-    config:PrintForced(L["Please enter the name of the item!"])
+    utils.printForced(L["Please enter the name of the item!"])
     SetFocusEditBox(itemsFrameUI.nameEditBox)
     return
   end
 
-  local l = config:CreateNoPointsLabel(itemsFrameUI, nil, db.itemName)
-  if (l:GetWidth() > itemNameWidthMax and config:HasHyperlink(db.itemName)) then l:SetFontObject("GameFontNormal") end -- if it has an hyperlink in it and it's too big, we allow it to be a liitle longer, considering hyperlinks take more place
+  local l = widgets.noPointsLabel(itemsFrameUI, nil, db.itemName)
+  if (l:GetWidth() > itemNameWidthMax and utils.hasHyperlink(db.itemName)) then l:SetFontObject("GameFontNormal") end -- if it has an hyperlink in it and it's too big, we allow it to be a liitle longer, considering hyperlinks take more place
   if (l:GetWidth() > itemNameWidthMax) then -- then we recheck to see if the item is not too long for good
-    config:PrintForced(L["This item name is too big!"])
+    utils.printForced(L["This item name is too big!"])
     SetFocusEditBox(itemsFrameUI.nameEditBox)
     return
   end
@@ -558,8 +562,8 @@ function itemsFrame:RenameCategory(oldCatName, newCatName)
   -- so first, we check if the category was closed in some tabs or not,
   -- and save this closed data to put it to the new category after the rename
   local closedData = nil
-  if (config:HasKey(NysTDL.db.profile.closedCategories, oldCatName) and NysTDL.db.profile.closedCategories[oldCatName] ~= nil) then
-    closedData = config:Deepcopy(NysTDL.db.profile.closedCategories[oldCatName]) -- we need to deepcopy it since it's a table
+  if (utils.hasKey(NysTDL.db.profile.closedCategories, oldCatName) and NysTDL.db.profile.closedCategories[oldCatName] ~= nil) then
+    closedData = utils.deepcopy(NysTDL.db.profile.closedCategories[oldCatName]) -- we need to deepcopy it since it's a table
   end
 
   -- then we can start renaming the category
@@ -596,10 +600,10 @@ function itemsFrame:AddItem(self, db)
     checked = false
 
     -- there we check if the item name is not too big
-    local l = config:CreateNoPointsLabel(itemsFrameUI, nil, itemName)
-    if (l:GetWidth() > itemNameWidthMax and config:HasHyperlink(itemName)) then l:SetFontObject("GameFontNormal") end -- if it has an hyperlink in it and it's too big, we allow it to be a liitle longer, considering hyperlinks take more place
+    local l = widgets.noPointsLabel(itemsFrameUI, nil, itemName)
+    if (l:GetWidth() > itemNameWidthMax and utils.hasHyperlink(itemName)) then l:SetFontObject("GameFontNormal") end -- if it has an hyperlink in it and it's too big, we allow it to be a liitle longer, considering hyperlinks take more place
     if (l:GetWidth() > itemNameWidthMax) then -- then we recheck to see if the item is not too long for good
-      config:PrintForced(L["This item name is too big!"])
+      utils.printForced(L["This item name is too big!"])
       return
     end
   else
@@ -622,14 +626,14 @@ function itemsFrame:AddItem(self, db)
   if (itemName == "") then
     addResult = {L["Please enter the name of the item!"], false}
   else -- if we typed something
-    local catAlreadyExists = config:HasKey(NysTDL.db.profile.itemsList, catName)
+    local catAlreadyExists = utils.hasKey(NysTDL.db.profile.itemsList, catName)
     if (not catAlreadyExists) then -- that means we'll be adding something to a new category, so we create the table to hold all theses shiny new items
       NysTDL.db.profile.itemsList[catName] = {}
       willCreateNewCat = true
     end
 
     local isPresentInCurrentTab = false
-    if (config:HasKey(NysTDL.db.profile.itemsList[catName], itemName)) then -- if it's present somewhere in the category
+    if (utils.hasKey(NysTDL.db.profile.itemsList[catName], itemName)) then -- if it's present somewhere in the category
         -- and if we're trying to add in the All tab, it's basically obliged to be already there
         -- but if we're adding somewhere else, it depends if the reset tab is the same or not
         -- it's done in a special (and maybe weird) way, but isPresentInCurrentTab needs to return if the item that's already here is in the same tab we are in or not
@@ -641,9 +645,9 @@ function itemsFrame:AddItem(self, db)
     else -- if it's not in the current category in the current tab
       if (tabName == "All") then -- then we are creating a new item for the current cat in the All tab --CASE1 (add in 'All' tab)
         NysTDL.db.profile.itemsList[catName][itemName] = defaultNewItemsTable
-        addResult = {config:SafeStringFormat(L["\"%s\" added to %s! ('All' tab item)"], itemName, catName), true}
+        addResult = {utils.safeStringFormat(L["\"%s\" added to %s! ('All' tab item)"], itemName, catName), true}
       else -- then we'll try to add the item as daily/weekly for the current cat in the current tab
-        if (config:HasKey(NysTDL.db.profile.itemsList[catName], itemName)) then -- if it exists in the category, we search where
+        if (utils.hasKey(NysTDL.db.profile.itemsList[catName], itemName)) then -- if it exists in the category, we search where
           -- checking...
           local data = NysTDL.db.profile.itemsList[catName][itemName]
           if (data.tabName ~= "All" and data.tabName ~= tabName) then -- if the item already exists in this category but in an other reset tab
@@ -651,12 +655,12 @@ function itemsFrame:AddItem(self, db)
           else -- if it isn't in the other reset tab, it means that the item is in the All tab -- CASE2 (add in reset tab, already in All)
             checked = data.checked -- in that case, we update the checked state to match the one the item had in the All tab
             data.tabName = tabName -- and we transform that item into a 'tabName' item for this category
-            addResult = {config:SafeStringFormat(L["\"%s\" added to %s! (%s item)"], itemName, catName, L[tabName]), true}
+            addResult = {utils.safeStringFormat(L["\"%s\" added to %s! (%s item)"], itemName, catName, L[tabName]), true}
           end
         else -- if that new reset item doesn't exists at all in that category, we create it -- CASE3 (add in 'All' tab and add in reset tab)
           NysTDL.db.profile.itemsList[catName][itemName] = defaultNewItemsTable
           NysTDL.db.profile.itemsList[catName][itemName].tabName = tabName
-          addResult = {config:SafeStringFormat(L["\"%s\" added to %s! (%s item)"], itemName, catName, L[tabName]), true}
+          addResult = {utils.safeStringFormat(L["\"%s\" added to %s! (%s item)"], itemName, catName, L[tabName]), true}
         end
       end
     end
@@ -670,9 +674,9 @@ function itemsFrame:AddItem(self, db)
   if (undoing["single"]) then undoing["singleok"] = addResult[2] end
   if (not undoing["clear"] and not (undoing["single"] and not undoing["singleok"])) and not movingItem then
     if (addResult[2]) then
-      config:Print(addResult[1])
+      utils.print(addResult[1])
     else
-      config:PrintForced(addResult[1])
+      utils.printForced(addResult[1])
     end
   elseif (addResult[2]) then undoing["clearnb"] = undoing["clearnb"] + 1 end
 
@@ -721,7 +725,7 @@ function itemsFrame:RemoveItem(self)
   NysTDL.db.profile.itemsList[catName][itemName] = nil
 
   if (not clearing and not movingItem) then
-    config:Print(config:SafeStringFormat(L["\"%s\" removed!"], itemName))
+    utils.print(utils.safeStringFormat(L["\"%s\" removed!"], itemName))
   end
 
   refreshTab(catName, itemName, "Remove", true)
@@ -825,7 +829,7 @@ function itemsFrame:descriptionFrameHide(name)
   for pos, v in pairs(descFrames) do
     if (v:GetName() == name) then
       v:Hide()
-      table.remove(hyperlinkEditBoxes, select(2, config:HasItem(hyperlinkEditBoxes, v.descriptionEditBox.EditBox))) -- removing the ref of the hyperlink edit box
+      table.remove(hyperlinkEditBoxes, select(2, utils.hasItem(hyperlinkEditBoxes, v.descriptionEditBox.EditBox))) -- removing the ref of the hyperlink edit box
       table.remove(descFrames, pos)
       for pos2, v2 in pairs(descFrames) do -- we reupdate the frame levels
         v2:SetFrameLevel(300 + (pos2-1)*descFrameLevelDiff)
@@ -845,7 +849,7 @@ function itemsFrame:DescriptionClick(self)
 
   -- we create the mini frame holding the name of the item and his description in an edit box
   local descFrame = CreateFrame("Frame", "NysTDL_DescFrame_"..catName.."_"..itemName, UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil) -- importing the backdrop in the desc frames, as of wow 9.0
-  local w = config:CreateNoPointsLabel(UIParent, nil, itemName):GetWidth()
+  local w = widgets.noPointsLabel(UIParent, nil, itemName):GetWidth()
   descFrame:SetSize((w < 180) and 180+75 or w+75, 110) -- 75 is large enough to place the closebutton, clearbutton, and a little bit of space at the right of the name
 
   -- background
@@ -884,7 +888,7 @@ function itemsFrame:DescriptionClick(self)
           local r, g, b = unpack(NysTDL.db.profile.favoritesColor)
           self.title:SetTextColor(r, g, b, currentAlpha)
         else
-          local r, g, b = unpack(config:ThemeDownTo01(config.database.theme_yellow))
+          local r, g, b = unpack(utils.themeDownTo01(config.database.theme_yellow))
           self.title:SetTextColor(r, g, b, currentAlpha)
         end
       end
@@ -1031,10 +1035,10 @@ function itemsFrame:ClearTab(tabName)
     table.insert(NysTDL.db.profile.undoTable, nb) -- and then we save how many items were actually removed
 
     clearing = false
-    config:Print(config:SafeStringFormat(L["Clear succesful! (%s tab, %i items)"], L[tabName], nb))
+    utils.print(utils.safeStringFormat(L["Clear succesful! (%s tab, %i items)"], L[tabName], nb))
     itemsFrame:ReloadTab()
   else
-    config:Print(L["Nothing can be cleared here!"])
+    utils.print(L["Nothing can be cleared here!"])
   end
 end
 
@@ -1050,7 +1054,7 @@ function itemsFrame:UndoRemove()
         itemsFrame:AddItem(nil, NysTDL.db.profile.undoTable[#NysTDL.db.profile.undoTable])
         table.remove(NysTDL.db.profile.undoTable, #NysTDL.db.profile.undoTable)
       end
-      config:Print(config:SafeStringFormat(L["Clear undo succesful! (%i items added back)"], undoing["clearnb"]))
+      utils.print(utils.safeStringFormat(L["Clear undo succesful! (%i items added back)"], undoing["clearnb"]))
       undoing["clearnb"] = 0
       undoing["clear"] = false
     else -- if it was a simple remove
@@ -1063,7 +1067,7 @@ function itemsFrame:UndoRemove()
       if (not pass) then itemsFrame:UndoRemove() end -- if the single undo failed (because of the user AAAAH :D) we just do it one more time
     end
   else
-    config:Print(L["No remove/clear to undo!"])
+    utils.print(L["No remove/clear to undo!"])
   end
 end
 
@@ -1282,14 +1286,14 @@ end
 function itemsFrame:CreateMovableCheckBtnElems(catName, itemName)
   local data = NysTDL.db.profile.itemsList[catName][itemName]
 
-  if (not config:HasKey(checkBtn, catName)) then checkBtn[catName] = {} end
+  if (not utils.hasKey(checkBtn, catName)) then checkBtn[catName] = {} end
   checkBtn[catName][itemName] = CreateFrame("CheckButton", "NysTDL_CheckBtn_"..catName.."_"..itemName, itemsFrameUI, "UICheckButtonTemplate")
-  checkBtn[catName][itemName].InteractiveLabel = config:CreateNoPointsInteractiveLabel(checkBtn[catName][itemName]:GetName().."_InteractiveLabel", checkBtn[catName][itemName], itemName, "GameFontNormalLarge")
+  checkBtn[catName][itemName].InteractiveLabel = widgets.noPointsInteractiveLabel(checkBtn[catName][itemName]:GetName().."_InteractiveLabel", checkBtn[catName][itemName], itemName, "GameFontNormalLarge")
   checkBtn[catName][itemName].InteractiveLabel:SetPoint("LEFT", checkBtn[catName][itemName], "RIGHT")
   checkBtn[catName][itemName].InteractiveLabel.Text:SetPoint("LEFT", checkBtn[catName][itemName], "RIGHT", 20, 0)
   checkBtn[catName][itemName].catName = catName -- easy access to the catName this button is in
   checkBtn[catName][itemName].itemName = itemName -- easy access to the itemName of this button, this also allows the shown text to be different
-  if (config:HasHyperlink(itemName)) then -- this is for making more space for items that have hyperlinks in them
+  if (utils.hasHyperlink(itemName)) then -- this is for making more space for items that have hyperlinks in them
     if (checkBtn[catName][itemName].InteractiveLabel.Text:GetWidth() > itemNameWidthMax) then
       checkBtn[catName][itemName].InteractiveLabel.Text:SetFontObject("GameFontNormal")
     end
@@ -1324,7 +1328,7 @@ function itemsFrame:CreateMovableCheckBtnElems(catName, itemName)
 
     -- then, we can create the new edit box to rename the item, where the label was
     local catName, itemName = checkBtn.catName, checkBtn.itemName
-    local renameEditBox = config:CreateNoPointsRenameEditBox(checkBtn, itemName, itemNameWidthMax, self:GetHeight())
+    local renameEditBox = widgets.noPointsRenameEditBox(checkBtn, itemName, itemNameWidthMax, self:GetHeight())
     renameEditBox:SetPoint("LEFT", checkBtn, "RIGHT", 5, 0)
     -- renameEditBox:SetHyperlinksEnabled(true) -- to enable OnHyperlinkClick
     -- renameEditBox:SetScript("OnHyperlinkClick", function(_, linkData, link, button)
@@ -1342,14 +1346,14 @@ function itemsFrame:CreateMovableCheckBtnElems(catName, itemName)
       elseif (newItemName == itemName) then -- if the new is the same as the old
         self:GetScript("OnEscapePressed")(self) -- we cancel the action
         return
-      elseif (config:HasKey(NysTDL.db.profile.itemsList[catName], newItemName)) then -- if the new item name already exists somewhere in the category
-        config:PrintForced(L["This item name already exists in the category"]..". "..L["Please choose a different name to avoid overriding data"])
+      elseif (utils.hasKey(NysTDL.db.profile.itemsList[catName], newItemName)) then -- if the new item name already exists somewhere in the category
+        utils.printForced(L["This item name already exists in the category"]..". "..L["Please choose a different name to avoid overriding data"])
         return
       else
-        local l = config:CreateNoPointsLabel(itemsFrameUI, nil, newItemName)
-        if (l:GetWidth() > itemNameWidthMax and config:HasHyperlink(newItemName)) then l:SetFontObject("GameFontNormal") end -- if it has an hyperlink in it and it's too big, we allow it to be a little longer, considering hyperlinks take more place
+        local l = widgets.noPointsLabel(itemsFrameUI, nil, newItemName)
+        if (l:GetWidth() > itemNameWidthMax and utils.hasHyperlink(newItemName)) then l:SetFontObject("GameFontNormal") end -- if it has an hyperlink in it and it's too big, we allow it to be a little longer, considering hyperlinks take more place
         if (l:GetWidth() > itemNameWidthMax) then -- then we recheck to see if the item is not too long for good
-          config:PrintForced(L["This item name is too big!"])
+          utils.printForced(L["This item name is too big!"])
           return
         end
       end
@@ -1363,24 +1367,24 @@ function itemsFrame:CreateMovableCheckBtnElems(catName, itemName)
     renameEditBox:SetScript("OnEscapePressed", function(self)
       self:Hide()
       checkBtn.InteractiveLabel:Show()
-      table.remove(hyperlinkEditBoxes, select(2, config:HasItem(hyperlinkEditBoxes, self))) -- removing the ref of the hyperlink edit box
+      table.remove(hyperlinkEditBoxes, select(2, utils.hasItem(hyperlinkEditBoxes, self))) -- removing the ref of the hyperlink edit box
     end)
     renameEditBox:HookScript("OnEditFocusLost", function(self)
       self:GetScript("OnEscapePressed")(self)
     end)
   end)
 
-  if (not config:HasKey(removeBtn, catName)) then removeBtn[catName] = {} end
-  removeBtn[catName][itemName] = config:CreateRemoveButton(checkBtn[catName][itemName])
+  if (not utils.hasKey(removeBtn, catName)) then removeBtn[catName] = {} end
+  removeBtn[catName][itemName] = widgets.removeButton(checkBtn[catName][itemName])
   removeBtn[catName][itemName]:SetScript("OnClick", function(self) itemsFrame:RemoveItem(self) end)
 
-  if (not config:HasKey(favoriteBtn, catName)) then favoriteBtn[catName] = {} end
-  favoriteBtn[catName][itemName] = config:CreateFavoriteButton(checkBtn[catName][itemName], catName, itemName)
+  if (not utils.hasKey(favoriteBtn, catName)) then favoriteBtn[catName] = {} end
+  favoriteBtn[catName][itemName] = widgets.favoriteButton(checkBtn[catName][itemName], catName, itemName)
   favoriteBtn[catName][itemName]:SetScript("OnClick", function(self) itemsFrame:FavoriteClick(self) end)
   favoriteBtn[catName][itemName]:Hide()
 
-  if (not config:HasKey(descBtn, catName)) then descBtn[catName] = {} end
-  descBtn[catName][itemName] = config:CreateDescButton(checkBtn[catName][itemName], catName, itemName)
+  if (not utils.hasKey(descBtn, catName)) then descBtn[catName] = {} end
+  descBtn[catName][itemName] = widgets.descButton(checkBtn[catName][itemName], catName, itemName)
   descBtn[catName][itemName]:SetScript("OnClick", function(self) itemsFrame:DescriptionClick(self) end)
   descBtn[catName][itemName]:Hide()
 end
@@ -1388,10 +1392,10 @@ end
 -- category widget
 function itemsFrame:CreateMovableLabelElems(catName)
   -- category label
-  label[catName] = config:CreateNoPointsInteractiveLabel("NysTDL_CatLabel_"..catName, itemsFrameUI, catName, "GameFontHighlightLarge")
+  label[catName] = widgets.noPointsInteractiveLabel("NysTDL_CatLabel_"..catName, itemsFrameUI, catName, "GameFontHighlightLarge")
   label[catName].catName = catName -- easy access to the catName of the label, this also allows the shown text to be different
   label[catName].Button:SetScript("OnEnter", function(self)
-    local r, g, b = unpack(config:ThemeDownTo01(config.database.theme))
+    local r, g, b = unpack(utils.themeDownTo01(config.database.theme))
     self:GetParent().Text:SetTextColor(r, g, b, 1) -- when we hover it, we color the label
   end)
   label[catName].Button:SetScript("OnLeave", function(self)
@@ -1401,8 +1405,8 @@ function itemsFrame:CreateMovableLabelElems(catName)
     if (IsAltKeyDown()) then return end -- we don't do any of the OnClick code if we have the Alt key down, bc it means that we want to rename the category by double clicking
     local catName = self:GetParent().catName
     if (button == "LeftButton") then -- we open/close the category
-      if (config:HasKey(NysTDL.db.profile.closedCategories, catName) and NysTDL.db.profile.closedCategories[catName] ~= nil) then -- if this is a category that is closed in certain tabs
-        local isPresent, pos = config:HasItem(NysTDL.db.profile.closedCategories[catName], CurrentTab:GetName()) -- we get if it is closed in the current tab
+      if (utils.hasKey(NysTDL.db.profile.closedCategories, catName) and NysTDL.db.profile.closedCategories[catName] ~= nil) then -- if this is a category that is closed in certain tabs
+        local isPresent, pos = utils.hasItem(NysTDL.db.profile.closedCategories[catName], CurrentTab:GetName()) -- we get if it is closed in the current tab
         if (isPresent) then -- if it is
           table.remove(NysTDL.db.profile.closedCategories[catName], pos) -- then we remove it from the saved variable
           if (#NysTDL.db.profile.closedCategories[catName] == 0) then -- and btw check if it was the only tab remaining where it was closed
@@ -1419,7 +1423,7 @@ function itemsFrame:CreateMovableLabelElems(catName)
       itemsFrame:ReloadTab()
     elseif (button == "RightButton") then -- we try to toggle the edit box to add new items
       -- if the label we right clicked on is NOT a closed category
-      if (not (select(1, config:HasKey(NysTDL.db.profile.closedCategories, catName))) or not (select(1, config:HasItem(NysTDL.db.profile.closedCategories[catName], CurrentTab:GetName())))) then
+      if (not (select(1, utils.hasKey(NysTDL.db.profile.closedCategories, catName))) or not (select(1, utils.hasItem(NysTDL.db.profile.closedCategories[catName], CurrentTab:GetName())))) then
         -- we toggle its edit box
         editBox[catName]:SetShown(not editBox[catName]:IsShown())
 
@@ -1443,11 +1447,11 @@ function itemsFrame:CreateMovableLabelElems(catName)
 
     -- then, we can create the new edit box to rename the category, where the label was
     local catName = label.catName
-    local renameEditBox = config:CreateNoPointsRenameEditBox(label, catName, categoryNameWidthMax, self:GetHeight())
+    local renameEditBox = widgets.noPointsRenameEditBox(label, catName, categoryNameWidthMax, self:GetHeight())
     renameEditBox:SetPoint("LEFT", label, "LEFT", 5, 0)
 
     -- we move the favs remaining label to the right of the edit box while it's shown
-    if (config:HasKey(categoryLabelFavsRemaining, catName)) then
+    if (utils.hasKey(categoryLabelFavsRemaining, catName)) then
       categoryLabelFavsRemaining[catName]:ClearAllPoints()
       categoryLabelFavsRemaining[catName]:SetPoint("LEFT", renameEditBox, "RIGHT", 6, 0)
     end
@@ -1462,13 +1466,13 @@ function itemsFrame:CreateMovableLabelElems(catName)
       elseif (newCatName == catName) then -- if the new is the same as the old
         self:GetScript("OnEscapePressed")(self) -- we cancel the action
         return
-      elseif (config:HasKey(NysTDL.db.profile.itemsList, newCatName)) then -- if the new cat name already exists
-        config:PrintForced(L["This category name already exists"]..". "..L["Please choose a different name to avoid overriding data"])
+      elseif (utils.hasKey(NysTDL.db.profile.itemsList, newCatName)) then -- if the new cat name already exists
+        utils.printForced(L["This category name already exists"]..". "..L["Please choose a different name to avoid overriding data"])
         return
       else
-        local l = config:CreateNoPointsLabel(itemsFrameUI, nil, newCatName)
+        local l = widgets.noPointsLabel(itemsFrameUI, nil, newCatName)
         if (l:GetWidth() > categoryNameWidthMax) then -- if the new cat name is too big
-          config:PrintForced(L["This categoty name is too big!"])
+          utils.printForced(L["This categoty name is too big!"])
           return
         end
       end
@@ -1483,7 +1487,7 @@ function itemsFrame:CreateMovableLabelElems(catName)
       label.Text:Show()
       label.Button:Show()
       -- when hiding the edit box, we reset the pos of the favs remaining label
-      if (config:HasKey(categoryLabelFavsRemaining, catName)) then
+      if (utils.hasKey(categoryLabelFavsRemaining, catName)) then
         categoryLabelFavsRemaining[catName]:ClearAllPoints()
         categoryLabelFavsRemaining[catName]:SetPoint("LEFT", label, "RIGHT", 6, 0)
       end
@@ -1494,10 +1498,10 @@ function itemsFrame:CreateMovableLabelElems(catName)
   end)
 
   -- associated favs remaining label
-  categoryLabelFavsRemaining[catName] = config:CreateNoPointsLabel(label[catName], label[catName]:GetName().."_FavsRemaining", "")
+  categoryLabelFavsRemaining[catName] = widgets.noPointsLabel(label[catName], label[catName]:GetName().."_FavsRemaining", "")
 
   -- associated edit box and add button
-  editBox[catName] = config:CreateNoPointsLabelEditBox(catName)
+  editBox[catName] = widgets.noPointsLabelEditBox(catName)
   editBox[catName]:SetScript("OnEnterPressed", function(self)
     itemsFrame:AddItem(self)
     self:Show() -- we keep it shown to add more items
@@ -1532,7 +1536,7 @@ local function loadCategories(tab, categoryLabel, catName, itemNames, lastData)
       tutorialFrames.addItem:SetPoint("RIGHT", tutorialFramesTarget.addItem, "LEFT", -23, 0)
     else
       lastLabel = lastData["categoryLabel"]
-      if (config:HasKey(NysTDL.db.profile.closedCategories, lastData["catName"]) and config:HasItem(NysTDL.db.profile.closedCategories[lastData["catName"]], tab:GetName())) then -- if the last category loaded was a closed one in this tab
+      if (utils.hasKey(NysTDL.db.profile.closedCategories, lastData["catName"]) and utils.hasItem(NysTDL.db.profile.closedCategories[lastData["catName"]], tab:GetName())) then -- if the last category loaded was a closed one in this tab
         newLabelHeightDelta = 1 -- we only have a delta of one
       else
         newLabelHeightDelta = #lastData["itemNames"] + 1 -- or else, we have a delta of the number of items loaded in the last category + the last category's label
@@ -1566,7 +1570,7 @@ local function loadCategories(tab, categoryLabel, catName, itemNames, lastData)
     editBox[catName]:Hide() -- we hide every edit box by default when we reload the tab
 
     -- if the category is opened in this tab, we display all of its items
-    if (not config:HasKey(NysTDL.db.profile.closedCategories, catName) or not config:HasItem(NysTDL.db.profile.closedCategories[catName], tab:GetName())) then
+    if (not utils.hasKey(NysTDL.db.profile.closedCategories, catName) or not utils.hasItem(NysTDL.db.profile.closedCategories[catName], tab:GetName())) then
       -- checkboxes
       local buttonsLength = 0
       for _, itemName in pairs(itemNames) do -- for every item to load
@@ -1605,8 +1609,8 @@ local function loadCategories(tab, categoryLabel, catName, itemNames, lastData)
     -- then, since there isn't anything to show in the current category for the current tab,
     -- we check if it was a closed category, in which case, we remove it from the saved variable
     if (tab:GetName() ~= "All") then -- unless we're in the All tab, since we can decide to hide items, so i want to keep the closed state if we want to show the items back
-      if (config:HasKey(NysTDL.db.profile.closedCategories, catName) and NysTDL.db.profile.closedCategories[catName] ~= nil) then
-        local isPresent, pos = config:HasItem(NysTDL.db.profile.closedCategories[catName], tab:GetName()) -- we get if it is closed in the current tab
+      if (utils.hasKey(NysTDL.db.profile.closedCategories, catName) and NysTDL.db.profile.closedCategories[catName] ~= nil) then
+        local isPresent, pos = utils.hasItem(NysTDL.db.profile.closedCategories[catName], tab:GetName()) -- we get if it is closed in the current tab
         if (isPresent) then -- if it is
           table.remove(NysTDL.db.profile.closedCategories[catName], pos) -- then we remove it from the saved variable
           if (#NysTDL.db.profile.closedCategories[catName] == 0) then -- and btw check if it was the only tab remaining where it was closed
@@ -1620,7 +1624,7 @@ local function loadCategories(tab, categoryLabel, catName, itemNames, lastData)
     -- and if it's empty, we delete all of the corresponding elements, this is the place where we properly delete a category.
     if (not next(NysTDL.db.profile.itemsList[catName])) then
       -- we destroy them
-      table.remove(hyperlinkEditBoxes, select(2, config:HasItem(hyperlinkEditBoxes, editBox[catName])))
+      table.remove(hyperlinkEditBoxes, select(2, utils.hasItem(hyperlinkEditBoxes, editBox[catName])))
       editBox[catName] = nil
       label[catName] = nil
       categoryLabelFavsRemaining[catName] = nil
@@ -1726,7 +1730,7 @@ local function loadTabActions(tab)
 
   itemsFrameUI.tabActionsTitle:SetParent(tab)
   itemsFrameUI.tabActionsTitle:SetPoint("TOP", itemsFrameUI.title, "TOP", 0, - 59)
-  itemsFrameUI.tabActionsTitle:SetText(string.format("|cff%s%s|r", config:RGBToHex(config.database.theme), "/ "..L["Tab actions"].." ("..L[tab:GetName()]..") \\"))
+  itemsFrameUI.tabActionsTitle:SetText(string.format("|cff%s%s|r", utils.RGBToHex(config.database.theme), "/ "..L["Tab actions"].." ("..L[tab:GetName()]..") \\"))
 
   --/************************************************/--
 
@@ -1937,7 +1941,7 @@ local function loadTab(tab)
     if (unchecked[tab:GetName()] == 0) then -- and if they are checked ones
       -- we check if they are hidden or not, and if they are, we show the nothing label with a different text
       if (shownInTab[tab:GetName()] == 0) then
-        itemsFrameUI.nothingLabel:SetText(config:SafeStringFormat(L["(%i hidden item(s))"], checked[tab:GetName()]))
+        itemsFrameUI.nothingLabel:SetText(utils.safeStringFormat(L["(%i hidden item(s))"], checked[tab:GetName()]))
         itemsFrameUI.nothingLabel:Show()
       end
     end
@@ -1964,7 +1968,7 @@ local function generateAddACategory()
 
   --/************************************************/--
 
-  itemsFrameUI.categoryTitle = config:CreateNoPointsLabel(itemsFrameUI, nil, string.format("|cff%s%s|r", config:RGBToHex(config.database.theme), "/ "..L["Add a category"].." \\"))
+  itemsFrameUI.categoryTitle = widgets.noPointsLabel(itemsFrameUI, nil, string.format("|cff%s%s|r", utils.RGBToHex(config.database.theme), "/ "..L["Add a category"].." \\"))
   table.insert(addACategoryItems, itemsFrameUI.categoryTitle)
 
   --/************************************************/--
@@ -1975,7 +1979,7 @@ local function generateAddACategory()
   table.insert(addACategoryItems, itemsFrameUI.labelCategoryName)
 
   itemsFrameUI.categoryEditBox = CreateFrame("EditBox", nil, itemsFrameUI, "InputBoxTemplate") -- edit box to put the new category name
-  local l = config:CreateNoPointsLabel(itemsFrameUI, nil, itemsFrameUI.labelCategoryName:GetText())
+  local l = widgets.noPointsLabel(itemsFrameUI, nil, itemsFrameUI.labelCategoryName:GetText())
   itemsFrameUI.categoryEditBox:SetSize(257 - l:GetWidth() - 20, 30)
   itemsFrameUI.categoryEditBox:SetAutoFocus(false)
   itemsFrameUI.categoryEditBox:SetScript("OnKeyDown", function(_, key) if (key == "TAB") then SetFocusEditBox(itemsFrameUI.nameEditBox) end end) -- to switch easily between the two edit boxes
@@ -2158,7 +2162,7 @@ local function generateAddACategory()
   table.insert(addACategoryItems, itemsFrameUI.labelFirstItemName)
 
   itemsFrameUI.nameEditBox = CreateFrame("EditBox", nil, itemsFrameUI, "InputBoxTemplate") -- edit box tp put the name of the first item
-  l = config:CreateNoPointsLabel(itemsFrameUI, nil, itemsFrameUI.labelFirstItemName:GetText())
+  l = widgets.noPointsLabel(itemsFrameUI, nil, itemsFrameUI.labelFirstItemName:GetText())
   itemsFrameUI.nameEditBox:SetSize(280 - l:GetWidth() - 20, 30)
   itemsFrameUI.nameEditBox:SetAutoFocus(false)
   itemsFrameUI.nameEditBox:SetScript("OnKeyDown", function(_, key) if (key == "TAB") then SetFocusEditBox(itemsFrameUI.categoryEditBox) end end)
@@ -2173,7 +2177,7 @@ local function generateAddACategory()
   table.insert(addACategoryItems, itemsFrameUI.nameEditBox)
   table.insert(hyperlinkEditBoxes, itemsFrameUI.nameEditBox)
 
-  itemsFrameUI.addBtn = config:CreateButton("addButton", itemsFrameUI, L["Add category"])
+  itemsFrameUI.addBtn = widgets.button("addButton", itemsFrameUI, L["Add category"])
   itemsFrameUI.addBtn:SetScript("onClick", addCategory)
   table.insert(addACategoryItems, itemsFrameUI.addBtn)
 end
@@ -2191,19 +2195,19 @@ local function generateTabActions()
 
   --/************************************************/--
 
-  itemsFrameUI.tabActionsTitle = config:CreateNoPointsLabel(itemsFrameUI, nil, string.format("|cff%s%s|r", config:RGBToHex(config.database.theme), "/ "..L["Tab actions"].." \\"))
+  itemsFrameUI.tabActionsTitle = widgets.noPointsLabel(itemsFrameUI, nil, string.format("|cff%s%s|r", utils.RGBToHex(config.database.theme), "/ "..L["Tab actions"].." \\"))
   table.insert(tabActionsItems, itemsFrameUI.tabActionsTitle)
 
   --/************************************************/--
 
-  itemsFrameUI.btnCheck = config:CreateButton("btnCheck_itemsFrameUI", itemsFrameUI, L["Check"], "Interface\\BUTTONS\\UI-CheckBox-Check")
+  itemsFrameUI.btnCheck = widgets.button("btnCheck_itemsFrameUI", itemsFrameUI, L["Check"], "Interface\\BUTTONS\\UI-CheckBox-Check")
   itemsFrameUI.btnCheck:SetScript("OnClick", function(self)
     local tabName = self:GetParent():GetName()
     itemsFrame:CheckBtns(tabName)
   end)
   table.insert(tabActionsItems, itemsFrameUI.btnCheck)
 
-  itemsFrameUI.btnUncheck = config:CreateButton("btnUncheck_itemsFrameUI", itemsFrameUI, L["Uncheck"], "Interface\\BUTTONS\\UI-CheckBox-Check-Disabled")
+  itemsFrameUI.btnUncheck = widgets.button("btnUncheck_itemsFrameUI", itemsFrameUI, L["Uncheck"], "Interface\\BUTTONS\\UI-CheckBox-Check-Disabled")
   itemsFrameUI.btnUncheck:SetScript("OnClick", function(self)
     local tabName = self:GetParent():GetName()
     itemsFrame:ResetBtns(tabName)
@@ -2212,7 +2216,7 @@ local function generateTabActions()
 
   --/************************************************/--
 
-  itemsFrameUI.btnClear = config:CreateButton("clearButton", itemsFrameUI, L["Clear"], "Interface\\GLUES\\LOGIN\\Glues-CheckBox-Check")
+  itemsFrameUI.btnClear = widgets.button("clearButton", itemsFrameUI, L["Clear"], "Interface\\GLUES\\LOGIN\\Glues-CheckBox-Check")
   itemsFrameUI.btnClear:SetScript("onClick", function(self)
     local tabName = self:GetParent():GetName()
     itemsFrame:ClearTab(tabName)
@@ -2235,12 +2239,12 @@ local function generateOptions()
 
   --/************************************************/--
 
-  itemsFrameUI.optionsTitle = config:CreateNoPointsLabel(itemsFrameUI, nil, string.format("|cff%s%s|r", config:RGBToHex(config.database.theme), "/ "..L["Frame options"].." \\"))
+  itemsFrameUI.optionsTitle = widgets.noPointsLabel(itemsFrameUI, nil, string.format("|cff%s%s|r", utils.RGBToHex(config.database.theme), "/ "..L["Frame options"].." \\"))
   table.insert(frameOptionsItems, itemsFrameUI.optionsTitle)
 
   --/************************************************/--
 
-  itemsFrameUI.resizeTitle = config:CreateNoPointsLabel(itemsFrameUI, nil, string.format("|cffffffff%s|r", L["Hold ALT to see the resize button"]))
+  itemsFrameUI.resizeTitle = widgets.noPointsLabel(itemsFrameUI, nil, string.format("|cffffffff%s|r", L["Hold ALT to see the resize button"]))
   itemsFrameUI.resizeTitle:SetFontObject("GameFontHighlight")
   itemsFrameUI.resizeTitle:SetWidth(230)
   table.insert(frameOptionsItems, itemsFrameUI.resizeTitle)
@@ -2312,7 +2316,7 @@ local function generateOptions()
 
   --/************************************************/--
 
-  itemsFrameUI.btnAddonOptions = config:CreateButton("addonOptionsButton", itemsFrameUI, L["Open addon options"], "Interface\\Buttons\\UI-OptionsButton")
+  itemsFrameUI.btnAddonOptions = widgets.button("addonOptionsButton", itemsFrameUI, L["Open addon options"], "Interface\\Buttons\\UI-OptionsButton")
   itemsFrameUI.btnAddonOptions:SetScript("OnClick", function() if (not NysTDL:ToggleOptions(true)) then itemsFrameUI:Hide() end end)
   table.insert(frameOptionsItems, itemsFrameUI.btnAddonOptions)
 end
@@ -2320,19 +2324,19 @@ end
 -- generating the content (top to bottom)
 local function generateFrameContent()
   -- title
-  itemsFrameUI.title = config:CreateNoPointsLabel(itemsFrameUI, nil, string.gsub(config.toc.title, "Ny's ", ""))
+  itemsFrameUI.title = widgets.noPointsLabel(itemsFrameUI, nil, string.gsub(config.toc.title, "Ny's ", ""))
   itemsFrameUI.title:SetFontObject("GameFontNormalLarge")
 
   -- remaining label
-  itemsFrameUI.remaining = config:CreateNoPointsLabel(itemsFrameUI, nil, L["Remaining:"])
+  itemsFrameUI.remaining = widgets.noPointsLabel(itemsFrameUI, nil, L["Remaining:"])
   itemsFrameUI.remaining:SetFontObject("GameFontNormalLarge")
-  itemsFrameUI.remainingNumber = config:CreateNoPointsLabel(itemsFrameUI, nil, "...")
+  itemsFrameUI.remainingNumber = widgets.noPointsLabel(itemsFrameUI, nil, "...")
   itemsFrameUI.remainingNumber:SetFontObject("GameFontNormalLarge")
-  itemsFrameUI.remainingFavsNumber = config:CreateNoPointsLabel(itemsFrameUI, nil, "...")
+  itemsFrameUI.remainingFavsNumber = widgets.noPointsLabel(itemsFrameUI, nil, "...")
   itemsFrameUI.remainingFavsNumber:SetFontObject("GameFontNormalLarge")
 
   -- help button
-  itemsFrameUI.helpButton = config:CreateHelpButton(itemsFrameUI)
+  itemsFrameUI.helpButton = widgets.helpButton(itemsFrameUI)
   itemsFrameUI.helpButton:SetScript("OnClick", function()
     SlashCmdList["NysToDoList"](L["info"])
     itemsFrame:ValidateTutorial("getMoreInfo") -- tutorial
@@ -2353,15 +2357,15 @@ local function generateFrameContent()
   -- options button
   generateOptions()
 
-  itemsFrameUI.titleLineLeft = config:CreateNoPointsLine(itemsFrameUI, 2, unpack(config:ThemeDownTo01(config:DimTheme(config.database.theme_yellow, 0.8))))
-  itemsFrameUI.titleLineRight = config:CreateNoPointsLine(itemsFrameUI, 2, unpack(config:ThemeDownTo01(config:DimTheme(config.database.theme_yellow, 0.8))))
-  itemsFrameUI.menuTitleLineLeft = config:CreateNoPointsLine(itemsFrameUI, 2, unpack(config:ThemeDownTo01(config:DimTheme(config.database.theme, 0.7))))
-  itemsFrameUI.menuTitleLineRight = config:CreateNoPointsLine(itemsFrameUI, 2, unpack(config:ThemeDownTo01(config:DimTheme(config.database.theme, 0.7))))
-  itemsFrameUI.lineBottom = config:CreateNoPointsLine(itemsFrameUI, 2, unpack(config:ThemeDownTo01(config:DimTheme(config.database.theme, 0.7))))
+  itemsFrameUI.titleLineLeft = widgets.noPointsLine(itemsFrameUI, 2, unpack(utils.themeDownTo01(utils.dimTheme(config.database.theme_yellow, 0.8))))
+  itemsFrameUI.titleLineRight = widgets.noPointsLine(itemsFrameUI, 2, unpack(utils.themeDownTo01(utils.dimTheme(config.database.theme_yellow, 0.8))))
+  itemsFrameUI.menuTitleLineLeft = widgets.noPointsLine(itemsFrameUI, 2, unpack(utils.themeDownTo01(utils.dimTheme(config.database.theme, 0.7))))
+  itemsFrameUI.menuTitleLineRight = widgets.noPointsLine(itemsFrameUI, 2, unpack(utils.themeDownTo01(utils.dimTheme(config.database.theme, 0.7))))
+  itemsFrameUI.lineBottom = widgets.noPointsLine(itemsFrameUI, 2, unpack(utils.themeDownTo01(utils.dimTheme(config.database.theme, 0.7))))
 
-  itemsFrameUI.nothingLabel = config:CreateNothingLabel(itemsFrameUI)
+  itemsFrameUI.nothingLabel = widgets.nothingLabel(itemsFrameUI)
 
-  itemsFrameUI.dummyLabel = config:CreateDummy(itemsFrameUI, itemsFrameUI.lineBottom, 0, 0)
+  itemsFrameUI.dummyLabel = widgets.dummy(itemsFrameUI, itemsFrameUI.lineBottom, 0, 0)
 end
 
 -- // Tutorial
@@ -2369,7 +2373,7 @@ end
 local function generateTutorialFrames()
   -- TUTO : How to add categories ("addNewCat")
     -- frame
-    tutorialFrames.addNewCat = config:CreateTutorialFrame("addNewCat", itemsFrameUI, false, "UP", L["Start by adding a new category!"], 190, 50)
+    tutorialFrames.addNewCat = widgets.tutorialFrame("addNewCat", itemsFrameUI, false, "UP", L["Start by adding a new category!"], 190, 50)
 
     -- targeted frame
     tutorialFramesTarget.addNewCat = itemsFrameUI.categoryButton
@@ -2377,7 +2381,7 @@ local function generateTutorialFrames()
 
   -- TUTO : Adding the categories ("addCat")
     -- frame
-    tutorialFrames.addCat = config:CreateTutorialFrame("addCat", itemsFrameUI, true, "UP", L["This will add your category and item to the current tab"], 240, 50)
+    tutorialFrames.addCat = widgets.tutorialFrame("addCat", itemsFrameUI, true, "UP", L["This will add your category and item to the current tab"], 240, 50)
 
     -- targeted frame
     tutorialFramesTarget.addCat = itemsFrameUI.addBtn
@@ -2385,14 +2389,14 @@ local function generateTutorialFrames()
 
   -- TUTO : adding an item to a category ("addItem")
     -- frame
-    tutorialFrames.addItem = config:CreateTutorialFrame("addItem", itemsFrameUI, false, "RIGHT", L["To add new items to existing categories, just right-click the category names!"], 220, 50)
+    tutorialFrames.addItem = widgets.tutorialFrame("addItem", itemsFrameUI, false, "RIGHT", L["To add new items to existing categories, just right-click the category names!"], 220, 50)
 
     -- targeted frame
     -- THIS IS A SPECIAL TARGET THAT GETS UPDATED IN THE LOADCATEGORIES FUNCTION
 
   -- TUTO : getting more information ("getMoreInfo")
     -- frame
-    tutorialFrames.getMoreInfo = config:CreateTutorialFrame("getMoreInfo", itemsFrameUI, false, "LEFT", L["If you're having any problems, or you want more information on systems like favorites or descriptions, you can always click here to print help in the chat!"], 275, 50)
+    tutorialFrames.getMoreInfo = widgets.tutorialFrame("getMoreInfo", itemsFrameUI, false, "LEFT", L["If you're having any problems, or you want more information on systems like favorites or descriptions, you can always click here to print help in the chat!"], 275, 50)
 
     -- targeted frame
     tutorialFramesTarget.getMoreInfo = itemsFrameUI.helpButton
@@ -2400,7 +2404,7 @@ local function generateTutorialFrames()
 
   -- TUTO : accessing the options ("accessOptions")
     -- frame
-    tutorialFrames.accessOptions = config:CreateTutorialFrame("accessOptions", itemsFrameUI, false, "DOWN", L["You can access the options from here"], 220, 50)
+    tutorialFrames.accessOptions = widgets.tutorialFrame("accessOptions", itemsFrameUI, false, "DOWN", L["You can access the options from here"], 220, 50)
 
     -- targeted frame
     tutorialFramesTarget.accessOptions = itemsFrameUI.frameOptionsButton
@@ -2408,7 +2412,7 @@ local function generateTutorialFrames()
 
   -- TUTO : what does holding ALT do? ("ALTkey")
     -- frame
-    tutorialFrames.ALTkey = config:CreateTutorialFrame("ALTkey", itemsFrameUI, false, "DOWN", L["One more thing: if you hold ALT while the list is opened, some interesting buttons will appear!"], 220, 50)
+    tutorialFrames.ALTkey = widgets.tutorialFrame("ALTkey", itemsFrameUI, false, "DOWN", L["One more thing: if you hold ALT while the list is opened, some interesting buttons will appear!"], 220, 50)
 
     -- targeted frame
     tutorialFramesTarget.ALTkey = itemsFrameUI
@@ -2417,7 +2421,7 @@ end
 
 function itemsFrame:ValidateTutorial(tuto_name)
   -- completes the "tuto_name" tutorial, only if it was active
-  local i = config:GetKeyFromValue(tuto_order, tuto_name)
+  local i = utils.getKeyFromValue(tuto_order, tuto_name)
   if (NysTDL.db.global.tuto_progression < i) then
     if (NysTDL.db.global.tuto_progression == i-1) then
       NysTDL.db.global.tuto_progression = NysTDL.db.global.tuto_progression + 1 -- we validate the tutorial
@@ -2522,12 +2526,12 @@ function itemsFrame:ResetContent()
     label[k]:Hide()
     categoryLabelFavsRemaining[k]:Hide()
     editBox[k]:Hide()
-    table.remove(hyperlinkEditBoxes, select(2, config:HasItem(hyperlinkEditBoxes, editBox[k])))
+    table.remove(hyperlinkEditBoxes, select(2, utils.hasItem(hyperlinkEditBoxes, editBox[k])))
   end
 
   for _, v in pairs(descFrames) do
     v:Hide()
-    table.remove(hyperlinkEditBoxes, select(2, config:HasItem(hyperlinkEditBoxes, v.descriptionEditBox.EditBox)))
+    table.remove(hyperlinkEditBoxes, select(2, utils.hasItem(hyperlinkEditBoxes, v.descriptionEditBox.EditBox)))
   end
 
   -- 2 - reset every content variable to their default value
@@ -2807,8 +2811,10 @@ function Nys_Tests(yes)
     -- print("Daily:    "..tostringall(NysTDL.db.profile.autoReset["Daily"]))
     -- print("Weekly: "..tostringall(NysTDL.db.profile.autoReset["Weekly"]))
     -- print("Time:    "..tostringall(time()))
-    -- local timeUntil = config:GetSecondsToReset()
+    -- local timeUntil = autoReset.getSecondsToReset()
     -- print(timeUntil.hour, timeUntil.min + 1)
+
+    init.ola("hey")
   end
   print("--Nys_Tests--")
 end
