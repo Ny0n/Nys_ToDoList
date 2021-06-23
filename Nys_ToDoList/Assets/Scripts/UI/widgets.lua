@@ -1,20 +1,16 @@
 -- Namespaces
 local addonName, addonTable = ...
 
-local config = addonTable.config
-local utils = addonTable.utils
-local autoReset = addonTable.autoReset
+-- addonTable aliases
 local widgets = addonTable.widgets
-local itemsFrame = addonTable.itemsFrame
-local init = addonTable.init
+local utils = addonTable.utils
 
 -- Variables
-
-local L = config.L
+local L = addonTable.core.L
 
 --/*******************/ WIDGET CREATION FUNCTIONS /*************************/--
 
-function widgets.tutorialFrame(tutoName, parent, showCloseButton, arrowSide, text, width, height)
+function widgets:TutorialFrame(tutoName, parent, showCloseButton, arrowSide, text, width, height)
   local tutoFrame = CreateFrame("Frame", "NysTDL_tutoFrame_"..tutoName, parent, "NysTDL_HelpPlateTooltip")
   tutoFrame:SetSize(width, height)
   if (arrowSide == "UP") then tutoFrame.ArrowDOWN:Show()
@@ -35,14 +31,14 @@ function widgets.tutorialFrame(tutoName, parent, showCloseButton, arrowSide, tex
   return tutoFrame
 end
 
-function widgets.noPointsLabel(relativeFrame, name, text)
+function widgets:NoPointsLabel(relativeFrame, name, text)
   local label = relativeFrame:CreateFontString(name)
   label:SetFontObject("GameFontHighlightLarge")
   label:SetText(text)
   return label
 end
 
-function widgets.noPointsInteractiveLabel(name, relativeFrame, text, fontObjectString)
+function widgets:NoPointsInteractiveLabel(name, relativeFrame, text, fontObjectString)
   local label = CreateFrame("Frame", name, relativeFrame, "NysTDL_InteractiveLabel")
   label.Text:SetFontObject(fontObjectString)
   label.Text:SetText(text)
@@ -56,18 +52,18 @@ function widgets.noPointsInteractiveLabel(name, relativeFrame, text, fontObjectS
   return label
 end
 
-function widgets.nothingLabel(relativeFrame)
+function widgets:NothingLabel(relativeFrame)
   local label = relativeFrame:CreateFontString(nil)
   label:SetFontObject("GameFontHighlightLarge")
   label:SetTextColor(0.5, 0.5, 0.5, 0.5)
   return label
 end
 
-function widgets.button(name, relativeFrame, text, iconPath, fc)
+function widgets:Button(name, relativeFrame, text, iconPath, fc)
   fc = fc or false
   iconPath = (type(iconPath) == "string") and iconPath or nil
   local btn = CreateFrame("Button", name, relativeFrame, "NysTDL_NormalButton")
-  local w = widgets.noPointsLabel(relativeFrame, nil, text):GetWidth()
+  local w = self:NoPointsLabel(relativeFrame, nil, text):GetWidth()
   btn:SetText(text)
   btn:SetNormalFontObject("GameFontNormalLarge")
   if (fc == true) then btn:SetHighlightFontObject("GameFontHighlightLarge") end
@@ -85,7 +81,7 @@ function widgets.button(name, relativeFrame, text, iconPath, fc)
   return btn
 end
 
-function widgets.helpButton(relativeFrame)
+function widgets:HelpButton(relativeFrame)
   local btn = CreateFrame("Button", nil, relativeFrame, "NysTDL_HelpButton")
   btn.tooltip = L["Information"]
 
@@ -102,7 +98,7 @@ function widgets.helpButton(relativeFrame)
   return btn
 end
 
-function widgets.removeButton(relativeCheckButton)
+function widgets:RemoveButton(relativeCheckButton)
   local btn = CreateFrame("Button", nil, relativeCheckButton, "NysTDL_RemoveButton")
   btn:SetPoint("LEFT", relativeCheckButton, "LEFT", - 20, 0)
 
@@ -126,14 +122,14 @@ function widgets.removeButton(relativeCheckButton)
   return btn
 end
 
-function widgets.favoriteButton(relativeCheckButton, catName, itemName)
+function widgets:FavoriteButton(relativeCheckButton, catName, itemName)
   local btn = CreateFrame("Button", nil, relativeCheckButton, "NysTDL_FavoriteButton")
   btn:SetPoint("LEFT", relativeCheckButton, "LEFT", - 20, -2)
 
   -- these are for changing the color depending on the mouse actions (since they are custom xml)
   -- and yea, this one's a bit complicated because I wanted its look to be really precise...
   btn:HookScript("OnEnter", function(self)
-    if (not utils.itemExists(catName, itemName)) then return end
+    if (not utils:ItemExists(catName, itemName)) then return end
     if (not NysTDL.db.profile.itemsList[catName][itemName].favorite) then -- not favorited
       self.Icon:SetDesaturated(nil)
       self.Icon:SetVertexColor(1, 1, 1)
@@ -142,7 +138,7 @@ function widgets.favoriteButton(relativeCheckButton, catName, itemName)
     end
   end)
   btn:HookScript("OnLeave", function(self)
-    if (not utils.itemExists(catName, itemName)) then return end
+    if (not utils:ItemExists(catName, itemName)) then return end
     if (not NysTDL.db.profile.itemsList[catName][itemName].favorite) then
       if (tonumber(string.format("%.1f", self.Icon:GetAlpha())) ~= 0.5) then -- if we are currently clicking on the button
         self.Icon:SetDesaturated(1)
@@ -153,7 +149,7 @@ function widgets.favoriteButton(relativeCheckButton, catName, itemName)
     end
    end)
    btn:HookScript("OnMouseUp", function(self)
-     if (not utils.itemExists(catName, itemName)) then return end
+     if (not utils:ItemExists(catName, itemName)) then return end
      if (self.name == "FavoriteButton") then
        self:SetAlpha(1)
        if (not NysTDL.db.profile.itemsList[catName][itemName].favorite) then
@@ -168,7 +164,7 @@ function widgets.favoriteButton(relativeCheckButton, catName, itemName)
      end
    end)
   btn:HookScript("OnShow", function(self)
-    if (not utils.itemExists(catName, itemName)) then return end
+    if (not utils:ItemExists(catName, itemName)) then return end
     self:SetAlpha(1)
     if (not NysTDL.db.profile.itemsList[catName][itemName].favorite) then
       self.Icon:SetDesaturated(1)
@@ -181,14 +177,14 @@ function widgets.favoriteButton(relativeCheckButton, catName, itemName)
   return btn
 end
 
-function widgets.descButton(relativeCheckButton, catName, itemName)
+function widgets:DescButton(relativeCheckButton, catName, itemName)
   local btn = CreateFrame("Button", nil, relativeCheckButton, "NysTDL_DescButton")
   btn:SetPoint("LEFT", relativeCheckButton, "LEFT", - 20, 0)
 
   -- these are for changing the color depending on the mouse actions (since they are custom xml)
   -- and yea, this one's a bit complicated too because it works in very specific ways
   btn:HookScript("OnEnter", function(self)
-    if (not utils.itemExists(catName, itemName)) then return end
+    if (not utils:ItemExists(catName, itemName)) then return end
     if (not NysTDL.db.profile.itemsList[catName][itemName].description) then -- no description
       self.Icon:SetDesaturated(nil)
       self.Icon:SetVertexColor(1, 1, 1)
@@ -197,7 +193,7 @@ function widgets.descButton(relativeCheckButton, catName, itemName)
     end
   end)
   btn:HookScript("OnLeave", function(self)
-    if (not utils.itemExists(catName, itemName)) then return end
+    if (not utils:ItemExists(catName, itemName)) then return end
     if (not NysTDL.db.profile.itemsList[catName][itemName].description) then
       if (tonumber(string.format("%.1f", self.Icon:GetAlpha())) ~= 0.5) then -- if we are currently clicking on the button
         self.Icon:SetDesaturated(1)
@@ -208,7 +204,7 @@ function widgets.descButton(relativeCheckButton, catName, itemName)
     end
    end)
    btn:HookScript("OnMouseUp", function(self)
-     if (not utils.itemExists(catName, itemName)) then return end
+     if (not utils:ItemExists(catName, itemName)) then return end
      if (self.name == "DescButton") then
        self:SetAlpha(1)
        if (not NysTDL.db.profile.itemsList[catName][itemName].description) then
@@ -223,7 +219,7 @@ function widgets.descButton(relativeCheckButton, catName, itemName)
      end
    end)
   btn:HookScript("OnShow", function(self)
-    if (not utils.itemExists(catName, itemName)) then return end
+    if (not utils:ItemExists(catName, itemName)) then return end
     self:SetAlpha(1)
     if (not NysTDL.db.profile.itemsList[catName][itemName].description) then
       self.Icon:SetDesaturated(1)
@@ -236,7 +232,7 @@ function widgets.descButton(relativeCheckButton, catName, itemName)
   return btn
 end
 
-function widgets.noPointsRenameEditBox(relativeFrame, text, width, height)
+function widgets:NoPointsRenameEditBox(relativeFrame, text, width, height)
   local renameEditBox = CreateFrame("EditBox", relativeFrame:GetName().."_renameEditBox", relativeFrame, "InputBoxTemplate")
   renameEditBox:SetSize(width-10, height)
   renameEditBox:SetText(text)
@@ -252,7 +248,7 @@ function widgets.noPointsRenameEditBox(relativeFrame, text, width, height)
   return renameEditBox
 end
 
-function widgets.noPointsLabelEditBox(name)
+function widgets:NoPointsLabelEditBox(name)
   local edb = CreateFrame("EditBox", name, nil, "InputBoxTemplate")
   edb:SetAutoFocus(false)
   -- edb:SetTextInsets(0, 15, 0, 0)
@@ -274,7 +270,7 @@ function widgets.noPointsLabelEditBox(name)
   return edb
 end
 
-function widgets.dummy(parentFrame, relativeFrame, xOffset, yOffset)
+function widgets:Dummy(parentFrame, relativeFrame, xOffset, yOffset)
   local dummy = CreateFrame("Frame", nil, parentFrame, nil)
   dummy:SetPoint("TOPLEFT", relativeFrame, "TOPLEFT", xOffset, yOffset)
   dummy:SetSize(1, 1)
@@ -282,7 +278,7 @@ function widgets.dummy(parentFrame, relativeFrame, xOffset, yOffset)
   return dummy
 end
 
-function widgets.noPointsLine(relativeFrame, thickness, r, g, b, a)
+function widgets:NoPointsLine(relativeFrame, thickness, r, g, b, a)
   a = a or 1
   local line = relativeFrame:CreateLine()
   line:SetThickness(thickness)

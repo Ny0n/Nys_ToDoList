@@ -1,48 +1,15 @@
 -- Namespaces
 local addonName, addonTable = ...
 
-local config = addonTable.config
+-- addonTable aliases
 local utils = addonTable.utils
-local autoReset = addonTable.autoReset
-local widgets = addonTable.widgets
-local itemsFrame = addonTable.itemsFrame
-local init = addonTable.init
 
 -- Variables
-
-local L = config.L
+local L = addonTable.core.L
 
 --/*******************/ COMMON (utils) FUNCTIONS /*************************/--
 
-function utils.print(...)
-  if (not NysTDL.db.profile.showChatMessages) then return end -- we don't print anything if the user chose to deactivate this
-  utils.printForced(...)
-end
-
-local T_printForced = {}
-function utils.printForced(...)
-  if (... == nil) then return end
-
-  local hex = utils.RGBToHex(config.database.theme)
-  local prefix = string.format("|cff%s%s|r", hex, config.toc.title..':')
-
-  wipe(T_printForced)
-  local message = T_printForced
-  for i = 1, select("#", ...) do
-    local s = (select(i, ...))
-    if type(s) == "table" then
-      for j = 1, #s do
-        table.insert(message, (select(j, unpack(s))))
-      end
-    else
-      table.insert(message, s)
-    end
-  end
-
-  DEFAULT_CHAT_FRAME:AddMessage(string.join(' ', prefix, unpack(message)))
-end
-
-function utils.RGBToHex(rgb)
+function utils:RGBToHex(rgb)
 	local hexadecimal = ""
 
 	for _, value in pairs(rgb) do
@@ -67,31 +34,31 @@ function utils.RGBToHex(rgb)
 	return hexadecimal
 end
 
-local T_themeDownTo01 = {}
-function utils.themeDownTo01(theme)
+local T_ThemeDownTo01 = {}
+function utils:ThemeDownTo01(theme)
   local r, g, b = unpack(theme)
 
-  wipe(T_themeDownTo01)
-  table.insert(T_themeDownTo01, r/255)
-  table.insert(T_themeDownTo01, g/255)
-  table.insert(T_themeDownTo01, b/255)
+  wipe(T_ThemeDownTo01)
+  table.insert(T_ThemeDownTo01, r/255)
+  table.insert(T_ThemeDownTo01, g/255)
+  table.insert(T_ThemeDownTo01, b/255)
 
-  return T_themeDownTo01
+  return T_ThemeDownTo01
 end
 
-local T_dimTheme = {}
-function utils.dimTheme(theme, dim)
+local T_DimTheme = {}
+function utils:DimTheme(theme, dim)
   local r, g, b = unpack(theme)
 
-  wipe(T_dimTheme)
-  table.insert(T_dimTheme, r*dim)
-  table.insert(T_dimTheme, g*dim)
-  table.insert(T_dimTheme, b*dim)
+  wipe(T_DimTheme)
+  table.insert(T_DimTheme, r*dim)
+  table.insert(T_DimTheme, g*dim)
+  table.insert(T_DimTheme, b*dim)
 
-  return T_dimTheme
+  return T_DimTheme
 end
 
-function utils.deepcopy(orig, copies)
+function utils:Deepcopy(orig, copies)
     copies = copies or {}
     local orig_type = type(orig)
     local copy
@@ -102,9 +69,9 @@ function utils.deepcopy(orig, copies)
             copy = {}
             copies[orig] = copy
             for orig_key, orig_value in next, orig, nil do
-                copy[utils.deepcopy(orig_key, copies)] = utils.deepcopy(orig_value, copies)
+                copy[self:Deepcopy(orig_key, copies)] = self:Deepcopy(orig_value, copies)
             end
-            setmetatable(copy, utils.deepcopy(getmetatable(orig), copies))
+            setmetatable(copy, self:Deepcopy(getmetatable(orig), copies))
         end
     else -- number, string, boolean, etc
         copy = orig
@@ -112,7 +79,7 @@ function utils.deepcopy(orig, copies)
     return copy
 end
 
-function utils.safeStringFormat(str, ...)
+function utils:SafeStringFormat(str, ...)
   -- safe format, in case there is an error in the localization (happened once)
   -- (we check if there are the necessary %x in the string, corresponding to the content of ...)
   -- only accepting %i and %s, it's enough for my use
@@ -131,7 +98,7 @@ function utils.safeStringFormat(str, ...)
   return str:format(...) -- it should be good
 end
 
-function utils.hasHyperlink(s)
+function utils:HasHyperlink(s)
   if s ~= nil then
     -- a hyperlink pattern has at least one '|H' and two '|h', so this is the closest test i can think of
     if (select(2, string.gsub(s, "|H", "")) >= 1) and (select(2, string.gsub(s, "|h", "")) >= 2) then
@@ -141,7 +108,7 @@ function utils.hasHyperlink(s)
   return false
 end
 
-function utils.hasItem(table, item)
+function utils:HasItem(table, item)
   if type(table) ~= "table" then -- just in case
     return false, 0
   end
@@ -158,7 +125,7 @@ function utils.hasItem(table, item)
   return isPresent, pos
 end
 
-function utils.hasKey(table, key)
+function utils:HasKey(table, key)
   if type(table) ~= "table" then -- just in case
     return false
   end
@@ -171,18 +138,18 @@ function utils.hasKey(table, key)
   return false
 end
 
-function utils.itemExists(catName, itemName)
+function utils:ItemExists(catName, itemName)
   -- returns true or false, depending on the existence of the item
   -- it's basically a sanity check for functions that need it
-  if utils.hasKey(NysTDL.db.profile.itemsList, catName) then
-    if utils.hasKey(NysTDL.db.profile.itemsList[catName], itemName) then
+  if self:HasKey(NysTDL.db.profile.itemsList, catName) then
+    if self:HasKey(NysTDL.db.profile.itemsList[catName], itemName) then
       return true
     end
   end
   return false
 end
 
-function utils.getKeyFromValue(tabSource, value)
+function utils:GetKeyFromValue(tabSource, value)
   for k, v in pairs(tabSource) do
     if v == value then return k end
   end

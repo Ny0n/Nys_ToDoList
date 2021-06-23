@@ -1,6 +1,7 @@
 -- Namespaces
 local addonName, addonTable = ...
 
+-- addonTable aliases
 local autoReset = addonTable.autoReset
 
 --/*******************/ AUTO-RESET FUNCTIONS /*************************/--
@@ -48,35 +49,35 @@ local function getDaysUntilReset(dateValue)
   return n -- same, but a bit more complicated since it depends on the daily reset hour
 end
 
-local T_getTimeUntilReset = {}
-function autoReset.getTimeUntilReset()
+local T_GetTimeUntilReset = {}
+function autoReset:GetTimeUntilReset()
   local dateValue = date("*t")
 
-  wipe(T_getTimeUntilReset)
-  T_getTimeUntilReset.days = getDaysUntilReset(dateValue)
-  T_getTimeUntilReset.hour = getHoursUntilReset(dateValue)
-  T_getTimeUntilReset.min = math.abs(dateValue.min - 59)
-  T_getTimeUntilReset.sec = math.abs(dateValue.sec - 59)
+  wipe(T_GetTimeUntilReset)
+  T_GetTimeUntilReset.days = getDaysUntilReset(dateValue)
+  T_GetTimeUntilReset.hour = getHoursUntilReset(dateValue)
+  T_GetTimeUntilReset.min = math.abs(dateValue.min - 59)
+  T_GetTimeUntilReset.sec = math.abs(dateValue.sec - 59)
 
-  return T_getTimeUntilReset
+  return T_GetTimeUntilReset
 end
 
-local T_getSecondsToReset = {}
-function autoReset.getSecondsToReset()
-  local timeUntil = autoReset.getTimeUntilReset()
+local T_GetSecondsToReset = {}
+function autoReset:GetSecondsToReset()
+  local timeUntil = self:GetTimeUntilReset()
 
-  wipe(T_getSecondsToReset)
-  T_getSecondsToReset.weekly =
+  wipe(T_GetSecondsToReset)
+  T_GetSecondsToReset.weekly =
        timeUntil.days * 24 * 60 * 60
      + timeUntil.hour * 60 * 60
      + timeUntil.min * 60
      + timeUntil.sec
      + time()
-  T_getSecondsToReset.daily =
+  T_GetSecondsToReset.daily =
        timeUntil.hour * 60 * 60
      + timeUntil.min * 60
      + timeUntil.sec
      + time()
 
-  return T_getSecondsToReset
+  return T_GetSecondsToReset
 end
