@@ -2,14 +2,15 @@
 local addonName, addonTable = ...
 
 -- addonTable aliases
-local itemsFrame = addonTable.itemsFrame
 local core = addonTable.core
 local chat = addonTable.chat
 local utils = addonTable.utils
 local widgets = addonTable.widgets
 local database = addonTable.database
 local autoReset = addonTable.autoReset
+local itemsFrame = addonTable.itemsFrame
 local optionsManager = addonTable.optionsManager
+local tutorialsManager = addonTable.tutorialsManager
 
 -- Variables
 local L = core.L
@@ -38,11 +39,6 @@ local autoResetedThisSession = false
 
 -- these are for code comfort (sort of)
 
--- tutorial
-local tutorialFrames = {}
-local tutorialFramesTarget = {}
-local tuto_order = { "addNewCat", "addCat", "addItem", "accessOptions", "getMoreInfo", "ALTkey" }
-
 -- other
 local shownInTab = {}
 local hyperlinkEditBoxes = {}
@@ -63,6 +59,10 @@ local refreshRate = 1
 --------------------------------------
 -- General functions
 --------------------------------------
+
+function itemsFrame:GetFrame()
+  return tdlFrame
+end
 
 function itemsFrame:Toggle()
   -- changes the visibility of the ToDoList frame
@@ -514,8 +514,6 @@ local function addCategory()
   local db = {}
   db.catName = tdlFrame.categoryEditBox:GetText()
 
-
-
   if (db.catName == "") then
     chat:PrintForced(L["Please enter a category name!"])
     SetFocusEditBox(tdlFrame.categoryEditBox)
@@ -694,7 +692,7 @@ function itemsFrame:AddItem(self, db)
       tdlFrame.nameEditBox:SetText("")
 
       -- tutorial
-      itemsFrame:ValidateTutorial("addCat")
+      tutorialsManager:Validate("addCat")
     end
   end
 
@@ -1122,9 +1120,7 @@ local function ItemsFrame_Scale()
     _G["ToDoListUIFrameTab"..i].content:SetScale(scale)
     _G["ToDoListUIFrameTab"..i]:SetScale(scale)
   end
-  for _, v in pairs(tutorialFrames) do
-    v:SetScale(scale)
-  end
+  tutorialsManager:SetFramesScale(scale)
 end
 
 local T_ItemsFrame_OnUpdate = {
@@ -1177,7 +1173,7 @@ local function ItemsFrame_OnUpdate(self, elapsed)
       if (not T_ItemsFrame_OnUpdate.alt) then
         T_ItemsFrame_OnUpdate:something("alt")
 
-        itemsFrame:ValidateTutorial("ALTkey") -- tutorial
+        tutorialsManager:Validate("ALTkey") -- tutorial
         -- we switch the category and frame options buttons for the undo and frame action ones and vice versa
         tdlFrame.categoryButton:Hide()
         tdlFrame.undoButton:Show()
@@ -1248,24 +1244,7 @@ local function ItemsFrame_OnUpdate(self, elapsed)
     end
   end
 
-  -- here we manage the visibility of the tutorial frames, showing them if their corresponding buttons is shown, their tuto has not been completed (false) and the previous one is true.
-  if (NysTDL.db.global.tuto_progression < #tuto_order) then
-    for i, v in pairs(tuto_order) do
-      local r = false
-      if (NysTDL.db.global.tuto_progression < i) then -- if the current loop tutorial has not already been done
-        if (NysTDL.db.global.tuto_progression == i-1) then -- and the previous one has been done
-          if (tutorialFramesTarget[v] ~= nil and tutorialFramesTarget[v]:IsShown()) then -- and his corresponding target frame is currently shown
-            r = true -- then we can show the tutorial frame
-          end
-        end
-      end
-      tutorialFrames[v]:SetShown(r)
-    end
-  elseif (NysTDL.db.global.tuto_progression == #tuto_order) then -- we completed the last tutorial
-    tutorialFrames[tuto_order[#tuto_order]]:SetShown(false) -- we don't need to do the big loop above, we just need to hide the last tutorial frame (it's just optimization)
-    NysTDL.db.global.tuto_progression = NysTDL.db.global.tuto_progression + 1 -- and we also add a step of progression, just so that we never enter this 'if' again. (optimization too :D)
-    ItemsFrame_OnVisibilityUpdate() -- and finally, we reset the menu openings of the list at the end of the tutorial, for more visibility
-  end
+  tutorialsManager:UpdateFramesVisibility()
 
   while (self.timeSinceLastUpdate > updateRate) do -- every 0.05 sec (instead of every frame which is every 1/144 (0.007) sec for a 144hz display... optimization :D)
     if (NysTDL.db.profile.rainbow) then
@@ -1431,7 +1410,7 @@ function itemsFrame:CreateMovableLabelElems(catName)
 
         if (editBox[catName]:IsShown()) then
           -- tutorial
-          itemsFrame:ValidateTutorial("addItem")
+          tutorialsManager:Validate("addItem")
 
           -- we also give that edit box the focus if we are showing it
           SetFocusEditBox(editBox[catName])
@@ -1534,8 +1513,7 @@ local function loadCategories(tab, categoryLabel, catName, itemNames, lastData)
       newLabelHeightDelta = 0 -- no delta, this is the start point
 
       -- tutorial
-      tutorialFramesTarget.addItem = categoryLabel
-      tutorialFrames.addItem:SetPoint("RIGHT", tutorialFramesTarget.addItem, "LEFT", -23, 0)
+      tutorialsManager:SetTarget("addItem", categoryLabel)
     else
       lastLabel = lastData["categoryLabel"]
       if (utils:HasKey(NysTDL.db.profile.closedCategories, lastData["catName"]) and utils:HasItem(NysTDL.db.profile.closedCategories[lastData["catName"]], tab:GetName())) then -- if the last category loaded was a closed one in this tab
@@ -1960,7 +1938,7 @@ local function generateAddACategory()
     optionsClosed = true
     addACategoryClosed = not addACategoryClosed
 
-    itemsFrame:ValidateTutorial("addNewCat") -- tutorial
+    tutorialsManager:Validate("addNewCat") -- tutorial
 
     itemsFrame:ReloadTab() -- we reload the frame to display the changes
     if (not addACategoryClosed) then
@@ -2008,7 +1986,6 @@ local function generateAddACategory()
   	end
   end
 
-  -- Implement the function to change the weekly reset day, then refresh
   tdlFrame.categoriesDropdown.SetValue = function(self, newValue)
     -- we update the category edit box
     if (tdlFrame.categoryEditBox:GetText() == newValue) then
@@ -2234,7 +2211,7 @@ local function generateOptions()
     tabActionsClosed = true
     optionsClosed = not optionsClosed
 
-    itemsFrame:ValidateTutorial("accessOptions") -- tutorial
+    tutorialsManager:Validate("accessOptions") -- tutorial
 
     itemsFrame:ReloadTab() -- we reload the frame to display the changes
   end)
@@ -2341,7 +2318,7 @@ local function generateFrameContent()
   tdlFrame.helpButton = widgets:HelpButton(tdlFrame)
   tdlFrame.helpButton:SetScript("OnClick", function()
     SlashCmdList["NysToDoList"](L["info"])
-    itemsFrame:ValidateTutorial("getMoreInfo") -- tutorial
+    tutorialsManager:Validate("getMoreInfo") -- tutorial
   end)
 
   -- undo button
@@ -2368,73 +2345,6 @@ local function generateFrameContent()
   tdlFrame.nothingLabel = widgets:NothingLabel(tdlFrame)
 
   tdlFrame.dummyLabel = widgets:Dummy(tdlFrame, tdlFrame.lineBottom, 0, 0)
-end
-
--- // Tutorial
-
-local function generateTutorialFrames()
-  -- TUTO : How to add categories ("addNewCat")
-    -- frame
-    tutorialFrames.addNewCat = widgets:TutorialFrame("addNewCat", tdlFrame, false, "UP", L["Start by adding a new category!"], 190, 50)
-
-    -- targeted frame
-    tutorialFramesTarget.addNewCat = tdlFrame.categoryButton
-    tutorialFrames.addNewCat:SetPoint("TOP", tutorialFramesTarget.addNewCat, "BOTTOM", 0, -18)
-
-  -- TUTO : Adding the categories ("addCat")
-    -- frame
-    tutorialFrames.addCat = widgets:TutorialFrame("addCat", tdlFrame, true, "UP", L["This will add your category and item to the current tab"], 240, 50)
-
-    -- targeted frame
-    tutorialFramesTarget.addCat = tdlFrame.addBtn
-    tutorialFrames.addCat:SetPoint("TOP", tutorialFramesTarget.addCat, "BOTTOM", 0, -22)
-
-  -- TUTO : adding an item to a category ("addItem")
-    -- frame
-    tutorialFrames.addItem = widgets:TutorialFrame("addItem", tdlFrame, false, "RIGHT", L["To add new items to existing categories, just right-click the category names!"], 220, 50)
-
-    -- targeted frame
-    -- THIS IS A SPECIAL TARGET THAT GETS UPDATED IN THE LOADCATEGORIES FUNCTION
-
-  -- TUTO : getting more information ("getMoreInfo")
-    -- frame
-    tutorialFrames.getMoreInfo = widgets:TutorialFrame("getMoreInfo", tdlFrame, false, "LEFT", L["If you're having any problems, or you want more information on systems like favorites or descriptions, you can always click here to print help in the chat!"], 275, 50)
-
-    -- targeted frame
-    tutorialFramesTarget.getMoreInfo = tdlFrame.helpButton
-    tutorialFrames.getMoreInfo:SetPoint("LEFT", tutorialFramesTarget.getMoreInfo, "RIGHT", 18, 0)
-
-  -- TUTO : accessing the options ("accessOptions")
-    -- frame
-    tutorialFrames.accessOptions = widgets:TutorialFrame("accessOptions", tdlFrame, false, "DOWN", L["You can access the options from here"], 220, 50)
-
-    -- targeted frame
-    tutorialFramesTarget.accessOptions = tdlFrame.frameOptionsButton
-    tutorialFrames.accessOptions:SetPoint("BOTTOM", tutorialFramesTarget.accessOptions, "TOP", 0, 18)
-
-  -- TUTO : what does holding ALT do? ("ALTkey")
-    -- frame
-    tutorialFrames.ALTkey = widgets:TutorialFrame("ALTkey", tdlFrame, false, "DOWN", L["One more thing: if you hold ALT while the list is opened, some interesting buttons will appear!"], 220, 50)
-
-    -- targeted frame
-    tutorialFramesTarget.ALTkey = tdlFrame
-    tutorialFrames.ALTkey:SetPoint("BOTTOM", tutorialFramesTarget.ALTkey, "TOP", 0, 18)
-end
-
-function itemsFrame:ValidateTutorial(tuto_name)
-  -- completes the "tuto_name" tutorial, only if it was active
-  local i = utils:GetKeyFromValue(tuto_order, tuto_name)
-  if (NysTDL.db.global.tuto_progression < i) then
-    if (NysTDL.db.global.tuto_progression == i-1) then
-      NysTDL.db.global.tuto_progression = NysTDL.db.global.tuto_progression + 1 -- we validate the tutorial
-    end
-  end
-end
-
-function itemsFrame:RedoTutorial()
-  NysTDL.db.global.tuto_progression = 0
-  ItemsFrame_OnVisibilityUpdate()
-  tdlFrame.ScrollFrame:SetVerticalScroll(0)
 end
 
 -- // Creating the frame and tabs
@@ -2537,17 +2447,17 @@ function itemsFrame:ResetContent()
   end
 
   -- 2 - reset every content variable to their default value
-  clearing, undoing = false, { ["clear"] = false, ["clearnb"] = 0, ["single"] = false, ["singleok"] = true}
+  clearing, undoing = false, { ["clear"] = false, ["clearnb"] = 0, ["single"] = false, ["singleok"] = true }
   movingItem, movingCategory = false, false
 
-  checkBtn = {}
-  removeBtn = {}
-  favoriteBtn = {}
-  descBtn = {}
-  descFrames = {}
-  label = {}
-  editBox = {}
-  categoryLabelFavsRemaining = {}
+  wipe(checkBtn)
+  wipe(removeBtn)
+  wipe(favoriteBtn)
+  wipe(descBtn)
+  wipe(descFrames)
+  wipe(label)
+  wipe(editBox)
+  wipe(categoryLabelFavsRemaining)
   addACategoryClosed = true
   tabActionsClosed = true
   optionsClosed = true
@@ -2671,8 +2581,8 @@ function itemsFrame:CreateTDLFrame()
   -- generating the fixed content shared between the 3 tabs
   generateFrameContent()
 
-  -- generating the non tab-specific content of the frame
-  generateTutorialFrames()
+  -- tutorial
+  tutorialsManager:Init()
 
   -- scroll frame
   tdlFrame.ScrollFrame = CreateFrame("ScrollFrame", nil, tdlFrame, "UIPanelScrollFrameTemplate")
@@ -2771,91 +2681,3 @@ function itemsFrame:Initialize()
   self:CreateTDLFrame()
   self:CreateTDLButton()
 end
-
---@do-not-package@
-
--- Tests function (for me :p)
-function Nys_Tests(yes)
-  if (yes == 1) then -- tests profile
-    NysTDL.db.profile.minimap = { hide = false, minimapPos = 241, lock = false, tooltip = true }
-    NysTDL.db.profile.framePos = { point = "CENTER", relativeTo = nil, relativePoint = "CENTER", xOffset = 0, yOffset = 0 }
-    NysTDL.db.profile.frameSize = { width = 340, height = 400 }
-    NysTDL.db.profile.tdlButton = { ["show"] = true, ["points"] = { ["point"] = "BOTTOMRIGHT", ["relativePoint"] = "BOTTOMRIGHT", ["xOffset"] = -182.9999237060547, ["yOffset"] = 44.99959945678711 }
-    }
-
-    NysTDL.db.profile.lastLoadedTab = "ToDoListUIFrameTab2"
-    NysTDL.db.profile.rememberUndo = false
-    NysTDL.db.profile.autoReset = nil
-
-    NysTDL.db.profile.showChatMessages = false
-    NysTDL.db.profile.showWarnings = false
-    NysTDL.db.profile.favoritesWarning = true
-    NysTDL.db.profile.normalWarning = false
-    NysTDL.db.profile.hourlyReminder = true
-
-    NysTDL.db.profile.frameAlpha = 65
-    NysTDL.db.profile.frameContentAlpha = 100
-    NysTDL.db.profile.affectDesc = true
-    NysTDL.db.profile.descFrameAlpha = 65
-    NysTDL.db.profile.descFrameContentAlpha = 100
-
-    NysTDL.db.profile.rainbow = true
-    NysTDL.db.profile.rainbowSpeed = 1
-    NysTDL.db.profile.weeklyDay = 4
-    NysTDL.db.profile.dailyHour = 9
-    NysTDL.db.profile.favoritesColor = {
-      0.5720385674916013, -- [1]
-      0, -- [2]
-      1, -- [3]
-    }
-    NysTDL:ProfileChanged()
-  elseif (yes == 2) then
-    LibStub("AceConfigDialog-3.0"):Open("Nys_ToDoListWIP")
-  elseif (yes == 3) then
-    UIFrameFadeOut(tdlFrame, 2)
-      print(tdlFrame.fadeInfo.finishedFunc)
-    tdlFrame.fadeInfo.finishedFunc = function(arg1)
-      print("hey")
-    end
-    print(tdlFrame.fadeInfo.finishedFunc)
-  elseif (yes == 5) then -- EXPLOSION
-    if (not NysTDL.db.profile.itemsList["EXPLOSION"]) then
-    itemsFrame:AddItem("", {
-      ["catName"] = "EXPLOSION",
-      ["itemName"] = "1",
-      ["tabName"] = "All",
-      ["checked"] = false,
-    })
-
-    for i = 1, 99 do
-      itemsFrame:AddItem("", {
-        ["catName"] = "EXPLOSION",
-        ["itemName"] = tostring(tonumber(NysTDL.db.profile.itemsList["EXPLOSION"][#NysTDL.db.profile.itemsList["EXPLOSION"]]) + 1),
-        ["tabName"] = "All",
-        ["checked"] = false,
-      })
-    end
-
-    return
-    end
-
-    for i = 1, 100 do
-    itemsFrame:AddItem("", {
-      ["catName"] = "EXPLOSION",
-      ["itemName"] = tostring(tonumber(NysTDL.db.profile.itemsList["EXPLOSION"][#NysTDL.db.profile.itemsList["EXPLOSION"]]) + 1),
-      ["tabName"] = "All",
-      ["checked"] = false,
-    })
-    end
-  elseif (yes == 4) then
-    -- print("Daily:    "..tostringall(NysTDL.db.profile.autoReset["Daily"]))
-    -- print("Weekly: "..tostringall(NysTDL.db.profile.autoReset["Weekly"]))
-    -- print("Time:    "..tostringall(time()))
-    -- local timeUntil = autoReset:GetSecondsToReset()
-    -- print(timeUntil.hour, timeUntil.min + 1)
-
-  end
-  print("--Nys_Tests--")
-end
-
---@end-do-not-package@

@@ -138,7 +138,7 @@ function databroker:SetAdvancedMode()
   o.icon = "Interface\\AddOns\\"..addonName.."\\Assets\\Art\\minimap_icon"
 end
 
--- // DataObject creation & modification
+--/***************/ DATAOBJECT /*****************/--
 
 function databroker:SetMode(mode)
   if mode == "SIMPLE" then
@@ -170,7 +170,7 @@ function databroker:CreateMinimapButton()
   -- so here, we are, each delay for max NysTDL.iconTimerCountMax seconds calling this function
   NysTDL.iconTimer = NysTDL:ScheduleRepeatingTimer(function()
     -- we really do this to call this function
-    LDBIcon:Refresh(addonName, NysTDL.db.profile.minimap)
+    databroker:RefreshMinimapButton()
 
     -- and here we check and stop the timer when we're done
     NysTDL.iconTimerCount = NysTDL.iconTimerCount + 1
@@ -178,6 +178,10 @@ function databroker:CreateMinimapButton()
       NysTDL:CancelTimer(NysTDL.iconTimer)
     end
   end, delay)
+end
+
+function databroker:RefreshMinimapButton()
+  LDBIcon:Refresh(addonName, NysTDL.db.profile.minimap)
 end
 
 --/***************/ INITIALIZATION /******************/--

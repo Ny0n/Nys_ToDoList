@@ -11,6 +11,9 @@
 
   <!-- **************** ASSETS *********************** -->
   <Script file="Assets\Scripts\core.lua"/> <!-- #1 to be loaded -->
+  <!--@do-not-package@-->
+  <Script file="Assets\Dev\devScript.lua"/>
+  <!--@end-do-not-package@-->
   <!-- frame -->
   <Script file="Assets\Scripts\Frame\itemsFrame.lua"/>
   <!-- random -->

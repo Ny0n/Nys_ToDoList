@@ -7,6 +7,7 @@ local chat = addonTable.chat
 local utils = addonTable.utils
 local database = addonTable.database
 local itemsFrame = addonTable.itemsFrame
+local tutorialsManager = addonTable.tutorialsManager
 
 -- Variables
 local L = core.L
@@ -163,7 +164,7 @@ chat.commands = {
   end,
 
   [L["tutorial"]] = function()
-    itemsFrame:RedoTutorial()
+    tutorialsManager:Redo()
     chat:PrintForced(L["The tutorial has been reset!"])
   end,
 }

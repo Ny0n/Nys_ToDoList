@@ -10,6 +10,7 @@ addonTable.chat = {}
 addonTable.database = {}
 addonTable.events = {}
 addonTable.optionsManager = {}
+addonTable.tutorialsManager = {}
 addonTable.utils = {}
 addonTable.widgets = {}
 
@@ -54,11 +55,11 @@ function NysTDL:OnInitialize()
     -- database
     database:Initialize()
 
-    -- events
-    events:Initialize()
-
     -- options
     optionsManager:Initialize()
+
+    -- events
+    events:Initialize()
 
     -- databroker
     databroker:Initialize()

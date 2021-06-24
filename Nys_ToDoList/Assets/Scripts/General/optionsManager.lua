@@ -2,14 +2,15 @@
 local addonName, addonTable = ...
 
 -- addonTable aliases
-local optionsManager = addonTable.optionsManager
 local core = addonTable.core
 local chat = addonTable.chat
 local utils = addonTable.utils
 local widgets = addonTable.widgets
 local database = addonTable.database
 local autoReset = addonTable.autoReset
+local databroker = addonTable.databroker
 local itemsFrame = addonTable.itemsFrame
+local optionsManager = addonTable.optionsManager
 
 -- Variables
 local L = core.L
@@ -149,7 +150,7 @@ end
 
 function optionsManager:minimapButtonHideSET(info, newValue)
   NysTDL.db.profile.minimap.hide = newValue
-  LDBIcon:Refresh(addonName, NysTDL.db.profile.minimap)
+  databroker:RefreshMinimapButton()
 end
 
 -- minimapButtonTooltip
@@ -160,7 +161,7 @@ end
 
 function optionsManager:minimapButtonTooltipSET(info, newValue)
   NysTDL.db.profile.minimap.tooltip = newValue
-  LDBIcon:Refresh(addonName, NysTDL.db.profile.minimap)
+  databroker:RefreshMinimapButton()
 end
 
 -- keyBind
@@ -195,7 +196,7 @@ end
 -- // 'Tabs' tab // --
 
 function optionsManager:GetterTabs(info)
-  self:Setter(info, NysTDL.db.profile[info[#info]])
+  self:SetterTabs(info, NysTDL.db.profile[info[#info]])
   return NysTDL.db.profile[info[#info]]
 end
 
@@ -207,7 +208,7 @@ end
 -- // 'Auto Uncheck' (reset) tab // --
 
 function optionsManager:GetterReset(info)
-  self:Setter(info, NysTDL.db.profile[info[#info]])
+  self:SetterReset(info, NysTDL.db.profile[info[#info]])
   return NysTDL.db.profile[info[#info]]
 end
 
