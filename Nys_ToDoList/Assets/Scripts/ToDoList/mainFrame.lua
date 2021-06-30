@@ -458,649 +458,8 @@ function itemsFrame:updateCheckButtonsColor()
   end
 end
 
--- // Automatic reset
 
-function itemsFrame:checkAutoReset()
-  if time() > NysTDL.db.profile.autoReset["Weekly"] then
-    NysTDL.db.profile.autoReset["Daily"] = autoReset:GetSecondsToReset().daily
-    NysTDL.db.profile.autoReset["Weekly"] = autoReset:GetSecondsToReset().weekly
-    itemsFrame:ResetBtns("Daily", true)
-    itemsFrame:ResetBtns("Weekly", true)
-    autoResetedThisSession = true
-  elseif time() > NysTDL.db.profile.autoReset["Daily"] then
-    NysTDL.db.profile.autoReset["Daily"] = autoReset:GetSecondsToReset().daily
-    itemsFrame:ResetBtns("Daily", true)
-    autoResetedThisSession = true
-  end
-end
-
-function itemsFrame:autoResetedThisSessionGET()
-  return autoResetedThisSession
-end
-
--- // Items modifications
-
-local function refreshTab(catName, itemName, action, modif)
-  -- if the last tab we were on is getting an update
-  -- because of an add or remove of an item, we re-update it
-
-  if (modif) then
-    -- Removing case
-    if (action == "Remove") then
-      removeBtn[catName][itemName] = nil
-      favoriteBtn[catName][itemName] = nil
-      descBtn[catName][itemName] = nil
-      checkBtn[catName][itemName]:Hide() -- get out of my view mate
-      checkBtn[catName][itemName] = nil
-    end
-
-    -- Adding case
-    if (action == "Add") then
-      -- we create the corresponding label (if it is a new one)
-      if (label[catName] == nil) then
-        itemsFrame:CreateMovableLabelElems(catName)
-      end
-      -- we create the new check button
-      itemsFrame:CreateMovableCheckBtnElems(catName, itemName)
-    end
-
-    itemsFrame:ReloadTab() -- we reload the tab to instantly display the changes
-  end
-end
-
-local function addCategory()
-  -- the big function to add categories
-
-  local db = {}
-  db.catName = tdlFrame.categoryEditBox:GetText()
-
-  if (db.catName == "") then
-    chat:PrintForced(L["Please enter a category name!"])
-    SetFocusEditBox(tdlFrame.categoryEditBox)
-    return
-  end
-
-  local l = widgets:NoPointsLabel(tdlFrame, nil, db.catName)
-  if (l:GetWidth() > categoryNameWidthMax) then
-    chat:PrintForced(L["This categoty name is too big!"])
-    SetFocusEditBox(tdlFrame.categoryEditBox)
-    return
-  end
-
-  db.itemName = tdlFrame.nameEditBox:GetText()
-  if (db.itemName == "") then
-    chat:PrintForced(L["Please enter the name of the item!"])
-    SetFocusEditBox(tdlFrame.nameEditBox)
-    return
-  end
-
-  local l = widgets:NoPointsLabel(tdlFrame, nil, db.itemName)
-  if (l:GetWidth() > itemNameWidthMax and utils:HasHyperlink(db.itemName)) then l:SetFontObject("GameFontNormal") end -- if it has an hyperlink in it and it's too big, we allow it to be a liitle longer, considering hyperlinks take more place
-  if (l:GetWidth() > itemNameWidthMax) then -- then we recheck to see if the item is not too long for good
-    chat:PrintForced(L["This item name is too big!"])
-    SetFocusEditBox(tdlFrame.nameEditBox)
-    return
-  end
-
-  db.tabName = tdlFrame.categoryButton:GetParent():GetName()
-  db.checked = false
-
-  -- this one is for clearing the text of both edit boxes IF the adding is a success
-  db.form = true
-
-  itemsFrame:AddItem(nil, db)
-
-  -- after the adding, we give back the focus to the edit box that needs it, depending on if it was a success or not
-  if (tdlFrame.categoryEditBox:GetText() == "") then-- if the adding was a success, it should have cleared both edit boxes
-    SetFocusEditBox(tdlFrame.categoryEditBox) -- so we go back to the category edit box
-  else -- but if it wasn't cleared, it means the adding failed
-    SetFocusEditBox(tdlFrame.nameEditBox) -- and that can only mean one thing: the item name is the problem, so we go back to it
-  end
-end
-
-function itemsFrame:RenameCategory(oldCatName, newCatName)
-  -- so first, we check if the category was closed in some tabs or not,
-  -- and save this closed data to put it to the new category after the rename
-  local closedData = nil
-  if (utils:HasKey(NysTDL.db.profile.closedCategories, oldCatName) and NysTDL.db.profile.closedCategories[oldCatName] ~= nil) then
-    closedData = utils:Deepcopy(NysTDL.db.profile.closedCategories[oldCatName]) -- we need to deepcopy it since it's a table
-  end
-
-  -- then we can start renaming the category
-  -- basically, it's the same process from the MoveItem func, just through a for loop so we do every item in the category
-  movingCategory = true
-  for itemName, data in pairs(NysTDL.db.profile.itemsList[oldCatName]) do -- for every item in the category
-    itemsFrame:MoveItem(oldCatName, newCatName, itemName, itemName, data.tabName) -- we move it to the new cat
-  end
-  movingCategory = false
-
-  -- and finally, we put back the closed category data
-  NysTDL.db.profile.closedCategories[newCatName] = closedData
-
-  itemsFrame:ReloadTab() -- we reload the tab to instantly display the changes
-end
-
-function itemsFrame:AddItem(self, db)
-  -- the big big function to add items
-
-  local addResult = {"", false} -- message to be displayed in result of the function and wether there was an adding or not
-  local willCreateNewCat = false
-  local itemName, tabName, catName, checked
-  local defaultNewItemsTable = {
-    ["tabName"] = "All",
-    ["checked"] = false,
-  }
-
-  if (type(db) ~= "table") then
-    -- if we're here, it means that we added a new item from the edit box next to the category names
-    -- and self is the edit box itself
-    catName = self:GetName() -- we get the category we're adding the item in (it's the name of the edit box)
-    itemName = self:GetText() -- we get the item name the player entered (the text inside the edit box)
-    tabName = self:GetParent():GetName() -- we get the tab we're on (the name of the edit box's parent)
-    checked = false
-
-    -- there we check if the item name is not too big
-    local l = widgets:NoPointsLabel(tdlFrame, nil, itemName)
-    if (l:GetWidth() > itemNameWidthMax and utils:HasHyperlink(itemName)) then l:SetFontObject("GameFontNormal") end -- if it has an hyperlink in it and it's too big, we allow it to be a liitle longer, considering hyperlinks take more place
-    if (l:GetWidth() > itemNameWidthMax) then -- then we recheck to see if the item is not too long for good
-      chat:PrintForced(L["This item name is too big!"])
-      return
-    end
-  else
-    -- undoing / adding from category form
-    catName = db.catName
-    itemName = db.itemName
-    tabName = db.tabName
-    checked = db.checked
-
-    if (catName == nil or itemName == nil or tabName == nil or checked == nil) then -- I prefer to do 'X == nil' than 'not X' bc checked is a boolean, this if is here to check that we do have a value in each of the variables, and those are the basic needed ones
-      -- this is the safe code, we can get here after the 5.5 update if we had some old undos in stock and decided to undo them
-      -- so we take their old data names
-      catName = db.cat
-      itemName = db.name
-      tabName = db.case
-      checked = db.checked
-    end
-  end
-
-  if (itemName == "") then
-    addResult = {L["Please enter the name of the item!"], false}
-  else -- if we typed something
-    local catAlreadyExists = utils:HasKey(NysTDL.db.profile.itemsList, catName)
-    if (not catAlreadyExists) then -- that means we'll be adding something to a new category, so we create the table to hold all theses shiny new items
-      NysTDL.db.profile.itemsList[catName] = {}
-      willCreateNewCat = true
-    end
-
-    local isPresentInCurrentTab = false
-    if (utils:HasKey(NysTDL.db.profile.itemsList[catName], itemName)) then -- if it's present somewhere in the category
-        -- and if we're trying to add in the All tab, it's basically obliged to be already there
-        -- but if we're adding somewhere else, it depends if the reset tab is the same or not
-        -- it's done in a special (and maybe weird) way, but isPresentInCurrentTab needs to return if the item that's already here is in the same tab we are in or not
-        isPresentInCurrentTab = tabName == "All" or NysTDL.db.profile.itemsList[catName][itemName].tabName == tabName
-    end
-
-    if (isPresentInCurrentTab) then
-      addResult = {L["This item is already here in this category!"], false}
-    else -- if it's not in the current category in the current tab
-      if (tabName == "All") then -- then we are creating a new item for the current cat in the All tab --CASE1 (add in 'All' tab)
-        NysTDL.db.profile.itemsList[catName][itemName] = defaultNewItemsTable
-        addResult = {utils:SafeStringFormat(L["\"%s\" added to %s! ('All' tab item)"], itemName, catName), true}
-      else -- then we'll try to add the item as daily/weekly for the current cat in the current tab
-        if (utils:HasKey(NysTDL.db.profile.itemsList[catName], itemName)) then -- if it exists in the category, we search where
-          -- checking...
-          local data = NysTDL.db.profile.itemsList[catName][itemName]
-          if (data.tabName ~= "All" and data.tabName ~= tabName) then -- if the item already exists in this category but in an other reset tab
-            addResult = {L["No item can be daily and weekly!"], false}
-          else -- if it isn't in the other reset tab, it means that the item is in the All tab -- CASE2 (add in reset tab, already in All)
-            checked = data.checked -- in that case, we update the checked state to match the one the item had in the All tab
-            data.tabName = tabName -- and we transform that item into a 'tabName' item for this category
-            addResult = {utils:SafeStringFormat(L["\"%s\" added to %s! (%s item)"], itemName, catName, L[tabName]), true}
-          end
-        else -- if that new reset item doesn't exists at all in that category, we create it -- CASE3 (add in 'All' tab and add in reset tab)
-          NysTDL.db.profile.itemsList[catName][itemName] = defaultNewItemsTable
-          NysTDL.db.profile.itemsList[catName][itemName].tabName = tabName
-          addResult = {utils:SafeStringFormat(L["\"%s\" added to %s! (%s item)"], itemName, catName, L[tabName]), true}
-        end
-      end
-    end
-  end
-
-  if (willCreateNewCat and not addResult[2]) then -- if we didn't add anything and it was supposed to create a new category, we cancel our move and nil this false new empty category
-    NysTDL.db.profile.itemsList[catName] = nil
-  end
-
-  -- okay so we print only if we're not in a clear undo process / single undo process but failed
-  if (undoing["single"]) then undoing["singleok"] = addResult[2] end
-  if (not undoing["clear"] and not (undoing["single"] and not undoing["singleok"])) and not movingItem then
-    if (addResult[2]) then
-      chat:Print(addResult[1])
-    else
-      chat:PrintForced(addResult[1])
-    end
-  elseif (addResult[2]) then undoing["clearnb"] = undoing["clearnb"] + 1 end
-
-  if (addResult[2]) then -- if the adding was succesfull
-    -- then we don't forget to set the checked state of the new item
-    NysTDL.db.profile.itemsList[catName][itemName].checked = checked
-
-    -- and we clear some visuals
-    if (type(db) ~= "table") then -- if we come from the edit box to add an item next to the category name label
-      self:SetText("") -- but we clear it since our query was succesful
-    elseif (type(db) == "table" and db.form) then -- if we come from the Add a category form
-      tdlFrame.categoryEditBox:SetText("")
-      tdlFrame.nameEditBox:SetText("")
-
-      -- tutorial
-      tutorialsManager:Validate("addCat")
-    end
-  end
-
-  refreshTab(catName, itemName, "Add", addResult[2])
-end
-
-function itemsFrame:RemoveItem(self)
-  -- the really important function to delete items
-  -- if we're here, we're forced to delete an item so the result will be true in any case
-
-  local catName, itemName = self:GetParent().catName, self:GetParent().itemName
-  local data = NysTDL.db.profile.itemsList[catName][itemName]
-
-  -- since the item will get removed, we check if his description frame was opened (can happen if there was no description on the item)
-  -- and if so, we hide and destroy it
-  itemsFrame:descriptionFrameHide("NysTDL_DescFrame_"..catName.."_"..itemName)
-
-  -- undo part
-  if (not movingItem) then
-    local db = {
-      ["catName"] = catName,
-      ["itemName"] = itemName,
-      ["tabName"] = data.tabName,
-      ["checked"] = data.checked,
-    }
-    table.insert(NysTDL.db.profile.undoTable, db)
-  end
-
-  -- remove part
-  NysTDL.db.profile.itemsList[catName][itemName] = nil
-
-  if (not clearing and not movingItem) then
-    chat:Print(utils:SafeStringFormat(L["\"%s\" removed!"], itemName))
-  end
-
-  refreshTab(catName, itemName, "Remove", true)
-end
-
-function itemsFrame:MoveItem(oldCatName, newCatName, oldItemName, newItemName, newTabName)
-  -- so first, we prep the database to send to the AddItem func
-  local data = {
-    ["catName"] = newCatName,
-    ["itemName"] = newItemName,
-    ["tabName"] = newTabName,
-    ["checked"] = NysTDL.db.profile.itemsList[oldCatName][oldItemName].checked,
-    -- while saving the old item's data while we're at it
-    ["favorite"] = NysTDL.db.profile.itemsList[oldCatName][oldItemName].favorite,
-    ["description"] = NysTDL.db.profile.itemsList[oldCatName][oldItemName].description
-  }
-
-  -- then we can start renaming
-  movingItem = true
-  itemsFrame:RemoveItem(removeBtn[oldCatName][oldItemName])
-  itemsFrame:AddItem(nil, data)
-  movingItem = false
-
-  -- and finally, we put back the original item data
-  NysTDL.db.profile.itemsList[newCatName][newItemName].favorite = data.favorite
-  NysTDL.db.profile.itemsList[newCatName][newItemName].description = data.description
-
-  itemsFrame:ReloadTab() -- we reload the tab to instantly display the changes
-end
-
-function itemsFrame:FavoriteClick(self)
-  -- the function to favorite items
-
-  local catName, itemName = self:GetParent().catName, self:GetParent().itemName
-
-  if (NysTDL.db.profile.itemsList[catName][itemName].favorite) then -- we set the new favorite state of the item
-    NysTDL.db.profile.itemsList[catName][itemName].favorite = nil
-  else
-    NysTDL.db.profile.itemsList[catName][itemName].favorite = true
-  end
-
-  itemsFrame:ReloadTab() -- we reload the tab to instantly display the changes
-end
-
-function itemsFrame:ApplyNewRainbowColor(i)
-  i = i or 1
-  -- when called, takes the current favs color, goes to the next one i times, then updates the visual
-  local r, g, b = unpack(NysTDL.db.profile.favoritesColor)
-  local Cmax = math.max(r, g, b)
-  local Cmin = math.min(r, g, b)
-  local delta = Cmax - Cmin
-
-  local Hue
-  if (delta == 0) then
-    Hue = 0
-  elseif(Cmax == r) then
-    Hue = 60 * (((g-b)/delta)%6)
-  elseif(Cmax == g) then
-    Hue = 60 * (((b-r)/delta)+2)
-  elseif(Cmax == b) then
-    Hue = 60 * (((r-g)/delta)+4)
-  end
-
-  if (Hue >= 359) then
-    Hue = 0
-  else
-    Hue = Hue + i
-    if (Hue >= 359) then
-      Hue = Hue - 359
-    end
-  end
-
-  local X = 1-math.abs((Hue/60)%2-1)
-
-  if (Hue < 60) then
-    r, g, b = 1, X, 0
-  elseif(Hue < 120) then
-    r, g, b = X, 1, 0
-  elseif(Hue < 180) then
-    r, g, b = 0, 1, X
-  elseif(Hue < 240) then
-    r, g, b = 0, X, 1
-  elseif(Hue < 300) then
-    r, g, b = X, 0, 1
-  elseif(Hue < 360) then
-    r, g, b = 1, 0, X
-  end
-
-  -- we apply the new color
-  local var = NysTDL.db.profile.favoritesColor
-  wipe(var)
-  table.insert(var, r)
-  table.insert(var, g)
-  table.insert(var, b)
-  itemsFrame:updateCheckButtonsColor()
-  itemsFrame:updateFavsRemainingNumbersColor()
-end
-
-function itemsFrame:descriptionFrameHide(name)
-  -- here, if the name matches one of the opened description frames, we hide that frame, delete it from memory and reupdate the levels of every other active ones
-  for pos, v in pairs(descFrames) do
-    if (v:GetName() == name) then
-      v:Hide()
-      table.remove(hyperlinkEditBoxes, select(2, utils:HasValue(hyperlinkEditBoxes, v.descriptionEditBox.EditBox))) -- removing the ref of the hyperlink edit box
-      table.remove(descFrames, pos)
-      for pos2, v2 in pairs(descFrames) do -- we reupdate the frame levels
-        v2:SetFrameLevel(300 + (pos2-1)*descFrameLevelDiff)
-      end
-      return true
-    end
-  end
-  return false
-end
-
-function itemsFrame:DescriptionClick(self)
-  -- the big function to create the description frame for each items
-
-  local catName, itemName = self:GetParent().catName, self:GetParent().itemName
-
-  if (itemsFrame:descriptionFrameHide("NysTDL_DescFrame_"..catName.."_"..itemName)) then return end
-
-  -- we create the mini frame holding the name of the item and his description in an edit box
-  local descFrame = CreateFrame("Frame", "NysTDL_DescFrame_"..catName.."_"..itemName, UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil) -- importing the backdrop in the desc frames, as of wow 9.0
-  local w = widgets:NoPointsLabel(UIParent, nil, itemName):GetWidth()
-  descFrame:SetSize((w < 180) and 180+75 or w+75, 110) -- 75 is large enough to place the closebutton, clearbutton, and a little bit of space at the right of the name
-
-  -- background
-  descFrame:SetBackdrop({bgFile = "Interface\\Tooltips\\UI-Tooltip-Background", edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", tile = false, tileSize = 1, edgeSize = 10, insets = { left = 1, right = 1, top = 1, bottom = 1 }})
-  descFrame:SetBackdropColor(0, 0, 0, 1)
-
-  -- properties
-  descFrame:SetResizable(true)
-  descFrame:SetMinResize(descFrame:GetWidth(), descFrame:GetHeight())
-  descFrame:SetFrameLevel(300 + #descFrames*descFrameLevelDiff)
-  descFrame:SetMovable(true)
-  descFrame:SetClampedToScreen(true)
-  descFrame:EnableMouse(true)
-  descFrame.timeSinceLastUpdate = 0 -- for the updating of the title's color and alpha
-  descFrame.opening = 0 -- for the scrolling up on opening
-
-  -- to move the frame
-  descFrame:SetScript("OnMouseDown", function(self, button)
-      if (button == "LeftButton") then
-          self:StartMoving()
-      end
-  end)
-  descFrame:SetScript("OnMouseUp", descFrame.StopMovingOrSizing)
-
-  -- other scripts
-  descFrame:SetScript("OnUpdate", function(self, elapsed)
-    self.timeSinceLastUpdate = self.timeSinceLastUpdate + elapsed
-
-    while (self.timeSinceLastUpdate > updateRate) do -- every 0.05 sec (instead of every frame which is every 1/144 (0.007) sec for a 144hz display... optimization :D)
-      -- we update non-stop the color of the title
-      local currentAlpha = NysTDL.db.profile.descFrameContentAlpha/100
-      if (checkBtn[catName][itemName]:GetChecked()) then
-        self.title:SetTextColor(0, 1, 0, currentAlpha)
-      else
-        if (NysTDL.db.profile.itemsList[catName][itemName].favorite) then
-          local r, g, b = unpack(NysTDL.db.profile.favoritesColor)
-          self.title:SetTextColor(r, g, b, currentAlpha)
-        else
-          local r, g, b = unpack(utils:ThemeDownTo01(database.themes.theme_yellow))
-          self.title:SetTextColor(r, g, b, currentAlpha)
-        end
-      end
-
-      -- if the desc frame is the oldest (the first opened on screen, or subsequently the one who has the lowest frame level)
-      -- we use that one to cycle the rainbow colors if the list gets closed
-      if (not tdlFrame:IsShown()) then
-        if (self:GetFrameLevel() == 300) then
-          if (NysTDL.db.profile.rainbow) then itemsFrame:ApplyNewRainbowColor(NysTDL.db.profile.rainbowSpeed) end
-        end
-      end
-
-      self.timeSinceLastUpdate = self.timeSinceLastUpdate - updateRate
-    end
-
-    -- and we also update non-stop the width of the description edit box to match that of the frame if we resize it, and when the scrollbar kicks in. (this is the secret to make it work)
-    self.descriptionEditBox.EditBox:SetWidth(self.descriptionEditBox:GetWidth() - (self.descriptionEditBox.ScrollBar:IsShown() and 15 or 0))
-
-    if (self.opening < 5) then -- doing this only on the 5 first updates after creating the frame, i won't go into the details but updating the vertical scroll of this template is a real fucker :D
-      self.descriptionEditBox:SetVerticalScroll(0)
-      self.opening = self.opening + 1
-    end
-  end)
-
-  -- position
-  descFrame:ClearAllPoints()
-  descFrame:SetParent(UIParent)
-  descFrame:SetPoint("BOTTOMRIGHT", self, "TOPLEFT", 0, 0)
-  descFrame:StartMoving() -- to unlink it from the itemsframe
-  descFrame:StopMovingOrSizing()
-
-  -- / content of the frame / --
-
-  -- resize button
-  descFrame.resizeButton = CreateFrame("Button", nil, descFrame, "NysTDL_ResizeButton")
-  descFrame.resizeButton:SetPoint("BOTTOMRIGHT")
-  descFrame.resizeButton:SetScript("OnMouseDown", function(self, button)
-    if (button == "LeftButton") then
-      descFrame:StartSizing("BOTTOMRIGHT")
-      self:GetHighlightTexture():Hide() -- more noticeable
-    end
-  end)
-  descFrame.resizeButton:SetScript("OnMouseUp", function(self)
-    descFrame:StopMovingOrSizing()
-    self:GetHighlightTexture():Show()
-  end)
-
-  -- close button
-  descFrame.closeButton = CreateFrame("Button", "closeButton", descFrame, "NysTDL_CloseButton")
-  descFrame.closeButton:SetPoint("TOPRIGHT", descFrame, "TOPRIGHT", -2, -2)
-  descFrame.closeButton:SetScript("OnClick", function(self)
-      itemsFrame:descriptionFrameHide(self:GetParent():GetName())
-  end)
-
-  -- clear button
-  descFrame.clearButton = CreateFrame("Button", "clearButton", descFrame, "NysTDL_ClearButton")
-  descFrame.clearButton.tooltip = L["Clear"].."\n("..L["Right-click"]..')'
-  descFrame.clearButton:SetPoint("TOPRIGHT", descFrame, "TOPRIGHT", -24, -2)
-  descFrame.clearButton:RegisterForClicks("RightButtonUp")
-  descFrame.clearButton:SetScript("OnClick", function(self)
-      local eb = self:GetParent().descriptionEditBox.EditBox
-      eb:SetText("")
-  end)
-
-  -- item label
-  descFrame.title = descFrame:CreateFontString(itemName.."_descFrameTitle")
-  descFrame.title:SetFontObject("GameFontNormalLarge")
-  descFrame.title:SetPoint("TOPLEFT", descFrame, "TOPLEFT", 6, -5)
-  descFrame.title:SetText(itemName)
-  descFrame:SetHyperlinksEnabled(true) -- to enable OnHyperlinkClick
-  descFrame:SetScript("OnHyperlinkClick", function(_, linkData, link, button)
-    ChatFrame_OnHyperlinkShow(ChatFrame1, linkData, link, button)
-  end)
-
-  -- description edit box
-  descFrame.descriptionEditBox = CreateFrame("ScrollFrame", itemName.."_descFrameEditBox", descFrame, "InputScrollFrameTemplate")
-  descFrame.descriptionEditBox.EditBox:SetFontObject("ChatFontNormal")
-  descFrame.descriptionEditBox.EditBox:SetAutoFocus(false)
-  descFrame.descriptionEditBox.EditBox:SetMaxLetters(0)
-  descFrame.descriptionEditBox.CharCount:Hide()
-  descFrame.descriptionEditBox.EditBox.Instructions:SetFontObject("GameFontNormal")
-  descFrame.descriptionEditBox.EditBox.Instructions:SetText(L["Add a description..."].."\n"..L["(automatically saved)"])
-  descFrame.descriptionEditBox:SetPoint("TOPLEFT", descFrame, "TOPLEFT", 10, -30)
-  descFrame.descriptionEditBox:SetPoint("BOTTOMRIGHT", descFrame, "BOTTOMRIGHT", -10, 10)
-  if (NysTDL.db.profile.itemsList[catName][itemName].description) then -- if there is already a description for this item, we write it on frame creation
-    descFrame.descriptionEditBox.EditBox:SetText(NysTDL.db.profile.itemsList[catName][itemName].description)
-  end
-  descFrame.descriptionEditBox.EditBox:HookScript("OnTextChanged", function(self, userInput)
-    -- and here we save the description everytime the text is updated (best auto-save possible I think)
-    NysTDL.db.profile.itemsList[catName][itemName].description = (self:GetText() ~= "") and self:GetText() or nil
-    if (IsControlKeyDown()) then -- just in case we are ctrling-v, to color the icon
-      descBtn[catName][itemName]:GetScript("OnShow")(descBtn[catName][itemName])
-    elseif (NysTDL.db.profile.itemsList[catName][itemName].description ~= nil and not descBtn[catName][itemName]:IsShown()
-      or NysTDL.db.profile.itemsList[catName][itemName].description == nil and descBtn[catName][itemName]:IsShown()) then
-        itemsFrame:UpdateItemButtons(catName, itemName) -- we update the desc button is there is a worthy change
-    end
-  end)
-  descFrame.descriptionEditBox.EditBox:SetHyperlinksEnabled(true) -- to enable OnHyperlinkClick
-  descFrame.descriptionEditBox.EditBox:SetScript("OnHyperlinkClick", function(_, linkData, link, button)
-    ChatFrame_OnHyperlinkShow(ChatFrame1, linkData, link, button)
-  end)
-  table.insert(hyperlinkEditBoxes, descFrame.descriptionEditBox.EditBox)
-
-  table.insert(descFrames, descFrame) -- we save it for level, hide, and alpha purposes
-
-  -- we update the alpha if it needs to be
-  FrameAlphaSlider_OnValueChanged(nil, NysTDL.db.profile.frameAlpha)
-  FrameContentAlphaSlider_OnValueChanged(nil, NysTDL.db.profile.frameContentAlpha)
-
-  itemsFrame:ReloadTab() -- we reload the tab to instantly display the changes
-end
-
-function itemsFrame:ClearTab(tabName)
-  -- first we get how many items are favorites and how many have descriptions in this tab (they are protected, we won't clear them)
-  local nbItems = 0
-  local nbProtected = 0
-  for _, items in pairs(NysTDL.db.profile.itemsList) do -- for every item
-    for _, data in pairs(items) do
-      if (ItemIsInTab(data.tabName, tabName)) then -- if it is one in the selected tab
-        nbItems = nbItems + 1
-        if (data.favorite or data.description) then -- if it is a favorite or has a description
-          nbProtected = nbProtected + 1
-        end
-      end
-    end
-  end
-
-  if (nbItems > nbProtected) then -- if there is at least one item that can be cleared in this tab
-    -- we start the clear
-    clearing = true
-
-    local nb = nbItems - nbProtected -- but before (if we want to undo it) we keep in mind how many items there were to be cleared
-
-    for catName, items in pairs(removeBtn) do -- for every remove button
-      for itemName, btn in pairs(items) do
-        if (ItemIsInTab(NysTDL.db.profile.itemsList[catName][itemName].tabName, tabName)) then -- if the item is in the tab we want to clear
-          if (not NysTDL.db.profile.itemsList[catName][itemName].favorite and not NysTDL.db.profile.itemsList[catName][itemName].description) then -- if it's not a favorite nor it has a description
-            itemsFrame:RemoveItem(btn) -- then we remove it
-          end
-        end
-      end
-    end
-
-    table.insert(NysTDL.db.profile.undoTable, nb) -- and then we save how many items were actually removed
-
-    clearing = false
-    chat:Print(utils:SafeStringFormat(L["Clear succesful! (%s tab, %i items)"], L[tabName], nb))
-    itemsFrame:ReloadTab()
-  else
-    chat:Print(L["Nothing can be cleared here!"])
-  end
-end
-
-function itemsFrame:UndoRemove()
-  -- function to undo the last removes we did
-  if (next(NysTDL.db.profile.undoTable)) then -- if there's something to undo
-    if (type(NysTDL.db.profile.undoTable[#NysTDL.db.profile.undoTable]) ~= "table") then -- if it was a clear command
-      -- we start undoing it
-      undoing["clear"] = true
-      local nb = NysTDL.db.profile.undoTable[#NysTDL.db.profile.undoTable]
-      table.remove(NysTDL.db.profile.undoTable, #NysTDL.db.profile.undoTable)
-      for i = 1, nb do
-        itemsFrame:AddItem(nil, NysTDL.db.profile.undoTable[#NysTDL.db.profile.undoTable])
-        table.remove(NysTDL.db.profile.undoTable, #NysTDL.db.profile.undoTable)
-      end
-      chat:Print(utils:SafeStringFormat(L["Clear undo succesful! (%i items added back)"], undoing["clearnb"]))
-      undoing["clearnb"] = 0
-      undoing["clear"] = false
-    else -- if it was a simple remove
-      undoing["single"] = true
-      itemsFrame:AddItem(nil, NysTDL.db.profile.undoTable[#NysTDL.db.profile.undoTable])
-      table.remove(NysTDL.db.profile.undoTable, #NysTDL.db.profile.undoTable)
-      local pass = undoing["singleok"]
-      undoing["singleok"] = true
-      undoing["single"] = false
-      if (not pass) then itemsFrame:UndoRemove() end -- if the single undo failed (because of the user AAAAH :D) we just do it one more time
-    end
-  else
-    chat:Print(L["No remove/clear to undo!"])
-  end
-end
-
--- // Frame updates and events
-
-function itemsFrame:Update()
-  -- updates everything about the frame without actually reloading the tab, this is a less intensive version
-  itemsFrame:checkAutoReset()
-  itemsFrame:updateRemainingNumbers()
-  itemsFrame:updateCheckButtonsColor()
-end
-
-function itemsFrame:UpdateItemButtons(catName, itemName)
-  if (not NysTDL.db.profile.itemsList[catName] or not NysTDL.db.profile.itemsList[catName][itemName]) then return end
-  local data = NysTDL.db.profile.itemsList[catName][itemName]
-  -- shows the right button at the left of every item
-  if (data.description) then
-    -- if current item has a description, the paper icon takes the lead
-    favoriteBtn[catName][itemName]:Hide()
-    removeBtn[catName][itemName]:Hide()
-    descBtn[catName][itemName]:Show()
-  elseif (data.favorite) then
-    -- or else if current item is a favorite
-    descBtn[catName][itemName]:Hide()
-    removeBtn[catName][itemName]:Hide()
-    favoriteBtn[catName][itemName]:Show()
-  else
-    -- default
-    favoriteBtn[catName][itemName]:Hide()
-    descBtn[catName][itemName]:Hide()
-    removeBtn[catName][itemName]:Show()
-  end
-end
+--/***************/ EVENTS /******************/--
 
 local function ItemsFrame_OnVisibilityUpdate()
   -- things to do when we hide/show the list
@@ -1259,7 +618,56 @@ local function ItemsFrame_OnUpdate(self, elapsed)
   end
 end
 
---------------------------------------------------------------------------------
+--/***************/ ITEMS, CATEGORIES AND TABS MANAGMENT /******************/--
+
+function itemsFrame:Update()
+  -- updates everything about the frame without actually reloading the tab, this is a less intensive version
+  itemsFrame:checkAutoReset()
+  itemsFrame:updateRemainingNumbers()
+  itemsFrame:updateCheckButtonsColor()
+end
+
+function itemsFrame:UpdateItemButtons(catName, itemName)
+  if (not NysTDL.db.profile.itemsList[catName] or not NysTDL.db.profile.itemsList[catName][itemName]) then return end
+  local data = NysTDL.db.profile.itemsList[catName][itemName]
+  -- shows the right button at the left of every item
+  if (data.description) then
+    -- if current item has a description, the paper icon takes the lead
+    favoriteBtn[catName][itemName]:Hide()
+    removeBtn[catName][itemName]:Hide()
+    descBtn[catName][itemName]:Show()
+  elseif (data.favorite) then
+    -- or else if current item is a favorite
+    descBtn[catName][itemName]:Hide()
+    removeBtn[catName][itemName]:Hide()
+    favoriteBtn[catName][itemName]:Show()
+  else
+    -- default
+    favoriteBtn[catName][itemName]:Hide()
+    descBtn[catName][itemName]:Hide()
+    removeBtn[catName][itemName]:Show()
+  end
+end
+
+-- // Automatic reset
+
+function itemsFrame:checkAutoReset()
+  if time() > NysTDL.db.profile.autoReset["Weekly"] then
+    NysTDL.db.profile.autoReset["Daily"] = autoReset:GetSecondsToReset().daily
+    NysTDL.db.profile.autoReset["Weekly"] = autoReset:GetSecondsToReset().weekly
+    itemsFrame:ResetBtns("Daily", true)
+    itemsFrame:ResetBtns("Weekly", true)
+    autoResetedThisSession = true
+  elseif time() > NysTDL.db.profile.autoReset["Daily"] then
+    NysTDL.db.profile.autoReset["Daily"] = autoReset:GetSecondsToReset().daily
+    itemsFrame:ResetBtns("Daily", true)
+    autoResetedThisSession = true
+  end
+end
+
+function itemsFrame:autoResetedThisSessionGET()
+  return autoResetedThisSession
+end
 
 -- // Some widgets
 
@@ -1679,26 +1087,15 @@ local function generateTab(tab)
   end
 end
 
--- // Content loading
+--/***************/ FRAME CREATION /******************/--
 
 local function loadAddACategory(tab)
-  tdlFrame.categoryButton:SetParent(tab)
-  tdlFrame.categoryButton:SetPoint("RIGHT", tdlFrame.frameOptionsButton, "LEFT", 2, 0)
 
-  tdlFrame.categoryTitle:SetParent(tab)
-  tdlFrame.categoryTitle:SetPoint("TOP", tdlFrame.title, "TOP", 0, - 59)
 
-  tdlFrame.labelCategoryName:SetParent(tab)
-  tdlFrame.labelCategoryName:SetPoint("TOPLEFT", tdlFrame.categoryTitle, "TOP", -140, - 35)
-  tdlFrame.categoryEditBox:SetParent(tab)
-  tdlFrame.categoryEditBox:SetPoint("RIGHT", tdlFrame.labelCategoryName, "LEFT", 257, 0)
 
-  tdlFrame.labelFirstItemName:SetParent(tab)
   tdlFrame.labelFirstItemName:SetPoint("TOPLEFT", tdlFrame.labelCategoryName, "TOPLEFT", 0, - 25)
-  tdlFrame.nameEditBox:SetParent(tab)
   tdlFrame.nameEditBox:SetPoint("RIGHT", tdlFrame.labelFirstItemName, "LEFT", 280, 0)
 
-  tdlFrame.addBtn:SetParent(tab)
   tdlFrame.addBtn:SetPoint("TOP", tdlFrame.labelFirstItemName, "TOPLEFT", 140, - 30)
 end
 
@@ -1931,8 +1328,8 @@ end
 -- // Content generation
 
 local function generateAddACategory()
-  tdlFrame.categoryButton = CreateFrame("Button", "categoryButton", tdlFrame, "NysTDL_CategoryButton")
-  tdlFrame.categoryButton.tooltip = L["Add a category"]
+  tdlFrame.categoryButton = widgets:IconButton(tdlFrame, "NysTDL_CategoryButton", "Add a category")
+  tdlFrame.categoryButton:SetPoint("RIGHT", tdlFrame.frameOptionsButton, "LEFT", 2, 0)
   tdlFrame.categoryButton:SetScript("OnClick", function()
     tabActionsClosed = true
     optionsClosed = true
@@ -1949,18 +1346,18 @@ local function generateAddACategory()
   --/************************************************/--
 
   tdlFrame.categoryTitle = widgets:NoPointsLabel(tdlFrame, nil, string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), "/ "..L["Add a category"].." \\"))
+  tdlFrame.categoryTitle:SetPoint("TOP", tdlFrame.title, "TOP", 0, -59)
   table.insert(addACategoryItems, tdlFrame.categoryTitle)
 
   --/************************************************/--
 
-  tdlFrame.labelCategoryName = tdlFrame:CreateFontString(nil) -- info label 2
-  tdlFrame.labelCategoryName:SetFontObject("GameFontHighlightLarge")
-  tdlFrame.labelCategoryName:SetText(L["Category:"])
+  tdlFrame.labelCategoryName = widgets:NoPointsLabel(tdlFrame, nil, L["Category:"])
+  tdlFrame.labelCategoryName:SetPoint("TOPLEFT", tdlFrame.categoryTitle, "TOP", -140, - 35)
   table.insert(addACategoryItems, tdlFrame.labelCategoryName)
 
   tdlFrame.categoryEditBox = CreateFrame("EditBox", nil, tdlFrame, "InputBoxTemplate") -- edit box to put the new category name
-  local l = widgets:NoPointsLabel(tdlFrame, nil, tdlFrame.labelCategoryName:GetText())
-  tdlFrame.categoryEditBox:SetSize(257 - l:GetWidth() - 20, 30)
+  tdlFrame.categoryEditBox:SetPoint("RIGHT", tdlFrame.labelCategoryName, "LEFT", 257, 0)
+  tdlFrame.categoryEditBox:SetSize(257 - widgets:GetWidth(tdlFrame.labelCategoryName:GetText()) - 20, 30)
   tdlFrame.categoryEditBox:SetAutoFocus(false)
   tdlFrame.categoryEditBox:SetScript("OnKeyDown", function(_, key) if (key == "TAB") then SetFocusEditBox(tdlFrame.nameEditBox) end end) -- to switch easily between the two edit boxes
   tdlFrame.categoryEditBox:SetScript("OnEnterPressed", addCategory) -- if we press enter, it's like we clicked on the add button
@@ -2347,77 +1744,6 @@ local function generateFrameContent()
   tdlFrame.dummyLabel = widgets:Dummy(tdlFrame, tdlFrame.lineBottom, 0, 0)
 end
 
--- // Creating the frame and tabs
-
---Selecting the tab
-function itemsFrame:SetActiveTab(self)
-  PanelTemplates_SetTab(self:GetParent(), self:GetID())
-
-  local scrollChild = tdlFrame.ScrollFrame:GetScrollChild()
-  if (scrollChild) then
-    scrollChild:Hide()
-  end
-
-  tdlFrame.ScrollFrame:SetScrollChild(self.content)
-
-  -- we update the frame before loading the tab if there are changes pending
-  itemsFrame:Update()
-
-  CurrentTab = self.content -- for an easier access to the currently selected tab, in any function
-
-  -- Loading the good tab
-  if (self:GetName() == "ToDoListUIFrameTab1") then loadTab(AllTab) end
-  if (self:GetName() == "ToDoListUIFrameTab2") then loadTab(DailyTab) end
-  if (self:GetName() == "ToDoListUIFrameTab3") then loadTab(WeeklyTab) end
-
-  -- we update the frame after loading the tab to refresh the display
-  itemsFrame:Update()
-
-  self.content:Show()
-end
-
---Creating the tabs
-local function SetTabs(frame, numTabs, ...)
-  frame.numTabs = numTabs
-
-  local contents = {}
-  local frameName = frame:GetName()
-
-  for i = 1, numTabs do
-    local tab = CreateFrame("Button", frameName.."Tab"..i, frame, "CharacterFrameTabButtonTemplate")
-
-    tab:SetID(i)
-    tab:SetText(select(i, ...))
-    tab:SetScript("OnClick", function(self)
-      itemsFrame:ReloadTab(self:GetName())
-    end)
-
-    if (i == 1) then -- OnUpdate hook
-      tab:HookScript("OnUpdate", function()
-        for i = 1, 3 do
-          _G["ToDoListUIFrameTab"..i.."Text"]:SetAlpha((NysTDL.db.profile.frameContentAlpha)/100)
-        end
-      end)
-    end
-
-    local name = ""
-    if (tab:GetName() == "ToDoListUIFrameTab1") then name = "All"
-    elseif (tab:GetName() == "ToDoListUIFrameTab2") then name = "Daily"
-    elseif (tab:GetName() == "ToDoListUIFrameTab3") then name = "Weekly" end
-
-
-    table.insert(contents, tab.content)
-
-    if (i == 1) then -- position
-      tab:SetPoint("TOPLEFT", tdlFrame, "BOTTOMLEFT", 5, 2)
-    else
-      tab:SetPoint("TOPLEFT", _G[frameName.."Tab"..(i - 1)], "TOPRIGHT", - 14, 0)
-    end
-  end
-
-  return unpack(contents)
-end
-
 -- // Profile init & change
 
 function itemsFrame:ResetContent()
@@ -2593,6 +1919,11 @@ function itemsFrame:CreateTDLFrame()
   tdlFrame.ScrollFrame.ScrollBar:ClearAllPoints()
   tdlFrame.ScrollFrame.ScrollBar:SetPoint("TOPLEFT", tdlFrame.ScrollFrame, "TOPRIGHT", - 12, - 38) -- the bottomright is updated in the OnUpdate (to manage the resize button)
 
+  -- XXX
+  tab.content = CreateFrame("Frame", name, tdlFrame.ScrollFrame)
+  tab.content:SetSize(308, 1) -- y is determined by number of elements inside of it
+  tab.content:Hide()
+
   -- close button
   tdlFrame.closeButton = CreateFrame("Button", "closeButton", tdlFrame, "NysTDL_CloseButton")
   tdlFrame.closeButton:SetPoint("TOPRIGHT", tdlFrame, "TOPRIGHT", -1, -1)
@@ -2625,13 +1956,16 @@ function itemsFrame:CreateTDLFrame()
     tdlFrame:SetSize(340, 400)
   end)
 
+  -- // Generating the tabs XXX
+  AllTab, DailyTab, WeeklyTab = SetTabs(tdlFrame, 3, L["All"], L["Daily"], L["Weekly"])
+
   -- Initializing the frame with the current data
   itemsFrame:Init(false)
 
   -- when we're here, the list was just created, so it is opened by default already,
   -- then we decide what we want to do with that
   if (NysTDL.db.profile.openByDefault) then
-    ItemsFrame_OnVisibilityUpdate()
+    ItemsFrame_OnVisibilityUpdate() -- XXX
   elseif (NysTDL.db.profile.keepOpen) then
     tdlFrame:SetShown(NysTDL.db.profile.lastListVisibility)
   else

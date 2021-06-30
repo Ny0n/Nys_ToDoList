@@ -109,14 +109,18 @@
       </OnLoad>
       <OnEnter>
         <!-- Show and reposition the tooltip -->
+        if type(self.tooltip) ~= "string" or self.tooltip == "" then return end -- no tooltip
+
         self.MiniTooltip.Text:SetText(self.tooltip)
         self.MiniTooltip:SetWidth(self.MiniTooltip.Text:GetStringWidth()+16)
+
         local _, n = string.gsub(self.tooltip, "\n", "")
         if (n > 0) then
           self.MiniTooltip:SetHeight(26 + n*10)
         else
           self.MiniTooltip:SetHeight(26)
         end
+
         if (self.name == "AddButton") then
           self.MiniTooltip:SetPoint("BOTTOMRIGHT", self, "TOPRIGHT", 4, 7)
         elseif (self.name == "TooltipResizeButton") then
@@ -126,6 +130,7 @@
         else
           self.MiniTooltip:SetPoint("RIGHT", self, "LEFT", 0, 0)
         end
+
         self.MiniTooltip:Show()
       </OnEnter>
       <OnLeave>
@@ -139,7 +144,7 @@
   <Button name="NysTDL_CategoryButton" inherits="NysTDL_IconButtonTemplate, NysTDL_IconButtonTooltipScripts, NysTDL_IconButtonPositionScripts" virtual="true">
     <Size x="32" y="32"/>
     <KeyValues>
-      <KeyValue key="tooltip" value="locale"/>
+      <KeyValue key="tooltip" value=""/>
       <KeyValue key="name" value="CategoryButton"/>
     </KeyValues>
     <Layers>
@@ -160,7 +165,7 @@
   <Button name="NysTDL_UndoButton" inherits="NysTDL_IconButtonTemplate, NysTDL_IconButtonTooltipScripts, NysTDL_IconButtonPositionScripts" virtual="true">
     <Size x="32" y="32"/>
     <KeyValues>
-      <KeyValue key="tooltip" value="locale"/>
+      <KeyValue key="tooltip" value=""/>
       <KeyValue key="name" value="UndoButton"/>
     </KeyValues>
     <Layers>
@@ -179,7 +184,7 @@
   <Button name="NysTDL_TabActionsButton" inherits="NysTDL_IconButtonTemplate, NysTDL_IconButtonTooltipScripts, NysTDL_IconButtonPositionScripts" virtual="true">
     <Size x="32" y="32"/>
     <KeyValues>
-      <KeyValue key="tooltip" value="locale"/>
+      <KeyValue key="tooltip" value=""/>
       <KeyValue key="name" value="TabActionsButton"/>
     </KeyValues>
     <Layers>
@@ -198,7 +203,7 @@
   <Button name="NysTDL_FrameOptionsButton" inherits="NysTDL_IconButtonTemplate, NysTDL_IconButtonTooltipScripts, NysTDL_IconButtonPositionScripts" virtual="true">
     <Size x="32" y="32"/>
     <KeyValues>
-      <KeyValue key="tooltip" value="locale"/>
+      <KeyValue key="tooltip" value=""/>
       <KeyValue key="name" value="FrameOptionsButton"/>
     </KeyValues>
     <Layers>
@@ -217,7 +222,7 @@
   <Button name="NysTDL_HelpButton" inherits="InlineHyperlinkFrameTemplate, NysTDL_IconButtonTooltipScripts, NysTDL_IconButtonPositionScripts" virtual="true">
     <Size x="30" y="30"/>
     <KeyValues>
-      <KeyValue key="tooltip" value="locale"/>
+      <KeyValue key="tooltip" value=""/>
       <KeyValue key="name" value="HelpButton"/>
     </KeyValues>
     <Layers>
@@ -254,7 +259,7 @@
   <Button name="NysTDL_ClearButton" inherits="NysTDL_IconButtonTemplate, NysTDL_IconButtonPositionScripts, NysTDL_IconButtonTooltipScripts" virtual="true">
     <Size x="25" y="25"/>
     <KeyValues>
-      <KeyValue key="tooltip" value="locale"/>
+      <KeyValue key="tooltip" value=""/>
       <KeyValue key="name" value="ClearButton"/>
     </KeyValues>
     <Layers>
@@ -305,23 +310,6 @@
     </Layers>
   </Button>
 
-  <!-- Dropdown button -->
-  <Button name="NysTDL_DropdownButton" virtual="true">
-    <Size x="25" y="25"/> <!-- Size of interactable zone -->
-    <KeyValues>
-      <KeyValue key="name" value="DropdownButton"/>
-    </KeyValues>
-		<NormalTexture file="Interface\ChatFrame\UI-ChatIcon-ScrollDown-Up"/>
-		<PushedTexture file="Interface\ChatFrame\UI-ChatIcon-ScrollDown-Down"/>
-		<DisabledTexture file="Interface\ChatFrame\UI-ChatIcon-ScrollDown-Disabled"/>
-    <HighlightTexture file="Interface\Buttons\UI-Common-MouseHilight" alphaMode="ADD" alpha="0.75">
-      <Anchors>
-        <Anchor point="TOPLEFT" x="2" y="-2"/>
-        <Anchor point="BOTTOMRIGHT" x="-2" y="2"/>
-      </Anchors>
-    </HighlightTexture>
-  </Button>
-
   <!-- Description button -->
   <Button name="NysTDL_DescButton" inherits="InlineHyperlinkFrameTemplate, NysTDL_IconButtonPositionScripts" virtual="true">
     <Size x="13" y="13"/> <!-- Size of interactable zone -->
@@ -340,6 +328,23 @@
     </Layers>
   </Button>
 
+  <!-- Dropdown button -->
+  <Button name="NysTDL_DropdownButton" virtual="true">
+    <Size x="25" y="25"/> <!-- Size of interactable zone -->
+    <KeyValues>
+      <KeyValue key="name" value="DropdownButton"/>
+    </KeyValues>
+		<NormalTexture file="Interface\ChatFrame\UI-ChatIcon-ScrollDown-Up"/>
+		<PushedTexture file="Interface\ChatFrame\UI-ChatIcon-ScrollDown-Down"/>
+		<DisabledTexture file="Interface\ChatFrame\UI-ChatIcon-ScrollDown-Disabled"/>
+    <HighlightTexture file="Interface\Buttons\UI-Common-MouseHilight" alphaMode="ADD" alpha="0.75">
+      <Anchors>
+        <Anchor point="TOPLEFT" x="2" y="-2"/>
+        <Anchor point="BOTTOMRIGHT" x="-2" y="2"/>
+      </Anchors>
+    </HighlightTexture>
+  </Button>
+
   <!-- resize button -->
   <Button name="NysTDL_ResizeButton" virtual="true">
     <Size x="16" y="16"/> <!-- Size of interactable zone -->
@@ -352,7 +357,7 @@
   <Button name="NysTDL_TooltipResizeButton" inherits="NysTDL_IconButtonTooltipScripts" virtual="true">
     <Size x="16" y="16"/> <!-- Size of interactable zone -->
     <KeyValues>
-      <KeyValue key="tooltip" value="locale"/>
+      <KeyValue key="tooltip" value=""/>
       <KeyValue key="name" value="TooltipResizeButton"/>
     </KeyValues>
     <NormalTexture file="Interface\ChatFrame\UI-ChatIM-SizeGrabber-Up"/>

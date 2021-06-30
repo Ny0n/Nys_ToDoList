@@ -8,7 +8,9 @@ local utils = addonTable.utils
 -- Variables
 local L = addonTable.core.L
 
---/*******************/ WIDGET CREATION FUNCTIONS /*************************/--
+local dummyFrame = nil -- XXX
+
+--/*******************/ FRAMES /*************************/--
 
 function widgets:TutorialFrame(tutoName, parent, showCloseButton, arrowSide, text, width, height)
   local tutoFrame = CreateFrame("Frame", "NysTDL_tutoFrame_"..tutoName, parent, "NysTDL_HelpPlateTooltip")
@@ -30,6 +32,20 @@ function widgets:TutorialFrame(tutoName, parent, showCloseButton, arrowSide, tex
 
   return tutoFrame
 end
+
+function widgets:DescriptionFrame(args)
+  -- body...
+end
+
+function widgets:Dummy(parentFrame, relativeFrame, xOffset, yOffset)
+  local dummy = CreateFrame("Frame", nil, parentFrame, nil)
+  dummy:SetPoint("TOPLEFT", relativeFrame, "TOPLEFT", xOffset, yOffset)
+  dummy:SetSize(1, 1)
+  dummy:Show()
+  return dummy
+end
+
+--/*******************/ LABELS /*************************/--
 
 function widgets:NoPointsLabel(relativeFrame, name, text)
   local label = relativeFrame:CreateFontString(name)
@@ -59,6 +75,14 @@ function widgets:NothingLabel(relativeFrame)
   return label
 end
 
+function widgets:GetWidth(text)
+  -- not the length (#) of a string, but the width it takes when placed on the screen as a font string
+  local l = widgets:NoPointsLabel(dummyFrame, nil, text)
+  return l:GetWidth()
+end
+
+--/*******************/ BUTTONS /*************************/--
+
 function widgets:Button(name, relativeFrame, text, iconPath, fc)
   fc = fc or false
   iconPath = (type(iconPath) == "string") and iconPath or nil
@@ -81,6 +105,12 @@ function widgets:Button(name, relativeFrame, text, iconPath, fc)
   return btn
 end
 
+function widgets:IconButton(relativeFrame, template, tooltip)
+  local btn = CreateFrame("Button", nil, relativeFrame, template)
+  btn.tooltip = L[tooltip]
+  return btn
+end
+
 function widgets:HelpButton(relativeFrame)
   local btn = CreateFrame("Button", nil, relativeFrame, "NysTDL_HelpButton")
   btn.tooltip = L["Information"]
@@ -97,6 +127,8 @@ function widgets:HelpButton(relativeFrame)
   end)
   return btn
 end
+
+-- item buttons
 
 function widgets:RemoveButton(relativeCheckButton)
   local btn = CreateFrame("Button", nil, relativeCheckButton, "NysTDL_RemoveButton")
@@ -232,6 +264,8 @@ function widgets:DescButton(relativeCheckButton, catName, itemName)
   return btn
 end
 
+--/*******************/ EDIT BOXES /*************************/--
+
 function widgets:NoPointsRenameEditBox(relativeFrame, text, width, height)
   local renameEditBox = CreateFrame("EditBox", relativeFrame:GetName().."_renameEditBox", relativeFrame, "InputBoxTemplate")
   renameEditBox:SetSize(width-10, height)
@@ -270,13 +304,7 @@ function widgets:NoPointsLabelEditBox(name)
   return edb
 end
 
-function widgets:Dummy(parentFrame, relativeFrame, xOffset, yOffset)
-  local dummy = CreateFrame("Frame", nil, parentFrame, nil)
-  dummy:SetPoint("TOPLEFT", relativeFrame, "TOPLEFT", xOffset, yOffset)
-  dummy:SetSize(1, 1)
-  dummy:Show()
-  return dummy
-end
+--/*******************/ OTHER /*************************/--
 
 function widgets:NoPointsLine(relativeFrame, thickness, r, g, b, a)
   a = a or 1

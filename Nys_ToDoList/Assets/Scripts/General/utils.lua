@@ -59,24 +59,24 @@ function utils:DimTheme(theme, dim)
 end
 
 function utils:Deepcopy(orig, copies)
-    copies = copies or {}
-    local orig_type = type(orig)
-    local copy
-    if orig_type == 'table' then
-        if copies[orig] then
-            copy = copies[orig]
-        else
-            copy = {}
-            copies[orig] = copy
-            for orig_key, orig_value in next, orig, nil do
-                copy[self:Deepcopy(orig_key, copies)] = self:Deepcopy(orig_value, copies)
-            end
-            setmetatable(copy, self:Deepcopy(getmetatable(orig), copies))
-        end
-    else -- number, string, boolean, etc
-        copy = orig
+  copies = copies or {}
+  local orig_type = type(orig)
+  local copy
+  if orig_type == 'table' then
+    if copies[orig] then
+      copy = copies[orig]
+    else
+      copy = {}
+      copies[orig] = copy
+      for orig_key, orig_value in next, orig, nil do
+        copy[self:Deepcopy(orig_key, copies)] = self:Deepcopy(orig_value, copies)
+      end
+      setmetatable(copy, self:Deepcopy(getmetatable(orig), copies))
     end
-    return copy
+  else -- number, string, boolean, etc
+    copy = orig
+  end
+  return copy
 end
 
 function utils:SafeStringFormat(str, ...)
@@ -108,32 +108,27 @@ function utils:HasHyperlink(s)
   return false
 end
 
-function utils:HasItem(table, item)
-  if type(table) ~= "table" then -- just in case
-    return false, 0
-  end
-
-  local isPresent = false
-  local pos = 0
-  for key, value in pairs(table) do
-    if (value == item) then
-      isPresent = true
-      pos = key
-      break
-    end
+function utils:HasValue(table, value)
+  local isPresent, pos = false, 0
+  if type(table) == "table" then -- just in case
+	  for key, v in pairs(table) do
+	    if v == value then
+	      isPresent = true
+	      pos = key
+	      break
+	    end
+	  end
   end
   return isPresent, pos
 end
 
 function utils:HasKey(table, key)
-  if type(table) ~= "table" then -- just in case
-    return false
-  end
-
-  for k in pairs(table) do
-    if (k == key) then
-      return true
-    end
+  if type(table) == "table" then -- just in case
+	  for k in pairs(table) do
+	    if (k == key) then
+	      return true
+	    end
+	  end
   end
   return false
 end

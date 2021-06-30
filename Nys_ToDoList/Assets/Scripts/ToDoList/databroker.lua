@@ -26,16 +26,16 @@ function databroker:DrawSimpleTooltip(tooltip)
   end
 
   if tooltip and tooltip.AddLine then
-      -- we get the color theme
-      local hex = utils:RGBToHex(database.themes.theme)
+    -- we get the color theme
+    local hex = utils:RGBToHex(database.themes.theme)
 
-      -- then we create each line
-      tooltip:ClearLines()
-      tooltip:AddDoubleLine(core.toc.title, core.toc.version)
-      tooltip:AddLine(string.format("|cff%s%s|r", hex, L["Click"])..' - '..string.format("|cff%s%s|r", "FFFFFF", L["toggle the list"]))
-      tooltip:AddLine(string.format("|cff%s%s|r", hex, L["Shift-Click"])..' - '..string.format("|cff%s%s|r", "FFFFFF", L["toggle addon options"]))
-      tooltip:AddLine(string.format("|cff%s%s|r", hex, L["Ctrl-Click"])..' - '..string.format("|cff%s%s|r", "FFFFFF", NysTDL.db.profile.minimap.lock and L["unlock minimap button"] or L["lock minimap button"]))
-      tooltip:Show()
+    -- then we create each line
+    tooltip:ClearLines()
+    tooltip:AddDoubleLine(core.toc.title, core.toc.version)
+    tooltip:AddLine(string.format("|cff%s%s|r", hex, L["Click"])..' - '..string.format("|cff%s%s|r", "FFFFFF", L["toggle the list"]))
+    tooltip:AddLine(string.format("|cff%s%s|r", hex, L["Shift-Click"])..' - '..string.format("|cff%s%s|r", "FFFFFF", L["toggle addon options"]))
+    tooltip:AddLine(string.format("|cff%s%s|r", hex, L["Ctrl-Click"])..' - '..string.format("|cff%s%s|r", "FFFFFF", NysTDL.db.profile.minimap.lock and L["unlock minimap button"] or L["lock minimap button"]))
+    tooltip:Show()
   end
 end
 
@@ -79,14 +79,14 @@ function databroker:DrawAdvancedTooltip(tooltip)
   end
 
   if tooltip and tooltip.AddLine then
-      -- we get the color theme
-      local hex = utils:RGBToHex(database.themes.theme)
+    -- we get the color theme
+    local hex = utils:RGBToHex(database.themes.theme)
 
-      -- then we create each line
-      tooltip:ClearLines()
-      tooltip:AddDoubleLine(core.toc.title, core.toc.version)
-      tooltip:AddLine("ADVANCED TOOLTIP")
-      tooltip:Show()
+    -- then we create each line
+    tooltip:ClearLines()
+    tooltip:AddDoubleLine(core.toc.title, core.toc.version)
+    tooltip:AddLine("ADVANCED TOOLTIP")
+    tooltip:Show()
   end
 end
 
