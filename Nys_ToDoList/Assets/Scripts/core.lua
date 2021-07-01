@@ -4,7 +4,7 @@ local addonName, addonTable = ...
 -- declaring the different addon tables, one for each file
 addonTable.core = {}
 addonTable.databroker = {}
-addonTable.itemsFrame = {}
+addonTable.mainFrame = {}
 addonTable.autoReset = {}
 addonTable.chat = {}
 addonTable.database = {}
@@ -23,6 +23,7 @@ local databroker = addonTable.databroker
 local optionsManager = addonTable.optionsManager
 
 --/*******************/ ADDON LIBS AND DATA HANDLER /*************************/--
+
 -- libs
 NysTDL = LibStub("AceAddon-3.0"):NewAddon(addonName, "AceTimer-3.0", "AceEvent-3.0")
 core.AceGUI = LibStub("AceGUI-3.0")
@@ -30,6 +31,7 @@ core.L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 core.LDB = LibStub("LibDataBroker-1.1")
 core.LDBIcon = LibStub("LibDBIcon-1.0")
 core.LDD = LibStub:GetLibrary("LibUIDropDownMenu-4.0")
+
 -- data (from toc file)
 core.toc = {}
 core.toc.title = GetAddOnMetadata(addonName, "Title") -- better than "Nys_ToDoList"
@@ -65,9 +67,9 @@ function NysTDL:OnInitialize()
     databroker:Initialize()
 
     -- we create the main frame and everything that goes with it
-    itemsFrame:Initialize()
+    mainFrame:Initialize()
 
-    -- addon fully loaded!
+    -- // addon fully loaded!
 
     -- checking for an addon update
     if (NysTDL.db.global.addonUpdated) then

@@ -9,7 +9,7 @@ local widgets = addonTable.widgets
 local database = addonTable.database
 local autoReset = addonTable.autoReset
 local databroker = addonTable.databroker
-local itemsFrame = addonTable.itemsFrame
+local mainFrame = addonTable.mainFrame
 local optionsManager = addonTable.optionsManager
 
 -- Variables
@@ -21,7 +21,7 @@ local LDBIcon = core.LDBIcon
 
 -- Bindings.xml access
 function NysTDL:ToggleFrame()
-  itemsFrame:Toggle()
+  mainFrame:Toggle()
 end
 
 function optionsManager:ToggleOptions(fromFrame)
@@ -116,8 +116,8 @@ end
 
 function optionsManager:favoritesColorSET(info, ...)
   NysTDL.db.profile.favoritesColor = { ... }
-  itemsFrame:updateCheckButtonsColor()
-  itemsFrame:updateFavsRemainingNumbersColor()
+  mainFrame:updateCheckButtonsColor()
+  mainFrame:updateFavsRemainingNumbersColor()
 end
 
 -- tdlButtonShow
@@ -128,7 +128,7 @@ end
 
 function optionsManager:tdlButtonShowSET(info, newValue)
   NysTDL.db.profile.tdlButton.show = newValue
-  itemsFrame:RefreshTDLButton()
+  mainFrame:RefreshTDLButton()
 end
 
 -- tdlButtonRed
@@ -139,7 +139,7 @@ end
 
 function optionsManager:tdlButtonRedSET(info, newValue)
   NysTDL.db.profile.tdlButton.red = newValue
-  itemsFrame:updateRemainingNumbers() -- we update the color depending on the new frame's data
+  mainFrame:updateRemainingNumbers() -- we update the color depending on the new frame's data
 end
 
 -- minimapButtonHide
@@ -202,7 +202,7 @@ end
 
 function optionsManager:SetterTabs(info, ...)
   NysTDL.db.profile[info[#info]] = ...
-  itemsFrame:ReloadTab()
+  mainFrame:ReloadTab()
 end
 
 -- // 'Auto Uncheck' (reset) tab // --

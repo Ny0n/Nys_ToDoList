@@ -38,13 +38,16 @@
 --   print(k, v)
 -- end
 
--- local a = {}
---
--- print(a[nil])
+local a = {}
+a[nil] = 5
+
+print(a[nil])
 
 -- local a = { ["ola"] = 1, ["bla"] = 2, ["oula"] = 3 }
-local a = { 1, 2, 3 }
+-- local a = { 1, 2, 3 }
 -- local b = {[next(a)] = 55}
-print(table.remove(a, 1))
+-- print(table.remove(a, 1))
 -- print(next(a))
 -- print(next(b))
+-- print(nil or false)
+-- select(2, nil)

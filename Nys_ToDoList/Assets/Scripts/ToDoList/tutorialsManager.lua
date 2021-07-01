@@ -4,7 +4,7 @@ local addonName, addonTable = ...
 -- addonTable aliases
 local utils = addonTable.utils
 local widgets = addonTable.widgets
-local itemsFrame = addonTable.itemsFrame
+local mainFrame = addonTable.mainFrame
 local tutorialsManager = addonTable.tutorialsManager
 
 -- Variables
@@ -124,13 +124,13 @@ end
 
 function tutorialsManager:RedoTutorial()
   NysTDL.db.global.tuto_progression = 0
-  ItemsFrame_OnVisibilityUpdate()
+  ItemsFrame_OnVisibilityUpdate() -- TODO
   tdlFrame.ScrollFrame:SetVerticalScroll(0)
 end
 
 --/*******************/ INIT /*************************/--
 
 function tutorialsManager:Init()
-  tdlFrame = itemsFrame:GetFrame()
+  tdlFrame = mainFrame:GetFrame()
   self:GenerateFrames()
 end

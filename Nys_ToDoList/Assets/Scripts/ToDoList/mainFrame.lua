@@ -8,7 +8,7 @@ local utils = addonTable.utils
 local widgets = addonTable.widgets
 local database = addonTable.database
 local autoReset = addonTable.autoReset
-local itemsFrame = addonTable.itemsFrame
+local mainFrame = addonTable.mainFrame
 local optionsManager = addonTable.optionsManager
 local tutorialsManager = addonTable.tutorialsManager
 
@@ -60,20 +60,20 @@ local refreshRate = 1
 -- General functions
 --------------------------------------
 
-function itemsFrame:GetFrame()
+function mainFrame:GetFrame()
   return tdlFrame
 end
 
-function itemsFrame:Toggle()
+function mainFrame:Toggle()
   -- changes the visibility of the ToDoList frame
 
   -- We also update the frame if we are about to show it
-  if (not tdlFrame:IsShown()) then itemsFrame:Update() end
+  if (not tdlFrame:IsShown()) then mainFrame:Update() end
 
   tdlFrame:SetShown(not tdlFrame:IsShown())
 end
 
-function itemsFrame:ReloadTab(tabGlobalWidgetName)
+function mainFrame:ReloadTab(tabGlobalWidgetName)
   NysTDL.db.profile.lastLoadedTab = tabGlobalWidgetName or NysTDL.db.profile.lastLoadedTab
 
   if (dontReloadPls) then
@@ -89,14 +89,14 @@ function itemsFrame:ReloadTab(tabGlobalWidgetName)
         if (data.tabName == "All") then
           if (data.checked) then
             dontReloadPls = true
-            itemsFrame:RemoveItem(removeBtn[catName][itemName])
+            mainFrame:RemoveItem(removeBtn[catName][itemName])
           end
         end
       end
     end
   end
 
-  itemsFrame:SetActiveTab(_G[NysTDL.db.profile.lastLoadedTab])
+  mainFrame:SetActiveTab(_G[NysTDL.db.profile.lastLoadedTab])
 end
 
 function NysTDL:EditBoxInsertLink(text)
@@ -109,35 +109,6 @@ function NysTDL:EditBoxInsertLink(text)
 			return true
 		end
 	end
-end
-
-local function ItemIsInTab(itemTabName, tabName)
-  return ((tabName == "All" and not NysTDL.db.profile.showOnlyAllTabItems) or itemTabName == tabName)
-end
-
-local function ItemIsHiddenInResetTab(catName, itemName)
-  local checked = NysTDL.db.profile.itemsList[catName][itemName].checked
-  local itemTabName = NysTDL.db.profile.itemsList[catName][itemName].tabName
-
-  if (checked) then
-    -- if it's a checked daily item and we have to hide these, same for weekly
-    if ((NysTDL.db.profile.hideDailyTabItems and itemTabName == "Daily")
-    or (NysTDL.db.profile.hideWeeklyTabItems and itemTabName == "Weekly")) then
-      return true
-    end
-  end
-
-  return false
-end
-
-function itemsFrame:GetCategoriesOrdered()
-  -- returns a table containing the name of every category there is, ordered
-  local categories = {}
-
-  for category in pairs(NysTDL.db.profile.itemsList) do table.insert(categories, category) end
-  table.sort(categories)
-
-  return categories
 end
 
 -- actions
@@ -229,66 +200,8 @@ local function SetFocusEditBox(editBox) -- DRY
 end
 
 -- frame functions
-function itemsFrame:ResetBtns(tabName, auto)
-  -- this function's goal is to reset (uncheck) every item in the given tab
-  -- "auto" is to differenciate the user pressing the uncheck button and the auto reset
-  local uncheckedSomething = false
 
-  for catName, items in pairs(NysTDL.db.profile.itemsList) do -- for every check buttons
-    for itemName, data in pairs(items) do
-      if (ItemIsInTab(data.tabName, tabName)) then -- if it is in the selected tab
-        if (checkBtn[catName][itemName]:GetChecked()) then
-          uncheckedSomething = true
-        end
-
-        checkBtn[catName][itemName]:SetChecked(false) -- we uncheck it
-        checkBtn[catName][itemName]:GetScript("OnClick")(checkBtn[catName][itemName]) -- and call its click handler so that it can do its things and update correctly
-      end
-    end
-  end
-
-  if (uncheckedSomething) then -- so that we print this message only if there was checked items before the uncheck
-    if (tabName == "All") then
-      chat:Print(L["Unchecked everything!"])
-    else
-      chat:Print(utils:SafeStringFormat(L["Unchecked %s tab!"], L[tabName]))
-    end
-    itemsFrame:ReloadTab()
-  elseif (not auto) then -- we print this message only if it was the user's action that triggered this function (not the auto reset)
-    chat:Print(L["Nothing to uncheck here!"])
-  end
-end
-
-function itemsFrame:CheckBtns(tabName)
-  -- this function's goal is to check every item in the selected tab
-  local checkedSomething = false
-
-  for catName, items in pairs(NysTDL.db.profile.itemsList) do -- for every item
-    for itemName, data in pairs(items) do
-      if (ItemIsInTab(data.tabName, tabName)) then -- if it is in the selected tab
-        if (not checkBtn[catName][itemName]:GetChecked()) then
-          checkedSomething = true
-        end
-
-        checkBtn[catName][itemName]:SetChecked(true) -- we check it, and the OnValueChanged will update the frame
-        checkBtn[catName][itemName]:GetScript("OnClick")(checkBtn[catName][itemName]) -- and call its click handler so that it can do its things and update correctly
-    end
-    end
-  end
-
-  if (checkedSomething) then -- so that we print this message only if there was checked items before the uncheck
-    if (tabName == "All") then
-      chat:Print(L["Checked everything!"])
-    else
-      chat:Print(utils:SafeStringFormat(L["Checked %s tab!"], L[tabName]))
-    end
-    itemsFrame:ReloadTab()
-  else
-    chat:Print(L["Nothing to check here!"])
-  end
-end
-
-function itemsFrame:updateFavsRemainingNumbersColor()
+function mainFrame:updateFavsRemainingNumbersColor()
   -- this updates the favorite color for every favorites remaining number label
   tdlFrame.remainingFavsNumber:SetTextColor(unpack(NysTDL.db.profile.favoritesColor))
   for catName in pairs(label) do -- for every category labels
@@ -300,7 +213,7 @@ local T_updateRemainingNumbers_1 = {}
 local T_updateRemainingNumbers_2 = {}
 local T_updateRemainingNumbers_3 = {}
 local T_updateRemainingNumbers_4 = {}
-function itemsFrame:updateRemainingNumbers()
+function mainFrame:updateRemainingNumbers()
   -- we get how many things there is left to do in every tab,
   -- it's the big important function that gives us every number, checked and unchecked, favs or not
 
@@ -388,10 +301,10 @@ function itemsFrame:updateRemainingNumbers()
   end
 
   -- we also update the favs colors
-  itemsFrame:updateFavsRemainingNumbersColor()
+  mainFrame:updateFavsRemainingNumbersColor()
 
   -- TDL button red option
-  itemsFrame.tdlButton:SetNormalFontObject("GameFontNormalLarge") -- by default, we reset the color of the TDL button to yellow
+  mainFrame.tdlButton:SetNormalFontObject("GameFontNormalLarge") -- by default, we reset the color of the TDL button to yellow
   if (NysTDL.db.profile.tdlButton.red) then -- we check here if we need to color it red here
     local red = false
     -- we first check if there are daily remaining items
@@ -409,10 +322,10 @@ function itemsFrame:updateRemainingNumbers()
     end
 
     if (red) then
-      local font = itemsFrame.tdlButton:GetNormalFontObject()
+      local font = mainFrame.tdlButton:GetNormalFontObject()
       if (font) then
         font:SetTextColor(1, 0, 0, 1) -- red
-        itemsFrame.tdlButton:SetNormalFontObject(font)
+        mainFrame.tdlButton:SetNormalFontObject(font)
       end
     end
   end
@@ -441,7 +354,7 @@ function itemsFrame:updateRemainingNumbers()
   return checked, checkedFavs, unchecked, uncheckedFavs -- and we return them, so that we can access it eg. in the favorites warning function
 end
 
-function itemsFrame:updateCheckButtonsColor()
+function mainFrame:updateCheckButtonsColor()
   for catName, items in pairs(NysTDL.db.profile.itemsList) do -- for every check buttons
     for itemName, data in pairs(items) do
       -- we color them in a color corresponding to their checked state
@@ -466,7 +379,7 @@ local function ItemsFrame_OnVisibilityUpdate()
   addACategoryClosed = true
   tabActionsClosed = true
   optionsClosed = true
-  itemsFrame:ReloadTab()
+  mainFrame:ReloadTab()
   NysTDL.db.profile.lastListVisibility = tdlFrame:IsShown()
 end
 
@@ -574,7 +487,7 @@ local function ItemsFrame_OnUpdate(self, elapsed)
       -- item icons
       for catName, items in pairs(NysTDL.db.profile.itemsList) do
         for itemName in pairs(items) do
-          itemsFrame:UpdateItemButtons(catName, itemName)
+          mainFrame:UpdateItemButtons(catName, itemName)
         end
       end
 
@@ -607,27 +520,27 @@ local function ItemsFrame_OnUpdate(self, elapsed)
 
   while (self.timeSinceLastUpdate > updateRate) do -- every 0.05 sec (instead of every frame which is every 1/144 (0.007) sec for a 144hz display... optimization :D)
     if (NysTDL.db.profile.rainbow) then
-      itemsFrame:ApplyNewRainbowColor(NysTDL.db.profile.rainbowSpeed)
+      mainFrame:ApplyNewRainbowColor(NysTDL.db.profile.rainbowSpeed)
     end
     self.timeSinceLastUpdate = self.timeSinceLastUpdate - updateRate
   end
 
   while (self.timeSinceLastRefresh > refreshRate) do -- every one second
-    itemsFrame:checkAutoReset()
+    mainFrame:checkAutoReset()
     self.timeSinceLastRefresh = self.timeSinceLastRefresh - refreshRate
   end
 end
 
 --/***************/ ITEMS, CATEGORIES AND TABS MANAGMENT /******************/--
 
-function itemsFrame:Update()
+function mainFrame:Update()
   -- updates everything about the frame without actually reloading the tab, this is a less intensive version
-  itemsFrame:checkAutoReset()
-  itemsFrame:updateRemainingNumbers()
-  itemsFrame:updateCheckButtonsColor()
+  mainFrame:checkAutoReset()
+  mainFrame:updateRemainingNumbers()
+  mainFrame:updateCheckButtonsColor()
 end
 
-function itemsFrame:UpdateItemButtons(catName, itemName)
+function mainFrame:UpdateItemButtons(catName, itemName)
   if (not NysTDL.db.profile.itemsList[catName] or not NysTDL.db.profile.itemsList[catName][itemName]) then return end
   local data = NysTDL.db.profile.itemsList[catName][itemName]
   -- shows the right button at the left of every item
@@ -651,28 +564,28 @@ end
 
 -- // Automatic reset
 
-function itemsFrame:checkAutoReset()
+function mainFrame:checkAutoReset()
   if time() > NysTDL.db.profile.autoReset["Weekly"] then
     NysTDL.db.profile.autoReset["Daily"] = autoReset:GetSecondsToReset().daily
     NysTDL.db.profile.autoReset["Weekly"] = autoReset:GetSecondsToReset().weekly
-    itemsFrame:ResetBtns("Daily", true)
-    itemsFrame:ResetBtns("Weekly", true)
+    mainFrame:ResetBtns("Daily", true)
+    mainFrame:ResetBtns("Weekly", true)
     autoResetedThisSession = true
   elseif time() > NysTDL.db.profile.autoReset["Daily"] then
     NysTDL.db.profile.autoReset["Daily"] = autoReset:GetSecondsToReset().daily
-    itemsFrame:ResetBtns("Daily", true)
+    mainFrame:ResetBtns("Daily", true)
     autoResetedThisSession = true
   end
 end
 
-function itemsFrame:autoResetedThisSessionGET()
+function mainFrame:autoResetedThisSessionGET()
   return autoResetedThisSession
 end
 
 -- // Some widgets
 
 -- item widget
-function itemsFrame:CreateMovableCheckBtnElems(catName, itemName)
+function mainFrame:CreateMovableCheckBtnElems(catName, itemName)
   local data = NysTDL.db.profile.itemsList[catName][itemName]
 
   if (not utils:HasKey(checkBtn, catName)) then checkBtn[catName] = {} end
@@ -701,9 +614,9 @@ function itemsFrame:CreateMovableCheckBtnElems(catName, itemName)
   checkBtn[catName][itemName]:SetScript("OnClick", function(self)
     data.checked = self:GetChecked()
     if (NysTDL.db.profile.instantRefresh) then
-      itemsFrame:ReloadTab()
+      mainFrame:ReloadTab()
     else
-      itemsFrame:Update()
+      mainFrame:Update()
     end
   end)
   checkBtn[catName][itemName].InteractiveLabel:SetHyperlinksEnabled(true) -- to enable OnHyperlinkClick
@@ -749,7 +662,7 @@ function itemsFrame:CreateMovableCheckBtnElems(catName, itemName)
 
       -- and if everything is good, we can rename the item (a.k.a, delete the current one and creating a new one)
       -- while keeping the same cat, and same tab
-      itemsFrame:MoveItem(catName, catName, itemName, newItemName, NysTDL.db.profile.itemsList[catName][itemName].tabName)
+      mainFrame:MoveItem(catName, catName, itemName, newItemName, NysTDL.db.profile.itemsList[catName][itemName].tabName)
     end)
 
     -- cancelling
@@ -765,21 +678,21 @@ function itemsFrame:CreateMovableCheckBtnElems(catName, itemName)
 
   if (not utils:HasKey(removeBtn, catName)) then removeBtn[catName] = {} end
   removeBtn[catName][itemName] = widgets:RemoveButton(checkBtn[catName][itemName])
-  removeBtn[catName][itemName]:SetScript("OnClick", function(self) itemsFrame:RemoveItem(self) end)
+  removeBtn[catName][itemName]:SetScript("OnClick", function(self) mainFrame:RemoveItem(self) end)
 
   if (not utils:HasKey(favoriteBtn, catName)) then favoriteBtn[catName] = {} end
   favoriteBtn[catName][itemName] = widgets:FavoriteButton(checkBtn[catName][itemName], catName, itemName)
-  favoriteBtn[catName][itemName]:SetScript("OnClick", function(self) itemsFrame:FavoriteClick(self) end)
+  favoriteBtn[catName][itemName]:SetScript("OnClick", function(self) mainFrame:FavoriteClick(self) end)
   favoriteBtn[catName][itemName]:Hide()
 
   if (not utils:HasKey(descBtn, catName)) then descBtn[catName] = {} end
   descBtn[catName][itemName] = widgets:DescButton(checkBtn[catName][itemName], catName, itemName)
-  descBtn[catName][itemName]:SetScript("OnClick", function(self) itemsFrame:DescriptionClick(self) end)
+  descBtn[catName][itemName]:SetScript("OnClick", function(self) mainFrame:DescriptionClick(self) end)
   descBtn[catName][itemName]:Hide()
 end
 
 -- category widget
-function itemsFrame:CreateMovableLabelElems(catName)
+function mainFrame:CreateMovableLabelElems(catName)
   -- category label
   label[catName] = widgets:NoPointsInteractiveLabel("NysTDL_CatLabel_"..catName, tdlFrame, catName, "GameFontHighlightLarge")
   label[catName].catName = catName -- easy access to the catName of the label, this also allows the shown text to be different
@@ -809,7 +722,7 @@ function itemsFrame:CreateMovableLabelElems(catName)
       end
 
       -- and finally, we reload the frame to display the changes
-      itemsFrame:ReloadTab()
+      mainFrame:ReloadTab()
     elseif (button == "RightButton") then -- we try to toggle the edit box to add new items
       -- if the label we right clicked on is NOT a closed category
       if (not (select(1, utils:HasKey(NysTDL.db.profile.closedCategories, catName))) or not (select(1, utils:HasValue(NysTDL.db.profile.closedCategories[catName], CurrentTab:GetName())))) then
@@ -867,7 +780,7 @@ function itemsFrame:CreateMovableLabelElems(catName)
       end
 
       -- and if everything is good, we can rename the category
-      itemsFrame:RenameCategory(catName, newCatName)
+      mainFrame:RenameCategory(catName, newCatName)
     end)
 
     -- cancelling
@@ -892,7 +805,7 @@ function itemsFrame:CreateMovableLabelElems(catName)
   -- associated edit box and add button
   editBox[catName] = widgets:NoPointsLabelEditBox(catName)
   editBox[catName]:SetScript("OnEnterPressed", function(self)
-    itemsFrame:AddItem(self)
+    mainFrame:AddItem(self)
     self:Show() -- we keep it shown to add more items
     SetFocusEditBox(self)
   end)
@@ -1037,7 +950,7 @@ end
 -- generating the list items to load for the tab
 local function generateTab(tab)
   -- We sort all of the categories in alphabetical order
-  local tempTable = itemsFrame:GetCategoriesOrdered()
+  local tempTable = mainFrame:GetCategoriesOrdered()
 
   -- doing that only one time
   -- before we reload the entire tab and items, we hide every checkboxes
@@ -1305,7 +1218,7 @@ local function loadTab(tab)
 
   -- Nothing label
   -- first, we get how many items there are shown in the tab
-  local checked, _, unchecked = itemsFrame:updateRemainingNumbers()
+  local checked, _, unchecked = mainFrame:updateRemainingNumbers()
 
   -- then we show/hide the nothing label depending on the result and shownInTab
   tdlFrame.nothingLabel:SetParent(tab)
@@ -1337,7 +1250,7 @@ local function generateAddACategory()
 
     tutorialsManager:Validate("addNewCat") -- tutorial
 
-    itemsFrame:ReloadTab() -- we reload the frame to display the changes
+    mainFrame:ReloadTab() -- we reload the frame to display the changes
     if (not addACategoryClosed) then
       SetFocusEditBox(tdlFrame.categoryEditBox)
     end -- then we give the focus to the category edit box if we opened the menu
@@ -1410,7 +1323,7 @@ local function generateAddACategory()
       -- the categories
       wipe(info)
       info.func = self.SetValue
-      local categories = itemsFrame:GetCategoriesOrdered()
+      local categories = mainFrame:GetCategoriesOrdered()
       for _, v in pairs(categories) do
         info.arg1 = v
         info.text = v
@@ -1455,7 +1368,7 @@ local function generateAddACategory()
       -- the categories
       wipe(info)
       info.func = self.SetValue
-      local categories = itemsFrame:GetCategoriesOrdered()
+      local categories = mainFrame:GetCategoriesOrdered()
       for _, v in pairs(categories) do
         info.text = v
         info.arg1 = v
@@ -1487,7 +1400,7 @@ local function generateAddACategory()
   --   info.notCheckable = false
   --   info.isTitle = false
   --   info.disabled = false
-  --   local categories = itemsFrame:GetCategoriesOrdered()
+  --   local categories = mainFrame:GetCategoriesOrdered()
   --   for _, v in pairs(categories) do
   --     info.func = self.SetValue
   --     info.arg1 = v
@@ -1565,7 +1478,7 @@ local function generateTabActions()
     addACategoryClosed = true
     optionsClosed = true
     tabActionsClosed = not tabActionsClosed
-    itemsFrame:ReloadTab() -- we reload the frame to display the changes
+    mainFrame:ReloadTab() -- we reload the frame to display the changes
   end)
   tdlFrame.tabActionsButton:Hide()
 
@@ -1579,14 +1492,14 @@ local function generateTabActions()
   tdlFrame.btnCheck = widgets:Button("btnCheck_tdlFrame", tdlFrame, L["Check"], "Interface\\BUTTONS\\UI-CheckBox-Check")
   tdlFrame.btnCheck:SetScript("OnClick", function(self)
     local tabName = self:GetParent():GetName()
-    itemsFrame:CheckBtns(tabName)
+    mainFrame:CheckBtns(tabName)
   end)
   table.insert(tabActionsItems, tdlFrame.btnCheck)
 
   tdlFrame.btnUncheck = widgets:Button("btnUncheck_tdlFrame", tdlFrame, L["Uncheck"], "Interface\\BUTTONS\\UI-CheckBox-Check-Disabled")
   tdlFrame.btnUncheck:SetScript("OnClick", function(self)
     local tabName = self:GetParent():GetName()
-    itemsFrame:ResetBtns(tabName)
+    mainFrame:ResetBtns(tabName)
   end)
   table.insert(tabActionsItems, tdlFrame.btnUncheck)
 
@@ -1595,7 +1508,7 @@ local function generateTabActions()
   tdlFrame.btnClear = widgets:Button("clearButton", tdlFrame, L["Clear"], "Interface\\GLUES\\LOGIN\\Glues-CheckBox-Check")
   tdlFrame.btnClear:SetScript("onClick", function(self)
     local tabName = self:GetParent():GetName()
-    itemsFrame:ClearTab(tabName)
+    mainFrame:ClearTab(tabName)
   end)
   table.insert(tabActionsItems, tdlFrame.btnClear)
 end
@@ -1610,7 +1523,7 @@ local function generateOptions()
 
     tutorialsManager:Validate("accessOptions") -- tutorial
 
-    itemsFrame:ReloadTab() -- we reload the frame to display the changes
+    mainFrame:ReloadTab() -- we reload the frame to display the changes
   end)
 
   --/************************************************/--
@@ -1721,7 +1634,7 @@ local function generateFrameContent()
   -- undo button
   tdlFrame.undoButton = CreateFrame("Button", "undoButton_tdlFrame", tdlFrame, "NysTDL_UndoButton")
   tdlFrame.undoButton.tooltip = L["Undo last remove/clear"]
-  tdlFrame.undoButton:SetScript("OnClick", itemsFrame.UndoRemove)
+  tdlFrame.undoButton:SetScript("OnClick", mainFrame.UndoRemove)
   tdlFrame.undoButton:Hide()
 
   -- add a category button
@@ -1746,7 +1659,7 @@ end
 
 -- // Profile init & change
 
-function itemsFrame:ResetContent()
+function mainFrame:ResetContent()
   -- considering I don't want to reload the UI when we change the current profile,
   -- we have to reset all the frame ourserves, so that means:
 
@@ -1788,7 +1701,7 @@ function itemsFrame:ResetContent()
   autoResetedThisSession = false
 end
 
-function itemsFrame:Init(profileChanged)
+function mainFrame:Init(profileChanged)
   -- this one is for keeping track of the old itemsList when we reset,
   -- so that we can hide everything when we change profiles
   currentDBItemsList = NysTDL.db.profile.itemsList
@@ -1805,9 +1718,9 @@ function itemsFrame:Init(profileChanged)
 
   -- Generating the core once --
   for catName, items in pairs(NysTDL.db.profile.itemsList) do
-    itemsFrame:CreateMovableLabelElems(catName) -- Category labels
+    mainFrame:CreateMovableLabelElems(catName) -- Category labels
     for itemName in pairs(items) do
-      itemsFrame:CreateMovableCheckBtnElems(catName, itemName) -- All items transformed as checkboxes
+      mainFrame:CreateMovableCheckBtnElems(catName, itemName) -- All items transformed as checkboxes
     end
   end
 
@@ -1824,7 +1737,7 @@ function itemsFrame:Init(profileChanged)
   -- end
 
   -- then we update everything
-  itemsFrame:ReloadTab() -- We load the good tab
+  mainFrame:ReloadTab() -- We load the good tab
 
   -- and we reload the saved variables needing an update
   tdlFrame.frameAlphaSlider:SetValue(NysTDL.db.profile.frameAlpha)
@@ -1839,7 +1752,7 @@ end
 
 -- // Creating the main frame
 
-function itemsFrame:CreateTDLFrame()
+function mainFrame:CreateTDLFrame()
   -- local btn = CreateFrame("Frame", nil, UIParent, "LargeUIDropDownMenuTemplate")
   -- btn:SetPoint("CENTER")
   -- UIDropDownMenu_SetWidth(btn, 200)
@@ -1960,7 +1873,7 @@ function itemsFrame:CreateTDLFrame()
   AllTab, DailyTab, WeeklyTab = SetTabs(tdlFrame, 3, L["All"], L["Daily"], L["Weekly"])
 
   -- Initializing the frame with the current data
-  itemsFrame:Init(false)
+  mainFrame:Init(false)
 
   -- when we're here, the list was just created, so it is opened by default already,
   -- then we decide what we want to do with that
@@ -1975,7 +1888,7 @@ end
 
 -- // creating the button to toggle it (if set in options)
 
-function itemsFrame:CreateTDLButton()
+function mainFrame:CreateTDLButton()
   -- Creating the big button to easily toggle the frame
   tdlButton = widgets:Button("tdlButton", UIParent, string.gsub(core.toc.title, "Ny's ", ""))
   tdlButton:SetFrameLevel(100)
@@ -1997,7 +1910,7 @@ function itemsFrame:CreateTDLButton()
   self:RefreshTDLButton()
 end
 
-function itemsFrame:RefreshTDLButton()
+function mainFrame:RefreshTDLButton()
   local points = NysTDL.db.profile.tdlButton.points
   tdlButton:ClearAllPoints()
   tdlButton:SetPoint(points.point, nil, points.relativePoint, points.xOffset, points.yOffset) -- relativeFrame = nil -> entire screen
@@ -2006,7 +1919,7 @@ end
 
 --/***************/ INITIALIZATION /******************/--
 
-function itemsFrame:Initialize()
+function mainFrame:Initialize()
   self:CreateTDLFrame()
   self:CreateTDLButton()
 end

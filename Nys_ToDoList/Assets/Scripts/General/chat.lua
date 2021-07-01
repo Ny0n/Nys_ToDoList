@@ -6,7 +6,7 @@ local core = addonTable.core
 local chat = addonTable.chat
 local utils = addonTable.utils
 local database = addonTable.database
-local itemsFrame = addonTable.itemsFrame
+local mainFrame = addonTable.mainFrame
 local tutorialsManager = addonTable.tutorialsManager
 
 -- Variables
@@ -44,13 +44,13 @@ end
 
 -- Warning function
 function chat:Warn()
-  if (not itemsFrame:autoResetedThisSessionGET()) then -- we don't want to show this warning if it's the first log in of the day, only if it is the next ones
+  if (not mainFrame:autoResetedThisSessionGET()) then -- we don't want to show this warning if it's the first log in of the day, only if it is the next ones
     if (NysTDL.db.profile.showWarnings) then
       local haveWarned = false
       local warn = "--------------| |cffff0000"..L["WARNING"].."|r |--------------"
 
       if (NysTDL.db.profile.favoritesWarning) then -- and the user allowed this functionnality
-        local _, _, _, ucFavs = itemsFrame:updateRemainingNumbers()
+        local _, _, _, ucFavs = mainFrame:updateRemainingNumbers()
         local daily, weekly = ucFavs.Daily, ucFavs.Weekly
         if ((daily + weekly) > 0) then -- and there is at least one daily or weekly favorite left to do
           local str = ""
@@ -82,7 +82,7 @@ function chat:Warn()
       end
 
       if (NysTDL.db.profile.normalWarning) then
-        local _, _, uc = itemsFrame:updateRemainingNumbers()
+        local _, _, uc = mainFrame:updateRemainingNumbers()
         local daily, weekly = uc.Daily, uc.Weekly
         if ((daily + weekly) > 0) then -- and there is at least one daily or weekly item left to do (favorite or not)
           local total = 0
@@ -122,7 +122,7 @@ end
 -- Commands:
 chat.commands = {
   [""] = function()
-    itemsFrame:Toggle()
+    mainFrame:Toggle()
   end,
 
   [L["info"]] = function()

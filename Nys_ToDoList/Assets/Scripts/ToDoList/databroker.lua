@@ -2,12 +2,12 @@
 local addonName, addonTable = ...
 
 -- addonTable aliases
-local databroker = addonTable.databroker
 local core = addonTable.core
 local utils = addonTable.utils
 local widgets = addonTable.widgets
 local database = addonTable.database
-local itemsFrame = addonTable.itemsFrame
+local mainFrame = addonTable.mainFrame
+local databroker = addonTable.databroker
 local optionsManager = addonTable.optionsManager
 
 -- Variables
@@ -61,7 +61,7 @@ function databroker:SetSimpleMode()
       optionsManager:ToggleOptions()
     else
       -- toggle the list
-      itemsFrame:Toggle()
+      mainFrame:Toggle()
     end
   end
   function o:OnTooltipShow(tooltip)
@@ -112,7 +112,7 @@ function databroker:SetAdvancedMode()
       optionsManager:ToggleOptions()
     else
       -- toggle the list
-      itemsFrame:Toggle()
+      mainFrame:Toggle()
     end
   end
   function o:OnTooltipShow(tooltip)
@@ -129,7 +129,7 @@ function databroker:CreateTooltipFrame()
   self.tooltipFrame:Hide()
 end
 
-function databroker:SetAdvancedMode()
+function databroker:SetFrameMode()
   local o = self.object
   table.wipe(o)
 
@@ -156,6 +156,7 @@ function databroker:CreateDatabrokerObject()
 end
 
 -- minimap button
+
 function databroker:CreateMinimapButton()
   -- Registering the data broker and creating the button
   LDBIcon:Register(addonName, self.object, NysTDL.db.profile.minimap)

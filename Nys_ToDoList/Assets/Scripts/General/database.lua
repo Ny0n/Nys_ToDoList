@@ -547,8 +547,8 @@ function database:ProfileChanged(_, profile)
   self:DBInit() -- in case the selected profile is empty XXX: test self
 
   -- we update the changes for the list
-  itemsFrame:ResetContent()
-  itemsFrame:Init(true)
+  mainFrame:ResetContent()
+  mainFrame:Init(true)
 
   -- we update the changes to the options (since I now use tabs and the options are not instantly getting a refresh when changing profiles)
   optionsManager:CallAllGETTERS()
