@@ -8,7 +8,7 @@ local utils = addonTable.utils
 -- Variables
 local L = addonTable.core.L
 
-local dummyFrame = nil -- XXX
+local dummyFrame = nil -- TODO
 
 --/*******************/ FRAMES /*************************/--
 

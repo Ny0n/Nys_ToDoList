@@ -27,11 +27,17 @@ database.defaults = {
     addonUpdated = true, -- used to call an update func in init, only once after each addon update
     latestVersion = "", -- used to update the global saved variables once after each addon update
 
-    -- // DATA
+    -- // GLOBAL DATA
     nextID = 1, -- unique id used for everything in the list, will be incremented towards infinity
     itemsList = {},
     categoriesList = {},
-    tabsList = {},
+    tabsList = {
+      orderedTabIDs = { -- to have an order in which we display the tabs buttons
+        -- [tabID], -- [1]
+        -- [tabID], -- [2]
+        -- ... -- [...]
+      },
+    },
 
     -- // Misc
     tuto_progression = 0,
@@ -42,18 +48,24 @@ database.defaults = {
     -- // Version
     latestVersion = "", -- used to update the profile saved variables once after each addon update, independent for each profile
 
-    -- // DATA
+    -- // PROFILE DATA
     itemsList = {},
     categoriesList = {},
-    tabsList = {},
+    tabsList = {
+      orderedTabIDs = { -- to have an order in which we display the tabs buttons
+        -- [tabID], -- [1]
+        -- [tabID], -- [2]
+        -- ... -- [...]
+      },
+    },
     undoTable = {},
 
     currentTab = tabID, -- TODO
 
     -- // Misc
     lastListVisibility = false,
-    lockList = false,
-    lockButton = false,
+    lockList = false, -- TODO
+    lockButton = false, -- TODO
 
     -- // Frame Options
     framePos = { point = "CENTER", relativePoint = "CENTER", xOffset = 0, yOffset = 0 },

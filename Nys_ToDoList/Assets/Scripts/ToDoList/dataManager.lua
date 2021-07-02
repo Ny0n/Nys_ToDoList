@@ -10,11 +10,18 @@ local database = addonTable.database
 local autoReset = addonTable.autoReset
 local mainFrame = addonTable.mainFrame
 local dataManager = addonTable.dataManager
+local resetManager = addonTable.resetManager
 local optionsManager = addonTable.optionsManager
 local tutorialsManager = addonTable.tutorialsManager
 
 -- Variables
 local L = core.L
+
+local maxNameWidth = {
+	itemsList = 240,
+	categoriesList = 220,
+	tabsList = 80,
+}
 
 -- global aliases
 local wipe = wipe
@@ -33,121 +40,35 @@ end
 
 -- misc functions
 
-local T_Find = {
-	-- where to look in the global saved database variable
-	locations = { "global", "profile" },
-	tables = { "itemsList", "categoriesList", "tabsList" },
-	tablesToReturn = {},
-}
 function dataManager:Find(ID)
 	-- returns all necessary data concerning a given ID
 	-- usage: local exists, isGlobal, tableName, tableData, itemsList, categoriesList, tabsList = dataManager:Find(ID)
 
-	local found, tableName, tableData = false
-
-	for _,loc in pairs(T_Find.locations) do -- global, profile
-		wipe(T_Find.tablesToReturn)
-
-		for _,table in pairs(T_Find.tables) do -- "itemsList", "categoriesList", "tabsList"
-			tinsert(T_Find.tablesToReturn, NysTDL.db[loc][table])
-			if NysTDL.db[loc][table] and NysTDL.db[loc][table][ID] ~= nil then -- presence test
-				found = true
-				tableName = table
-				tableData = NysTDL.db[loc][table][ID]
+	for i=1,2 do -- global, profile
+		local isGlobal = i==2
+		local locations = dataManager:GetData(isGlobal, true)
+		for name,table in pairs(locations) do -- itemsList, categoriesList, tabsList
+			if table[ID] ~= nil then -- presence test
+				return true, isGlobal, name, table, dataManager:GetData(isGlobal)
 			end
 		end
-
-		if found then
-			return true, loc == "global", tableName, tableData, unpack(T_Find.tablesToReturn)
-		end
 	end
-
 	return false
 end
 
-function dataManager:IsProtected(ID)
-	local exists, _, tableName, dataTable = dataManager:Find(ID)
-	if not exists then error("ID does not exist?!") end -- TODO
+function dataManager:GetData(isGlobal, tableMode)
+	-- returns itemsList, categoriesList, and tabsList located either in the global or profile SV
+	-- as a table if asked so
 
-	if tableName == "itemsList" then -- item
-		return dataTable.favorite or dataTable.description
-	elseif tableName == "categoriesList" then -- category
-		return false -- TODO
-	elseif tableName == "tabsList" then -- tab
-		return false -- TODO
-	end
-end
-
-function dataManager:GetCategoryOrdersLoc(catID, tabID)
-	-- since categories are either located in an other category (as a sub-category) or in a tab,
-	-- this is to easily get the good orders table where a category is in a certain tab
-	local catData, _, categoriesList, tabsList = select(4, dataManager:Find(catID))
-	local parentCatID = catData.parentsInTabIDs[tabID] -- nil or parentCatID
-	return parentCatID and categoriesList[parentCatID].orderedContentIDs or tabsList[tabID].orderedCatIDs
-end
-
-local T_UpdateTabsDisplay = {
-	itemsList = {},
-	categoriesList = {},
-}
-function dataManager:UpdateTabsDisplay(originalTabID, modif, ID, catOrder)
-	-- modif means adding/removing, modif = true --> adding, modif = false/nil --> removing
-	if modif == false then modif = nil end
-	-- ID is for only updating one specific ID, instead of going through everything
-	local tableName, data, itemsList, categoriesList, tabsList = select(3, dataManager:Find(ID or originalTabID))
-
-	if ID then
-		itemsList = T_UpdateTabsDisplay.itemsList
-		categoriesList = T_UpdateTabsDisplay.categoriesList
-		wipe(itemsList)
-		wipe(itemsList)
-		if tableName == "categoriesList" then -- single category
-			categoriesList[ID] = data
-		elseif tableName == "itemsList" then -- single item
-			itemsList[ID] = data
-		end
-	end
-
-	for tabID,tabData in pairs(tabsList) do -- for every tab
-		if tabID == "orderedTabIDs" then goto nextTab end
-		if not tabData.shownIDs[originalTabID] then goto nextTab end -- that is showing the originalTabID
-
-		-- we go through every category and every item, and for each that have
-		-- the original tab equal to originalTabID, we add the current tab to their tabIDs
-		for catID,catData in pairs(categoriesList) do
-			if catData.originalTabID == originalTabID then -- important
-				catData.tabIDs[tabID] = modif
-				if not catData.parentsInTabIDs[catData.originalTabID] then -- if it's not a sub-category, we edit it in its tab orders
-					if modif and not utils:HasValue(tabData.orderedCatIDs, catID) and not ID then
-						-- we add it ordered in the tab if it wasn't here already
-						local ordersLoc = tabData.orderedCatIDs
-						tinsert(ordersLoc, 1, catID)
-					elseif not modif then
-						tremove(tabData.orderedCatIDs, select(2, utils:HasValue(tabData.orderedCatIDs, catID)))
-					end
-				end
-			end
-		end
-
-		for itemID,itemData in pairs(itemsList) do
-			if itemData.originalTabID == originalTabID then -- important
-				itemData.tabIDs[tabID] = modif
-			end
-		end
-
-		::nextTab::
-	end
-end
-
-function dataManager:UpdateShownTabID(tabID, shownTabID, state)
-	-- to add/remove shown IDs in tabs
-	local tabData = select(4, dataManager:Find(tabID))
-	if state then
-		tabData.shownIDs[shownTabID] = true
-		dataManager:UpdateTabsDisplay(shownTabID, true)
+	local loc = isGlobal and NysTDL.db.global or NysTDL.db.profile
+	if tableMode then
+		return {
+			["itemsList"] = loc.itemsList,
+			["categoriesList"] = loc.categoriesList,
+			["tabsList"] = loc.tabsList
+		}
 	else
-		dataManager:UpdateTabsDisplay(shownTabID)
-		tabData.shownIDs[shownTabID] = nil
+		return loc.itemsList, loc.categoriesList, loc.tabsList
 	end
 end
 
@@ -159,6 +80,9 @@ function dataManager:CreateItem(itemName, tabID, catID)
 	-- creates the formatted item table with the given arguments,
 	-- this table will then be sent to AddItem who will properly
 	-- add the item and its dependencies to the saved variables
+
+	-- first, we check what needs to be checked
+	if not dataManager:CheckName(itemName, "itemsList") then return end
 
 	local newItem = { -- itemData
     name = itemName,
@@ -199,8 +123,10 @@ function dataManager:AddItem(itemData, itemID, itemOrder)
 		-- we add it ordered in its category
 		if not categoriesList[catID] then error("Category does not exist?!") end -- TODO
 		local cIDs = categoriesList[catID].orderedContentIDs
-		tinsert(cIDs, itemOrder[catID] > #cIDs and #cIDs + 1 or itemOrder[catID], itemID)
+		tinsert(cIDs, itemOrder[catID] > #cIDs and #cIDs + 1 or itemOrder[catID], itemID) -- saved order or first
 	end
+
+	return itemID
 end
 
 -- category
@@ -212,6 +138,9 @@ function dataManager:CreateCategory(catName, tabID, parentCatID)
 
 	-- when creating a new category, there can only be one parent (if any),
 	-- we can add others later
+
+	-- first, we check what needs to be checked
+	if not dataManager:CheckName(catName, "categoriesList") then return end
 
 	local newCategory = { -- catData
     name = catName,
@@ -253,40 +182,82 @@ function dataManager:AddCategory(catData, catID, catOrder)
 	for tabID in pairs(catData.tabIDs) do
 		-- and we add it ordered in the right places
 		local ordersloc = dataManager:GetCategoryOrdersLoc(catID, tabID)
-		tinsert(ordersloc, catOrder[catID] > #ordersloc and #ordersloc + 1 or catOrder[catID], catID)
+		tinsert(ordersloc, catOrder[catID] > #ordersloc and #ordersloc + 1 or catOrder[catID], catID) -- saved order or first
 	end
+
+	return catID
 end
 
 -- tab
 
-function dataManager:CreateTab(tabName, tabID, parentCatID)
+function dataManager:CreateTab(tabName)
 	-- creates the formatted tab table with the given arguments,
 	-- this table will then be sent to AddTab who will properly
 	-- add the tab and its dependencies to the saved variables
 
-	local newTab
+	-- first, we check what needs to be checked
+	if not dataManager:CheckName(tabName, "tabsList") then return end
 
-	-- TODO
+	local newTab = { -- tabData
+    name = "tabName",
+		orderedCatIDs = { -- content of the tab, ordered (table.insert(contentOrderedIDs, 1, ID)), FIRST LOOP ON THIS FOR CATEGORIES
+      -- [catID], -- [1]
+      -- [catID], -- [2]
+      -- ... -- [...]
+    },
+    -- reset data
+    reset = { -- content is user set
+      sameEachDay = true,
+      resetData = resetManager:NewResetData(),
+      days = {
+        -- [2] = resetData,
+        -- [3] = resetData,
+        -- ...
+      },
+    },
+    resetTimerID = 0, -- at load time
+		-- tab specific data
+		shownIDs = { -- user set
+      [tabID] = true, -- self forced
+      -- [tabID] = true,
+      -- ...
+    },
+    hideCheckedItems = false, -- user set
+  }
 
 	return newTab
 end
 
-function dataManager:AddTab(tabData, tabID, tabOrder)
-	-- TODO
+function dataManager:AddTab(tabData, isGlobal, tabID, tabOrder)
+	-- catData is either coming from CreateTab or is already a full fleshed tab coming from the undo table
+	tabID = tabID or dataManager:newID()
+
+	-- we add the tab to the saved variables
+
+	-- so first we get where we are, aka corresponding saved variables
+	local itemsList, categoriesList, tabsList = dataManager:GetData(isGlobal)
+
+	tabOrder = tabOrder or #tabsList.orderedTabIDs + 1 -- a tab either is new and is put last in line, or comes from an undo and already has an order
+
+	tabsList[tabID] = tabData -- adding action
+
+	for shownID in pairs(tabData.shownIDs) do
+		dataManager:UpdateShownTabID(tabID, shownID, true)
+	end
+
+	-- and we add it ordered in the tabs table
+	local oIDs = tabsList.orderedTabIDs
+	tinsert(oIDs, tabOrder <= #oIDs and tabOrder or #oIDs + 1, tabID) -- saved order or last
+
+	return tabID
 end
 
 -- // moving functions
 
 -- item
 
-function dataManager:MoveItem(itemID, newName, oldPos, newPos, oldCatID, newCatID, oldTabID, newTabID)
+function dataManager:MoveItem(itemID, oldPos, newPos, oldCatID, newCatID, oldTabID, newTabID)
 	local itemData = select(4, dataManager:Find(itemID))
-
-	-- name
-	if newName then
-		itemData.name = newName
-		return -- only a rename
-	end
 
 	-- position (order)
 	if oldCatID ~= newCatID or oldPos ~= newPos then
@@ -311,14 +282,8 @@ end
 
 -- category
 
-function dataManager:MoveCategory(catID, newName, oldPos, newPos, oldParentID, newParentID, oldTabID, newTabID)
+function dataManager:MoveCategory(catID, oldPos, newPos, oldParentID, newParentID, oldTabID, newTabID)
 	local catData, itemsList, categoriesList, tabsList = select(4, dataManager:Find(catID))
-
-	-- name
-	if newName then
-		catData.name = newName
-		return -- only a rename
-	end
 
 	-- position (order)
 	if oldPos ~= newPos or oldParentID ~= newParentID then
@@ -343,9 +308,9 @@ function dataManager:MoveCategory(catID, newName, oldPos, newPos, oldParentID, n
 		for _,contentID in pairs(catData.orderedContentIDs) do
 			local tableName = select(3, dataManager:Find(contentID))
 			if tableName == "categoriesList" then -- category
-				dataManager:MoveCategory(contentID, nil, nil, nil, nil, nil, oldTabID, newTabID)
+				dataManager:MoveCategory(contentID, nil, nil, nil, nil, oldTabID, newTabID)
 			else -- item
-				dataManager:MoveItem(contentID, nil, nil, nil, nil, nil, oldTabID, newTabID)
+				dataManager:MoveItem(contentID, nil, nil, nil, nil, oldTabID, newTabID)
 			end
 		end
 	end
@@ -355,7 +320,7 @@ end
 
 -- tab
 
-function dataManager:MoveTab(tabID, newName, oldPos, newPos, oldGlobalState, newGlobalState)
+function dataManager:MoveTab(tabID, oldPos, newPos, oldGlobalState, newGlobalState)
 	-- TODO
 end
 
@@ -429,7 +394,7 @@ function dataManager:DeleteTab(tabID, empty)
 
   -- we delete the tab and all its related data
 
-	local undoData = dataManager:CreateUndo(catID)
+	local undoData = dataManager:CreateUndo(tabID)
 	local nbToDelete = #tabData.orderedCatIDs
 
  	-- we delete everything inside the tab, this means every category inside of it
@@ -437,7 +402,7 @@ function dataManager:DeleteTab(tabID, empty)
 		dataManager:DeleteCat(catID)
 	end
 
-	if #tabsList.orderedCatIDs == 0 and not empty then -- we removed everything from the tab, now we delete it
+	if #tabData.orderedCatIDs == 0 and not empty then -- we removed everything from the tab, now we delete it
 		-- we remove the tab from its orders table
 		tremove(tabsList.orderedTabIDs, select(2, utils:HasValue(tabsList.orderedTabIDs, tabID)))
 
@@ -451,14 +416,15 @@ end
 -- // undo feature
 
 function dataManager:CreateUndo(ID)
-	local exists, _, tableName, tableData, _, categoriesList, tabsList = dataManager:Find(ID)
+	local exists, isGlobal, tableName, tableData, _, categoriesList, tabsList = dataManager:Find(ID)
 	if not exists then error("Cannot create new undo: ID does not exist!") end -- TODO
 
 	local newUndo = { -- number for clears, table for single data
     tableName = tableName,
     ID = ID,
     orders = {},
-    data = tableData,
+    data = utils:Deepcopy(tableData),
+		isGlobal = isGlobal, -- used exclusively for tabs
 	}
 
 	-- this is to keep the orders the removed object was if we want to undo the remove
@@ -504,11 +470,110 @@ function dataManager:Undo()
 	elseif toUndo.tableName == "categoriesList" then -- category
 		dataManager:AddCategory(toUndo.data, toUndo.ID, toUndo.orders)
 	elseif toUndo.tableName == "tabList" then -- tab
-		-- TODO
+		dataManager:AddTab(toUndo.data, toUndo.isGlobal, toUndo.ID, toUndo.orders)
 	end
 end
 
---/*******************/ ITEM CONTROL /*************************/--
+--/*******************/ DATA CONTROL /*************************/--
+
+-- misc
+
+local T_UpdateTabsDisplay = {
+	itemsList = {},
+	categoriesList = {},
+}
+function dataManager:UpdateTabsDisplay(originalTabID, modif, ID)
+	-- modif means adding/removing, modif = true --> adding, modif = false/nil --> removing
+	if modif == false then modif = nil end
+	-- ID is for only updating one specific ID, instead of going through everything
+	local tableName, data, itemsList, categoriesList, tabsList = select(3, dataManager:Find(ID or originalTabID))
+
+	if ID then
+		itemsList = T_UpdateTabsDisplay.itemsList
+		categoriesList = T_UpdateTabsDisplay.categoriesList
+		wipe(itemsList)
+		wipe(itemsList)
+		if tableName == "categoriesList" then -- single category
+			categoriesList[ID] = data
+		elseif tableName == "itemsList" then -- single item
+			itemsList[ID] = data
+		end
+	end
+
+	for tabID,tabData in pairs(tabsList) do -- for every tab
+		if tabID == "orderedTabIDs" then goto nextTab end
+		if not tabData.shownIDs[originalTabID] then goto nextTab end -- that is showing the originalTabID
+
+		-- we go through every category and every item, and for each that have
+		-- the original tab equal to originalTabID, we add the current tab to their tabIDs
+		for catID,catData in pairs(categoriesList) do
+			if catData.originalTabID == originalTabID then -- important
+				catData.tabIDs[tabID] = modif
+				if not catData.parentsInTabIDs[catData.originalTabID] then -- if it's not a sub-category, we edit it in its tab orders
+					if modif and not utils:HasValue(tabData.orderedCatIDs, catID) and not ID then
+						-- we add it ordered in the tab if it wasn't here already
+						local ordersLoc = tabData.orderedCatIDs
+						tinsert(ordersLoc, 1, catID)
+					elseif not modif then
+						tremove(tabData.orderedCatIDs, select(2, utils:HasValue(tabData.orderedCatIDs, catID)))
+					end
+				end
+			end
+		end
+
+		for itemID,itemData in pairs(itemsList) do
+			if itemData.originalTabID == originalTabID then -- important
+				itemData.tabIDs[tabID] = modif
+			end
+		end
+
+		::nextTab::
+	end
+end
+
+function dataManager:GetCategoryOrdersLoc(catID, tabID)
+	-- since categories are either located in an other category (as a sub-category) or in a tab,
+	-- this is to easily get the good orders table where a category is in a certain tab
+	local catData, _, categoriesList, tabsList = select(4, dataManager:Find(catID))
+	local parentCatID = catData.parentsInTabIDs[tabID] -- nil or parentCatID
+	return parentCatID and categoriesList[parentCatID].orderedContentIDs or tabsList[tabID].orderedCatIDs
+end
+
+function dataManager:CheckName(name, tableName)
+	if #name == 0 then -- empty
+		-- TODO message
+		return false
+	elseif widgets:GetWidth(name) > maxNameWidth[tableName] then -- width
+		-- TODO message
+		return false
+	end
+
+	return true
+end
+
+function dataManager:Rename(ID, newName)
+	local tableName, dataTable = select(3, dataManager:Find(ID))
+
+	if not dataManager:CheckName(newName, tableName) then return end
+
+	data.name = newName
+	return true
+end
+
+function dataManager:IsProtected(ID)
+	local exists, _, tableName, dataTable = dataManager:Find(ID)
+	if not exists then error("ID does not exist?!") end -- TODO
+
+	if tableName == "itemsList" then -- item
+		return dataTable.favorite or dataTable.description
+	elseif tableName == "categoriesList" then -- category
+		return false -- TODO
+	elseif tableName == "tabsList" then -- tab
+		return false -- TODO
+	end
+end
+
+-- items
 
 function dataManager:UncheckTab(tabID)
 	local itemsList = select(5, dataManager:Find(tabID))
@@ -528,4 +593,74 @@ function dataManager:CheckTab(tabID)
 		itemData.checked = true
 		::nextItem::
 	end
+end
+
+function dataManager:ToggleChecked(itemID)
+	local itemData = select(4, dataManager:Find(itemID))
+	itemData.checked = not itemData.checked
+	return itemData.checked
+end
+
+function dataManager:ToggleFavorite(itemID)
+	local itemData = select(4, dataManager:Find(itemID))
+	itemData.favorite = not itemData.favorite
+	return itemData.favorite
+end
+
+function dataManager:UpdateDescription(itemID, description)
+	local itemData = select(4, dataManager:Find(itemID))
+	if description == "" then description = false end
+	itemData.description = description
+	return itemData.description
+end
+
+-- categories
+
+-- tabs
+
+function dataManager:UpdateShownTabID(tabID, shownTabID, state)
+	-- to add/remove shown IDs in tabs
+	local tabData = select(4, dataManager:Find(tabID))
+	if state then
+		tabData.shownIDs[shownTabID] = true
+		dataManager:UpdateTabsDisplay(shownTabID, true)
+	else
+		dataManager:UpdateTabsDisplay(shownTabID)
+		tabData.shownIDs[shownTabID] = nil
+	end
+end
+
+--/*******************/ UTILS /*************************/--
+
+local T_GetRemainingNumbers = {}
+function dataManager:GetRemainingNumbers(tabID)
+	local tabData, itemsList = select(4, dataManager:Find(tabID))
+	local t = T_GetRemainingNumbers
+
+	wipe(t)
+	t.checked = 0
+	t.checkedFavs = 0
+	t.checkedDesc = 0
+	t.unchecked = 0
+	t.uncheckedFavs = 0
+	t.uncheckedDesc = 0
+	t.total = 0
+	for itemID,itemData in pairs(itemsList) do
+		if not itemData.tabIDs[tabID] then goto nextItem end -- for each item that is in the tab
+
+		if itemData.checked then
+			t.checked = t.checked + 1
+			if itemData.favorite then t.checkedFavs = t.checkedFavs + 1 end
+			if itemData.description then t.checkedDesc = t.checkedDesc + 1 end
+		else
+			t.unchecked = t.unchecked + 1
+			if itemData.favorite then t.uncheckedFavs = t.uncheckedFavs + 1 end
+			if itemData.description then t.uncheckedDesc = t.uncheckedDesc + 1 end
+		end
+		t.total = t.total + 1
+
+		::nextItem::
+	end
+
+	return t
 end

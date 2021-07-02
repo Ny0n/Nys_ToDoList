@@ -222,57 +222,6 @@ function mainFrame:updateRemainingNumbers()
 
   local tab = tdlFrame.remainingNumber:GetParent()
 
-  local numberCheckedAll, numberCheckedDaily, numberCheckedWeekly = 0, 0, 0
-  local numberCheckedFavAll, numberCheckedFavDaily, numberCheckedFavWeekly = 0, 0, 0
-  local numberUncheckedAll, numberUncheckedDaily, numberUncheckedWeekly = 0, 0, 0
-  local numberUncheckedFavAll, numberUncheckedFavDaily, numberUncheckedFavWeekly = 0, 0, 0
-  for _, items in pairs(NysTDL.db.profile.itemsList) do -- for every item
-    for _, data in pairs(items) do
-      -- All tab
-      if (ItemIsInTab(data.tabName, "All")) then
-        if (data.checked) then
-          numberCheckedAll = numberCheckedAll + 1 -- then it's one more done
-          if (data.favorite) then -- and we check for the favorite state too
-            numberCheckedFavAll = numberCheckedFavAll + 1
-          end
-        else
-          numberUncheckedAll = numberUncheckedAll + 1
-          if (data.favorite) then
-            numberUncheckedFavAll = numberUncheckedFavAll + 1
-          end
-        end
-      end
-      -- Daily tab
-      if (ItemIsInTab(data.tabName, "Daily")) then
-        if (data.checked) then
-          numberCheckedDaily = numberCheckedDaily + 1
-          if (data.favorite) then
-            numberCheckedFavDaily = numberCheckedFavDaily + 1
-          end
-        else
-          numberUncheckedDaily = numberUncheckedDaily + 1
-          if (data.favorite) then
-            numberUncheckedFavDaily = numberUncheckedFavDaily + 1
-          end
-        end
-      end
-      -- Weekly tab
-      if (ItemIsInTab(data.tabName, "Weekly")) then
-        if (data.checked) then
-          numberCheckedWeekly = numberCheckedWeekly + 1
-          if (data.favorite) then
-            numberCheckedFavWeekly = numberCheckedFavWeekly + 1
-          end
-        else
-          numberUncheckedWeekly = numberUncheckedWeekly + 1
-          if (data.favorite) then
-            numberUncheckedFavWeekly = numberUncheckedFavWeekly + 1
-          end
-        end
-      end
-    end
-  end
-
   -- we update the numbers of remaining things to do for the current tab
   if (tab == AllTab) then
     tdlFrame.remainingNumber:SetText(((numberUncheckedAll > 0) and "|cffffffff" or "|cff00ff00")..numberUncheckedAll.."|r")
@@ -329,29 +278,6 @@ function mainFrame:updateRemainingNumbers()
       end
     end
   end
-
-  -- and finally we put our variables in tables so they are easier to access on the other end
-  wipe(T_updateRemainingNumbers_1)
-  wipe(T_updateRemainingNumbers_2)
-  wipe(T_updateRemainingNumbers_3)
-  wipe(T_updateRemainingNumbers_4)
-  local checked = T_updateRemainingNumbers_1
-  checked.All = numberCheckedAll
-  checked.Daily = numberCheckedDaily
-  checked.Weekly = numberCheckedWeekly
-  local checkedFavs = T_updateRemainingNumbers_2
-  checkedFavs.All = numberCheckedFavAll
-  checkedFavs.Daily = numberCheckedFavDaily
-  checkedFavs.Weekly = numberCheckedFavWeekly
-  local unchecked = T_updateRemainingNumbers_3
-  unchecked.All = numberUncheckedAll
-  unchecked.Daily = numberUncheckedDaily
-  unchecked.Weekly = numberUncheckedWeekly
-  local uncheckedFavs = T_updateRemainingNumbers_4
-  uncheckedFavs.All = numberUncheckedFavAll
-  uncheckedFavs.Daily = numberUncheckedFavDaily
-  uncheckedFavs.Weekly = numberUncheckedFavWeekly
-  return checked, checkedFavs, unchecked, uncheckedFavs -- and we return them, so that we can access it eg. in the favorites warning function
 end
 
 function mainFrame:updateCheckButtonsColor()
