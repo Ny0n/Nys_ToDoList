@@ -39,9 +39,19 @@
 -- end
 
 local a = {}
-a[nil] = 5
+a["ola"] = 5
+a["bla"] = 6
+a["nil"] = 7
 
-print(a[nil])
+for k,v in next, a do
+  print(k, v)
+end
+
+print(next(a, nil))
+print(next(a, "ola"))
+for i = 1, 3 do
+
+end
 
 -- local a = { ["ola"] = 1, ["bla"] = 2, ["oula"] = 3 }
 -- local a = { 1, 2, 3 }

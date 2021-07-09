@@ -9,6 +9,10 @@ local L = addonTable.core.L
 
 --/*******************/ COMMON (utils) FUNCTIONS /*************************/--
 
+function utils:Clamp(number, min, max)
+  return math.min(math.max(number, min), max)
+end
+
 function utils:RGBToHex(rgb)
 	local hexadecimal = ""
 
@@ -109,17 +113,17 @@ function utils:HasHyperlink(s)
 end
 
 function utils:HasValue(table, value)
-  local isPresent, pos = false, 0
+  local isPresent, key = false, 0
   if type(table) == "table" then -- just in case
-	  for key, v in pairs(table) do
+	  for k, v in pairs(table) do
 	    if v == value then
 	      isPresent = true
-	      pos = key
+	      key = k
 	      break
 	    end
 	  end
   end
-  return isPresent, pos
+  return isPresent, key
 end
 
 function utils:HasKey(table, key)
