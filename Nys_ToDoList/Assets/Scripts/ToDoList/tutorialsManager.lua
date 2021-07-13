@@ -90,7 +90,7 @@ function tutorialsManager:SetFramesScale(scale)
 end
 
 function tutorialsManager:UpdateFramesVisibility()
-  -- here we manage the visibility of the tutorial frames, showing them if their corresponding buttons is shown, their tuto has not been completed (false) and the previous one is true.
+  -- here we manage the visibility of the tutorial frames, showing them if their corresponding frames are shown, their tuto has not been completed (false) and the previous one is true.
   if (NysTDL.db.global.tuto_progression < #tutorialOrder) then
     for i, v in pairs(tutorialOrder) do
       local r = false
@@ -106,7 +106,7 @@ function tutorialsManager:UpdateFramesVisibility()
   elseif (NysTDL.db.global.tuto_progression == #tutorialOrder) then -- we completed the last tutorial
     tutorialFrames[tutorialOrder[#tutorialOrder]]:SetShown(false) -- we don't need to do the big loop above, we just need to hide the last tutorial frame (it's just optimization)
     NysTDL.db.global.tuto_progression = NysTDL.db.global.tuto_progression + 1 -- and we also add a step of progression, just so that we never enter this 'if' again. (optimization too :D)
-    ItemsFrame_OnVisibilityUpdate() -- XXX and finally, we reset the menu openings of the list at the end of the tutorial, for more visibility
+    ItemsFrame_OnVisibilityUpdate() -- TODO and finally, we reset the menu openings of the list at the end of the tutorial, for more visibility
   end
 end
 
@@ -130,7 +130,7 @@ end
 
 --/*******************/ INIT /*************************/--
 
-function tutorialsManager:Init()
+function tutorialsManager:Initialize()
   tdlFrame = mainFrame:GetFrame()
   self:GenerateFrames()
 end

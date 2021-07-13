@@ -4,11 +4,13 @@ local addonName, addonTable = ...
 -- addonTable aliases
 local core = addonTable.core
 local chat = addonTable.chat
+local enums = addonTable.enums
 local utils = addonTable.utils
 local widgets = addonTable.widgets
 local database = addonTable.database
 local autoReset = addonTable.autoReset
 local mainFrame = addonTable.mainFrame
+local dataManager = addonTable.dataManager
 local optionsManager = addonTable.optionsManager
 local tutorialsManager = addonTable.tutorialsManager
 
@@ -16,13 +18,14 @@ local tutorialsManager = addonTable.tutorialsManager
 local L = core.L
 local LDD = core.LDD
 
+local ctab -- will be set at init
 local tdlFrame, tdlButton
 local AllTab, DailyTab, WeeklyTab, CurrentTab
 
 -- reset variables
 local clearing, undoing = false, { ["clear"] = false, ["clearnb"] = 0, ["single"] = false, ["singleok"] = true}
 local movingItem, movingCategory = false, false
-local dontReloadPls = false
+local dontRefreshPls = false
 
 local checkBtn = {}
 local removeBtn = {}
@@ -73,30 +76,39 @@ function mainFrame:Toggle()
   tdlFrame:SetShown(not tdlFrame:IsShown())
 end
 
-function mainFrame:ReloadTab(tabGlobalWidgetName)
-  NysTDL.db.profile.lastLoadedTab = tabGlobalWidgetName or NysTDL.db.profile.lastLoadedTab
+function mainFrame:ChangeTab(newTabID)
+  ctab(newTabID)
+  mainFrame:Refresh()
+end
 
-  if (dontReloadPls) then
-    dontReloadPls = false
+function mainFrame:Refresh()
+  if dontRefreshPls then
+    dontRefreshPls = false
     return
   end
 
   -- // ************************************************************* // --
 
-  if ((not undoing["clear"] and not undoing["single"]) and NysTDL.db.profile.deleteAllTabItems) then -- OPTION: delete checked 'All' tab items
-    for catName, items in pairs(NysTDL.db.profile.itemsList) do -- for every item
-      for itemName, data in pairs(items) do
-        if (data.tabName == "All") then
-          if (data.checked) then
-            dontReloadPls = true
-            mainFrame:RemoveItem(removeBtn[catName][itemName])
+  local tabID = ctab()
+  local tabData = select(3, dataManager:Find(tabID))
+
+  -- TAB OPTION: delete/hide checked items
+  if not undoing["clear"] and not undoing["single"] then
+    if tabData.deleteCheckedItems or tabData.hideCheckedItems then
+      for itemID,itemData in dataManager:ForEach(enums.item, tabID) do -- for each item in the tab
+        if itemData.originalTabID == tabID and itemData.checked then -- if the item is native to the tab and checked
+          dontRefreshPls = true
+          if tabData.deleteCheckedItems then
+            mainFrame:RemoveItem(itemID)
+          else
+            mainFrame:HideItem(itemID)
           end
         end
       end
     end
   end
 
-  mainFrame:SetActiveTab(_G[NysTDL.db.profile.lastLoadedTab])
+  mainFrame:LoadContent() -- content reloading (categories, items, etc...)
 end
 
 function NysTDL:EditBoxInsertLink(text)
@@ -305,7 +317,7 @@ local function ItemsFrame_OnVisibilityUpdate()
   addACategoryClosed = true
   tabActionsClosed = true
   optionsClosed = true
-  mainFrame:ReloadTab()
+  mainFrame:Refresh()
   NysTDL.db.profile.lastListVisibility = tdlFrame:IsShown()
 end
 
@@ -540,7 +552,7 @@ function mainFrame:CreateMovableCheckBtnElems(catName, itemName)
   checkBtn[catName][itemName]:SetScript("OnClick", function(self)
     data.checked = self:GetChecked()
     if (NysTDL.db.profile.instantRefresh) then
-      mainFrame:ReloadTab()
+      mainFrame:Refresh()
     else
       mainFrame:Update()
     end
@@ -648,7 +660,7 @@ function mainFrame:CreateMovableLabelElems(catName)
       end
 
       -- and finally, we reload the frame to display the changes
-      mainFrame:ReloadTab()
+      mainFrame:Refresh()
     elseif (button == "RightButton") then -- we try to toggle the edit box to add new items
       -- if the label we right clicked on is NOT a closed category
       if (not (select(1, utils:HasKey(NysTDL.db.profile.closedCategories, catName))) or not (select(1, utils:HasValue(NysTDL.db.profile.closedCategories[catName], CurrentTab:GetName())))) then
@@ -1176,7 +1188,7 @@ local function generateAddACategory()
 
     tutorialsManager:Validate("addNewCat") -- tutorial
 
-    mainFrame:ReloadTab() -- we reload the frame to display the changes
+    mainFrame:Refresh() -- we reload the frame to display the changes
     if (not addACategoryClosed) then
       SetFocusEditBox(tdlFrame.categoryEditBox)
     end -- then we give the focus to the category edit box if we opened the menu
@@ -1404,7 +1416,7 @@ local function generateTabActions()
     addACategoryClosed = true
     optionsClosed = true
     tabActionsClosed = not tabActionsClosed
-    mainFrame:ReloadTab() -- we reload the frame to display the changes
+    mainFrame:Refresh() -- we reload the frame to display the changes
   end)
   tdlFrame.tabActionsButton:Hide()
 
@@ -1449,7 +1461,7 @@ local function generateOptions()
 
     tutorialsManager:Validate("accessOptions") -- tutorial
 
-    mainFrame:ReloadTab() -- we reload the frame to display the changes
+    mainFrame:Refresh() -- we reload the frame to display the changes
   end)
 
   --/************************************************/--
@@ -1663,7 +1675,7 @@ function mainFrame:Init(profileChanged)
   -- end
 
   -- then we update everything
-  mainFrame:ReloadTab() -- We load the good tab
+  mainFrame:Refresh()
 
   -- and we reload the saved variables needing an update
   tdlFrame.frameAlphaSlider:SetValue(NysTDL.db.profile.frameAlpha)
@@ -1745,7 +1757,7 @@ function mainFrame:CreateTDLFrame()
   generateFrameContent()
 
   -- tutorial
-  tutorialsManager:Init()
+  tutorialsManager:Initialize()
 
   -- scroll frame
   tdlFrame.ScrollFrame = CreateFrame("ScrollFrame", nil, tdlFrame, "UIPanelScrollFrameTemplate")
@@ -1804,7 +1816,7 @@ function mainFrame:CreateTDLFrame()
   -- when we're here, the list was just created, so it is opened by default already,
   -- then we decide what we want to do with that
   if (NysTDL.db.profile.openByDefault) then
-    ItemsFrame_OnVisibilityUpdate() -- XXX
+    ItemsFrame_OnVisibilityUpdate() -- TODO
   elseif (NysTDL.db.profile.keepOpen) then
     tdlFrame:SetShown(NysTDL.db.profile.lastListVisibility)
   else
@@ -1846,6 +1858,7 @@ end
 --/***************/ INITIALIZATION /******************/--
 
 function mainFrame:Initialize()
+  ctab = database.ctab -- alias
   self:CreateTDLFrame()
   self:CreateTDLButton()
 end

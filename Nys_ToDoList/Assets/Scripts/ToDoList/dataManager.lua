@@ -95,7 +95,7 @@ function dataManager:ForEach(enum, location)
 	local isGlobal, getdatapos, checkFunc = location
 	if enum == enums.item then
 		getdatapos = 1
-		if type(location) == "number" then -- specific tab or cat ID
+		if type(location) == enums.idtype then -- specific tab or cat ID
 			enum, isGlobal = dataManager:Find(location)
 			local loc
 			if enum == enums.category then
@@ -112,7 +112,7 @@ function dataManager:ForEach(enum, location)
 		end
 	elseif enum == enums.category then
 		getdatapos = 2
-		if type(location) == "number" then -- specific tab ID
+		if type(location) == enums.idtype then -- specific tab ID
 			enum, isGlobal = dataManager:Find(location)
 			if enum == enums.tab then
 				checkFunc = function(ID, data)
@@ -125,7 +125,7 @@ function dataManager:ForEach(enum, location)
 		end
 	elseif enum == enums.tab then
 		getdatapos = 3
-		if type(location) == "number" then -- specific shown ID
+		if type(location) == enums.idtype then -- specific shown ID
 			enum, isGlobal = dataManager:Find(location)
 			if enum == enums.tab then
 				checkFunc = function(ID, data)
@@ -320,7 +320,6 @@ function dataManager:CreateTab(tabName)
 				-- ...
 			},
     },
-    resetTimerID = 0, -- at load time
 		-- tab specific data
 		shownIDs = { -- user set
       [tabID] = true, -- self forced
@@ -328,6 +327,7 @@ function dataManager:CreateTab(tabName)
       -- ...
     },
     hideCheckedItems = false, -- user set
+    deleteCheckedItems = false, -- user set
   }
 
 	return newTab

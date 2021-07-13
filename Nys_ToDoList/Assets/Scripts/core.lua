@@ -9,10 +9,12 @@ addonTable.autoReset = {}
 addonTable.chat = {}
 addonTable.database = {}
 addonTable.events = {}
+addonTable.resetManager = {}
 addonTable.optionsManager = {}
 addonTable.tutorialsManager = {}
 addonTable.utils = {}
 addonTable.widgets = {}
+addonTable.enums = {}
 
 -- addonTable aliases
 local core = addonTable.core
@@ -20,6 +22,7 @@ local chat = addonTable.chat
 local database = addonTable.database
 local events = addonTable.events
 local databroker = addonTable.databroker
+local resetManager = addonTable.resetManager
 local optionsManager = addonTable.optionsManager
 
 --/*******************/ ADDON LIBS AND DATA HANDLER /*************************/--
@@ -54,19 +57,19 @@ SlashCmdList.NysTDL = chat.HandleSlashCommands
 function NysTDL:OnInitialize()
     -- Called when the addon has finished loading
 
-    -- database
+    -- database #1
     database:Initialize()
 
-    -- options
+    -- options #2
     optionsManager:Initialize()
 
     -- events
     events:Initialize()
 
-    -- databroker
+    -- databroker #pre-last
     databroker:Initialize()
 
-    -- we create the main frame and everything that goes with it
+    -- we create the main frame and everything that goes with it #last
     mainFrame:Initialize()
 
     -- // addon fully loaded!

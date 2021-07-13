@@ -60,7 +60,7 @@ database.defaults = {
     },
     undoTable = {},
 
-    currentTab = tabID, -- TODO
+    currentTab = "TOSET", -- currently selected tab's ID
 
     -- // Misc
     lastListVisibility = false,
@@ -530,7 +530,7 @@ database.options = {
 
 -- this func is called once in initialize, on the addon load
 -- and also everytime we switch profiles
-function database:DBInit()
+function database:DBInit(profileChanged)
   -- checking for an addon update, globally
   if (NysTDL.db.global.latestVersion ~= core.toc.version) then
     self:GlobalNewVersion()
@@ -544,19 +544,25 @@ function database:DBInit()
     NysTDL.db.profile.latestVersion = core.toc.version
   end
 
-  -- initialization of elements that need access to other files functions or need to be updated correctly when the profile changes
-  if (NysTDL.db.profile.autoReset == nil) then
-    NysTDL.db.profile.autoReset = {
-      ["Daily"] = autoReset:GetSecondsToReset().daily,
-      ["Weekly"] = autoReset:GetSecondsToReset().weekly
-    }
+  -- // initialization of elements that need to be updated correctly when the profile changes
+
+  -- default tabs creation
+  if database.ctab() == "TOSET" then
+    database:CreateDefaultTabs()
   end
-  if (not NysTDL.db.profile.rememberUndo) then NysTDL.db.profile.undoTable = {} end
+
+  -- tabs resets
+  resetManager:Initialize(profileChanged)
+
+  -- remember undos
+  if not NysTDL.db.profile.rememberUndo then
+    wipe(NysTDL.db.profile.undoTable)
+  end
 end
 
 function database:ProfileChanged(_, profile)
   print("PROFILE: ", profile)
-  self:DBInit() -- in case the selected profile is empty XXX: test self
+  self:DBInit(true) -- in case the selected profile is empty TODO: test self
 
   -- we update the changes for the list
   mainFrame:ResetContent()
@@ -626,12 +632,52 @@ function database:ProfileNewVersion() -- profile
   end
 end
 
+-- // specific functions
+
+function database.ctab(newTabID) -- easy access to that specific database variable
+  -- sets or gets the currently selected tab ID
+  if type(newTabID) == enums.idtype then
+    NysTDL.db.profile.currentTab = newTabID
+  end
+  return NysTDL.db.profile.currentTab
+end
+
+function database:CreateDefaultTabs()
+	-- once per profile, we create the default addon tabs (All, Daily, Weekly)
+
+	-- // Profile
+
+	for g=1,2 do
+		local isGlobal = g == 2
+
+		-- Daily
+		local dailyTabData = dataManager:CreateTab("Daily") -- isSameEachDay already true
+		local dailyTabID = dataManager:AddTab(dailyTabData, isGlobal)
+		for i=1,7 do resetManager:UpdateResetDay(dailyTabID, i, true) end -- every day
+		resetManager:UpdateTimeData(dailyTabID, dailyTabData.reset.sameEachDay, 9, 0, 0)
+
+		-- Weekly
+		local weeklyTabData = dataManager:CreateTab("Weekly") -- isSameEachDay already true
+		local weeklyTabID = dataManager:AddTab(weeklyTabData, isGlobal)
+		resetManager:UpdateResetDay(weeklyTabID, 4, true) -- only wednesday
+		resetManager:UpdateTimeData(weeklyTabID, weeklyTabData.reset.sameEachDay, 9, 0, 0)
+
+		-- All
+		local allTabID = dataManager:AddTab(dataManager:CreateTab("All"), isGlobal)
+		dataManager:UpdateShownTabID(allTabID, dailyTabID, true)
+		dataManager:UpdateShownTabID(allTabID, weeklyTabID, true)
+	end
+
+	-- then we set the default tab
+  database.ctab(dailyTabID)
+end
+
 --/*******************/ INITIALIZATION /*************************/--
 
 function database:Initialize()
   -- Saved variable database
   NysTDL.db = LibStub("AceDB-3.0"):New("NysToDoListDB", self.defaults) -- THE important line
-  self:DBInit() -- initialization for some elements of the db that need specific functions
+  self:DBInit() -- initialization for some elements of the db
 
   -- callbacks for database changes
   NysTDL.db.RegisterCallback(self, "OnProfileChanged", "ProfileChanged")
