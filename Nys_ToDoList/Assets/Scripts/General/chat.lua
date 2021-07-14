@@ -44,7 +44,7 @@ end
 
 -- Warning function
 function chat:Warn()
-  if (not mainFrame:autoResetedThisSessionGET()) then -- we don't want to show this warning if it's the first log in of the day, only if it is the next ones
+  if (not resetManager:autoResetedThisSessionGET()) then -- we don't want to show this warning if it's the first log in of the day, only if it is the next ones
     if (NysTDL.db.profile.showWarnings) then
       local haveWarned = false
       local warn = "--------------| |cffff0000"..L["WARNING"].."|r |--------------"

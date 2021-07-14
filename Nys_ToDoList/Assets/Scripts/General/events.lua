@@ -5,6 +5,7 @@ local addonName, addonTable = ...
 local core = addonTable.core
 local chat = addonTable.chat
 local events = addonTable.events
+local widgets = addonTable.widgets
 local database = addonTable.database
 
 -- Variables
@@ -57,5 +58,5 @@ function events:Initialize()
     NysTDL.db.global.UI_reloading = true
     NysTDL.db.global.warnTimerRemaining = NysTDL:TimeLeft(events.warnTimer) -- if we are reloading, we keep in mind how much time there was left to our repeating warn timer
   end) -- this is for knowing when the addon is loading, if it was a UI reload or the player logging in
-  hooksecurefunc("ChatEdit_InsertLink", function(...) return NysTDL:EditBoxInsertLink(...) end) -- this is for adding hyperlinks in my addon edit boxes
+  hooksecurefunc("ChatEdit_InsertLink", function(...) return widgets:EditBoxInsertLink(...) end) -- this is for adding hyperlinks in my addon edit boxes
 end

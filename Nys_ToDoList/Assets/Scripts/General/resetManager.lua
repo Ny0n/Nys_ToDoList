@@ -17,9 +17,15 @@ local tutorialsManager = addonTable.tutorialsManager
 -- Variables
 local L = core.L
 
+local autoResetedThisSession = false
+
 --/*******************/ TABS RESET MANAGMENT /*************************/--
 
 -- // reset data
+
+function resetManager:autoResetedThisSessionGET()
+  return autoResetedThisSession
+end
 
 -- managment
 
@@ -353,6 +359,7 @@ function resetManager:Initialize(profileChanged)
 		for timerPos,targetTime in pairs(tabData.reset.nextResetTimes) do
 			if currentTime > targetTime then
 				dataManager:UncheckTab(tabID)
+				autoResetedThisSession = true -- TODO redo??
 				break
 			end
 		end

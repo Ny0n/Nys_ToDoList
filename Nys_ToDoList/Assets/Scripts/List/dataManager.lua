@@ -78,6 +78,10 @@ function dataManager:GetData(isGlobal, tableMode)
 	end
 end
 
+function dataManager:GetName(ID)
+	return select(3, dataManager:Find(ID)).name
+end
+
 -- iterator function
 
 -- // here is a function to iterate over the addon's data
