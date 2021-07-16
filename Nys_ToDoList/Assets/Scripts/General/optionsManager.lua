@@ -128,7 +128,7 @@ end
 
 function optionsManager:tdlButtonShowSET(info, newValue)
   NysTDL.db.profile.tdlButton.show = newValue
-  mainFrame:RefreshTDLButton()
+  widgets:RefreshTDLButton()
 end
 
 -- tdlButtonRed
@@ -139,7 +139,7 @@ end
 
 function optionsManager:tdlButtonRedSET(info, newValue)
   NysTDL.db.profile.tdlButton.red = newValue
-  mainFrame:updateRemainingNumbers() -- we update the color depending on the new frame's data
+  widgets:UpdateTDLButtonColor()
 end
 
 -- minimapButtonHide

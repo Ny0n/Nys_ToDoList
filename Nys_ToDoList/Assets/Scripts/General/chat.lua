@@ -15,13 +15,13 @@ local L = core.L
 --/*******************/ CHAT RELATED FUNCTIONS /*************************/--
 
 function chat:Print(...)
-  if (not NysTDL.db.profile.showChatMessages) then return end -- we don't print anything if the user chose to deactivate this
+  if not NysTDL.db.profile.showChatMessages then return end -- we don't print anything if the user chose to deactivate this
   self:PrintForced(...)
 end
 
 local T_PrintForced = {}
 function chat:PrintForced(...)
-  if (... == nil) then return end
+  if ... == nil then return end
 
   local hex = utils:RGBToHex(database.themes.theme)
   local prefix = string.format("|cff%s%s|r", hex, core.toc.title..':')
@@ -44,75 +44,59 @@ end
 
 -- Warning function
 function chat:Warn()
-  if (not resetManager:autoResetedThisSessionGET()) then -- we don't want to show this warning if it's the first log in of the day, only if it is the next ones
-    if (NysTDL.db.profile.showWarnings) then
+  if NysTDL.db.profile.showWarnings then -- if the option is checked
+    if not resetManager:autoResetedThisSessionGET() then -- we don't want to show this warning if it's the first log in of the day, only if it is the next ones
       local haveWarned = false
       local warn = "--------------| |cffff0000"..L["WARNING"].."|r |--------------"
 
-      if (NysTDL.db.profile.favoritesWarning) then -- and the user allowed this functionnality
-        local _, _, _, ucFavs = mainFrame:updateRemainingNumbers()
-        local daily, weekly = ucFavs.Daily, ucFavs.Weekly
-        if ((daily + weekly) > 0) then -- and there is at least one daily or weekly favorite left to do
-          local str = ""
+      if NysTDL.db.profile.favoritesWarning then -- and the user allowed this functionnality
+        local uncheckedFavs = dataManager:GetRemainingNumbers().uncheckedFavs
+        if uncheckedFavs > 0 then
+          local msg = ""
 
-          -- we first check if there are daily ones
-          if (daily > 0) then
-            if ((NysTDL.db.profile.autoReset["Daily"] - time()) < 86400) then -- pretty much all the time
-              str = str..daily.." ("..L["Daily"]..")"
+          local maxTime = time() + 86400
+          dataManager:DoIfFoundTabMatch(maxTime, "uncheckedFavs", function(tabID, tabData)
+            local nb = dataManager:GetRemainingNumbers(nil, tabID).uncheckedFavs
+            if msg ~= "" then
+              msg = msg.." + "
             end
-          end
+            local tabName = L[tabData.name] or tabData.name
+            msg = msg..tostring(nb).." ("..tabName..")"
+          end, true)
 
-          -- then we check if there are weekly ones
-          if (weekly > 0) then
-            if ((NysTDL.db.profile.autoReset["Weekly"] - time()) < 86400) then -- if there is less than one day left before the weekly reset
-              if (str ~= "") then
-                str = str.." + "
-              end
-              str = str..weekly.." ("..L["Weekly"]..")"
-            end
-          end
-
-          if (str ~= "") then
+          if msg ~= "" then
             local hex = utils:RGBToHex({ NysTDL.db.profile.favoritesColor[1]*255, NysTDL.db.profile.favoritesColor[2]*255, NysTDL.db.profile.favoritesColor[3]*255} )
-            str = string.format("|cff%s%s|r", hex, str)
-            if (not haveWarned) then self:PrintForced(warn) haveWarned = true end
-            self:PrintForced(utils:SafeStringFormat(L["You still have %s favorite item(s) to do before the next reset, don't forget them!"], str))
+            msg = msging.format("|cff%s%s|r", hex, msg)
+            if not haveWarned then self:PrintForced(warn) haveWarned = true end
+            self:PrintForced(utils:SafeStringFormat(L["You still have %s favorite item(s) to do before the next reset, don't forget them!"], msg))
           end
         end
       end
 
-      if (NysTDL.db.profile.normalWarning) then
-        local _, _, uc = mainFrame:updateRemainingNumbers()
-        local daily, weekly = uc.Daily, uc.Weekly
-        if ((daily + weekly) > 0) then -- and there is at least one daily or weekly item left to do (favorite or not)
+      if NysTDL.db.profile.normalWarning then
+        local unchecked = dataManager:GetRemainingNumbers().unchecked
+        if unchecked > 0 then
           local total = 0
 
-          -- we first check if there are daily ones
-          if (daily > 0) then
-            if ((NysTDL.db.profile.autoReset["Daily"] - time()) < 86400) then -- pretty much all the time
-              total = total + daily
-            end
-          end
+          local maxTime = time() + 86400
+          dataManager:DoIfFoundTabMatch(maxTime, "unchecked", function(tabID, tabData)
+            local nb = dataManager:GetRemainingNumbers(nil, tabID).unchecked
+            total = total + nb
+          end, true)
 
-          -- then we check if there are weekly ones
-          if (weekly > 0) then
-            if ((NysTDL.db.profile.autoReset["Weekly"] - time()) < 86400) then -- if there is less than one day left before the weekly reset
-              total = total + weekly
-            end
-          end
-
-          if (total ~= 0) then
-            if (not haveWarned) then self:PrintForced(warn) haveWarned = true end
+          if total ~= 0 then
+            if not haveWarned then self:PrintForced(warn) haveWarned = true end
             self:PrintForced(L["Total number of items left to do before tomorrow:"]..' '..tostring(total))
           end
         end
       end
 
-      if (haveWarned) then
-        local timeUntil = autoReset:GetTimeUntilReset()
-        local str2 = utils:SafeStringFormat(L["Time remaining: %i hours %i min"], timeUntil.hour, timeUntil.min + 1)
-        self:PrintForced(str2)
-      end
+      -- TODO maybe redo this?
+      -- if haveWarned then
+      --   local timeUntil = autoReset:GetTimeUntilReset()
+      --   local msg = utils:SafeStringFormat(L["Time remaining: %i hours %i min"], timeUntil.hour, timeUntil.min + 1)
+      --   self:PrintForced(msg)
+      -- end
     end
   end
 end

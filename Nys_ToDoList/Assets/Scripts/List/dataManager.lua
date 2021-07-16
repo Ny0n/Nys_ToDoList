@@ -454,6 +454,8 @@ function dataManager:DeleteItem(itemID)
 
 	dataManager:AddUndo(undoData)
   itemsList[itemID] = nil -- delete action
+
+	return true
 end
 
 -- category
@@ -489,11 +491,13 @@ function dataManager:DeleteCat(catID, empty)
 	  categoriesList[catID] = nil -- delete action
 	end
 	dataManager:AddUndo(nbToDelete - #catData.orderedContentIDs) -- to undo in one go everything that was removed
+
+	return true
 end
 
 -- tab
 
-function dataManager:DeleteTab(tabID, empty)
+function dataManager:DeleteTab(tabID)
 	local tabData, _, _, tabsList = select(3, dataManager:Find(tabID))
 
 	if dataManager:IsProtected(tabID) then return end -- TODO message "xxx is protected" ?
@@ -503,12 +507,19 @@ function dataManager:DeleteTab(tabID, empty)
 	local undoData = dataManager:CreateUndo(tabID)
 	local nbToDelete = #tabData.orderedCatIDs
 
- 	-- we delete everything inside the tab, this means every category inside of it
-	for _,catID in pairs(tabData.orderedCatIDs) do
-		dataManager:DeleteCat(catID)
+	-- first we remove every shown tab ID
+	for shownTabID in pairs(tabData.shownIDs) do
+		if shownTabID ~= tabID then
+			dataManager:UpdateShownTabID(tabID, shownTabID, false)
+		end
 	end
 
-	if #tabData.orderedCatIDs == 0 and not empty then -- we removed everything from the tab, now we delete it
+ 	-- we delete everything inside the tab, this means every category inside of it
+	for _,catID in pairs(tabData.orderedCatIDs) do
+		dataManager:DeleteCat(catID) -- TODO protected?
+	end
+
+	if #tabData.orderedCatIDs == 0 then -- we removed everything from the tab, now we delete it
 		-- we remove the tab from its orders table
 		tremove(tabsList.orderedTabIDs, select(2, utils:HasValue(tabsList.orderedTabIDs, tabID)))
 
@@ -517,6 +528,8 @@ function dataManager:DeleteTab(tabID, empty)
 	  tabsList[tabID] = nil -- delete action
 	end
 	dataManager:AddUndo(nbToDelete - #tabsList.orderedCatIDs) -- to undo in one go everything that was removed
+
+	return true
 end
 
 -- // undo feature
@@ -583,59 +596,6 @@ end
 
 -- misc
 
-local T_UpdateTabsDisplay = {
-	itemsList = {},
-	categoriesList = {},
-}
-function dataManager:UpdateTabsDisplay(originalTabID, modif, ID)
-	-- both originalTabID and ID are the same global or profile state
-	-- modif means adding/removing, modif = true --> adding, modif = false/nil --> removing
-	if modif == false then modif = nil end
-	-- ID is for only updating one specific ID (itemID.tabIDs or catID.tabIDs), instead of going through everything
-	local enum, isGlobal, data, itemsList, categoriesList = dataManager:Find(ID or originalTabID)
-
-	-- we check if it concerns only one ID
-	if ID then
-		itemsList = T_UpdateTabsDisplay.itemsList
-		categoriesList = T_UpdateTabsDisplay.categoriesList
-		wipe(itemsList)
-		wipe(categoriesList)
-		if enum == enums.category then -- single category
-			categoriesList[ID] = data
-		elseif enum == enums.item then -- single item
-			itemsList[ID] = data
-		end
-	end
-
-	for tabID,tabData in dataManager:ForEach(enums.tab, originalTabID) do -- for every tab that is showing the originalTabID
-		-- we go through every category and every item, and for each that have
-		-- the original tab equal to originalTabID, we add the current tab to their tabIDs
-
-		-- categories
-		for catID,catData in ID and pairs(categoriesList) or dataManager:ForEach(enums.category, isGlobal) do
-			if catData.originalTabID == originalTabID then -- important
-				catData.tabIDs[tabID] = modif
-				if not catData.parentsInTabIDs[catData.originalTabID] then -- if it's not a sub-category, we edit it in its tab orders
-					if modif and not utils:HasValue(tabData.orderedCatIDs, catID) and not ID then
-						-- we add it ordered in the tab if it wasn't here already
-						local ordersLoc = tabData.orderedCatIDs
-						tinsert(ordersLoc, 1, catID)
-					elseif not modif then
-						tremove(tabData.orderedCatIDs, select(2, utils:HasValue(tabData.orderedCatIDs, catID)))
-					end
-				end
-			end
-		end
-
-		-- items
-		for itemID,itemData in ID and pairs(itemsList) or dataManager:ForEach(enums.item, isGlobal) do
-			if itemData.originalTabID == originalTabID then -- important
-				itemData.tabIDs[tabID] = modif
-			end
-		end
-	end
-end
-
 function dataManager:GetCategoryOrdersLoc(catID, tabID)
 	-- since categories are either located in an other category (as a sub-category) or in a tab,
 	-- this is to easily get the good orders table where a category is in a certain tab
@@ -679,18 +639,6 @@ end
 
 -- items
 
-function dataManager:UncheckTab(tabID)
-	for itemID,itemData in dataManager:ForEach(enums.item, tabID) do
-		itemData.checked = false
-	end
-end
-
-function dataManager:CheckTab(tabID)
-	for itemID,itemData in dataManager:ForEach(enums.item, tabID) do
-		itemData.checked = true
-	end
-end
-
 function dataManager:ToggleChecked(itemID)
 	local itemData = select(3, dataManager:Find(itemID))
 	itemData.checked = not itemData.checked
@@ -714,6 +662,57 @@ end
 
 -- tabs
 
+local T_UpdateTabsDisplay = {
+	itemsList = {},
+	categoriesList = {},
+}
+function dataManager:UpdateTabsDisplay(originalTabID, modif, ID)
+	-- // big important func to update what is shown in what tab
+
+	-- both originalTabID and ID are the same global or profile state
+	-- modif means adding/removing, modif = true --> adding, modif = false/nil --> removing
+	if modif == false then modif = nil end
+	-- ID is for only updating one specific ID (itemID.tabIDs or catID.tabIDs), instead of going through everything
+	local enum, isGlobal, data, itemsList, categoriesList = dataManager:Find(ID or originalTabID)
+
+	-- we check if it concerns only one ID
+	if ID then
+		itemsList = T_UpdateTabsDisplay.itemsList
+		categoriesList = T_UpdateTabsDisplay.categoriesList
+		wipe(itemsList)
+		wipe(categoriesList)
+		if enum == enums.category then -- single category
+			categoriesList[ID] = data
+		elseif enum == enums.item then -- single item
+			itemsList[ID] = data
+		end
+	end
+
+	for tabID,tabData in dataManager:ForEach(enums.tab, originalTabID) do -- for every tab that is showing the originalTabID
+		-- we go through every category and every item, and for each that have
+		-- the original tab equal to originalTabID, we add/remove the current tab to their tabIDs
+
+		-- categories
+		for catID,catData in ID and pairs(categoriesList) or dataManager:ForEach(enums.category, isGlobal) do
+			catData.tabIDs[tabID] = modif
+			if not catData.parentsInTabIDs[catData.originalTabID] then -- if it's not a sub-category, we edit it in its tab orders
+				if modif and not utils:HasValue(tabData.orderedCatIDs, catID) and not ID then
+					-- we add it ordered in the tab if it wasn't here already
+					local ordersLoc = tabData.orderedCatIDs
+					tinsert(ordersLoc, 1, catID)
+				elseif not modif then
+					tremove(tabData.orderedCatIDs, select(2, utils:HasValue(tabData.orderedCatIDs, catID)))
+				end
+			end
+		end
+
+		-- items
+		for itemID,itemData in ID and pairs(itemsList) or dataManager:ForEach(enums.item, isGlobal) do
+				itemData.tabIDs[tabID] = modif
+		end
+	end
+end
+
 function dataManager:UpdateShownTabID(tabID, shownTabID, state)
 	-- to add/remove shown IDs in tabs
 	local isGlobal1, tabData = select(2, dataManager:Find(tabID))
@@ -727,15 +726,66 @@ function dataManager:UpdateShownTabID(tabID, shownTabID, state)
 		tabData.shownIDs[shownTabID] = true
 		dataManager:UpdateTabsDisplay(shownTabID, true)
 	else
-		dataManager:UpdateTabsDisplay(shownTabID)
+		dataManager:UpdateTabsDisplay(shownTabID, false)
 		tabData.shownIDs[shownTabID] = nil
+	end
+end
+
+function dataManager:UncheckTab(tabID)
+	for itemID,itemData in dataManager:ForEach(enums.item, tabID) do
+		itemData.checked = false
+	end
+end
+
+function dataManager:CheckTab(tabID)
+	for itemID,itemData in dataManager:ForEach(enums.item, tabID) do
+		itemData.checked = true
+	end
+end
+
+function dataManager:ClearTab(tabID)
+	local removed = 0
+	for catID,catData in dataManager:ForEach(enums.category, tabID) do
+		if dataManager:DeleteCat(catID) then
+			removed = removed + 1
+		end
+	end
+	dataManager:AddUndo(removed)
+end
+
+function dataManager:DoIfFoundTabMatch(maxTime, checkedType, callback, doAll)
+	-- // loops over every tab, and calls one (doAll=false/nil) or for all matching tabs (doAll=true) time the callback,
+	-- if the next requirements are met:
+	-- - the tab has resets
+	-- - one of its resets are scheduled before maxTime
+	-- - it has more than one checkedType item inside of it
+
+	for tabID,tabData in dataManager:ForEach(enums.tab) do -- for each tab
+		if next(tabData.nextResetTimes) then -- if it has resets
+			if dataManager:GetRemainingNumbers(nil, tabID)[checkedType] > 0 then -- and if it has unchecked items
+				for _, nextResetTime in pairs(tabData.nextResetTimes) do -- then for each reset times it has
+					if maxTime > nextResetTime then -- if one of them is coming in less than 24 hours
+						callback(tabID, tabData)
+						if doAll then break
+						else return end -- only once if not said otherwise
+					end
+				end
+			end
+		end
 	end
 end
 
 --/*******************/ UTILS /*************************/--
 
 local T_GetRemainingNumbers = {}
-function dataManager:GetRemainingNumbers(tabID)
+function dataManager:GetRemainingNumbers(isGlobal, tabID, catID)
+	-- // big func to get every numbers of checked/unchecked items,
+	-- depending on the given location. the inputs can be one of these:
+	-- dataManager:GetRemainingNumbers(nil/false/true) -- will search through EVERY item, in either profile+global/profile/global
+	-- dataManager:GetRemainingNumbers(nil, tabID) -- will search through every item found in the tab
+	-- dataManager:GetRemainingNumbers(nil, nil, catID) -- will search through every item found in the cat
+	-- dataManager:GetRemainingNumbers(nil, tabID, catID) -- will search through every item found in the cat, that are also in the tab
+
 	local t = T_GetRemainingNumbers
 	wipe(t)
 	t.checked = 0
@@ -746,7 +796,11 @@ function dataManager:GetRemainingNumbers(tabID)
 	t.uncheckedDesc = 0
 	t.total = 0
 
-	for itemID,itemData in dataManager:ForEach(enums.item, tabID) do -- for each item that is in the tab
+	local location = catID or tabID or isGlobal
+
+	for itemID,itemData in dataManager:ForEach(enums.item, location) do -- for each item that is in the cat
+		if tabID and not itemData.tabIDs[tabID] then goto next end
+
 		if itemData.checked then
 			t.checked = t.checked + 1
 			if itemData.favorite then t.checkedFavs = t.checkedFavs + 1 end
@@ -757,6 +811,8 @@ function dataManager:GetRemainingNumbers(tabID)
 			if itemData.description then t.uncheckedDesc = t.uncheckedDesc + 1 end
 		end
 		t.total = t.total + 1
+
+		::next::
 	end
 
 	return t

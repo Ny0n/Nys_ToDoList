@@ -106,7 +106,7 @@ function tutorialsManager:UpdateFramesVisibility()
   elseif (NysTDL.db.global.tuto_progression == #tutorialOrder) then -- we completed the last tutorial
     tutorialFrames[tutorialOrder[#tutorialOrder]]:SetShown(false) -- we don't need to do the big loop above, we just need to hide the last tutorial frame (it's just optimization)
     NysTDL.db.global.tuto_progression = NysTDL.db.global.tuto_progression + 1 -- and we also add a step of progression, just so that we never enter this 'if' again. (optimization too :D)
-    ItemsFrame_OnVisibilityUpdate() -- TODO and finally, we reset the menu openings of the list at the end of the tutorial, for more visibility
+    mainFrame:Event_TDLFrame_OnVisibilityUpdate() -- and finally, we reset the menu openings of the list at the end of the tutorial, for more visibility
   end
 end
 
