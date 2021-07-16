@@ -2,11 +2,11 @@
 local addonName, addonTable = ...
 
 -- addonTable aliases
-local database = addonTable.database
 local core = addonTable.core
 local utils = addonTable.utils
-local autoReset = addonTable.autoReset
+local database = addonTable.database
 local optionsManager = addonTable.optionsManager
+local tutorialsManager = addonTable.tutorialsManager
 
 -- Variables
 local L = core.L
@@ -84,7 +84,6 @@ database.defaults = {
     favoritesColor = { 1, 0.5, 0.6 },
     rainbow = false,
     rainbowSpeed = 2,
-    autoReset = nil,
     rememberUndo = true,
     highlightOnFocus = true,
     keepOpen = false,
@@ -576,9 +575,9 @@ end
 function database:GlobalNewVersion() -- global
   -- updates the global saved variables once after an update
 
-  if (NysTDL.db.global.tuto_progression > 0) then -- if we already completed the tutorial
+  if NysTDL.db.global.tuto_progression > 0 then -- if we already completed the tutorial
     -- since i added in the update a new tutorial frame that i want ppl to see, i just go back step in the tuto progression
-    NysTDL.db.global.tuto_progression = NysTDL.db.global.tuto_progression - 1
+    tutorialsManager:Previous()
   end
 end
 

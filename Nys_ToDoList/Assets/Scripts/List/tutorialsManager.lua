@@ -90,22 +90,25 @@ function tutorialsManager:SetFramesScale(scale)
 end
 
 function tutorialsManager:UpdateFramesVisibility()
-  -- here we manage the visibility of the tutorial frames, showing them if their corresponding frames are shown, their tuto has not been completed (false) and the previous one is true.
-  if (NysTDL.db.global.tuto_progression < #tutorialOrder) then
+  -- here we manage the visibility of the tutorial frames, showing them if their corresponding frames are shown,
+  -- their tuto has not been completed (false) and the previous one is true.
+  -- this is called by the OnUpdate event of the tdlFrame
+
+  if NysTDL.db.global.tuto_progression < #tutorialOrder then
     for i, v in pairs(tutorialOrder) do
       local r = false
-      if (NysTDL.db.global.tuto_progression < i) then -- if the current loop tutorial has not already been done
-        if (NysTDL.db.global.tuto_progression == i-1) then -- and the previous one has been done
-          if (tutorialFramesTarget[v] ~= nil and tutorialFramesTarget[v]:IsShown()) then -- and his corresponding target frame is currently shown
+      if NysTDL.db.global.tuto_progression < i then -- if the current loop tutorial has not already been done
+        if NysTDL.db.global.tuto_progression == i-1 then -- and the previous one has been done
+          if tutorialFramesTarget[v] ~= nil and tutorialFramesTarget[v]:IsShown() then -- and his corresponding target frame is currently shown
             r = true -- then we can show the tutorial frame
           end
         end
       end
       tutorialFrames[v]:SetShown(r)
     end
-  elseif (NysTDL.db.global.tuto_progression == #tutorialOrder) then -- we completed the last tutorial
+  elseif NysTDL.db.global.tuto_progression == #tutorialOrder then -- we completed the last tutorial
     tutorialFrames[tutorialOrder[#tutorialOrder]]:SetShown(false) -- we don't need to do the big loop above, we just need to hide the last tutorial frame (it's just optimization)
-    NysTDL.db.global.tuto_progression = NysTDL.db.global.tuto_progression + 1 -- and we also add a step of progression, just so that we never enter this 'if' again. (optimization too :D)
+    tutorialsManager:Next() -- and we also add a step of progression, just so that we never enter this 'if' again. (optimization too :D)
     mainFrame:Event_TDLFrame_OnVisibilityUpdate() -- and finally, we reset the menu openings of the list at the end of the tutorial, for more visibility
   end
 end
@@ -115,16 +118,27 @@ end
 function tutorialsManager:Validate(tuto_name)
   -- completes the "tuto_name" tutorial, only if it was active
   local i = utils:GetKeyFromValue(tutorialOrder, tuto_name)
-  if (NysTDL.db.global.tuto_progression < i) then
-    if (NysTDL.db.global.tuto_progression == i-1) then
-      NysTDL.db.global.tuto_progression = NysTDL.db.global.tuto_progression + 1 -- we validate the tutorial
+  if NysTDL.db.global.tuto_progression < i then
+    if NysTDL.db.global.tuto_progression == i-1 then
+      tutorialsManager:Next() -- we validate the tutorial by going to the next one
     end
   end
 end
 
-function tutorialsManager:RedoTutorial()
+function tutorialsManager:Next()
+  NysTDL.db.global.tuto_progression = NysTDL.db.global.tuto_progression + 1
+end
+
+function tutorialsManager:Previous()
+  NysTDL.db.global.tuto_progression = NysTDL.db.global.tuto_progression - 1
+  if NysTDL.db.global.tuto_progression < 0 then
+    NysTDL.db.global.tuto_progression = 0
+  end
+end
+
+function tutorialsManager:Reset()
   NysTDL.db.global.tuto_progression = 0
-  ItemsFrame_OnVisibilityUpdate() -- TODO
+  mainFrame:Event_TDLFrame_OnVisibilityUpdate()
   tdlFrame.ScrollFrame:SetVerticalScroll(0)
 end
 

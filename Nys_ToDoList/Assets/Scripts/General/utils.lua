@@ -137,17 +137,6 @@ function utils:HasKey(table, key)
   return false
 end
 
-function utils:ItemExists(catName, itemName)
-  -- returns true or false, depending on the existence of the item
-  -- it's basically a sanity check for functions that need it
-  if self:HasKey(NysTDL.db.profile.itemsList, catName) then
-    if self:HasKey(NysTDL.db.profile.itemsList[catName], itemName) then
-      return true
-    end
-  end
-  return false
-end
-
 function utils:GetKeyFromValue(tabSource, value)
   for k, v in pairs(tabSource) do
     if v == value then return k end

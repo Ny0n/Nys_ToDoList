@@ -2,9 +2,11 @@
 local addonName, addonTable = ...
 
 -- addonTable aliases
-local widgets = addonTable.widgets
 local utils = addonTable.utils
 local enums = addonTable.enums
+local widgets = addonTable.widgets
+local tutorialsManager = addonTable.tutorialsManager
+
 
 -- Variables
 local L = addonTable.core.L
@@ -157,7 +159,7 @@ end
 
 function widgets:SetFocusEditBox(editBox) -- DRY
   editBox:SetFocus()
-  if (NysTDL.db.profile.highlightOnFocus) then
+  if NysTDL.db.profile.highlightOnFocus then
     editBox:HighlightText()
   else
     editBox:HighlightText(0, 0)
@@ -173,19 +175,22 @@ end
 --/*******************/ FRAMES /*************************/--
 
 function widgets:TutorialFrame(tutoName, parent, showCloseButton, arrowSide, text, width, height)
-  local tutoFrame = CreateFrame("Frame", "NysTDL_tutoFrame_"..tutoName, parent, "NysTDL_HelpPlateTooltip")
+  local tutoFrame = CreateFrame("Frame", "NysTDL_TutorialFrame_"..tutoName, parent, "NysTDL_HelpPlateTooltip")
   tutoFrame:SetSize(width, height)
-  if (arrowSide == "UP") then tutoFrame.ArrowDOWN:Show()
-  elseif (arrowSide == "DOWN") then tutoFrame.ArrowUP:Show()
-  elseif (arrowSide == "LEFT") then tutoFrame.ArrowRIGHT:Show()
-  elseif (arrowSide == "RIGHT") then tutoFrame.ArrowLEFT:Show() end
+
+  if arrowSide == "UP" then tutoFrame.ArrowDOWN:Show()
+  elseif arrowSide == "DOWN" then tutoFrame.ArrowUP:Show()
+  elseif arrowSide == "LEFT" then tutoFrame.ArrowRIGHT:Show()
+  elseif arrowSide == "RIGHT" then tutoFrame.ArrowLEFT:Show() end
+
   local tutoFrameRightDist = 10
-  if (showCloseButton) then
+  if showCloseButton then
     tutoFrameRightDist = 40
     tutoFrame.closeButton = CreateFrame("Button", "closeButton", tutoFrame, "UIPanelCloseButton")
     tutoFrame.closeButton:SetPoint("TOPRIGHT", tutoFrame, "TOPRIGHT", 6, 6)
-    tutoFrame.closeButton:SetScript("OnClick", function() NysTDL.db.global.tuto_progression = NysTDL.db.global.tuto_progression + 1 end)
+    tutoFrame.closeButton:SetScript("OnClick", function() tutorialsManager:Next() end)
   end
+
   tutoFrame.Text:SetWidth(tutoFrame:GetWidth() - tutoFrameRightDist)
   tutoFrame.Text:SetText(text)
   tutoFrame:Hide() -- we hide them by default, we show them only when we need to
@@ -360,7 +365,7 @@ function widgets:DescriptionFrame(itemWidget)
 end
 
 function widgets:Dummy(parentFrame, relativeFrame, xOffset, yOffset)
-  local dummy = CreateFrame("Frame", nil, parentFrame, nil)
+  local dummy = CreateFrame("Frame", nil, parentFrame, nil) -- TODO test different things
   dummy:SetPoint("TOPLEFT", relativeFrame, "TOPLEFT", xOffset, yOffset)
   dummy:SetSize(1, 1)
   dummy:Show()
@@ -377,21 +382,21 @@ function widgets:NoPointsLabel(relativeFrame, name, text)
 end
 
 function widgets:NoPointsInteractiveLabel(name, relativeFrame, text, fontObjectString)
-  local label = CreateFrame("Frame", name, relativeFrame, "NysTDL_InteractiveLabel")
-  label.Text:SetFontObject(fontObjectString)
-  label.Text:SetText(text)
-  label:SetSize(label.Text:GetWidth(), label.Text:GetHeight()) -- we init the size to the text's size
+  local interactiveLabel = CreateFrame("Frame", name, relativeFrame, "NysTDL_InteractiveLabel")
+  interactiveLabel.Text:SetFontObject(fontObjectString)
+  interactiveLabel.Text:SetText(text)
+  interactiveLabel:SetSize(interactiveLabel.Text:GetWidth(), interactiveLabel.Text:GetHeight()) -- we init the size to the text's size
 
   -- this updates the frame's size each time the text's size is changed
-  label.Button:SetScript("OnSizeChanged", function(self, width, height)
+  interactiveLabel.Button:SetScript("OnSizeChanged", function(self, width, height)
     self:GetParent():SetSize(width, height)
   end)
 
-  return label
+  return interactiveLabel
 end
 
 function widgets:NothingLabel(relativeFrame)
-  local label = relativeFrame:CreateFontString(nil)
+  local label = relativeFrame:CreateFontString(nil) -- TODO this func necessary?
   label:SetFontObject("GameFontHighlightLarge")
   label:SetTextColor(0.5, 0.5, 0.5, 0.5)
   return label
@@ -401,13 +406,16 @@ end
 
 function widgets:Button(name, relativeFrame, text, iconPath, fc)
   fc = fc or false
-  iconPath = (type(iconPath) == "string") and iconPath or nil
+  iconPath = type(iconPath) == "string" and iconPath or nil
+
   local btn = CreateFrame("Button", name, relativeFrame, "NysTDL_NormalButton")
-  local w = self:NoPointsLabel(relativeFrame, nil, text):GetWidth()
+
   btn:SetText(text)
   btn:SetNormalFontObject("GameFontNormalLarge")
-  if (fc == true) then btn:SetHighlightFontObject("GameFontHighlightLarge") end
-  if (iconPath ~= nil) then
+  if fc == true then btn:SetHighlightFontObject("GameFontHighlightLarge") end
+
+  local w = widgets:GetWidth(text)
+  if iconPath ~= nil then
     w = w + 23
     btn.Icon = btn:CreateTexture(nil, "ARTWORK")
     btn.Icon:SetPoint("LEFT", btn, "LEFT", 10, 0)
@@ -418,6 +426,7 @@ function widgets:Button(name, relativeFrame, text, iconPath, fc)
     btn:HookScript("OnMouseUp", function(self) self.Icon:SetPoint("LEFT", self, "LEFT", 10, 0) end)
   end
   btn:SetWidth(w + 20)
+
   return btn
 end
 
@@ -473,21 +482,21 @@ end
 
 -- item buttons
 
-function widgets:RemoveButton(relativeCheckButton)
-  local btn = CreateFrame("Button", nil, relativeCheckButton, "NysTDL_RemoveButton")
-  btn:SetPoint("LEFT", relativeCheckButton, "LEFT", - 20, 0)
+function widgets:RemoveButton(itemWidget)
+  local btn = CreateFrame("Button", nil, itemWidget.checkBtn, "NysTDL_RemoveButton")
+  btn:SetPoint("LEFT", itemWidget.checkBtn, "LEFT", -20, 0)
 
   -- these are for changing the color depending on the mouse actions (since they are custom xml)
   btn:HookScript("OnEnter", function(self)
     self.Icon:SetVertexColor(0.8, 0.2, 0.2)
   end)
   btn:HookScript("OnLeave", function(self)
-    if (tonumber(string.format("%.1f", self.Icon:GetAlpha())) ~= 0.5) then
+    if tonumber(string.format("%.1f", self.Icon:GetAlpha())) ~= 0.5 then
       self.Icon:SetVertexColor(1, 1, 1)
     end
   end)
   btn:HookScript("OnMouseUp", function(self)
-    if (self.name == "RemoveButton") then
+    if self.name == "RemoveButton" then -- TODO is this useful?
       self.Icon:SetVertexColor(1, 1, 1)
     end
   end)
@@ -497,15 +506,14 @@ function widgets:RemoveButton(relativeCheckButton)
   return btn
 end
 
-function widgets:FavoriteButton(relativeCheckButton, catName, itemName)
-  local btn = CreateFrame("Button", nil, relativeCheckButton, "NysTDL_FavoriteButton")
-  btn:SetPoint("LEFT", relativeCheckButton, "LEFT", - 20, -2)
+function widgets:FavoriteButton(itemWidget)
+  local btn = CreateFrame("Button", nil, itemWidget.checkBtn, "NysTDL_FavoriteButton")
+  btn:SetPoint("LEFT", itemWidget.checkBtn, "LEFT", -20, -2)
 
   -- these are for changing the color depending on the mouse actions (since they are custom xml)
   -- and yea, this one's a bit complicated because I wanted its look to be really precise...
   btn:HookScript("OnEnter", function(self)
-    if (not utils:ItemExists(catName, itemName)) then return end
-    if (not NysTDL.db.profile.itemsList[catName][itemName].favorite) then -- not favorited
+    if not itemWidget.itemData.favorite then -- not favorited
       self.Icon:SetDesaturated(nil)
       self.Icon:SetVertexColor(1, 1, 1)
     else
@@ -513,9 +521,8 @@ function widgets:FavoriteButton(relativeCheckButton, catName, itemName)
     end
   end)
   btn:HookScript("OnLeave", function(self)
-    if (not utils:ItemExists(catName, itemName)) then return end
-    if (not NysTDL.db.profile.itemsList[catName][itemName].favorite) then
-      if (tonumber(string.format("%.1f", self.Icon:GetAlpha())) ~= 0.5) then -- if we are currently clicking on the button
+    if not itemWidget.itemData.favorite then
+      if tonumber(string.format("%.1f", self.Icon:GetAlpha())) ~= 0.5 then -- if we are currently clicking on the button
         self.Icon:SetDesaturated(1)
         self.Icon:SetVertexColor(0.4, 0.4, 0.4)
       end
@@ -524,24 +531,23 @@ function widgets:FavoriteButton(relativeCheckButton, catName, itemName)
     end
    end)
    btn:HookScript("OnMouseUp", function(self)
-     if (not utils:ItemExists(catName, itemName)) then return end
-     if (self.name == "FavoriteButton") then
+     if self.name == "FavoriteButton" then
        self:SetAlpha(1)
-       if (not NysTDL.db.profile.itemsList[catName][itemName].favorite) then
+       if not itemWidget.itemData.favorite then
          self.Icon:SetDesaturated(1)
          self.Icon:SetVertexColor(0.4, 0.4, 0.4)
        end
      end
    end)
    btn:HookScript("PostClick", function(self)
-     if (self.name == "FavoriteButton") then
+     if self.name == "FavoriteButton" then -- TODO same, useful?
        self:GetScript("OnShow")(self)
      end
    end)
   btn:HookScript("OnShow", function(self)
-    if (not utils:ItemExists(catName, itemName)) then return end
+    -- if not utils:ItemExists(catName, itemName) then return end -- TODO verify if its necessary
     self:SetAlpha(1)
-    if (not NysTDL.db.profile.itemsList[catName][itemName].favorite) then
+    if not itemWidget.itemData.favorite then
       self.Icon:SetDesaturated(1)
       self.Icon:SetVertexColor(0.4, 0.4, 0.4)
     else
@@ -552,15 +558,14 @@ function widgets:FavoriteButton(relativeCheckButton, catName, itemName)
   return btn
 end
 
-function widgets:DescButton(relativeCheckButton, catName, itemName)
-  local btn = CreateFrame("Button", nil, relativeCheckButton, "NysTDL_DescButton")
-  btn:SetPoint("LEFT", relativeCheckButton, "LEFT", - 20, 0)
+function widgets:DescButton(itemWidget)
+  local btn = CreateFrame("Button", nil, itemWidget.checkBtn, "NysTDL_DescButton")
+  btn:SetPoint("LEFT", itemWidget.checkBtn, "LEFT", -20, 0)
 
   -- these are for changing the color depending on the mouse actions (since they are custom xml)
   -- and yea, this one's a bit complicated too because it works in very specific ways
   btn:HookScript("OnEnter", function(self)
-    if (not utils:ItemExists(catName, itemName)) then return end
-    if (not NysTDL.db.profile.itemsList[catName][itemName].description) then -- no description
+    if not itemWidget.itemData.description then -- no description
       self.Icon:SetDesaturated(nil)
       self.Icon:SetVertexColor(1, 1, 1)
     else
@@ -568,9 +573,8 @@ function widgets:DescButton(relativeCheckButton, catName, itemName)
     end
   end)
   btn:HookScript("OnLeave", function(self)
-    if (not utils:ItemExists(catName, itemName)) then return end
-    if (not NysTDL.db.profile.itemsList[catName][itemName].description) then
-      if (tonumber(string.format("%.1f", self.Icon:GetAlpha())) ~= 0.5) then -- if we are currently clicking on the button
+    if not itemWidget.itemData.description then
+      if tonumber(string.format("%.1f", self.Icon:GetAlpha())) ~= 0.5 then -- if we are currently clicking on the button
         self.Icon:SetDesaturated(1)
         self.Icon:SetVertexColor(0.4, 0.4, 0.4)
       end
@@ -579,24 +583,22 @@ function widgets:DescButton(relativeCheckButton, catName, itemName)
     end
    end)
    btn:HookScript("OnMouseUp", function(self)
-     if (not utils:ItemExists(catName, itemName)) then return end
-     if (self.name == "DescButton") then
+     if self.name == "DescButton" then
        self:SetAlpha(1)
-       if (not NysTDL.db.profile.itemsList[catName][itemName].description) then
+       if not itemWidget.itemData.description then
          self.Icon:SetDesaturated(1)
          self.Icon:SetVertexColor(0.4, 0.4, 0.4)
        end
      end
    end)
    btn:HookScript("PostClick", function(self)
-     if (self.name == "DescButton") then
+     if self.name == "DescButton" then -- TODO same, useful?
        self:GetScript("OnShow")(self)
      end
    end)
   btn:HookScript("OnShow", function(self)
-    if (not utils:ItemExists(catName, itemName)) then return end
     self:SetAlpha(1)
-    if (not NysTDL.db.profile.itemsList[catName][itemName].description) then
+    if not itemWidget.itemData.description then
       self.Icon:SetDesaturated(1)
       self.Icon:SetVertexColor(0.4, 0.4, 0.4)
     else
@@ -605,27 +607,261 @@ function widgets:DescButton(relativeCheckButton, catName, itemName)
     end
   end)
   return btn
+end
+
+--/*******************/ ITEM/CATEGORY WIDGETS /*************************/--
+
+-- TODO redo
+function widgets:CategoryWidget(catID)
+  -- category label
+  label[catName] = widgets:NoPointsInteractiveLabel("NysTDL_CatLabel_"..catName, tdlFrame, catName, "GameFontHighlightLarge")
+  label[catName].catName = catName -- easy access to the catName of the label, this also allows the shown text to be different
+  label[catName].Button:SetScript("OnEnter", function(self)
+    local r, g, b = unpack(utils:ThemeDownTo01(database.themes.theme))
+    self:GetParent().Text:SetTextColor(r, g, b, 1) -- when we hover it, we color the label
+  end)
+  label[catName].Button:SetScript("OnLeave", function(self)
+    self:GetParent().Text:SetTextColor(1, 1, 1, 1) -- back to the default color
+  end)
+  label[catName].Button:SetScript("OnClick", function(self, button)
+    if (IsAltKeyDown()) then return end -- we don't do any of the OnClick code if we have the Alt key down, bc it means that we want to rename the category by double clicking
+    local catName = self:GetParent().catName
+    if (button == "LeftButton") then -- we open/close the category
+      if (utils:HasKey(NysTDL.db.profile.closedCategories, catName) and NysTDL.db.profile.closedCategories[catName] ~= nil) then -- if this is a category that is closed in certain tabs
+        local isPresent, pos = utils:HasValue(NysTDL.db.profile.closedCategories[catName], dataManager:GetName(ctab())) -- we get if it is closed in the current tab
+        if (isPresent) then -- if it is
+          table.remove(NysTDL.db.profile.closedCategories[catName], pos) -- then we remove it from the saved variable
+          if (#NysTDL.db.profile.closedCategories[catName] == 0) then -- and btw check if it was the only tab remaining where it was closed
+            NysTDL.db.profile.closedCategories[catName] = nil -- in which case we nil the table variable for that category
+          end
+        else  -- if it is opened in the current tab
+          table.insert(NysTDL.db.profile.closedCategories[catName], dataManager:GetName(ctab())) -- then we close it by adding it to the saved variable
+        end
+      else -- if this category was closed nowhere
+        NysTDL.db.profile.closedCategories[catName] = {dataManager:GetName(ctab())} -- then we create its table variable and initialize it with the current tab (we close the category in the current tab)
+      end
+
+      -- and finally, we reload the frame to display the changes
+      mainFrame:Refresh()
+    elseif (button == "RightButton") then -- we try to toggle the edit box to add new items
+      -- if the label we right clicked on is NOT a closed category
+      if (not (select(1, utils:HasKey(NysTDL.db.profile.closedCategories, catName))) or not (select(1, utils:HasValue(NysTDL.db.profile.closedCategories[catName], dataManager:GetName(ctab()))))) then
+        -- we toggle its edit box
+        editBox[catName]:SetShown(not editBox[catName]:IsShown())
+
+        if (editBox[catName]:IsShown()) then
+          -- tutorial
+          tutorialsManager:Validate("addItem")
+
+          -- we also give that edit box the focus if we are showing it
+          widgets:SetFocusEditBox(editBox[catName])
+        end
+      end
+    end
+  end)
+  label[catName].Button:SetScript("OnDoubleClick", function(self)
+    if (not IsAltKeyDown()) then return end -- we don't do any of the OnDoubleClick code if we don't have the Alt key down
+
+    -- first, we hide the label
+    local label = self:GetParent()
+    label.Text:Hide()
+    label.Button:Hide()
+
+    -- then, we can create the new edit box to rename the category, where the label was
+    local catName = label.catName
+    local renameEditBox = widgets:NoPointsRenameEditBox(label, catName, categoryNameWidthMax, self:GetHeight())
+    renameEditBox:SetPoint("LEFT", label, "LEFT", 5, 0)
+
+    -- we move the favs remaining label to the right of the edit box while it's shown
+    if (utils:HasKey(categoryLabelFavsRemaining, catName)) then
+      categoryLabelFavsRemaining[catName]:ClearAllPoints()
+      categoryLabelFavsRemaining[catName]:SetPoint("LEFT", renameEditBox, "RIGHT", 6, 0)
+    end
+
+    -- let's go!
+    renameEditBox:SetScript("OnEnterPressed", function(self)
+      local newCatName = self:GetText()
+      -- first, we do some tests
+      if (newCatName == "") then -- if the new cat name is empty
+        self:GetScript("OnEscapePressed")(self) -- we cancel the action
+        return
+      elseif (newCatName == catName) then -- if the new is the same as the old
+        self:GetScript("OnEscapePressed")(self) -- we cancel the action
+        return
+      elseif (utils:HasKey(NysTDL.db.profile.itemsList, newCatName)) then -- if the new cat name already exists
+        chat:PrintForced(L["This category name already exists"]..". "..L["Please choose a different name to avoid overriding data"])
+        return
+      else
+        local l = widgets:NoPointsLabel(tdlFrame, nil, newCatName)
+        if (l:GetWidth() > categoryNameWidthMax) then -- if the new cat name is too big
+          chat:PrintForced(L["This categoty name is too big!"])
+          return
+        end
+      end
+
+      -- and if everything is good, we can rename the category
+      mainFrame:RenameCategory(catName, newCatName)
+    end)
+
+    -- cancelling
+    renameEditBox:SetScript("OnEscapePressed", function(self)
+      self:Hide()
+      label.Text:Show()
+      label.Button:Show()
+      -- when hiding the edit box, we reset the pos of the favs remaining label
+      if (utils:HasKey(categoryLabelFavsRemaining, catName)) then
+        categoryLabelFavsRemaining[catName]:ClearAllPoints()
+        categoryLabelFavsRemaining[catName]:SetPoint("LEFT", label, "RIGHT", 6, 0)
+      end
+    end)
+    renameEditBox:HookScript("OnEditFocusLost", function(self)
+      self:GetScript("OnEscapePressed")(self)
+    end)
+  end)
+
+  -- associated favs remaining label
+  categoryLabelFavsRemaining[catName] = widgets:NoPointsLabel(label[catName], label[catName]:GetName().."_FavsRemaining", "")
+
+  -- associated edit box and add button
+  editBox[catName] = widgets:NoPointsCatEditBox(catName)
+  editBox[catName]:SetScript("OnEnterPressed", function(self)
+    mainFrame:AddItem(self)
+    self:Show() -- we keep it shown to add more items
+    widgets:SetFocusEditBox(self)
+  end)
+  -- cancelling
+  editBox[catName]:SetScript("OnEscapePressed", function(self)
+    self:Hide()
+  end)
+  editBox[catName]:HookScript("OnEditFocusLost", function(self)
+    self:GetScript("OnEscapePressed")(self)
+  end)
+  widgets:AddHyperlinkEditBox(editBox[catName])
+end
+
+-- TODO redo
+function widgets:ItemWidget(itemID)
+  local data = NysTDL.db.profile.itemsList[catName][itemName]
+
+  if (not utils:HasKey(checkBtn, catName)) then checkBtn[catName] = {} end
+  checkBtn[catName][itemName] = CreateFrame("CheckButton", "NysTDL_CheckBtn_"..catName.."_"..itemName, tdlFrame, "UICheckButtonTemplate")
+  checkBtn[catName][itemName].InteractiveLabel = widgets:NoPointsInteractiveLabel(checkBtn[catName][itemName]:GetName().."_InteractiveLabel", checkBtn[catName][itemName], itemName, "GameFontNormalLarge")
+  checkBtn[catName][itemName].InteractiveLabel:SetPoint("LEFT", checkBtn[catName][itemName], "RIGHT")
+  checkBtn[catName][itemName].InteractiveLabel.Text:SetPoint("LEFT", checkBtn[catName][itemName], "RIGHT", 20, 0)
+  checkBtn[catName][itemName].catName = catName -- easy access to the catName this button is in
+  checkBtn[catName][itemName].itemName = itemName -- easy access to the itemName of this button, this also allows the shown text to be different
+  if (utils:HasHyperlink(itemName)) then -- this is for making more space for items that have hyperlinks in them
+    if (checkBtn[catName][itemName].InteractiveLabel.Text:GetWidth() > itemNameWidthMax) then
+      checkBtn[catName][itemName].InteractiveLabel.Text:SetFontObject("GameFontNormal")
+    end
+
+    -- and also to deactivate the InteractiveLabel's Button, so that we can actually click on the links
+    -- unless we are holding Alt, and to detect this, we actually put on them an OnUpdate script
+    checkBtn[catName][itemName].InteractiveLabel:SetScript("OnUpdate", function(self)
+      if (IsAltKeyDown()) then
+        self.Button:Show()
+      else
+        self.Button:Hide()
+      end
+    end)
+  end
+  checkBtn[catName][itemName]:SetChecked(data.checked)
+  checkBtn[catName][itemName]:SetScript("OnClick", function(self)
+    data.checked = self:GetChecked()
+    if (NysTDL.db.profile.instantRefresh) then
+      mainFrame:Refresh()
+    else
+      mainFrame:Update()
+    end
+  end)
+  checkBtn[catName][itemName].InteractiveLabel:SetHyperlinksEnabled(true) -- to enable OnHyperlinkClick
+  checkBtn[catName][itemName].InteractiveLabel:SetScript("OnHyperlinkClick", function(_, linkData, link, button)
+    ChatFrame_OnHyperlinkShow(ChatFrame1, linkData, link, button)
+  end)
+  checkBtn[catName][itemName].InteractiveLabel.Button:SetScript("OnDoubleClick", function(self)
+    -- first, we hide the label
+    local checkBtn = self:GetParent():GetParent()
+    checkBtn.InteractiveLabel:Hide()
+
+    -- then, we can create the new edit box to rename the item, where the label was
+    local catName, itemName = checkBtn.catName, checkBtn.itemName
+    local renameEditBox = widgets:NoPointsRenameEditBox(checkBtn, itemName, itemNameWidthMax, self:GetHeight())
+    renameEditBox:SetPoint("LEFT", checkBtn, "RIGHT", 5, 0)
+    -- renameEditBox:SetHyperlinksEnabled(true) -- to enable OnHyperlinkClick
+    -- renameEditBox:SetScript("OnHyperlinkClick", function(_, linkData, link, button)
+    --   ChatFrame_OnHyperlinkShow(ChatFrame1, linkData, link, button)
+    -- end)
+    widgets:AddHyperlinkEditBox(renameEditBox) -- so that we can add hyperlinks in it
+
+    -- let's go!
+    renameEditBox:SetScript("OnEnterPressed", function(self)
+      local newItemName = self:GetText()
+      -- first, we do some tests
+      if (newItemName == "") then -- if the new item name is empty
+        self:GetScript("OnEscapePressed")(self) -- we cancel the action
+        return
+      elseif (newItemName == itemName) then -- if the new is the same as the old
+        self:GetScript("OnEscapePressed")(self) -- we cancel the action
+        return
+      elseif (utils:HasKey(NysTDL.db.profile.itemsList[catName], newItemName)) then -- if the new item name already exists somewhere in the category
+        chat:PrintForced(L["This item name already exists in the category"]..". "..L["Please choose a different name to avoid overriding data"])
+        return
+      else
+        local l = widgets:NoPointsLabel(tdlFrame, nil, newItemName)
+        if (l:GetWidth() > itemNameWidthMax and utils:HasHyperlink(newItemName)) then l:SetFontObject("GameFontNormal") end -- if it has an hyperlink in it and it's too big, we allow it to be a little longer, considering hyperlinks take more place
+        if (l:GetWidth() > itemNameWidthMax) then -- then we recheck to see if the item is not too long for good
+          chat:PrintForced(L["This item name is too big!"])
+          return
+        end
+      end
+
+      -- and if everything is good, we can rename the item (a.k.a, delete the current one and creating a new one)
+      -- while keeping the same cat, and same tab
+      mainFrame:MoveItem(catName, catName, itemName, newItemName, NysTDL.db.profile.itemsList[catName][itemName].tabName)
+    end)
+
+    -- cancelling
+    renameEditBox:SetScript("OnEscapePressed", function(self)
+      self:Hide()
+      checkBtn.InteractiveLabel:Show()
+      widgets:RemoveHyperlinkEditBox(self)
+    end)
+    renameEditBox:HookScript("OnEditFocusLost", function(self)
+      self:GetScript("OnEscapePressed")(self)
+    end)
+  end)
+
+  if (not utils:HasKey(removeBtn, catName)) then removeBtn[catName] = {} end
+  removeBtn[catName][itemName] = widgets:RemoveButton(checkBtn[catName][itemName])
+  removeBtn[catName][itemName]:SetScript("OnClick", function(self) mainFrame:RemoveItem(self) end)
+
+  if (not utils:HasKey(favoriteBtn, catName)) then favoriteBtn[catName] = {} end
+  favoriteBtn[catName][itemName] = widgets:FavoriteButton(checkBtn[catName][itemName], catName, itemName)
+  favoriteBtn[catName][itemName]:SetScript("OnClick", function(self) mainFrame:FavoriteClick(self) end)
+  favoriteBtn[catName][itemName]:Hide()
+
+  if (not utils:HasKey(descBtn, catName)) then descBtn[catName] = {} end
+  descBtn[catName][itemName] = widgets:DescButton(checkBtn[catName][itemName], catName, itemName)
+  descBtn[catName][itemName]:SetScript("OnClick", function() widgets:DescriptionFrame(itemWidget) end) -- TODO don't forget
+  descBtn[catName][itemName]:Hide()
 end
 
 --/*******************/ EDIT BOXES /*************************/--
 
 function widgets:NoPointsRenameEditBox(relativeFrame, text, width, height)
-  local renameEditBox = CreateFrame("EditBox", relativeFrame:GetName().."_renameEditBox", relativeFrame, "InputBoxTemplate")
+  local renameEditBox = CreateFrame("EditBox", tostring(relativeFrame:GetName()).."_RenameEditBox", relativeFrame, "InputBoxTemplate")
   renameEditBox:SetSize(width-10, height)
   renameEditBox:SetText(text)
   renameEditBox:SetFontObject("GameFontHighlightLarge")
   renameEditBox:SetAutoFocus(false)
-  renameEditBox:SetFocus()
-  if (not NysTDL.db.profile.highlightOnFocus) then
-    renameEditBox:HighlightText(0, 0)
-  end
+  widgets:SetFocusEditBox(renameEditBox) -- TODO verify this or redo old version
   -- renameEditBox:HookScript("OnEditFocusGained", function(self)
   --   self:HighlightText(0, 0) -- we don't select everything by default when we select the edit box
   -- end)
   return renameEditBox
 end
 
-function widgets:NoPointsLabelEditBox(name)
+function widgets:NoPointsCatEditBox(name)
   local edb = CreateFrame("EditBox", name, nil, "InputBoxTemplate")
   edb:SetAutoFocus(false)
   -- edb:SetTextInsets(0, 15, 0, 0)
@@ -653,10 +889,10 @@ function widgets:NoPointsLine(relativeFrame, thickness, r, g, b, a)
   a = a or 1
   local line = relativeFrame:CreateLine()
   line:SetThickness(thickness)
-  if (r and g and b and a) then line:SetColorTexture(r, g, b, a) end
+  if r and g and b and a then line:SetColorTexture(r, g, b, a) end
   return line
 end
 
-function widgets:ThemeLine(relativeFrame, theme)
-  return widgets:NoPointsLine(relativeFrame, 2, unpack(utils:ThemeDownTo01(utils:DimTheme(theme, 0.7))))
+function widgets:ThemeLine(relativeFrame, theme, dim)
+  return widgets:NoPointsLine(relativeFrame, 2, unpack(utils:ThemeDownTo01(utils:DimTheme(theme, dim))))
 end

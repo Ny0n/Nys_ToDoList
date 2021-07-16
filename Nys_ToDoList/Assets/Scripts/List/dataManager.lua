@@ -8,7 +8,6 @@ local enums = addonTable.enums
 local utils = addonTable.utils
 local widgets = addonTable.widgets
 local database = addonTable.database
-local autoReset = addonTable.autoReset
 local mainFrame = addonTable.mainFrame
 local dataManager = addonTable.dataManager
 local resetManager = addonTable.resetManager

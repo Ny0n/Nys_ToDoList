@@ -7,7 +7,6 @@ local chat = addonTable.chat
 local utils = addonTable.utils
 local widgets = addonTable.widgets
 local database = addonTable.database
-local autoReset = addonTable.autoReset
 local databroker = addonTable.databroker
 local mainFrame = addonTable.mainFrame
 local optionsManager = addonTable.optionsManager
@@ -205,17 +204,14 @@ function optionsManager:SetterTabs(info, ...)
   mainFrame:ReloadTab()
 end
 
--- // 'Auto Uncheck' (reset) tab // --
+-- // 'Auto Uncheck' (reset) tab // -- -- TODO remove those
 
 function optionsManager:GetterReset(info)
-  self:SetterReset(info, NysTDL.db.profile[info[#info]])
-  return NysTDL.db.profile[info[#info]]
+
 end
 
 function optionsManager:SetterReset(info, ...)
-  NysTDL.db.profile[info[#info]] = ...
-  NysTDL.db.profile.autoReset["Daily"] = autoReset:GetSecondsToReset().daily
-  NysTDL.db.profile.autoReset["Weekly"] = autoReset:GetSecondsToReset().weekly
+
 end
 
 --/*******************/ INITIALIZATION /*************************/--

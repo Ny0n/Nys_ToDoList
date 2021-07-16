@@ -148,7 +148,7 @@ chat.commands = {
   end,
 
   [L["tutorial"]] = function()
-    tutorialsManager:Redo()
+    tutorialsManager:Reset()
     chat:PrintForced(L["The tutorial has been reset!"])
   end,
 }

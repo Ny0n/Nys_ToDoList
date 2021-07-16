@@ -2,19 +2,20 @@
 local addonName, addonTable = ...
 
 -- declaring the different addon tables, one for each file
-addonTable.core = {}
-addonTable.databroker = {}
-addonTable.mainFrame = {}
-addonTable.autoReset = {}
+-- because i don't want to use a global variable
 addonTable.chat = {}
 addonTable.database = {}
-addonTable.events = {}
-addonTable.resetManager = {}
-addonTable.optionsManager = {}
-addonTable.tutorialsManager = {}
-addonTable.utils = {}
-addonTable.widgets = {}
 addonTable.enums = {}
+addonTable.events = {}
+addonTable.optionsManager = {}
+addonTable.resetManager = {}
+addonTable.utils = {}
+addonTable.databroker = {}
+addonTable.dataManager = {}
+addonTable.mainFrame = {}
+addonTable.tutorialsManager = {}
+addonTable.widgets = {}
+addonTable.core = {}
 
 -- addonTable aliases
 local core = addonTable.core
