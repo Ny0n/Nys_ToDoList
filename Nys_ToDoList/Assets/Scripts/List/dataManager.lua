@@ -618,7 +618,11 @@ function dataManager:Undo()
 	local toUndo = tremove(NysTDL.db.profile.undoTable) -- remove last
 	if type(toUndo) == "number" then -- clear
 		if toUndo <= 0 then toUndo = 1 end -- when we find a "0", we pass it like it was never here, and directly go undo the next item
-		for i=1, toUndo do dataManager:Undo() end
+		for i=1, toUndo do
+			mainFrame:DontRefreshNextTime()
+			dataManager:Undo()
+		end
+		mainFrame:Refresh()
 		-- TODO messages "undo clear" and others
 	elseif toUndo.enum == enums.item then -- item
 		dataManager:AddItem(toUndo.data, toUndo.ID, toUndo.orders)
@@ -704,7 +708,8 @@ function dataManager:ToggleFavorite(itemID)
 	itemData.favorite = not itemData.favorite
 
 	-- refresh the mainFrame
-	mainFrame:Refresh()
+	mainFrame:UpdateItemButtons(itemID)
+	mainFrame:Refresh() -- we refresh bc the sort order will change
 
 	return itemData.favorite
 end
@@ -715,7 +720,7 @@ function dataManager:UpdateDescription(itemID, description)
 	itemData.description = description
 
 	-- refresh the mainFrame
-	-- mainFrame:Refresh() -- TODO what to do?
+	mainFrame:UpdateItemButtons(itemID)
 
 	return itemData.description
 end

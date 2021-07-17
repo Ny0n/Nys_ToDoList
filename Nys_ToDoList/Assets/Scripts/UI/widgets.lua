@@ -344,12 +344,6 @@ function widgets:DescriptionFrame(itemWidget)
   descFrame.descriptionEditBox.EditBox:SetScript("OnTextChanged", function(self)
     -- and here we save the description everytime the text is updated (best auto-save possible I think)
     dataManager:UpdateDescription(itemID, self:GetText())
-    if IsControlKeyDown() then -- just in case we are ctrling-v, to color the icon
-      itemWidget.descBtn:GetScript("OnShow")(itemWidget.descBtn)
-    elseif (NysTDL.db.profile.itemsList[catName][itemName].description ~= nil and not descBtn[catName][itemName]:IsShown()
-      or NysTDL.db.profile.itemsList[catName][itemName].description == nil and descBtn[catName][itemName]:IsShown()) then
-        mainFrame:UpdateItemButtons(itemID) -- we update the desc button is there is a worthy change
-    end
   end)
   widgets:SetHyperlinksEnabled(descFrame.descriptionEditBox.EditBox, true)
   widgets:AddHyperlinkEditBox(descFrame.descriptionEditBox.EditBox)
@@ -646,6 +640,7 @@ function widgets:CategoryWidget(catID, parentFrame)
 
   -- / interactiveLabel
   categoryWidget.interactiveLabel = widgets:NoPointsInteractiveLabel(categoryWidget, "noname", catData.name, "GameFontHighlightLarge")
+  categoryWidget.interactiveLabel:SetPoint("LEFT", categoryWidget, "LEFT", 0, 0)
   categoryWidget.interactiveLabel.Button:SetScript("OnEnter", function(self)
     local r, g, b = unpack(utils:ThemeDownTo01(database.themes.theme))
     self:GetParent().Text:SetTextColor(r, g, b, 1) -- when we hover it, we color the label
@@ -711,10 +706,22 @@ function widgets:CategoryWidget(catID, parentFrame)
 
   -- / favsRemainingLabel
   categoryWidget.favsRemainingLabel = widgets:NoPointsLabel(categoryWidget, "noname", "")
-  categoryWidget.favsRemainingLabel:SetPoint("LEFT", categoryWidget.interactiveLabel, "RIGHT", 6, 0) -- TODO hmmmm, is it okay?
+  categoryWidget.favsRemainingLabel:SetPoint("LEFT", categoryWidget.interactiveLabel, "RIGHT", 6, 0)
 
   -- / addEditBox
   categoryWidget.addEditBox = widgets:NoPointsCatEditBox("noname")
+  categoryWidget.addEditBox:SetPoint("RIGHT", categoryWidget.interactiveLabel, "LEFT", rightPointDistance, 0)
+  categoryWidget.addEditBox:SetPoint("LEFT", categoryWidget.interactiveLabel, "RIGHT", 5, 0)
+  -- TODO check this
+  -- -- edit box width (we adapt it based on the category label's width)
+  -- local labelWidth = tonumber(string.format("%i", categoryWidget.interactiveLabel.Text:GetWidth()))
+  -- local rightPointDistance = 297 -- in alignment with the item renaming edit boxes
+  -- local editBoxAddItemWidth = 150 -- max width
+  -- if labelWidth + editBoxAddItemWidth > rightPointDistance then
+  --   categoryWidget.addEditBox:SetSize(editBoxAddItemWidth - 10 - ((labelWidth + editBoxAddItemWidth) - rightPointDistance), categoryWidget.interactiveLabel.Button:GetHeight())
+  -- else
+  --   categoryWidget.addEditBox:SetSize(editBoxAddItemWidth - 10, categoryWidget.interactiveLabel.Button:GetHeight())
+  -- end
   categoryWidget.addEditBox:SetScript("OnEnterPressed", function(self)
     dataManager:AddItem(dataManager:CreateItem(self:GetText(), database.ctab(), catID))
     self:Show() -- we keep it shown to add more items

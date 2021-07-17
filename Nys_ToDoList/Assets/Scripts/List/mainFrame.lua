@@ -150,7 +150,7 @@ function mainFrame:UpdateRemainingNumberLabels()
   tdlFrame.content.remainingNumber:SetText((numbers.unchecked > 0 and "|cffffffff" or "|cff00ff00")..numbers.unchecked.."|r")
   tdlFrame.content.remainingFavsNumber:SetText(numbers.uncheckedFavs > 0 and "("..uncheckedFavs..")" or "")
 
-  -- we update the remaining numbers of every category visible in the tab
+  -- we update the remaining numbers of every category in the tab
   for catID,catData in dataManager:ForEach(enums.category, tabID) do
     local nbFav = dataManager:GetRemainingNumbers(nil, tabID, catID).uncheckedFavs
     contentWidgets[catID].favsRemainingLabel:SetText(nbFav > 0 and "("..nbFav..")" or "")
@@ -244,6 +244,14 @@ function mainFrame:UpdateItemButtons(itemID)
   itemWidget.descBtn:Hide()
   itemWidget.favoriteBtn:Hide()
   itemWidget.removeBtn:Hide()
+
+  if T_Event_TDLFrame_OnUpdate.ctrl then -- if ctrl is pressed and is the priority
+    itemWidget.descBtn:Show() -- we force the paper (description)
+    return
+  elseif T_Event_TDLFrame_OnUpdate.shift then -- if shift is pressed and is the priority
+    itemWidget.favoriteBtn:Show() -- we force the star (favorite)
+    return
+  end
 
   local itemData = itemWidget.itemData
   if itemData.description then -- the paper (description) icon takes the lead
@@ -469,183 +477,6 @@ local function loadWidgets()
   end
 end
 
--- // Creation and loading of the list's content
-
--- boom
-local function loadCategories(tab, categoryLabel, catName, itemNames, lastData)
-  -- here we generate and load each categories and their items one by one
-
-  if (next(itemNames) ~= nil) then -- if for the current category there is at least one item to show in the current tab
-    local lastLabel, newLabelHeightDelta, adjustHeight
-
-    -- category label
-    if (lastData == nil) then
-      lastLabel = tdlFrame.dummyFrame
-      newLabelHeightDelta = 0 -- no delta, this is the start point
-
-      -- tutorial
-      tutorialsManager:SetTarget("addItem", categoryLabel)
-    else
-      lastLabel = lastData["categoryLabel"]
-      if (utils:HasKey(NysTDL.db.profile.closedCategories, lastData["catName"]) and utils:HasValue(NysTDL.db.profile.closedCategories[lastData["catName"]], tab:GetName())) then -- if the last category loaded was a closed one in this tab
-        newLabelHeightDelta = 1 -- we only have a delta of one
-      else
-        newLabelHeightDelta = #lastData["itemNames"] + 1 -- or else, we have a delta of the number of items loaded in the last category + the last category's label
-      end
-    end
-
-    -- category label placement
-    if (newLabelHeightDelta == 0) then adjustHeight = 0 else adjustHeight = 1 end -- just for a proper clean height
-    categoryLabel:SetParent(tab)
-    categoryLabel:SetPoint("TOPLEFT", lastLabel, "TOPLEFT", 0, (-newLabelHeightDelta * 22) - (adjustHeight * 5)) -- here
-    categoryLabel:Show()
-
-    -- category label favs remaining placement
-    -- we determine if it is shown or not later
-    categoryLabelFavsRemaining[catName]:SetParent(categoryLabel)
-    categoryLabelFavsRemaining[catName]:SetPoint("LEFT", categoryLabel, "RIGHT", 6, 0)
-
-    -- edit box
-    editBox[catName]:SetParent(tab)
-    -- edit box width (we adapt it based on the category label's width)
-    local labelWidth = tonumber(string.format("%i", categoryLabel.Text:GetWidth()))
-    local rightPointDistance = 297 -- in alignment with the item renaming edit boxes
-    local editBoxAddItemWidth = 150
-    if (labelWidth + editBoxAddItemWidth > rightPointDistance) then
-      editBox[catName]:SetSize(editBoxAddItemWidth - 10 - ((labelWidth + editBoxAddItemWidth) - rightPointDistance), 30)
-      editBox[catName]:SetPoint("RIGHT", categoryLabel, "LEFT", rightPointDistance, 0)
-    else
-      editBox[catName]:SetSize(editBoxAddItemWidth - 10, 30)
-      editBox[catName]:SetPoint("RIGHT", categoryLabel, "LEFT", rightPointDistance, 0)
-    end
-    editBox[catName]:Hide() -- we hide every edit box by default when we reload the tab
-
-    -- if the category is opened in this tab, we display all of its items
-    if (not utils:HasKey(NysTDL.db.profile.closedCategories, catName) or not utils:HasValue(NysTDL.db.profile.closedCategories[catName], tab:GetName())) then
-      -- checkboxes
-      local buttonsLength = 0
-      for _, itemName in pairs(itemNames) do -- for every item to load
-          buttonsLength = buttonsLength + 1
-
-          checkBtn[catName][itemName]:SetParent(tab)
-          checkBtn[catName][itemName]:SetPoint("TOPLEFT", categoryLabel, "TOPLEFT", 30, - 22 * buttonsLength + 5)
-          checkBtn[catName][itemName]:Show()
-      end
-      categoryLabelFavsRemaining[catName]:Hide() -- the only thing is that we hide it if the category is opened
-    else
-      -- if not, we still need to put them at their right place, anchors and parents (but we keep them hidden)
-      -- especially for when we load the All tab, for the clearing
-      for _, itemName in pairs(itemNames) do -- for every item to load but hidden
-        checkBtn[catName][itemName]:SetParent(tab)
-        checkBtn[catName][itemName]:SetPoint("TOPLEFT", categoryLabel, "TOPLEFT")
-      end
-      categoryLabelFavsRemaining[catName]:Show() -- bc we only see him when the cat is closed
-    end
-  else
-    -- if the current label has no reason to be visible in this tab, we hide it (and for the checkboxes, they have already been hidden before the first call to this func).
-    -- so first we hide them to be sure they are gone from our view, and then it's a bit more complicated:
-    -- we reset their parent to be the current tab, so that we're sure that they are all on the same tab, and then
-    -- ClearAllPoints is pretty magical here since a hidden label CAN be clicked on and still manages to fire OnEnter and everything else, so :Hide() is not enough,
-    -- so with this API we clear their points so that they have nowhere to go and they don't fire events anymore.
-    label[catName]:Hide()
-    label[catName]:SetParent(tab)
-    label[catName]:ClearAllPoints()
-    categoryLabelFavsRemaining[catName]:Hide()
-    categoryLabelFavsRemaining[catName]:SetParent(tab)
-    categoryLabelFavsRemaining[catName]:ClearAllPoints()
-    editBox[catName]:Hide()
-    editBox[catName]:SetParent(tab)
-    editBox[catName]:ClearAllPoints()
-
-    -- then, since there isn't anything to show in the current category for the current tab,
-    -- we check if it was a closed category, in which case, we remove it from the saved variable
-    if (tab:GetName() ~= "All") then -- unless we're in the All tab, since we can decide to hide items, so i want to keep the closed state if we want to show the items back
-      if (utils:HasKey(NysTDL.db.profile.closedCategories, catName) and NysTDL.db.profile.closedCategories[catName] ~= nil) then
-        local isPresent, pos = utils:HasValue(NysTDL.db.profile.closedCategories[catName], tab:GetName()) -- we get if it is closed in the current tab
-        if (isPresent) then -- if it is
-          table.remove(NysTDL.db.profile.closedCategories[catName], pos) -- then we remove it from the saved variable
-          if (#NysTDL.db.profile.closedCategories[catName] == 0) then -- and btw check if it was the only tab remaining where it was closed
-            NysTDL.db.profile.closedCategories[catName] = nil -- in which case we nil the table variable for that category
-          end
-        end
-      end
-    end
-
-    -- and btw, we check if there is no more item at all in that category
-    -- and if it's empty, we delete all of the corresponding elements, this is the place where we properly delete a category.
-    if (not next(NysTDL.db.profile.itemsList[catName])) then
-      -- we destroy them
-      widgets:RemoveHyperlinkEditBox(editBox[catName])
-      editBox[catName] = nil
-      label[catName] = nil
-      categoryLabelFavsRemaining[catName] = nil
-
-      -- and we nil them in the saved variables
-      NysTDL.db.profile.itemsList[catName] = nil
-      NysTDL.db.profile.closedCategories[catName] = nil
-    end
-
-    return lastData -- if we are here, lastData shall not be changed or there will be consequences! (so we end the function prematurely)
-  end
-
-  lastData = {
-    ["tab"] = tab,
-    ["categoryLabel"] = categoryLabel,
-    ["catName"] = catName,
-    ["itemNames"] = itemNames,
-  }
-  return lastData
-end
-
-local function generateTab(tab)
-  -- We sort all of the categories in alphabetical order
-  local tempTable = mainFrame:GetCategoriesOrdered()
-
-  -- doing that only one time
-  -- before we reload the entire tab and items, we hide every checkboxes
-  for catName, items in pairs(NysTDL.db.profile.itemsList) do -- for every item
-    for itemName in pairs(items) do
-      checkBtn[catName][itemName]:Hide()
-      checkBtn[catName][itemName]:SetParent(tab)
-      checkBtn[catName][itemName]:ClearAllPoints()
-    end
-  end
-
-  -- then we load everything
-  local lastData = nil
-  for _, catName in pairs(tempTable) do -- for each categories, alphabetically
-    -- we sort alphabetically all the items inside, with the favorites in first
-    local itemNames = {}
-    local fav = {}
-    local others = {}
-
-    -- first we get every favs and other items for the current cat and place them in their respective tables
-    for itemName, data in pairs(NysTDL.db.profile.itemsList[catName]) do
-      if (ItemIsInTab(data.tabName, tab:GetName())) then
-        if (not ItemIsHiddenInResetTab(catName, itemName)) then
-          if (data.favorite) then
-            table.insert(fav, itemName)
-          else
-            table.insert(others, itemName)
-          end
-        end
-      end
-    end
-
-    -- sorting
-    table.sort(fav)
-    table.sort(others)
-    for _, itemName in pairs(fav) do
-      table.insert(itemNames, itemName)
-    end
-    for _, itemName in pairs(others) do
-      table.insert(itemNames, itemName)
-    end
-
-    lastData = loadCategories(tab, label[catName], catName, itemNames, lastData) -- and finally, we load them on the tab in the defined order
-  end
-end
-
 -- // Content loading
 
 local function loadContent()
@@ -683,7 +514,7 @@ local function loadContent()
     if numbers.checked == numbers.total then -- and if they are all checked ones
       -- we check if they are hidden or not, and if they are, we show the nothing label with a different text
       local tabData = select(3, dataManager:Find(ctab()))
-      if tabData.hideCheckedItems then
+      if tabData.hideCheckedItems then -- TODO hide cat with items? / close it automatically with special label ?
         tdlFrame.content.nothingLabel:SetText(utils:SafeStringFormat(L["(%i hidden item(s))"], numbers.checked))
         tdlFrame.content.nothingLabel:Show()
       end
@@ -692,11 +523,51 @@ local function loadContent()
 end
 
 local function loadList()
-  -- generating all of the content (items, checkboxes, editboxes, category labels...)
+  -- // generating all of the content (items, checkboxes, editboxes, category labels...)
+  -- it's the big big important generation loop (oof)
 
+  -- first things first, we hide EVERY widget, so that we only show the good ones after
+  for _,contentWidget in pairs(contentWidgets) do
+    contentWidget:ClearAllPoints()
+    contentWidget:Hide()
+  end
 
+  -- let's go!
+  local tabID, tabData = ctab(), select(3, dataManager:Find(ctab()))
+  local newX, xSpace, newY, ySpace = 0, 12, 0, 28
+  local oldCatWidget = tdlFrame.content.dummyFrame -- starting point
 
-  -- TODO big big important generation loop oof
+  -- category widgets loop
+  for catOrder,catID in ipairs(tabData.orderedCatIDs) do
+    contentWidgets[catID]:SetPoint("TOPLEFT", oldCatWidget, "TOPLEFT", newX, newY)
+    contentWidgets[catID]:Show()
+    oldCatWidget = contentWidgets[catID]
+    newY = newY + ySpace
+
+    local catData = contentWidgets[catID].catData
+
+    if catData.closedInTabIDs[tabID] then
+      contentWidgets[catID].favsRemainingLabel:Show()
+      goto nextCat
+    else
+      contentWidgets[catID].favsRemainingLabel:Hide()
+    end
+
+    -- item widgets loop
+    newX = newX + xSpace
+    for itemOrder,itemID in ipairs(catData.orderedContentIDs) do -- TODO for now, only items
+      if dataManager:IsHidden(itemID) then goto nextItem end -- optimize this func
+
+      contentWidgets[itemID]:SetPoint("TOPLEFT", oldCatWidget, "TOPLEFT", newX, newY)
+      contentWidgets[itemID]:Show()
+      newY = newY + ySpace
+
+      ::nextItem::
+    end
+    newX = newX - xSpace
+
+    ::nextCat::
+  end
 end
 
 -- // frame refresh
