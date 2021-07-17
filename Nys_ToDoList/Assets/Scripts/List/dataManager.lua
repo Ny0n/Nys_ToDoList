@@ -8,11 +8,25 @@ local enums = addonTable.enums
 local utils = addonTable.utils
 local widgets = addonTable.widgets
 local database = addonTable.database
-local mainFrame = addonTable.mainFrame
 local dataManager = addonTable.dataManager
 local resetManager = addonTable.resetManager
 local optionsManager = addonTable.optionsManager
 local tutorialsManager = addonTable.tutorialsManager
+
+-- the access to mainFrame is controlled:
+-- this file can only call mainFrame funcs if the tdlFrame exists
+-- this is only to counter the fact that to migrate the
+-- odl variables to the new ones, i have to call funcs here before the list is loaded
+
+local _mainFrame = addonTable.mainFrame
+local dummyFunc = function()end
+
+local mainFrame = setmetatable({}, {
+	__index = function (t,k)
+		if not _mainFrame:GetFrame() then return dummyFunc end
+    return _mainFrame[k]   -- access the original table
+  end,
+})
 
 -- Variables
 local L = core.L
@@ -224,6 +238,10 @@ function dataManager:AddItem(itemData, itemID, itemOrder)
 		tinsert(cIDs, itemOrder[catID] > #cIDs and #cIDs + 1 or itemOrder[catID], itemID) -- saved order or first
 	end
 
+	-- refresh the mainFrame
+	mainFrame:UpdateWidget(itemID)
+	mainFrame:Refresh()
+
 	return itemID
 end
 
@@ -281,6 +299,10 @@ function dataManager:AddCategory(catData, catID, catOrder)
 		local ordersloc = dataManager:GetCategoryOrdersLoc(catID, tabID)
 		tinsert(ordersloc, catOrder[catID] > #ordersloc and #ordersloc + 1 or catOrder[catID], catID) -- saved order or first
 	end
+
+	-- refresh the mainFrame
+	mainFrame:UpdateWidget(catID)
+	mainFrame:Refresh()
 
 	return catID
 end
@@ -356,6 +378,8 @@ function dataManager:AddTab(tabData, isGlobal, tabID, tabOrder)
 	-- and we add it ordered in the tabs table
 	local oIDs = tabsList.orderedTabIDs
 	tinsert(oIDs, tabOrder <= #oIDs and tabOrder or #oIDs + 1, tabID) -- saved order or last
+
+	-- TODO refresh frame? check other tab func too
 
 	return tabID
 end
@@ -454,10 +478,14 @@ function dataManager:DeleteItem(itemID)
 	dataManager:AddUndo(undoData)
   itemsList[itemID] = nil -- delete action
 
+	-- refresh the mainFrame
+	mainFrame:DeleteWidget(itemID)
+	mainFrame:Refresh()
+
 	return true
 end
 
--- category
+-- category -- TODO check empty
 
 function dataManager:DeleteCat(catID, empty)
 	local catData, _, categoriesList = select(3, dataManager:Find(catID))
@@ -471,6 +499,7 @@ function dataManager:DeleteCat(catID, empty)
 
 	-- we delete everything inside the category, even sub-categories recursively
 	for _,contentID in pairs(catData.orderedContentIDs) do
+		mainFrame:DontRefreshNextTime() -- TODO IsProtected OULA
 		if dataManager:Find(contentID) == enums.category then -- current ID is a sub-category
 			dataManager:DeleteCat(contentID)
 		else -- current ID is an item
@@ -491,6 +520,10 @@ function dataManager:DeleteCat(catID, empty)
 	end
 	dataManager:AddUndo(nbToDelete - #catData.orderedContentIDs) -- to undo in one go everything that was removed
 
+	-- refresh the mainFrame
+	mainFrame:DeleteWidget(catID)
+	mainFrame:Refresh()
+
 	return true
 end
 
@@ -509,12 +542,14 @@ function dataManager:DeleteTab(tabID)
 	-- first we remove every shown tab ID
 	for shownTabID in pairs(tabData.shownIDs) do
 		if shownTabID ~= tabID then
+			mainFrame:DontRefreshNextTime()
 			dataManager:UpdateShownTabID(tabID, shownTabID, false)
 		end
 	end
 
  	-- we delete everything inside the tab, this means every category inside of it
 	for _,catID in pairs(tabData.orderedCatIDs) do
+		mainFrame:DontRefreshNextTime()
 		dataManager:DeleteCat(catID) -- TODO protected?
 	end
 
@@ -527,6 +562,9 @@ function dataManager:DeleteTab(tabID)
 	  tabsList[tabID] = nil -- delete action
 	end
 	dataManager:AddUndo(nbToDelete - #tabsList.orderedCatIDs) -- to undo in one go everything that was removed
+
+	-- refresh the mainFrame
+	mainFrame:Refresh() -- TODO OULA choose automatically a new selected tab?
 
 	return true
 end
@@ -608,6 +646,10 @@ function dataManager:CheckName(name, enum)
 		-- TODO message
 		return false
 	elseif widgets:GetWidth(name) > maxNameWidth[enum] then -- width
+		-- TODO redo this? if it has an hyperlink in it and it's too big, we allow it to be a little longer, considering hyperlinks take more place
+		-- if l:GetWidth() > itemNameWidthMax and utils:HasHyperlink(newItemName) then
+		-- 	l:SetFontObject("GameFontNormal")
+		-- end
 		-- TODO message
 		return false
 	end
@@ -621,6 +663,11 @@ function dataManager:Rename(ID, newName)
 	if not dataManager:CheckName(newName, enum) then return end
 
 	dataTable.name = newName
+
+	-- refresh the mainFrame
+	mainFrame:UpdateWidget(ID)
+	mainFrame:Refresh()
+
 	return true
 end
 
@@ -641,12 +688,24 @@ end
 function dataManager:ToggleChecked(itemID)
 	local itemData = select(3, dataManager:Find(itemID))
 	itemData.checked = not itemData.checked
+
+	-- refresh the mainFrame
+	if NysTDL.db.profile.instantRefresh then -- TODO redo?
+		mainFrame:Refresh()
+	else
+		mainFrame:UpdateVisuals()
+	end
+
 	return itemData.checked
 end
 
 function dataManager:ToggleFavorite(itemID)
 	local itemData = select(3, dataManager:Find(itemID))
 	itemData.favorite = not itemData.favorite
+
+	-- refresh the mainFrame
+	mainFrame:Refresh()
+
 	return itemData.favorite
 end
 
@@ -654,6 +713,10 @@ function dataManager:UpdateDescription(itemID, description)
 	local itemData = select(3, dataManager:Find(itemID))
 	if description == "" then description = false end
 	itemData.description = description
+
+	-- refresh the mainFrame
+	-- mainFrame:Refresh() -- TODO what to do?
+
 	return itemData.description
 end
 
@@ -710,6 +773,9 @@ function dataManager:UpdateTabsDisplay(originalTabID, modif, ID)
 				itemData.tabIDs[tabID] = modif
 		end
 	end
+
+	-- refresh the mainFrame
+	mainFrame:Refresh()
 end
 
 function dataManager:UpdateShownTabID(tabID, shownTabID, state)
@@ -734,22 +800,32 @@ function dataManager:UncheckTab(tabID)
 	for itemID,itemData in dataManager:ForEach(enums.item, tabID) do
 		itemData.checked = false
 	end
+
+	-- refresh the mainFrame
+	mainFrame:Refresh()
 end
 
 function dataManager:CheckTab(tabID)
 	for itemID,itemData in dataManager:ForEach(enums.item, tabID) do
 		itemData.checked = true
 	end
+
+	-- refresh the mainFrame
+	mainFrame:Refresh()
 end
 
 function dataManager:ClearTab(tabID)
 	local removed = 0
 	for catID,catData in dataManager:ForEach(enums.category, tabID) do
+		mainFrame:DontRefreshNextTime() -- TODO OULA protected?
 		if dataManager:DeleteCat(catID) then
 			removed = removed + 1
 		end
 	end
 	dataManager:AddUndo(removed)
+
+	-- refresh the mainFrame
+	mainFrame:Refresh()
 end
 
 function dataManager:DoIfFoundTabMatch(maxTime, checkedType, callback, doAll)
@@ -772,6 +848,12 @@ function dataManager:DoIfFoundTabMatch(maxTime, checkedType, callback, doAll)
 			end
 		end
 	end
+end
+
+function dataManager:IsHidden(itemID, tabID)
+	local itemData = select(3, dataManager:Find(itemID))
+	local tabData = select(3, dataManager:Find(tabID))
+	return tabData.hideCheckedItems and itemData.checked
 end
 
 --/*******************/ UTILS /*************************/--

@@ -18,14 +18,12 @@ local tutorialsManager = addonTable.tutorialsManager
 local L = core.L
 local LDD = core.LDD
 
-local ctab -- will be set at init
-local tdlFrame
+local tdlFrame -- THE frame
 
 -- reset variables
 
-local dontRefreshPls = false
-local categoryWidgets = {}
-local itemWidgets = {}
+local dontRefreshPls = 0
+local contentWidgets
 local menuFrames = {
   -- these will be replaced in the code,
   -- but i'm putting them here just so i can remember how this table works
@@ -35,29 +33,28 @@ local menuFrames = {
 
 --[[
 
--- // categoryWidgets and itemWidgets examples:
+-- // contentWidgets examples:
 
-categoryWidgets = {
+contentWidgets = {
   [catID] = { -- widgets:CategoryWidget(catID)
     -- data
+    enum = enums.category,
     catID = catID,
     catData = catData,
     -- frames
     interactiveLabel,
     favsRemainingLabel,
-    editBox,
+    addEditBox,
   },
   ...
-}
-
-itemWidgets = {
-  [itemID] = { -- widgets:CategoryWidget(catID) -- TODO this is a frame, not just a table
+  [itemID] = { -- widgets:ItemWidget(itemID)
     -- data
+    enum = enums.item,
     itemID = itemID,
     itemData = itemData,
     -- frames
-    interactiveLabel,
     checkBtn,
+    interactiveLabel,
     removeBtn,
     favoriteBtn,
     descBtn,
@@ -69,9 +66,7 @@ itemWidgets = {
 
 -- these are for code comfort
 
-local currentDBItemsList
-local categoryNameWidthMax = 220
-local itemNameWidthMax = 240
+local ctab -- set at initialization
 local centerXOffset = 165
 local lineOffset = 120
 local cursorX, cursorY, cursorDist = 0, 0, 10 -- for my special drag
@@ -137,41 +132,15 @@ function mainFrame:ChangeTab(newTabID)
   mainFrame:Refresh()
 end
 
-function mainFrame:Refresh()
-  -- // THE refresh function, reloads the entire list's content in accordance to the current database
+-- // frame color/visual update functions
 
-  if dontRefreshPls then
-    dontRefreshPls = false
-    return
-  end
-
-  -- // ************************************************************* // --
-
-  local tabID = ctab()
-  local tabData = select(3, dataManager:Find(tabID))
-
-  -- TAB OPTION: delete/hide checked items
-  if tabData.deleteCheckedItems or tabData.hideCheckedItems then
-    for itemID,itemData in dataManager:ForEach(enums.item, tabID) do -- for each item in the tab
-      if itemData.originalTabID == tabID and itemData.checked then -- if the item is native to the tab and checked
-        dontRefreshPls = true
-        if tabData.deleteCheckedItems then
-          mainFrame:RemoveItem(itemID)
-        else
-          mainFrame:HideItem(itemID) -- TODO remove this, do dataManager:IsHidden(itemID, tabID)
-        end
-      end
+function mainFrame:UpdateCheckedStates()
+  for _,contentWidget in pairs(contentWidgets) do
+    if contentWidget.enum == enums.item then -- for every item checkboxes
+      contentWidget.checkBtn:SetChecked(contentWidget.itemData.checked)
     end
   end
-
-  -- // ************************************************************* // --
-
-  mainFrame:LoadContent() -- content reloading (menus, buttons, ...)
-  mainFrame:LoadList() -- list reloading (categories, items, ...)
-  mainFrame:UpdateVisuals() -- coloring...
 end
-
--- // frame color/visual update functions
 
 function mainFrame:UpdateRemainingNumberLabels()
   local tabID = ctab()
@@ -184,15 +153,17 @@ function mainFrame:UpdateRemainingNumberLabels()
   -- we update the remaining numbers of every category visible in the tab
   for catID,catData in dataManager:ForEach(enums.category, tabID) do
     local nbFav = dataManager:GetRemainingNumbers(nil, tabID, catID).uncheckedFavs
-    categoryWidgets[catID].favsRemainingLabel:SetText(nbFav > 0 and "("..nbFav..")" or "")
+    contentWidgets[catID].favsRemainingLabel:SetText(nbFav > 0 and "("..nbFav..")" or "")
   end
 end
 
 function mainFrame:updateFavsRemainingNumbersColor()
   -- this updates the favorite color for every favorites remaining number label
   tdlFrame.remainingFavsNumber:SetTextColor(unpack(NysTDL.db.profile.favoritesColor))
-  for _, catWidget in pairs(categoryWidgets) do -- for every category widgets
-    catWidget.favsRemainingLabel:SetTextColor(unpack(NysTDL.db.profile.favoritesColor))
+  for _, contentWidget in pairs(contentWidgets) do
+    if contentWidget.enum == enums.category then -- for every category widgets
+      catWidget.favsRemainingLabel:SetTextColor(unpack(NysTDL.db.profile.favoritesColor))
+    end
   end
 end
 
@@ -211,20 +182,11 @@ function mainFrame:UpdateItemNamesColor()
   end
 end
 
-function mainFrame:UpdateVisuals()
-  -- updates everything visual about the frame without actually fully refreshing it,
-  -- like colors, etc... (it's a less-intensive version)
-  mainFrame:UpdateRemainingNumberLabels()
-  mainFrame:updateFavsRemainingNumbersColor()
-  mainFrame:UpdateItemNamesColor()
-  widgets:UpdateTDLButtonColor()
-end
-
-function itemsFrame:ApplyNewRainbowColor(i)
+function mainFrame:ApplyNewRainbowColor()
   -- // when called, takes the current favs color, goes to the next one i times, then updates the visual
   -- it is called by the OnUpdate event of the frame / of one of the description frames
 
-  i = i or 1
+  local i = NysTDL.db.profile.rainbowSpeed
 
   local r, g, b = unpack(NysTDL.db.profile.favoritesColor)
   local Cmax = math.max(r, g, b)
@@ -269,8 +231,8 @@ function itemsFrame:ApplyNewRainbowColor(i)
 
   -- we apply the new color where it needs to be
   NysTDL.db.profile.favoritesColor = { r, g, b }
-  itemsFrame:updateFavsRemainingNumbersColor()
-  itemsFrame:UpdateItemNamesColor()
+  mainFrame:updateFavsRemainingNumbersColor()
+  mainFrame:UpdateItemNamesColor()
 end
 
 function mainFrame:UpdateItemButtons(itemID)
@@ -456,9 +418,7 @@ function mainFrame:Event_TDLFrame_OnUpdate(self, elapsed)
   tutorialsManager:UpdateFramesVisibility()
 
   while self.timeSinceLastUpdate > updateRate do -- every 0.05 sec (instead of every frame which is every 1/144 (0.007) sec for a 144hz display... optimization :D)
-    if NysTDL.db.profile.rainbow then
-      mainFrame:ApplyNewRainbowColor(NysTDL.db.profile.rainbowSpeed)
-    end
+    if NysTDL.db.profile.rainbow then mainFrame:ApplyNewRainbowColor() end
     self.timeSinceLastUpdate = self.timeSinceLastUpdate - updateRate
   end
 
@@ -470,18 +430,42 @@ end
 
 --/*******************/ LIST LOADING /*************************/--
 
-local function loadMovable()
+function mainFrame:UpdateWidget(ID, enum)
+  if contentWidgets[ID] then
+    contentWidgets[ID]:ClearAllPoints()
+    contentWidgets[ID]:Hide()
+  end
+
+  if enum == enums.item then
+    contentWidgets[ID] = widgets:ItemWidget(ID, tdlFrame.content)
+  elseif enum == enums.category then
+    contentWidgets[ID] = widgets:CategoryWidget(ID, tdlFrame.content)
+  end
+end
+
+function mainFrame:DeleteWidget(ID)
+  if contentWidgets[ID] then
+    contentWidgets[ID]:ClearAllPoints()
+    contentWidgets[ID]:Hide()
+    if contentWidgets[ID].enum == enums.category then
+      widgets:RemoveHyperlinkEditBox(contentWidgets[ID].addEditBox)
+    end
+    contentWidgets[ID] = nil
+  end
+end
+
+local function loadWidgets()
   -- // creating every category and item widget for the list
   -- called at load time / when changing profiles to crunch every creation at the same time
 
   -- category widgets
   for catID in dataManager:ForEach(enums.category) do
-    widgets:CategoryWidget(catID)
+    mainFrame:UpdateWidget(catID, enums.category)
   end
 
   -- item widgets
   for itemID in dataManager:ForEach(enums.item) do
-    widgets:ItemWidget(itemID)
+    mainFrame:UpdateWidget(itemID, enums.item)
   end
 end
 
@@ -664,48 +648,106 @@ end
 
 -- // Content loading
 
-function mainFrame:LoadContent()
-  -- we show the good sub-menu (add a category, frame options, tab actions, ...)
-  for menuEnum,frame in pairs(menuFrames) do -- so first we hide each of them
+local function loadContent()
+  -- // reloading of elements that need updates
+
+  -- // we show the good sub-menu (add a category, frame options, tab actions, ...)
+  -- so first we hide each of them
+  for menuEnum,frame in pairs(menuFrames) do
     if menuEnum ~= "selected" then frame:Hide() end
   end
-  if menuFrames.selected then -- and then we show the good one, if there is one to show
+
+  -- and then we show the good one, if there is one to show
+  if menuFrames.selected then
     local menu = menuFrames[menuFrames.selected]
     menu:Show()
-    itemsFrameUI.lineBottom:SetStartPoint("TOPLEFT", centerXOffset-lineOffset, -59 - menu:GetHeight())
-    itemsFrameUI.lineBottom:SetEndPoint("TOPLEFT", centerXOffset+lineOffset, -59 - menu:GetHeight())
+    tdlFrame.content.lineBottom:SetStartPoint("TOPLEFT", centerXOffset-lineOffset, -59 - menu:GetHeight())
+    tdlFrame.content.lineBottom:SetEndPoint("TOPLEFT", centerXOffset+lineOffset, -59 - menu:GetHeight())
   else
-    itemsFrameUI.lineBottom:SetStartPoint("TOPLEFT", centerXOffset-lineOffset, -59)
-    itemsFrameUI.lineBottom:SetEndPoint("TOPLEFT", centerXOffset+lineOffset, -59)
+    tdlFrame.content.lineBottom:SetStartPoint("TOPLEFT", centerXOffset-lineOffset, -59)
+    tdlFrame.content.lineBottom:SetEndPoint("TOPLEFT", centerXOffset+lineOffset, -59)
   end
-end
 
-function mainFrame:LoadList()
-  -- generating all of the content (items, checkboxes, editboxes, category labels...)
+  -- // nothing label ("There are no items!" / "(%i hidden item(s))")
+  -- first, we get how many items there are in the tab
+  local numbers = dataManager:GetRemainingNumbers(nil, ctab())
 
-  -- Nothing label -- TODO redo, and redo shownInTab to know about hidden items
-  -- first, we get how many items there are shown in the tab
-  local checked, _, unchecked = mainFrame:UpdateRemainingNumbers()
-  -- then we show/hide the nothing label depending on the result
-  tdlFrame.nothingLabel:SetPoint("TOP", tdlFrame.lineBottom, "TOP", 0, - 20) -- to correctly center this text on diffent screen sizes
-  tdlFrame.nothingLabel:Hide()
-  if (checked[tab:GetName()] + unchecked[tab:GetName()] == 0) then -- if there is nothing to show in the tab we're in
-    tdlFrame.nothingLabel:SetText(L["There are no items!"])
-    tdlFrame.nothingLabel:Show()
+  -- we hide it by default
+  tdlFrame.content.nothingLabel:Hide()
+
+  -- then we show it depending on the result
+  if numbers.total == 0 then -- if there are no items in the current tab
+    tdlFrame.content.nothingLabel:SetText(L["There are no items!"])
+    tdlFrame.content.nothingLabel:Show()
   else -- if there are items in the tab
-    if (unchecked[tab:GetName()] == 0) then -- and if they are checked ones
+    if numbers.checked == numbers.total then -- and if they are all checked ones
       -- we check if they are hidden or not, and if they are, we show the nothing label with a different text
-      if (false) then
-        tdlFrame.nothingLabel:SetText(utils:SafeStringFormat(L["(%i hidden item(s))"], checked[tab:GetName()]))
-        tdlFrame.nothingLabel:Show()
+      local tabData = select(3, dataManager:Find(ctab()))
+      if tabData.hideCheckedItems then
+        tdlFrame.content.nothingLabel:SetText(utils:SafeStringFormat(L["(%i hidden item(s))"], numbers.checked))
+        tdlFrame.content.nothingLabel:Show()
       end
     end
   end
+end
+
+local function loadList()
+  -- generating all of the content (items, checkboxes, editboxes, category labels...)
+
+
 
   -- TODO big big important generation loop oof
 end
 
--- TODO recheck TOUS les unchecktab etc pour que datamanager fasse les bon refresh?
+-- // frame refresh
+
+function mainFrame:UpdateVisuals()
+  -- updates everything visual about the frame without actually fully refreshing it,
+  -- this func can be called on its own, it's a less-intensive version than calling Refresh
+  mainFrame:UpdateCheckedStates()
+  mainFrame:UpdateRemainingNumberLabels()
+  mainFrame:updateFavsRemainingNumbersColor()
+  mainFrame:UpdateItemNamesColor()
+  widgets:UpdateTDLButtonColor()
+end
+
+function mainFrame:DontRefreshNextTime()
+  -- // this func is for optimization:
+  -- as an example, i sometimes only need to refresh the list one time after 10 operations instead of 10 times
+
+  dontRefreshPls = dontRefreshPls + 1
+end
+
+function mainFrame:Refresh()
+  -- // THE refresh function, reloads the entire list's content in accordance to the current database
+
+  -- anti-refresh for optimization
+  if dontRefreshPls > 0 then
+    dontRefreshPls = dontRefreshPls - 1
+    return
+  end
+
+  -- // ************************************************************* // --
+
+  local tabID = ctab()
+  local tabData = select(3, dataManager:Find(tabID))
+
+  -- TAB OPTION: delete checked items
+  if tabData.deleteCheckedItems then
+    for itemID,itemData in dataManager:ForEach(enums.item, tabID) do -- for each item in the tab
+      if itemData.originalTabID == tabID and itemData.checked then -- if the item is native to the tab and checked
+        mainFrame:DontRefreshNextTime()
+        mainFrame:RemoveItem(itemID)
+      end
+    end
+  end
+
+  -- // ************************************************************* // --
+
+  loadContent() -- content reloading (menus, buttons, ...)
+  loadList() -- list reloading (categories, items, ...)
+  mainFrame:UpdateVisuals() -- coloring...
+end
 
 --/*******************/ FRAME CREATION /*************************/--
 
@@ -1071,26 +1113,17 @@ local function generateMenuTabActions()
 
   menuframe.btnCheck = widgets:Button("btnCheck_menuframe", menuframe, L["Check"], "Interface\\BUTTONS\\UI-CheckBox-Check")
   menuframe.btnCheck:SetPoint("TOPLEFT", menuframe.menuTitle, "TOP", 20, - 35) -- TODO redo this (x pos)
-  menuframe.btnCheck:SetScript("OnClick", function()
-    dataManager:CheckTab(ctab())
-    mainFrame:Refresh()
-  end)
+  menuframe.btnCheck:SetScript("OnClick", function() dataManager:CheckTab(ctab()) end)
 
   menuframe.btnUncheck = widgets:Button("btnUncheck_menuframe", menuframe, L["Uncheck"], "Interface\\BUTTONS\\UI-CheckBox-Check-Disabled")
   menuframe.btnUncheck:SetPoint("TOPLEFT", menuframe.btnCheck, "TOPRIGHT", 10, 0)
-  menuframe.btnUncheck:SetScript("OnClick", function()
-    dataManager:UncheckTab(ctab())
-    mainFrame:Refresh()
-  end)
+  menuframe.btnUncheck:SetScript("OnClick", function() dataManager:UncheckTab(ctab()) end)
 
   --/************************************************/--
 
   menuframe.btnClear = widgets:Button("clearButton", menuframe, L["Clear"], "Interface\\GLUES\\LOGIN\\Glues-CheckBox-Check")
   menuframe.btnClear:SetPoint("TOP", menuframe.btnCheck, "TOPLEFT", 50, -45) -- TODO redo x pos
-  menuframe.btnClear:SetScript("OnClick", function()
-    dataManager:ClearTab(ctab())
-    mainFrame:Refresh()
-  end)
+  menuframe.btnClear:SetScript("OnClick", function() dataManager:ClearTab(ctab()) end)
 end
 
 local function generateFrameContent()
@@ -1148,6 +1181,7 @@ local function generateFrameContent()
   content.lineBottom = widgets:ThemeLine(content, database.themes.theme, 0.7)
 
   content.nothingLabel = widgets:NothingLabel(content)
+  content.nothingLabel:SetPoint("TOP", tdlFrame.lineBottom, "TOP", 0, -20)
 
   content.dummyFrame = widgets:Dummy(content, content.lineBottom, 0, 0)
   content.dummyFrame:SetPoint("TOPLEFT", content.lineBottom, "TOPLEFT", -35, -20) -- TODO redo?
@@ -1178,10 +1212,7 @@ function mainFrame:CreateTDLFrame()
   tdlFrame:SetMovable(true)
   tdlFrame:SetClampedToScreen(true)
   tdlFrame:EnableMouse(true)
-  -- tdlFrame:SetHyperlinksEnabled(true) -- to enable OnHyperlinkClick on the frame
-  -- tdlFrame:SetScript("OnHyperlinkClick", function(_, linkData, link, button)
-  --   ChatFrame_OnHyperlinkShow(ChatFrame1, linkData, link, button)
-  -- end)
+  -- widgets:SetHyperlinksEnabled(tdlFrame, true)
 
   tdlFrame:HookScript("OnUpdate", mainFrame.Event_TDLFrame_OnUpdate)
   tdlFrame:HookScript("OnShow", mainFrame.Event_TDLFrame_OnVisibilityUpdate)
@@ -1298,24 +1329,17 @@ function mainFrame:ResetContent()
   -- we have to reset all of the frame ourserves, so that means:
 
   -- 1 - having to hide everything in it
-  for catName, items in pairs(currentDBItemsList) do -- TODO redo this
-    for itemName in pairs(items) do
-      checkBtn[catName][itemName]:Hide()
-    end
+  -- hide categories and items
+  for ID in pairs(contentWidgets) do
+    mainFrame:DeleteWidget(ID)
   end
 
-  for k, _ in pairs(currentDBItemsList) do -- TODO redo this
-    label[k]:Hide()
-    categoryLabelFavsRemaining[k]:Hide()
-    editBox[k]:Hide()
-    widgets:RemoveHyperlinkEditBox(editBox[k])
-  end
-
+  -- hide description frames
   widgets:WipeDescFrames()
 
   -- 2 - reset every content variable to their default value
-  dontRefreshPls = false
-  -- TODO put rest here
+  dontRefreshPls = 0
+  wipe(contentWidgets)
   wipe(menuFrames)
 end
 
@@ -1338,10 +1362,10 @@ function mainFrame:Init(profileChanged)
   tdlFrame.frameContentAlphaSlider:SetValue(NysTDL.db.profile.frameContentAlpha)
   tdlFrame.affectDesc:SetChecked(NysTDL.db.profile.affectDesc)
 
-  -- we generate the core once
-  loadMovable()
+  -- we generate the widgets once
+  loadWidgets()
 
-  --widgets:SetEditBoxHyperlinkClicks(true) -- see func details for why i'm not using it
+  --widgets:SetEditBoxesHyperlinksEnabled(true) -- see func details for why i'm not using it
 
   -- // then we refresh everything
 

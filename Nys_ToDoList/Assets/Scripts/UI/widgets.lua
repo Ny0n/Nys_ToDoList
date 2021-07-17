@@ -15,6 +15,8 @@ local dummyFrame = CreateFrame("Frame", nil, UIParent)
 local hyperlinkEditBoxes = {}
 local descFrames = {}
 local descFrameLevelDiff = 20
+local categoryNameWidthMax = 220 -- TODO use those from dataManager?
+local itemNameWidthMax = 240
 local tdlButton
 
 --/*******************/ MISC /*************************/--
@@ -29,20 +31,12 @@ function widgets:RemoveHyperlinkEditBox(editBox)
   table.remove(hyperlinkEditBoxes, select(2, utils:HasValue(hyperlinkEditBoxes, editBox))) -- removing the ref of the hyperlink edit box
 end
 
-function widgets:SetEditBoxHyperlinkClicks(activated)
+function widgets:SetEditBoxesHyperlinksEnabled(enabled)
   -- IMPORTANT: this code is to activate hyperlink clicks in edit boxes such as the ones for adding new items in categories,
   -- I disabled this for practical reasons: it's easier to write new item names in them if we can click on the links without triggering the hyperlink (and it's not very useful anyways :D).
 
-  for _, v in pairs(hyperlinkEditBoxes) do
-    if activated and not v:GetHyperlinksEnabled() then -- just to be sure they are new ones (eg: not redo this for the first item name edit box of the add a category menu)
-      v:SetHyperlinksEnabled(true) -- to enable OnHyperlinkClick
-      v:SetScript("OnHyperlinkClick", function(self, linkData, link, button)
-        ChatFrame_OnHyperlinkShow(ChatFrame1, linkData, link, button)
-      end)
-    elseif not activated and v:GetHyperlinksEnabled() then
-      v:SetHyperlinksEnabled(false) -- to disable OnHyperlinkClick
-      v:SetScript("OnHyperlinkClick", nil)
-    end
+  for _, editBox in pairs(hyperlinkEditBoxes) do
+    widgets:SetHyperlinksEnabled(editBox, enabled)
   end
 end
 
@@ -172,6 +166,18 @@ function widgets:GetWidth(text)
   return l:GetWidth()
 end
 
+function widgets:SetHyperlinksEnabled(frame, enabled)
+  if enabled then
+    frame:SetHyperlinksEnabled(true) -- to enable OnHyperlinkClick
+    frame:SetScript("OnHyperlinkClick", function(_, linkData, link, button)
+      ChatFrame_OnHyperlinkShow(ChatFrame1, linkData, link, button)
+    end)
+  else
+    frame:SetHyperlinksEnabled(false) -- to disable OnHyperlinkClick
+    frame:SetScript("OnHyperlinkClick", nil)
+  end
+end
+
 --/*******************/ FRAMES /*************************/--
 
 function widgets:TutorialFrame(tutoName, parent, showCloseButton, arrowSide, text, width, height)
@@ -261,7 +267,7 @@ function widgets:DescriptionFrame(itemWidget)
       -- we use that one to cycle the rainbow colors if the list gets closed
       if not tdlFrame:IsShown() then
         if self:GetFrameLevel() == 300 then
-          if NysTDL.db.profile.rainbow then mainFrame:ApplyNewRainbowColor(NysTDL.db.profile.rainbowSpeed) end
+          if NysTDL.db.profile.rainbow then mainFrame:ApplyNewRainbowColor() end
         end
       end
 
@@ -322,10 +328,7 @@ function widgets:DescriptionFrame(itemWidget)
   descFrame.title:SetFontObject("GameFontNormalLarge")
   descFrame.title:SetPoint("TOPLEFT", descFrame, "TOPLEFT", 6, -5)
   descFrame.title:SetText(itemData.name)
-  descFrame:SetHyperlinksEnabled(true) -- to enable OnHyperlinkClick on the frame
-  descFrame:SetScript("OnHyperlinkClick", function(_, linkData, link, button)
-    ChatFrame_OnHyperlinkShow(ChatFrame1, linkData, link, button)
-  end)
+  widgets:SetHyperlinksEnabled(descFrame, true)
 
   -- description edit box
   descFrame.descriptionEditBox = CreateFrame("ScrollFrame", frameName.."_EditBox", descFrame, "InputScrollFrameTemplate")
@@ -347,10 +350,7 @@ function widgets:DescriptionFrame(itemWidget)
       itemWidget.descBtn:GetScript("OnShow")(itemWidget.descBtn)
     end
   end)
-  descFrame.descriptionEditBox.EditBox:SetHyperlinksEnabled(true) -- to enable OnHyperlinkClick in the EditBox
-  descFrame.descriptionEditBox.EditBox:SetScript("OnHyperlinkClick", function(_, linkData, link, button)
-    ChatFrame_OnHyperlinkShow(ChatFrame1, linkData, link, button)
-  end)
+  widgets:SetHyperlinksEnabled(descFrame.descriptionEditBox.EditBox, true)
   widgets:AddHyperlinkEditBox(descFrame.descriptionEditBox.EditBox)
 
   table.insert(descFrames, descFrame) -- we save it for access, level, hide, and alpha purposes
@@ -381,7 +381,7 @@ function widgets:NoPointsLabel(relativeFrame, name, text)
   return label
 end
 
-function widgets:NoPointsInteractiveLabel(name, relativeFrame, text, fontObjectString)
+function widgets:NoPointsInteractiveLabel(relativeFrame, name, text, fontObjectString)
   local interactiveLabel = CreateFrame("Frame", name, relativeFrame, "NysTDL_InteractiveLabel")
   interactiveLabel.Text:SetFontObject(fontObjectString)
   interactiveLabel.Text:SetText(text)
@@ -611,219 +611,220 @@ end
 
 --/*******************/ ITEM/CATEGORY WIDGETS /*************************/--
 
--- TODO redo
-function widgets:CategoryWidget(catID)
-  -- category label
-  label[catName] = widgets:NoPointsInteractiveLabel("NysTDL_CatLabel_"..catName, tdlFrame, catName, "GameFontHighlightLarge")
-  label[catName].catName = catName -- easy access to the catName of the label, this also allows the shown text to be different
-  label[catName].Button:SetScript("OnEnter", function(self)
+--[[
+
+-- // categoryWidget example:
+
+contentWidgets = {
+  [catID] = { -- widgets:CategoryWidget(catID)
+    -- data
+    enum = enums.category,
+    catID = catID,
+    catData = catData,
+    -- frames
+    interactiveLabel,
+    favsRemainingLabel,
+    addEditBox,
+  },
+  ...
+}
+
+]]
+
+function widgets:CategoryWidget(catID, parentFrame)
+  local categoryWidget = CreateFrame("Frame", "noname", parentFrame, nil) -- TODO replace all "noname"
+
+  -- // data
+
+  categoryWidget.enum = enums.category
+  categoryWidget.catID = catID
+  categoryWidget.catData = select(3, dataManager:Find(catID))
+  local catData = categoryWidget.catData
+
+  -- // frames
+
+  -- / interactiveLabel
+  categoryWidget.interactiveLabel = widgets:NoPointsInteractiveLabel(categoryWidget, "noname", catData.name, "GameFontHighlightLarge")
+  categoryWidget.interactiveLabel.Button:SetScript("OnEnter", function(self)
     local r, g, b = unpack(utils:ThemeDownTo01(database.themes.theme))
     self:GetParent().Text:SetTextColor(r, g, b, 1) -- when we hover it, we color the label
   end)
-  label[catName].Button:SetScript("OnLeave", function(self)
+  categoryWidget.interactiveLabel.Button:SetScript("OnLeave", function(self)
     self:GetParent().Text:SetTextColor(1, 1, 1, 1) -- back to the default color
   end)
-  label[catName].Button:SetScript("OnClick", function(self, button)
-    if (IsAltKeyDown()) then return end -- we don't do any of the OnClick code if we have the Alt key down, bc it means that we want to rename the category by double clicking
-    local catName = self:GetParent().catName
-    if (button == "LeftButton") then -- we open/close the category
-      if (utils:HasKey(NysTDL.db.profile.closedCategories, catName) and NysTDL.db.profile.closedCategories[catName] ~= nil) then -- if this is a category that is closed in certain tabs
-        local isPresent, pos = utils:HasValue(NysTDL.db.profile.closedCategories[catName], dataManager:GetName(ctab())) -- we get if it is closed in the current tab
-        if (isPresent) then -- if it is
-          table.remove(NysTDL.db.profile.closedCategories[catName], pos) -- then we remove it from the saved variable
-          if (#NysTDL.db.profile.closedCategories[catName] == 0) then -- and btw check if it was the only tab remaining where it was closed
-            NysTDL.db.profile.closedCategories[catName] = nil -- in which case we nil the table variable for that category
-          end
-        else  -- if it is opened in the current tab
-          table.insert(NysTDL.db.profile.closedCategories[catName], dataManager:GetName(ctab())) -- then we close it by adding it to the saved variable
-        end
-      else -- if this category was closed nowhere
-        NysTDL.db.profile.closedCategories[catName] = {dataManager:GetName(ctab())} -- then we create its table variable and initialize it with the current tab (we close the category in the current tab)
-      end
+  categoryWidget.interactiveLabel.Button:SetScript("OnClick", function(_, button)
+    -- we don't do any of the OnClick code if we have the Alt key down,
+    -- bc it means that we may want to rename the category by double clicking
+    if IsAltKeyDown() then return end
 
-      -- and finally, we reload the frame to display the changes
-      mainFrame:Refresh()
-    elseif (button == "RightButton") then -- we try to toggle the edit box to add new items
-      -- if the label we right clicked on is NOT a closed category
-      if (not (select(1, utils:HasKey(NysTDL.db.profile.closedCategories, catName))) or not (select(1, utils:HasValue(NysTDL.db.profile.closedCategories[catName], dataManager:GetName(ctab()))))) then
-        -- we toggle its edit box
-        editBox[catName]:SetShown(not editBox[catName]:IsShown())
+    if button == "LeftButton" then -- we open/close the category
+      catData.closedInTabIDs[database.ctab()] = not catData.closedInTabIDs[database.ctab()] or nil
+      mainFrame:Refresh() -- we refresh the list
+    elseif button == "RightButton" then -- we try to toggle the addEditBox
+      -- if the cat we right clicked on is NOT a closed category
+      if catData.closedInTabIDs[database.ctab()] then return end
 
-        if (editBox[catName]:IsShown()) then
-          -- tutorial
-          tutorialsManager:Validate("addItem")
+      -- we toggle its edit box
+      categoryWidget.addEditBox:SetShown(not categoryWidget.addEditBox:IsShown())
 
-          -- we also give that edit box the focus if we are showing it
-          widgets:SetFocusEditBox(editBox[catName])
-        end
+      if categoryWidget.addEditBox:IsShown() then -- and if we are opening it
+        tutorialsManager:Validate("addItem") -- tutorial
+        widgets:SetFocusEditBox(categoryWidget.addEditBox) -- we give it the focus
       end
     end
   end)
-  label[catName].Button:SetScript("OnDoubleClick", function(self)
-    if (not IsAltKeyDown()) then return end -- we don't do any of the OnDoubleClick code if we don't have the Alt key down
+  categoryWidget.interactiveLabel.Button:SetScript("OnDoubleClick", function(self)
+    -- we don't do any of the OnDoubleClick code if we don't have the Alt key down
+    if not IsAltKeyDown() then return end
 
-    -- first, we hide the label
-    local label = self:GetParent()
-    label.Text:Hide()
-    label.Button:Hide()
+    -- first, we hide the interactiveLabel
+    self:GetParent():Hide()
 
     -- then, we can create the new edit box to rename the category, where the label was
-    local catName = label.catName
-    local renameEditBox = widgets:NoPointsRenameEditBox(label, catName, categoryNameWidthMax, self:GetHeight())
-    renameEditBox:SetPoint("LEFT", label, "LEFT", 5, 0)
+    local renameEditBox = widgets:NoPointsRenameEditBox(categoryWidget, catData.name, categoryNameWidthMax, self:GetHeight())
+    renameEditBox:SetPoint("LEFT", categoryWidget, "LEFT", 5, 0)
 
     -- we move the favs remaining label to the right of the edit box while it's shown
-    if (utils:HasKey(categoryLabelFavsRemaining, catName)) then
-      categoryLabelFavsRemaining[catName]:ClearAllPoints()
-      categoryLabelFavsRemaining[catName]:SetPoint("LEFT", renameEditBox, "RIGHT", 6, 0)
-    end
+    categoryWidget.favsRemainingLabel:ClearAllPoints()
+    categoryWidget.favsRemainingLabel:SetPoint("LEFT", renameEditBox, "RIGHT", 6, 0)
 
     -- let's go!
     renameEditBox:SetScript("OnEnterPressed", function(self)
-      local newCatName = self:GetText()
-      -- first, we do some tests
-      if (newCatName == "") then -- if the new cat name is empty
-        self:GetScript("OnEscapePressed")(self) -- we cancel the action
-        return
-      elseif (newCatName == catName) then -- if the new is the same as the old
-        self:GetScript("OnEscapePressed")(self) -- we cancel the action
-        return
-      elseif (utils:HasKey(NysTDL.db.profile.itemsList, newCatName)) then -- if the new cat name already exists
-        chat:PrintForced(L["This category name already exists"]..". "..L["Please choose a different name to avoid overriding data"])
-        return
-      else
-        local l = widgets:NoPointsLabel(tdlFrame, nil, newCatName)
-        if (l:GetWidth() > categoryNameWidthMax) then -- if the new cat name is too big
-          chat:PrintForced(L["This categoty name is too big!"])
-          return
-        end
-      end
-
-      -- and if everything is good, we can rename the category
-      mainFrame:RenameCategory(catName, newCatName)
+      dataManager:Rename(catID, self:GetText()) -- TODO verify if it closes the box when it doesn't work
     end)
 
     -- cancelling
     renameEditBox:SetScript("OnEscapePressed", function(self)
+      -- we hide the edit box and show the label
       self:Hide()
-      label.Text:Show()
-      label.Button:Show()
-      -- when hiding the edit box, we reset the pos of the favs remaining label
-      if (utils:HasKey(categoryLabelFavsRemaining, catName)) then
-        categoryLabelFavsRemaining[catName]:ClearAllPoints()
-        categoryLabelFavsRemaining[catName]:SetPoint("LEFT", label, "RIGHT", 6, 0)
-      end
+      categoryWidget.interactiveLabel:Show()
+
+      -- when hiding the edit box, we reset the pos of the favsRemainingLabel
+      categoryWidget.favsRemainingLabel:ClearAllPoints()
+      categoryWidget.favsRemainingLabel:SetPoint("LEFT", categoryWidget.interactiveLabel, "RIGHT", 6, 0)
     end)
     renameEditBox:HookScript("OnEditFocusLost", function(self)
       self:GetScript("OnEscapePressed")(self)
     end)
   end)
 
-  -- associated favs remaining label
-  categoryLabelFavsRemaining[catName] = widgets:NoPointsLabel(label[catName], label[catName]:GetName().."_FavsRemaining", "")
+  -- / favsRemainingLabel
+  categoryWidget.favsRemainingLabel = widgets:NoPointsLabel(categoryWidget, "noname", "")
+  categoryWidget.favsRemainingLabel:SetPoint("LEFT", categoryWidget.interactiveLabel, "RIGHT", 6, 0) -- TODO hmmmm, is it okay?
 
-  -- associated edit box and add button
-  editBox[catName] = widgets:NoPointsCatEditBox(catName)
-  editBox[catName]:SetScript("OnEnterPressed", function(self)
-    mainFrame:AddItem(self)
+  -- / addEditBox
+  categoryWidget.addEditBox = widgets:NoPointsCatEditBox("noname")
+  categoryWidget.addEditBox:SetScript("OnEnterPressed", function(self)
+    dataManager:AddItem(dataManager:CreateItem(self:GetText(), database.ctab(), catID))
     self:Show() -- we keep it shown to add more items
     widgets:SetFocusEditBox(self)
   end)
   -- cancelling
-  editBox[catName]:SetScript("OnEscapePressed", function(self)
+  categoryWidget.addEditBox:SetScript("OnEscapePressed", function(self)
     self:Hide()
   end)
-  editBox[catName]:HookScript("OnEditFocusLost", function(self)
+  categoryWidget.addEditBox:HookScript("OnEditFocusLost", function(self)
     self:GetScript("OnEscapePressed")(self)
   end)
-  widgets:AddHyperlinkEditBox(editBox[catName])
+  widgets:AddHyperlinkEditBox(categoryWidget.addEditBox)
 end
 
--- TODO redo
-function widgets:ItemWidget(itemID)
-  local data = NysTDL.db.profile.itemsList[catName][itemName]
+--[[
 
-  if (not utils:HasKey(checkBtn, catName)) then checkBtn[catName] = {} end
-  checkBtn[catName][itemName] = CreateFrame("CheckButton", "NysTDL_CheckBtn_"..catName.."_"..itemName, tdlFrame, "UICheckButtonTemplate")
-  checkBtn[catName][itemName].InteractiveLabel = widgets:NoPointsInteractiveLabel(checkBtn[catName][itemName]:GetName().."_InteractiveLabel", checkBtn[catName][itemName], itemName, "GameFontNormalLarge")
-  checkBtn[catName][itemName].InteractiveLabel:SetPoint("LEFT", checkBtn[catName][itemName], "RIGHT")
-  checkBtn[catName][itemName].InteractiveLabel.Text:SetPoint("LEFT", checkBtn[catName][itemName], "RIGHT", 20, 0)
-  checkBtn[catName][itemName].catName = catName -- easy access to the catName this button is in
-  checkBtn[catName][itemName].itemName = itemName -- easy access to the itemName of this button, this also allows the shown text to be different
-  if (utils:HasHyperlink(itemName)) then -- this is for making more space for items that have hyperlinks in them
-    if (checkBtn[catName][itemName].InteractiveLabel.Text:GetWidth() > itemNameWidthMax) then
-      checkBtn[catName][itemName].InteractiveLabel.Text:SetFontObject("GameFontNormal")
+-- // itemWidget example:
+
+contentWidgets = {
+  [itemID] = { -- widgets:CategoryWidget(catID)
+    -- data
+    enum = enums.item,
+    itemID = itemID,
+    itemData = itemData,
+    -- frames
+    checkBtn,
+    interactiveLabel,
+    removeBtn,
+    favoriteBtn,
+    descBtn,
+  },
+  ...
+}
+
+]]
+
+function widgets:ItemWidget(itemID, parentFrame)
+  local itemWidget = CreateFrame("Frame", "noname", parentFrame, nil)
+
+  -- // data
+
+  itemWidget.enum = enums.item
+  itemWidget.itemID = itemID
+  itemWidget.itemData = select(3, dataManager:Find(itemID))
+  local itemData = itemWidget.catData
+
+  -- // frames
+
+  -- / checkBtn
+  itemWidget.checkBtn = CreateFrame("CheckButton", "noname", itemWidget, "UICheckButtonTemplate")
+  -- TODO setpoint in itemWidget, same pour cat
+  itemWidget.checkBtn:SetScript("OnClick", function() dataManager:ToggleChecked(itemID) end)
+
+  -- / interactiveLabel
+  itemWidget.interactiveLabel = widgets:NoPointsInteractiveLabel(itemWidget, "noname", itemData.name, "GameFontNormalLarge")
+  itemWidget.interactiveLabel:SetPoint("LEFT", itemWidget.checkBtn, "RIGHT")
+  itemWidget.interactiveLabel.Text:SetPoint("LEFT", itemWidget.checkBtn, "RIGHT", 20, 0) -- TODO why this line?
+
+  if utils:HasHyperlink(itemData.name) then -- this is for making more space for items that have hyperlinks in them
+    if itemWidget.interactiveLabel.Text:GetWidth() > itemNameWidthMax then
+      itemWidget.interactiveLabel.Text:SetFontObject("GameFontNormal")
     end
 
     -- and also to deactivate the InteractiveLabel's Button, so that we can actually click on the links
     -- unless we are holding Alt, and to detect this, we actually put on them an OnUpdate script
-    checkBtn[catName][itemName].InteractiveLabel:SetScript("OnUpdate", function(self)
-      if (IsAltKeyDown()) then
+    itemWidget.interactiveLabel:SetScript("OnUpdate", function(self) -- TODO OULA
+      if IsAltKeyDown() then
         self.Button:Show()
       else
         self.Button:Hide()
       end
     end)
   end
-  checkBtn[catName][itemName]:SetChecked(data.checked)
-  checkBtn[catName][itemName]:SetScript("OnClick", function(self)
-    data.checked = self:GetChecked()
-    if (NysTDL.db.profile.instantRefresh) then
-      mainFrame:Refresh()
-    else
-      mainFrame:Update()
-    end
-  end)
-  checkBtn[catName][itemName].InteractiveLabel:SetHyperlinksEnabled(true) -- to enable OnHyperlinkClick
-  checkBtn[catName][itemName].InteractiveLabel:SetScript("OnHyperlinkClick", function(_, linkData, link, button)
-    ChatFrame_OnHyperlinkShow(ChatFrame1, linkData, link, button)
-  end)
-  checkBtn[catName][itemName].InteractiveLabel.Button:SetScript("OnDoubleClick", function(self)
-    -- first, we hide the label
-    local checkBtn = self:GetParent():GetParent()
-    checkBtn.InteractiveLabel:Hide()
+
+  widgets:SetHyperlinksEnabled(itemWidget.interactiveLabel, true)
+  itemWidget.interactiveLabel.Button:SetScript("OnDoubleClick", function(self)
+    -- first, we hide the interactiveLabel
+    self:GetParent():Hide()
 
     -- then, we can create the new edit box to rename the item, where the label was
-    local catName, itemName = checkBtn.catName, checkBtn.itemName
-    local renameEditBox = widgets:NoPointsRenameEditBox(checkBtn, itemName, itemNameWidthMax, self:GetHeight())
-    renameEditBox:SetPoint("LEFT", checkBtn, "RIGHT", 5, 0)
-    -- renameEditBox:SetHyperlinksEnabled(true) -- to enable OnHyperlinkClick
-    -- renameEditBox:SetScript("OnHyperlinkClick", function(_, linkData, link, button)
-    --   ChatFrame_OnHyperlinkShow(ChatFrame1, linkData, link, button)
-    -- end)
+    local renameEditBox = widgets:NoPointsRenameEditBox(itemWidget, itemData.name, itemNameWidthMax, self:GetHeight())
+    renameEditBox:SetPoint("LEFT", itemWidget.checkBtn, "LEFT", 5, 0)
+    -- widgets:SetHyperlinksEnabled(renameEditBox, true)
     widgets:AddHyperlinkEditBox(renameEditBox) -- so that we can add hyperlinks in it
+
+    -- cancelling
+    renameEditBox:SetScript("OnEscapePressed", function(self)
+      -- we hide the edit box and show the label
+      self:Hide()
+      categoryWidget.interactiveLabel:Show()
+
+      -- when hiding the edit box, we reset the pos of the favsRemainingLabel
+      categoryWidget.favsRemainingLabel:ClearAllPoints()
+      categoryWidget.favsRemainingLabel:SetPoint("LEFT", categoryWidget.interactiveLabel, "RIGHT", 6, 0)
+    end)
+    renameEditBox:HookScript("OnEditFocusLost", function(self)
+      self:GetScript("OnEscapePressed")(self)
+    end)
+
 
     -- let's go!
     renameEditBox:SetScript("OnEnterPressed", function(self)
-      local newItemName = self:GetText()
-      -- first, we do some tests
-      if (newItemName == "") then -- if the new item name is empty
-        self:GetScript("OnEscapePressed")(self) -- we cancel the action
-        return
-      elseif (newItemName == itemName) then -- if the new is the same as the old
-        self:GetScript("OnEscapePressed")(self) -- we cancel the action
-        return
-      elseif (utils:HasKey(NysTDL.db.profile.itemsList[catName], newItemName)) then -- if the new item name already exists somewhere in the category
-        chat:PrintForced(L["This item name already exists in the category"]..". "..L["Please choose a different name to avoid overriding data"])
-        return
-      else
-        local l = widgets:NoPointsLabel(tdlFrame, nil, newItemName)
-        if (l:GetWidth() > itemNameWidthMax and utils:HasHyperlink(newItemName)) then l:SetFontObject("GameFontNormal") end -- if it has an hyperlink in it and it's too big, we allow it to be a little longer, considering hyperlinks take more place
-        if (l:GetWidth() > itemNameWidthMax) then -- then we recheck to see if the item is not too long for good
-          chat:PrintForced(L["This item name is too big!"])
-          return
-        end
-      end
-
-      -- and if everything is good, we can rename the item (a.k.a, delete the current one and creating a new one)
-      -- while keeping the same cat, and same tab
-      mainFrame:MoveItem(catName, catName, itemName, newItemName, NysTDL.db.profile.itemsList[catName][itemName].tabName)
+      dataManager:Rename(itemID, self:GetText()) -- TODO verify if it closes the box when it doesn't work
     end)
 
     -- cancelling
     renameEditBox:SetScript("OnEscapePressed", function(self)
+      -- we hide the edit box and show the label
       self:Hide()
-      checkBtn.InteractiveLabel:Show()
+      itemWidget.interactiveLabel:Show()
       widgets:RemoveHyperlinkEditBox(self)
     end)
     renameEditBox:HookScript("OnEditFocusLost", function(self)
@@ -831,19 +832,19 @@ function widgets:ItemWidget(itemID)
     end)
   end)
 
-  if (not utils:HasKey(removeBtn, catName)) then removeBtn[catName] = {} end
-  removeBtn[catName][itemName] = widgets:RemoveButton(checkBtn[catName][itemName])
-  removeBtn[catName][itemName]:SetScript("OnClick", function(self) mainFrame:RemoveItem(self) end)
+  -- / removeBtn
+  itemWidget.removeBtn = widgets:RemoveButton(itemWidget)
+  itemWidget.removeBtn:SetScript("OnClick", function() dataManager:DeleteItem(itemID) end)
 
-  if (not utils:HasKey(favoriteBtn, catName)) then favoriteBtn[catName] = {} end
-  favoriteBtn[catName][itemName] = widgets:FavoriteButton(checkBtn[catName][itemName], catName, itemName)
-  favoriteBtn[catName][itemName]:SetScript("OnClick", function(self) mainFrame:FavoriteClick(self) end)
-  favoriteBtn[catName][itemName]:Hide()
+  -- / favoriteBtn
+  itemWidget.favoriteBtn = widgets:FavoriteButton(itemWidget)
+  itemWidget.favoriteBtn:SetScript("OnClick", function() dataManager:ToggleFavorite(itemID) end)
+  itemWidget.favoriteBtn:Hide()
 
-  if (not utils:HasKey(descBtn, catName)) then descBtn[catName] = {} end
-  descBtn[catName][itemName] = widgets:DescButton(checkBtn[catName][itemName], catName, itemName)
-  descBtn[catName][itemName]:SetScript("OnClick", function() widgets:DescriptionFrame(itemWidget) end) -- TODO don't forget
-  descBtn[catName][itemName]:Hide()
+  -- / descBtn
+  itemWidget.descBtn = widgets:DescButton(itemWidget)
+  itemWidget.descBtn:SetScript("OnClick", function() widgets:DescriptionFrame(itemWidget) end)
+  itemWidget.descBtn:Hide()
 end
 
 --/*******************/ EDIT BOXES /*************************/--
