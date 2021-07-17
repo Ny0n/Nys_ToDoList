@@ -316,11 +316,9 @@ function widgets:DescriptionFrame(itemWidget)
   descFrame.clearButton = CreateFrame("Button", "clearButton", descFrame, "NysTDL_ClearButton") -- TODO icon button?
   descFrame.clearButton.tooltip = L["Clear"].."\n("..L["Right-click"]..')'
   descFrame.clearButton:SetPoint("TOPRIGHT", descFrame, "TOPRIGHT", -24, -2)
-  descFrame.clearButton:RegisterForClicks("RightButtonUp")
+  descFrame.clearButton:RegisterForClicks("RightButtonUp") -- only responds to right-clicks
   descFrame.clearButton:SetScript("OnClick", function(self)
-      local eb = self:GetParent().descriptionEditBox.EditBox
-      eb:SetText("")
-      eb:GetScript("OnKeyUp")(eb)
+      self:GetParent().descriptionEditBox.EditBox:SetText("")
   end)
 
   -- item label
@@ -343,11 +341,14 @@ function widgets:DescriptionFrame(itemWidget)
   if itemData.description then -- if there is already a description for this item, we write it on frame creation
     descFrame.descriptionEditBox.EditBox:SetText(itemData.description)
   end
-  descFrame.descriptionEditBox.EditBox:SetScript("OnKeyUp", function(self)
-    -- and here we save the description everytime we lift a finger (best auto-save possible I think)
+  descFrame.descriptionEditBox.EditBox:SetScript("OnTextChanged", function(self)
+    -- and here we save the description everytime the text is updated (best auto-save possible I think)
     dataManager:UpdateDescription(itemID, self:GetText())
     if IsControlKeyDown() then -- just in case we are ctrling-v, to color the icon
       itemWidget.descBtn:GetScript("OnShow")(itemWidget.descBtn)
+    elseif (NysTDL.db.profile.itemsList[catName][itemName].description ~= nil and not descBtn[catName][itemName]:IsShown()
+      or NysTDL.db.profile.itemsList[catName][itemName].description == nil and descBtn[catName][itemName]:IsShown()) then
+        mainFrame:UpdateItemButtons(itemID) -- we update the desc button is there is a worthy change
     end
   end)
   widgets:SetHyperlinksEnabled(descFrame.descriptionEditBox.EditBox, true)
