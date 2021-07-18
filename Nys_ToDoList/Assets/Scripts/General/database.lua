@@ -5,6 +5,8 @@ local addonName, addonTable = ...
 local core = addonTable.core
 local utils = addonTable.utils
 local database = addonTable.database
+local dataManager = addonTable.dataManager
+local resetManager = addonTable.resetManager
 local optionsManager = addonTable.optionsManager
 local tutorialsManager = addonTable.tutorialsManager
 
@@ -91,10 +93,6 @@ database.defaults = {
 
     --'Tabs' tab
     instantRefresh = false,
-    deleteAllTabItems = false,
-    showOnlyAllTabItems = false,
-    hideDailyTabItems = false,
-    hideWeeklyTabItems = false,
 
     --'Chat Messages' tab
     showChatMessages = true,
@@ -102,10 +100,6 @@ database.defaults = {
     favoritesWarning = true,
     normalWarning = false,
     hourlyReminder = false,
-
-    --'Auto Uncheck' tab
-    weeklyDay = 4,
-    dailyHour = 9,
   }, -- profile
 }
 
@@ -137,7 +131,7 @@ database.options = {
               name = L["Stay opened"],
               desc = L["Keeps the list opened if it was during last session"],
               disabled = function() return NysTDL.db.profile.openByDefault end,
-            }, -- rememberUndo
+            }, -- keepOpen
             openByDefault = {
               order = 1.3,
               type = "toggle",
@@ -301,31 +295,6 @@ database.options = {
               name = L["Instant refresh"],
               desc = L["Applies the following settings instantly when checking items, instead of waiting for any other action"],
             }, -- instantRefresh
-            deleteAllTabItems = {
-              order = 1.1,
-              type = "toggle",
-              name = L["Delete checked items"],
-              desc = L["Automatically deletes checked items that are unique to the 'All' tab"],
-            }, -- deleteAllTabItems
-            showOnlyAllTabItems = {
-              order = 1.2,
-              type = "toggle",
-              name = L["Only show tab items"],
-              desc = L["Only show items unique to the 'All' tab"],
-            }, -- showOnlyAllTabItems
-            hideDailyTabItems = {
-              order = 2.1,
-              type = "toggle",
-              name = L["Hide checked items"],
-              desc = L["Automatically hides checked items in the tab until the next reset"],
-            }, -- hideDailyTabItems
-            hideWeeklyTabItems = {
-              order = 3.1,
-              type = "toggle",
-              name = L["Hide checked items"],
-              desc = L["Automatically hides checked items in the tab until the next reset"],
-            }, -- hideWeeklyTabItems
-
 
             -- / layout widgets / --
 
@@ -455,52 +424,6 @@ database.options = {
             }, -- header2
           } -- args
         }, -- chat
-        reset = {
-          order = 3,
-          type = "group",
-          name = L["Auto Uncheck"],
-          get = "GetterReset",
-          set = "SetterReset",
-          args = {
-            weeklyDay = {
-              order = 0.1,
-              type = "select",
-              style = "dropdown",
-              name = L["Weekly reset day"],
-              desc = L["Choose the day for the weekly reset"],
-              values = {
-                [2] = L["Monday"],
-                [3] = L["Tuesday"],
-                [4] = L["Wednesday"],
-                [5] = L["Thursday"],
-                [6] = L["Friday"],
-                [7] = L["Saturday"],
-                [1] = L["Sunday"],
-              },
-              sorting = {
-                2, 3, 4, 5, 6, 7, 1,
-              },
-            }, -- weeklyDay
-            dailyHour = {
-              order = 0.2,
-              type = "range",
-              name = L["Daily reset hour"],
-              desc = L["Choose the hour for the daily reset"],
-              min = 0,
-              max = 23,
-              step = 1,
-            }, -- dailyHour
-
-            -- / layout widgets / --
-
-            -- headers
-            header1 = {
-              order = 0,
-              type = "header",
-              name = L["General"],
-            }, -- header1
-          } -- args
-        }, -- reset
         -- new main tab
       }, -- args
     }, -- main
@@ -531,14 +454,14 @@ database.options = {
 -- and also everytime we switch profiles
 function database:DBInit(profileChanged)
   -- checking for an addon update, globally
-  if (NysTDL.db.global.latestVersion ~= core.toc.version) then
+  if NysTDL.db.global.latestVersion ~= core.toc.version then
     self:GlobalNewVersion()
     NysTDL.db.global.latestVersion = core.toc.version
     NysTDL.db.global.addonUpdated = true
   end
 
   -- checking for an addon update, for the profile that was just loaded
-  if (NysTDL.db.profile.latestVersion ~= core.toc.version) then
+  if NysTDL.db.profile.latestVersion ~= core.toc.version then
     self:ProfileNewVersion()
     NysTDL.db.profile.latestVersion = core.toc.version
   end
@@ -574,7 +497,7 @@ end
 -- these two functions are called only once, each time there is an addon update
 function database:GlobalNewVersion() -- global
   -- updates the global saved variables once after an update
-
+  do return end -- XXX
   if NysTDL.db.global.tuto_progression > 0 then -- if we already completed the tutorial
     -- since i added in the update a new tutorial frame that i want ppl to see, i just go back step in the tuto progression
     tutorialsManager:Previous()
@@ -582,6 +505,7 @@ function database:GlobalNewVersion() -- global
 end
 
 function database:ProfileNewVersion() -- profile
+  do return end -- XXX
   -- if we're loading this profile for the first time after updating to 5.5+ from 5.4-
   if (NysTDL.db.profile.itemsDaily or NysTDL.db.profile.itemsWeekly or NysTDL.db.profile.itemsFavorite or NysTDL.db.profile.itemsDesc or NysTDL.db.profile.checkedButtons) then
     -- we need to change the saved variables to the new format

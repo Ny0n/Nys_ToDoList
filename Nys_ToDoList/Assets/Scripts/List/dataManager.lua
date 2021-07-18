@@ -3,15 +3,11 @@ local addonName, addonTable = ...
 
 -- addonTable aliases
 local core = addonTable.core
-local chat = addonTable.chat
 local enums = addonTable.enums
 local utils = addonTable.utils
 local widgets = addonTable.widgets
-local database = addonTable.database
 local dataManager = addonTable.dataManager
 local resetManager = addonTable.resetManager
-local optionsManager = addonTable.optionsManager
-local tutorialsManager = addonTable.tutorialsManager
 
 -- the access to mainFrame is controlled:
 -- this file can only call mainFrame funcs if the tdlFrame exists

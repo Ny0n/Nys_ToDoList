@@ -23,7 +23,6 @@ local chat = addonTable.chat
 local database = addonTable.database
 local events = addonTable.events
 local databroker = addonTable.databroker
-local resetManager = addonTable.resetManager
 local optionsManager = addonTable.optionsManager
 
 --/*******************/ ADDON LIBS AND DATA HANDLER /*************************/--
@@ -67,7 +66,7 @@ function NysTDL:OnInitialize()
     -- events
     events:Initialize()
 
-    -- databroker #pre-last
+    -- databroker #last
     databroker:Initialize()
 
     -- we create the main frame and everything that goes with it #last
@@ -76,7 +75,7 @@ function NysTDL:OnInitialize()
     -- // addon fully loaded!
 
     -- checking for an addon update
-    if (NysTDL.db.global.addonUpdated) then
+    if NysTDL.db.global.addonUpdated then
       self:AddonUpdated()
       NysTDL.db.global.addonUpdated = false
     end
@@ -88,4 +87,5 @@ end
 
 function NysTDL:AddonUpdated()
   -- called once, when the addon gets an update
+  print("wait what no way")
 end

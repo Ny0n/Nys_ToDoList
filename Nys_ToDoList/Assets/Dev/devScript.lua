@@ -2,16 +2,19 @@
 local addonName, addonTable = ...
 
 -- addonTable aliases
-local core = addonTable.core
 local chat = addonTable.chat
-local utils = addonTable.utils
-local events = addonTable.events
-local widgets = addonTable.widgets
 local database = addonTable.database
-local autoReset = addonTable.autoReset
-local itemsFrame = addonTable.itemsFrame
+local enums = addonTable.enums
+local events = addonTable.events
 local optionsManager = addonTable.optionsManager
+local resetManager = addonTable.resetManager
+local utils = addonTable.utils
+local databroker = addonTable.databroker
+local dataManager = addonTable.dataManager
+local mainFrame = addonTable.mainFrame
 local tutorialsManager = addonTable.tutorialsManager
+local widgets = addonTable.widgets
+local core = addonTable.core
 
 -- Variables
 local L = core.L

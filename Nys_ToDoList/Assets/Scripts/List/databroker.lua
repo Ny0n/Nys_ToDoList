@@ -4,7 +4,6 @@ local addonName, addonTable = ...
 -- addonTable aliases
 local core = addonTable.core
 local utils = addonTable.utils
-local widgets = addonTable.widgets
 local database = addonTable.database
 local mainFrame = addonTable.mainFrame
 local databroker = addonTable.databroker

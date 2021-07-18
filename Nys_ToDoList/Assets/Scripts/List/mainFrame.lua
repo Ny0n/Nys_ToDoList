@@ -3,7 +3,6 @@ local addonName, addonTable = ...
 
 -- addonTable aliases
 local core = addonTable.core
-local chat = addonTable.chat
 local enums = addonTable.enums
 local utils = addonTable.utils
 local widgets = addonTable.widgets

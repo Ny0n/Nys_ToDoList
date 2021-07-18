@@ -5,8 +5,8 @@ local addonName, addonTable = ...
 local utils = addonTable.utils
 local enums = addonTable.enums
 local widgets = addonTable.widgets
+local dataManager = addonTable.dataManager
 local tutorialsManager = addonTable.tutorialsManager
-
 
 -- Variables
 local L = addonTable.core.L

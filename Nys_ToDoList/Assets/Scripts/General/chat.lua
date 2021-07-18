@@ -7,6 +7,7 @@ local chat = addonTable.chat
 local utils = addonTable.utils
 local database = addonTable.database
 local mainFrame = addonTable.mainFrame
+local dataManager = addonTable.dataManager
 local tutorialsManager = addonTable.tutorialsManager
 
 -- Variables
