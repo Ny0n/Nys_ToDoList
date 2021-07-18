@@ -2,14 +2,17 @@
 local addonName, addonTable = ...
 
 -- addonTable aliases
+local core = addonTable.core
 local utils = addonTable.utils
 local enums = addonTable.enums
 local widgets = addonTable.widgets
+local mainFrame = addonTable.mainFrame
+local databroker = addonTable.databroker
 local dataManager = addonTable.dataManager
 local tutorialsManager = addonTable.tutorialsManager
 
 -- Variables
-local L = addonTable.core.L
+local L = core.L
 
 local dummyFrame = CreateFrame("Frame", nil, UIParent)
 local hyperlinkEditBoxes = {}
@@ -140,7 +143,7 @@ function widgets:UpdateTDLButtonColor()
   if NysTDL.db.profile.tdlButton.red then -- if the option is checked
     tdlButton:SetNormalFontObject("GameFontNormalLarge") -- by default, we reset the color of the TDL button to yellow
     local maxTime = time() + 86400
-    dataManager:DoForEachResetTab(maxTime, "unchecked", function()
+    dataManager:DoIfFoundTabMatch(maxTime, "totalUnchecked", function()
       -- we color the button in red
       local font = tdlButton:GetNormalFontObject()
       font:SetTextColor(1, 0, 0, 1)
@@ -180,8 +183,8 @@ end
 
 --/*******************/ FRAMES /*************************/--
 
-function widgets:TutorialFrame(tutoName, parent, showCloseButton, arrowSide, text, width, height)
-  local tutoFrame = CreateFrame("Frame", "NysTDL_TutorialFrame_"..tutoName, parent, "NysTDL_HelpPlateTooltip")
+function widgets:TutorialFrame(tutoName, showCloseButton, arrowSide, text, width, height)
+  local tutoFrame = CreateFrame("Frame", "NysTDL_TutorialFrame_"..tutoName, dummyFrame, "NysTDL_HelpPlateTooltip")
   tutoFrame:SetSize(width, height)
 
   if arrowSide == "UP" then tutoFrame.ArrowDOWN:Show()
@@ -390,8 +393,8 @@ function widgets:NoPointsInteractiveLabel(relativeFrame, name, text, fontObjectS
   return interactiveLabel
 end
 
-function widgets:NothingLabel(relativeFrame)
-  local label = relativeFrame:CreateFontString(nil) -- TODO this func necessary?
+function widgets:NothingLabel(relativeFrame) -- TODO this func necessary?
+  local label = relativeFrame:CreateFontString(nil)
   label:SetFontObject("GameFontHighlightLarge")
   label:SetTextColor(0.5, 0.5, 0.5, 0.5)
   return label
@@ -904,4 +907,22 @@ end
 
 function widgets:ThemeLine(relativeFrame, theme, dim)
   return widgets:NoPointsLine(relativeFrame, 2, unpack(utils:ThemeDownTo01(utils:DimTheme(theme, dim))))
+end
+
+--/*******************/ INITIALIZATION /*************************/--
+
+function widgets:Initialize()
+  tutorialsManager:CreateTutoFrames()
+  widgets:CreateTDLButton() -- TODO check callallgetters tdl button ?
+  databroker:CreateDatabrokerObject()
+  databroker:CreateTooltipFrame()
+  databroker:CreateMinimapButton()
+  mainFrame:CreateTDLFrame()
+end
+
+function widgets:ProfileChanged()
+  -- visual updates to match the new profile
+  widgets:RefreshTDLButton() -- XXX
+  databroker:SetMode(NysTDL.db.profile.databrokerMode) -- XXX a terme dans le callallgetters ?
+  mainFrame:Init()
 end

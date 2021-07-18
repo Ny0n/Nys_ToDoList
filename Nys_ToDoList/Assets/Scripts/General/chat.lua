@@ -8,6 +8,7 @@ local utils = addonTable.utils
 local database = addonTable.database
 local mainFrame = addonTable.mainFrame
 local dataManager = addonTable.dataManager
+local resetManager = addonTable.resetManager
 local tutorialsManager = addonTable.tutorialsManager
 
 -- Variables

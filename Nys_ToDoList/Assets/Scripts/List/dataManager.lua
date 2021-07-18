@@ -10,16 +10,18 @@ local dataManager = addonTable.dataManager
 local resetManager = addonTable.resetManager
 
 -- the access to mainFrame is controlled:
--- this file can only call mainFrame funcs if the tdlFrame exists
--- this is only to counter the fact that to migrate the
--- odl variables to the new ones, i have to call funcs here before the list is loaded
+-- this file can only call mainFrame funcs if it is specifically authorized to do so,
+-- it's to counter the fact that for some database updates
+-- (var migration, profile change, default tabs creation...)
+-- i have to call funcs here before the list is created
 
+dataManager.authorized = true
 local _mainFrame = addonTable.mainFrame
 local dummyFunc = function()end
 
 local mainFrame = setmetatable({}, {
 	__index = function (t,k)
-		if not _mainFrame:GetFrame() then return dummyFunc end
+		if not dataManager.authorized then return dummyFunc end
     return _mainFrame[k]   -- access the original table
   end,
 })
@@ -38,14 +40,28 @@ local wipe = wipe
 local unpack = unpack
 local tinsert = table.insert
 local tremove = table.remove
+local random = math.random
 
 --/*******************/ DATA MANAGMENT /*************************/--
 
 -- id func
-function dataManager:newID()
-	local newID = NysTDL.db.global.nextID
-	NysTDL.db.global.nextID = NysTDL.db.global.nextID + 1
-	return newID
+function dataManager:NewID()
+	local template ='xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
+	return (select(1, string.gsub(template, '[xy]', function(c)
+		local v = (c == 'x') and random(0, 0xf) or random(8, 0xb)
+		return string.format('%x', v)
+	end)))
+
+	-- local newID = NysTDL.db.global.nextID
+	-- NysTDL.db.global.nextID = NysTDL.db.global.nextID + 1
+	-- return newID
+end
+
+function dataManager:IsID(ID)
+	if type(ID) ~= enums.idtype then return end
+	return string.match(ID, '^[0-9a-f]+-[0-9a-f]+-[0-5][0-9a-f]+-[089ab][0-9a-f]+-[0-9a-f]+$')
+
+	-- return type(ID) == enums.idtype
 end
 
 -- misc functions
@@ -108,7 +124,7 @@ function dataManager:ForEach(enum, location)
 	local isGlobal, getdatapos, checkFunc = location
 	if enum == enums.item then
 		getdatapos = 1
-		if type(location) == enums.idtype then -- specific tab or cat ID
+		if dataManager:IsID(location) then -- specific tab or cat ID
 			enum, isGlobal = dataManager:Find(location)
 			local loc
 			if enum == enums.category then
@@ -125,7 +141,7 @@ function dataManager:ForEach(enum, location)
 		end
 	elseif enum == enums.category then
 		getdatapos = 2
-		if type(location) == enums.idtype then -- specific tab ID
+		if dataManager:IsID(location) then -- specific tab ID
 			enum, isGlobal = dataManager:Find(location)
 			if enum == enums.tab then
 				checkFunc = function(ID, data)
@@ -138,7 +154,7 @@ function dataManager:ForEach(enum, location)
 		end
 	elseif enum == enums.tab then
 		getdatapos = 3
-		if type(location) == enums.idtype then -- specific shown ID
+		if dataManager:IsID(location) then -- specific shown ID
 			enum, isGlobal = dataManager:Find(location)
 			if enum == enums.tab then
 				checkFunc = function(ID, data)
@@ -158,25 +174,30 @@ function dataManager:ForEach(enum, location)
 	else
 		error("Forgot ForEach argument #1", 2)
 	end
+	-- print("NEWFOREACH")
 
 	-- // iteration part
 	local table, key, data = (select(getdatapos, dataManager:GetData(isGlobal)))
 	return function()
-		::redo::
+		repeat
+			local redo = false
 
-		-- first we get the next value
-		key, data = next(table, key)
+			-- first we get the next value
+			key, data = next(table, key)
 
-		if checkFunc and not checkFunc(key, data) then goto redo end
+			if key and checkFunc and not checkFunc(key, data) then redo = true end
 
-		-- then we check what to return
-		if key == nil and isGlobal == nil then
-			-- if we finished one table and isGlobal was nil, then we start the other table
-			isGlobal = not isGlobal
-			table = (select(getdatapos, dataManager:GetData(isGlobal)))
-			key = nil
-			goto redo
-		end
+			-- then we check what to return
+			if not redo and key == nil and isGlobal == nil then
+				-- if we finished one table and isGlobal was nil, then we start the other table
+				isGlobal = not isGlobal
+				table = (select(getdatapos, dataManager:GetData(isGlobal)))
+				key = nil
+				redo = true
+			end
+		until not redo
+
+		-- print(key, data)
 		return key, data, isGlobal
 	end
 end
@@ -218,7 +239,7 @@ end
 
 function dataManager:AddItem(itemData, itemID, itemOrder)
 	-- itemData is either coming from CreateItem or is already a full fleshed item coming from the undo table
-	itemID = itemID or dataManager:newID()
+	itemID = itemID or dataManager:NewID()
 	itemOrder = itemOrder or {[next(itemData.catIDs)] = 1} -- an item either is new and only has one cat, or comes from an undo and already has orders
 
 	-- we add the item to the saved variables
@@ -252,7 +273,7 @@ function dataManager:CreateCategory(catName, tabID, parentCatID)
 	-- we can add others later
 
 	-- first, we check what needs to be checked
-	if not dataManager:CheckName(catName, "categoriesList") then return end
+	if not dataManager:CheckName(catName, enums.category) then return end
 
 	local newCategory = { -- catData
     name = catName,
@@ -281,7 +302,7 @@ end
 
 function dataManager:AddCategory(catData, catID, catOrder)
 	-- catData is either coming from CreateCategory or is already a full fleshed category coming from the undo table
-	catID = catID or dataManager:newID()
+	catID = catID or dataManager:NewID()
 	catOrder = catOrder or {[next(catData.tabIDs)] = 1} -- a category either is new and only has one tab, or comes from an undo and already has orders
 
 	-- we add the category to the saved variables
@@ -311,10 +332,10 @@ function dataManager:CreateTab(tabName)
 	-- add the tab and its dependencies to the saved variables
 
 	-- first, we check what needs to be checked
-	if not dataManager:CheckName(tabName, "tabsList") then return end
+	if not dataManager:CheckName(tabName, enums.tab) then return end
 
 	local newTab = { -- tabData
-    name = "tabName",
+    name = tabName,
 		orderedCatIDs = { -- content of the tab, ordered (table.insert(contentOrderedIDs, 1, ID)), FIRST LOOP ON THIS FOR CATEGORIES
       -- [catID], -- [1]
       -- [catID], -- [2]
@@ -343,7 +364,6 @@ function dataManager:CreateTab(tabName)
     },
 		-- tab specific data
 		shownIDs = { -- user set
-      [tabID] = true, -- self forced
       -- [tabID] = true,
       -- ...
     },
@@ -356,9 +376,11 @@ end
 
 function dataManager:AddTab(tabData, isGlobal, tabID, tabOrder)
 	-- catData is either coming from CreateTab or is already a full fleshed tab coming from the undo table
-	tabID = tabID or dataManager:newID()
+	tabID = tabID or dataManager:NewID()
 
 	-- we add the tab to the saved variables
+
+	tabData.shownIDs[tabID] = true -- self forced
 
 	-- so first we get where we are, aka corresponding saved variables
 	local tabsList = select(3, dataManager:GetData(isGlobal))
@@ -862,9 +884,9 @@ function dataManager:DoIfFoundTabMatch(maxTime, checkedType, callback, doAll)
 	-- - it has more than one checkedType item inside of it
 
 	for tabID,tabData in dataManager:ForEach(enums.tab) do -- for each tab
-		if next(tabData.nextResetTimes) then -- if it has resets
+		if next(tabData.reset.nextResetTimes) then -- if it has resets
 			if dataManager:GetRemainingNumbers(nil, tabID)[checkedType] > 0 then -- and if it has unchecked items
-				for _, nextResetTime in pairs(tabData.nextResetTimes) do -- then for each reset times it has
+				for _, nextResetTime in pairs(tabData.reset.nextResetTimes) do -- then for each reset times it has
 					if maxTime > nextResetTime then -- if one of them is coming in less than 24 hours
 						callback(tabID, tabData)
 						if doAll then break
@@ -921,21 +943,19 @@ function dataManager:GetRemainingNumbers(isGlobal, tabID, catID)
 	local location = catID or tabID or isGlobal
 
 	for itemID,itemData in dataManager:ForEach(enums.item, location) do -- for each item that is in the cat
-		if tabID and not itemData.tabIDs[tabID] then goto next end
-
-		if itemData.checked then
-			t.totalChecked = t.totalChecked + 1
-			if itemData.description then t.checkedDesc = t.checkedDesc + 1 end
-			if itemData.favorite then t.checkedFav = t.checkedFav + 1 end
-			if not itemData.description and not itemData.favorite then t.checkedNormal = t.checkedNormal + 1 end
-		else
-			t.totalUnchecked = t.totalUnchecked + 1
-			if itemData.description then t.uncheckedDesc = t.uncheckedDesc + 1 end
-			if itemData.favorite then t.uncheckedFav = t.uncheckedFav + 1 end
-			if not itemData.description and not itemData.favorite then t.uncheckedNormal = t.uncheckedNormal + 1 end
+		if not tabID or itemData.tabIDs[tabID] then
+			if itemData.checked then
+				t.totalChecked = t.totalChecked + 1
+				if itemData.description then t.checkedDesc = t.checkedDesc + 1 end
+				if itemData.favorite then t.checkedFav = t.checkedFav + 1 end
+				if not itemData.description and not itemData.favorite then t.checkedNormal = t.checkedNormal + 1 end
+			else
+				t.totalUnchecked = t.totalUnchecked + 1
+				if itemData.description then t.uncheckedDesc = t.uncheckedDesc + 1 end
+				if itemData.favorite then t.uncheckedFav = t.uncheckedFav + 1 end
+				if not itemData.description and not itemData.favorite then t.uncheckedNormal = t.uncheckedNormal + 1 end
+			end
 		end
-
-		::next::
 	end
 
 	t.totalDesc = t.checkedDesc + t.uncheckedDesc

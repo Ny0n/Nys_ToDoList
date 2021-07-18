@@ -53,8 +53,8 @@ function optionsManager:CallAllGETTERS()
 
   local info = {}
 
-  local function recursiveGet(argName, argTable, getter, info)
-    local getter = argTable.get or getter
+  local function recursiveGet(argName, argTable, getter)
+    getter = argTable.get or getter
     table.wipe(info)
     table.insert(info, argName)
 
@@ -65,6 +65,7 @@ function optionsManager:CallAllGETTERS()
     else
       if (argTable.type ~= "description" and argTable.type ~= "header" and argName ~= "profiles") then
         if (type(getter) == "string") then
+          if getter == "GetCurrentProfile" then return end -- TODO hmmmm?
           optionsManager[getter](optionsManager, info)
         elseif(type(getter) == "function") then
           getter(info)
@@ -100,6 +101,7 @@ end
 
 function optionsManager:Setter(info, ...)
   NysTDL.db.profile[info[#info]] = ...
+  print("Setter")
 end
 
 -- // specific getters and setters // --
@@ -114,8 +116,7 @@ end
 
 function optionsManager:favoritesColorSET(info, ...)
   NysTDL.db.profile.favoritesColor = { ... }
-  mainFrame:updateCheckButtonsColor()
-  mainFrame:updateFavsRemainingNumbersColor()
+  mainFrame:UpdateVisuals()
 end
 
 -- tdlButtonShow
@@ -159,7 +160,7 @@ end
 
 function optionsManager:minimapButtonTooltipSET(info, newValue)
   NysTDL.db.profile.minimap.tooltip = newValue
-  databroker:RefreshMinimapButton()
+  databroker:RefreshMinimapButton() -- XXX
 end
 
 -- keyBind
@@ -200,17 +201,8 @@ end
 
 function optionsManager:SetterTabs(info, ...)
   NysTDL.db.profile[info[#info]] = ...
-  mainFrame:ReloadTab()
-end
-
--- // 'Auto Uncheck' (reset) tab // -- -- TODO remove those
-
-function optionsManager:GetterReset(info)
-
-end
-
-function optionsManager:SetterReset(info, ...)
-
+  print("SetterTabs")
+  mainFrame:Refresh()
 end
 
 --/*******************/ INITIALIZATION /*************************/--

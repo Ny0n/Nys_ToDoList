@@ -4,6 +4,7 @@ local addonName, addonTable = ...
 -- addonTable aliases
 local core = addonTable.core
 local utils = addonTable.utils
+local enums = addonTable.enums
 local database = addonTable.database
 local mainFrame = addonTable.mainFrame
 local databroker = addonTable.databroker
@@ -40,13 +41,13 @@ end
 
 function databroker:SetSimpleMode()
   local o = self.object
-  table.wipe(o)
+  --table.wipe(o)
 
   local tooltipObject -- we get the tooltip frame on the first databroker:DrawSimpleTooltip call from OnTooltipShow
   o.type = "launcher"
   o.label = core.toc.title
   o.icon = "Interface\\AddOns\\"..addonName.."\\Assets\\Art\\minimap_icon"
-  function o:OnClick(button)
+  function o.OnClick()
     if IsControlKeyDown() then
       -- lock minimap button
       if (not NysTDL.db.profile.minimap.lock) then
@@ -63,7 +64,7 @@ function databroker:SetSimpleMode()
       mainFrame:Toggle()
     end
   end
-  function o:OnTooltipShow(tooltip)
+  function o.OnTooltipShow(tooltip)
     tooltipObject = tooltip
     databroker:DrawSimpleTooltip(tooltip)
   end
@@ -97,7 +98,7 @@ function databroker:SetAdvancedMode()
   o.type = "launcher"
   o.label = core.toc.title.." ADVANCED"
   o.icon = "Interface\\AddOns\\"..addonName.."\\Assets\\Art\\minimap_icon"
-  function o:OnClick(button)
+  function o.OnClick()
     if IsControlKeyDown() then
       -- lock minimap button
       if (not NysTDL.db.profile.minimap.lock) then
@@ -114,7 +115,7 @@ function databroker:SetAdvancedMode()
       mainFrame:Toggle()
     end
   end
-  function o:OnTooltipShow(tooltip)
+  function o.OnTooltipShow(tooltip)
     tooltipObject = tooltip
     databroker:DrawAdvancedTooltip(tooltip)
   end
@@ -140,18 +141,19 @@ end
 --/***************/ DATAOBJECT /*****************/--
 
 function databroker:SetMode(mode)
-  if mode == "SIMPLE" then
+  if mode == enums.databrokerModes.simple then
     self:SetSimpleMode()
-  elseif mode == "ADVANCED" then
+  elseif mode == enums.databrokerModes.advanced then
     self:SetAdvancedMode()
-  elseif mode == "FRAME" then
+  elseif mode == enums.databrokerModes.frame then
     self:SetFrameMode()
   end
+  NysTDL.db.profile.databrokerMode = mode
 end
 
 function databroker:CreateDatabrokerObject()
   self.object = LDB:NewDataObject(addonName)
-  self:SetMode("SIMPLE") -- TODO
+  self:SetMode(NysTDL.db.profile.databrokerMode)
 end
 
 -- minimap button
@@ -182,12 +184,4 @@ end
 
 function databroker:RefreshMinimapButton()
   LDBIcon:Refresh(addonName, NysTDL.db.profile.minimap)
-end
-
---/***************/ INITIALIZATION /******************/--
-
-function databroker:Initialize()
-  self:CreateTooltipFrame()
-  self:CreateDatabrokerObject()
-  self:CreateMinimapButton()
 end

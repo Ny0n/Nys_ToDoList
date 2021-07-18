@@ -4,6 +4,7 @@ local addonName, addonTable = ...
 -- addonTable aliases
 local core = addonTable.core
 local utils = addonTable.utils
+local enums = addonTable.enums
 local dataManager = addonTable.dataManager
 local resetManager = addonTable.resetManager
 
@@ -164,6 +165,13 @@ end
 
 --/*******************/ AUTOMATIC RESET MANAGMENT /*************************/--
 
+-- this table is to keep track of every currently active timer IDs for every tab
+local activeTimerIDs = {
+	-- [tabID] = { 5, 22, 45 }, (timerIDs)
+	-- [tabID] = { 1, 78, 12 }, (timerIDs)
+	-- ...
+}
+
 local function getDiff(max, current, target)
 	if target > current then
 		return target - current
@@ -323,14 +331,12 @@ function resetManager.ResetTab(tabID, timerPos)
 	end
 end
 
+function NysTDL:StartResetTimer()
+  -- body...
+end
+
 --/*******************/ INITIALIZATION /*************************/--
 
--- this table is to keep track of every currently active timer IDs for every tab
-local activeTimerIDs = {
-	-- [tabID] = { 5, 22, 45 }, (timerIDs)
-	-- [tabID] = { 1, 78, 12 }, (timerIDs)
-	-- ...
-}
 function resetManager:Initialize(profileChanged)
 	-- called on addon load
 	if profileChanged ~= nil then

@@ -18,17 +18,17 @@ local L = core.L
 local LDD = core.LDD
 
 local tdlFrame -- THE frame
-
--- reset variables
-
-local dontRefreshPls = 0
-local contentWidgets
 local menuFrames = {
   -- these will be replaced in the code,
   -- but i'm putting them here just so i can remember how this table works
   selected = nil,
   -- "ENUM_MENUS_xxx" = frame,
 }
+
+-- profile-dependant variables (those are reset in mainFrame:ResetContent())
+
+local dontRefreshPls = 0
+local contentWidgets = {}
 
 --[[
 
@@ -65,7 +65,7 @@ contentWidgets = {
 
 -- these are for code comfort
 
-local ctab -- set at initialization
+local ctab -- set at initialization, it's just an alias
 local centerXOffset = 165
 local lineOffset = 120
 local cursorX, cursorY, cursorDist = 0, 0, 10 -- for my special drag
@@ -91,20 +91,20 @@ local function menuClick(menuEnum)
   local selected = menuFrames.selected
 
   -- like updating the color to white-out the selected menu button, so first we reset them all
-  tdlFrame.categoryButton.Icon:SetDesaturated(nil) tdlFrame.categoryButton.Icon:SetVertexColor(0.85, 1, 1) -- here we change the vertex color because the original icon is a bit reddish
-  tdlFrame.frameOptionsButton.Icon:SetDesaturated(nil)
-  tdlFrame.tabActionsButton.Icon:SetDesaturated(nil)
+  tdlFrame.content.categoryButton.Icon:SetDesaturated(nil) tdlFrame.content.categoryButton.Icon:SetVertexColor(0.85, 1, 1) -- here we change the vertex color because the original icon is a bit reddish
+  tdlFrame.content.frameOptionsButton.Icon:SetDesaturated(nil)
+  tdlFrame.content.tabActionsButton.Icon:SetDesaturated(nil)
 
   -- and other things
   if selected == enums.menus.addcat then -- add a category menu
-    tdlFrame.categoryButton.Icon:SetDesaturated(1) tdlFrame.categoryButton.Icon:SetVertexColor(1, 1, 1)
-    widgets:SetFocusEditBox(tdlFrame.categoryEditBox)
+    tdlFrame.content.categoryButton.Icon:SetDesaturated(1) tdlFrame.content.categoryButton.Icon:SetVertexColor(1, 1, 1)
+    widgets:SetFocusEditBox(menuFrames[enums.menus.addcat].categoryEditBox)
     tutorialsManager:Validate("addNewCat") -- tutorial
   elseif selected == enums.menus.frameopt then -- frame options menu
-    tdlFrame.frameOptionsButton.Icon:SetDesaturated(1)
+    tdlFrame.content.frameOptionsButton.Icon:SetDesaturated(1)
     tutorialsManager:Validate("accessOptions") -- tutorial
   elseif selected == enums.menus.tabact then -- tab actions menu
-    tdlFrame.tabActionsButton.Icon:SetDesaturated(1)
+    tdlFrame.content.tabActionsButton.Icon:SetDesaturated(1)
   end
 end
 
@@ -158,7 +158,7 @@ end
 
 function mainFrame:updateFavsRemainingNumbersColor()
   -- this updates the favorite color for every favorites remaining number label
-  tdlFrame.remainingFavsNumber:SetTextColor(unpack(NysTDL.db.profile.favoritesColor))
+  tdlFrame.content.remainingFavsNumber:SetTextColor(unpack(NysTDL.db.profile.favoritesColor))
   for _, contentWidget in pairs(contentWidgets) do
     if contentWidget.enum == enums.category then -- for every category widgets
       catWidget.favsRemainingLabel:SetTextColor(unpack(NysTDL.db.profile.favoritesColor))
@@ -167,15 +167,17 @@ function mainFrame:updateFavsRemainingNumbersColor()
 end
 
 function mainFrame:UpdateItemNamesColor()
-  for _, itemWidget in pairs(itemWidgets) do -- for every item widgets
-    -- we color in accordance to their checked state
-    if itemWidget.itemData.checked then
-      itemWidget.interactiveLabel.Text:SetTextColor(0, 1, 0) -- green
-    else
-      if itemWidget.itemData.favorite then
-        itemWidget.interactiveLabel.Text:SetTextColor(unpack(NysTDL.db.profile.favoritesColor)) -- colored
+  for _, contentWidget in pairs(contentWidgets) do
+    if contentWidget.enum == enums.item then -- for every item widget
+      -- we color in accordance to their checked state
+      if contentWidget.itemData.checked then
+        contentWidget.interactiveLabel.Text:SetTextColor(0, 1, 0) -- green
       else
-        itemWidget.interactiveLabel.Text:SetTextColor(unpack(utils:ThemeDownTo01(database.themes.theme_yellow))) -- yellow
+        if contentWidget.itemData.favorite then
+          contentWidget.interactiveLabel.Text:SetTextColor(unpack(NysTDL.db.profile.favoritesColor)) -- colored
+        else
+          contentWidget.interactiveLabel.Text:SetTextColor(unpack(utils:ThemeDownTo01(database.themes.theme_yellow))) -- yellow
+        end
       end
     end
   end
@@ -236,7 +238,7 @@ end
 
 function mainFrame:UpdateItemButtons(itemID)
   -- // shows the right button at the left of the given item
-  local itemWidget = itemWidgets[itemID]
+  local itemWidget = contentWidgets[itemID] -- we take the item widget
   if not itemWidget then return end -- just in case
 
   -- first we hide each button to show the good one afterwards
@@ -264,23 +266,23 @@ end
 
 --/*******************/ EVENTS /*************************/--
 
-function mainFrame:Event_ScrollFrame_OnMouseWheel(self, delta)
+function mainFrame:Event_ScrollFrame_OnMouseWheel(delta)
   -- defines how fast we can scroll throught the frame (here: 30)
-  local newValue = self:GetVerticalScroll() - (delta * 30)
+  local newValue = tdlFrame.ScrollFrame:GetVerticalScroll() - (delta * 30)
 
   if newValue < 0 then
     newValue = 0
-  elseif newValue > self:GetVerticalScrollRange() then
-    newValue = self:GetVerticalScrollRange()
+  elseif newValue > tdlFrame.ScrollFrame:GetVerticalScrollRange() then
+    newValue = tdlFrame.ScrollFrame:GetVerticalScrollRange()
   end
 
-  self:SetVerticalScroll(newValue)
+  tdlFrame.ScrollFrame:SetVerticalScroll(newValue)
 end
 
-function mainFrame:Event_FrameAlphaSlider_OnValueChanged(_, value)
+function mainFrame:Event_FrameAlphaSlider_OnValueChanged(value)
   -- itemsList frame part
   NysTDL.db.profile.frameAlpha = value
-  tdlFrame.frameAlphaSliderValue:SetText(value)
+  menuFrames[enums.menus.frameopt].frameAlphaSliderValue:SetText(value)
   tdlFrame:SetBackdropColor(0, 0, 0, value/100)
   tdlFrame:SetBackdropBorderColor(1, 1, 1, value/100)
 
@@ -288,10 +290,10 @@ function mainFrame:Event_FrameAlphaSlider_OnValueChanged(_, value)
   widgets:SetDescFramesAlpha(value)
 end
 
-function mainFrame:Event_FrameContentAlphaSlider_OnValueChanged(_, value)
+function mainFrame:Event_FrameContentAlphaSlider_OnValueChanged(value)
   -- itemsList frame part
   NysTDL.db.profile.frameContentAlpha = value
-  tdlFrame.frameContentAlphaSliderValue:SetText(value)
+  menuFrames[enums.menus.frameopt].frameContentAlphaSliderValue:SetText(value)
   tdlFrame.content:SetAlpha(value/100) -- content
   tdlFrame.ScrollFrame.ScrollBar:SetAlpha(value/100)
   tdlFrame.closeButton:SetAlpha(value/100)
@@ -303,18 +305,18 @@ end
 
 function mainFrame:Event_TDLFrame_OnVisibilityUpdate()
   -- things to do when we hide/show the list
-  menuClick() -- to close any opened menu
-  mainFrame:Refresh()
+  menuClick() -- to close any opened menu and refresh the list
   NysTDL.db.profile.lastListVisibility = tdlFrame:IsShown()
+  tutorialsManager:UpdateFramesVisibility() -- TODO maybe do better? like dummyFrame OnUpdate or something else
 end
 
-function mainFrame:Event_TDLFrame_OnSizeChanged(self)
+function mainFrame:Event_TDLFrame_OnSizeChanged(width, height)
   -- saved variables
-  NysTDL.db.profile.frameSize.width = self:GetWidth()
-  NysTDL.db.profile.frameSize.height = self:GetHeight()
+  NysTDL.db.profile.frameSize.width = width
+  NysTDL.db.profile.frameSize.height = height
 
   -- scaling
-  local scale = self:GetWidth()/340
+  local scale = width/enums.tdlFrameDefaultWidth
   self.content:SetScale(scale) -- content
   self.ScrollFrame.ScrollBar:SetScale(scale)
   self.closeButton:SetScale(scale)
@@ -347,23 +349,23 @@ local T_Event_TDLFrame_OnUpdate = {
   ctrl = false,
   alt = false,
 }
-function mainFrame:Event_TDLFrame_OnUpdate(self, elapsed)
+function mainFrame:Event_TDLFrame_OnUpdate(elapsed)
   -- called every frame
-  self.timeSinceLastUpdate = self.timeSinceLastUpdate + elapsed
-  self.timeSinceLastRefresh = self.timeSinceLastRefresh + elapsed
+  tdlFrame.timeSinceLastUpdate = tdlFrame.timeSinceLastUpdate + elapsed
+  tdlFrame.timeSinceLastRefresh = tdlFrame.timeSinceLastRefresh + elapsed
 
-  -- if (self:IsMouseOver()) then
+  -- if (tdlFrame:IsMouseOver()) then
   --   tdlFrame.ScrollFrame.ScrollBar:Show()
   -- else
   --   tdlFrame.ScrollFrame.ScrollBar:Hide()
   -- end
 
   -- dragging
-  if self.isMouseDown and not self.hasMoved then
+  if tdlFrame.isMouseDown and not tdlFrame.hasMoved then
     local x, y = GetCursorPosition()
     if (x > cursorX + cursorDist) or (x < cursorX - cursorDist) or (y > cursorY + cursorDist) or (y < cursorY - cursorDist) then  -- we start dragging the frame
-      self:StartMoving()
-      self.hasMoved = true
+      tdlFrame:StartMoving()
+      tdlFrame.hasMoved = true
     end
   end
 
@@ -374,10 +376,10 @@ function mainFrame:Event_TDLFrame_OnUpdate(self, elapsed)
 
       tutorialsManager:Validate("ALTkey") -- tutorial
       -- we switch the category and frame options buttons for the undo and frame action ones and vice versa
-      tdlFrame.categoryButton:Hide()
-      tdlFrame.undoButton:Show()
-      tdlFrame.frameOptionsButton:Hide()
-      tdlFrame.tabActionsButton:Show()
+      tdlFrame.content.categoryButton:Hide()
+      tdlFrame.content.frameOptionsButton:Hide()
+      tdlFrame.content.tabActionsButton:Show()
+      tdlFrame.content.undoButton:Show()
       -- resize button
       tdlFrame.ScrollFrame.ScrollBar:SetPoint("BOTTOMRIGHT", tdlFrame.ScrollFrame, "BOTTOMRIGHT", - 7, 32)
       tdlFrame.resizeButton:Show()
@@ -388,9 +390,9 @@ function mainFrame:Event_TDLFrame_OnUpdate(self, elapsed)
 
       -- we show the star (favorite) icon for every item
       for itemID in dataManager:ForEach(enums.item) do
-        itemWidget[itemID].descBtn:Hide()
-        itemWidget[itemID].favoriteBtn:Show()
-        itemWidget[itemID].removeBtn:Hide()
+        contentWidget[itemID].descBtn:Hide()
+        contentWidget[itemID].favoriteBtn:Show()
+        contentWidget[itemID].removeBtn:Hide()
       end
     end
   elseif IsControlKeyDown() and not T_Event_TDLFrame_OnUpdate:other("ctrl") then
@@ -399,9 +401,9 @@ function mainFrame:Event_TDLFrame_OnUpdate(self, elapsed)
 
       -- we show the paper (description) icon for every item
       for itemID in dataManager:ForEach(enums.item) do
-        itemWidget[itemID].descBtn:Show()
-        itemWidget[itemID].favoriteBtn:Hide()
-        itemWidget[itemID].removeBtn:Hide()
+        contentWidget[itemID].descBtn:Show()
+        contentWidget[itemID].favoriteBtn:Hide()
+        contentWidget[itemID].removeBtn:Hide()
       end
     end
   elseif not T_Event_TDLFrame_OnUpdate.nothing then
@@ -413,10 +415,10 @@ function mainFrame:Event_TDLFrame_OnUpdate(self, elapsed)
     end
 
     -- buttons
-    tdlFrame.undoButton:Hide()
-    tdlFrame.categoryButton:Show()
-    tdlFrame.tabActionsButton:Hide()
-    tdlFrame.frameOptionsButton:Show()
+    tdlFrame.content.categoryButton:Show()
+    tdlFrame.content.frameOptionsButton:Show()
+    tdlFrame.content.tabActionsButton:Hide()
+    tdlFrame.content.undoButton:Hide()
     -- resize button
     tdlFrame.ScrollFrame.ScrollBar:SetPoint("BOTTOMRIGHT", tdlFrame.ScrollFrame, "BOTTOMRIGHT", - 7, 17)
     tdlFrame.resizeButton:Hide()
@@ -424,14 +426,14 @@ function mainFrame:Event_TDLFrame_OnUpdate(self, elapsed)
 
   tutorialsManager:UpdateFramesVisibility()
 
-  while self.timeSinceLastUpdate > updateRate do -- every 0.05 sec (instead of every frame which is every 1/144 (0.007) sec for a 144hz display... optimization :D)
+  while tdlFrame.timeSinceLastUpdate > updateRate do -- every 0.05 sec (instead of every frame which is every 1/144 (0.007) sec for a 144hz display... optimization :D)
     if NysTDL.db.profile.rainbow then mainFrame:ApplyNewRainbowColor() end
-    self.timeSinceLastUpdate = self.timeSinceLastUpdate - updateRate
+    tdlFrame.timeSinceLastUpdate = tdlFrame.timeSinceLastUpdate - updateRate
   end
 
-  while self.timeSinceLastRefresh > refreshRate do -- every one second
+  while tdlFrame.timeSinceLastRefresh > refreshRate do -- every one second
     -- TODO remove?
-    self.timeSinceLastRefresh = self.timeSinceLastRefresh - refreshRate
+    tdlFrame.timeSinceLastRefresh = tdlFrame.timeSinceLastRefresh - refreshRate
   end
 end
 
@@ -483,19 +485,19 @@ local function loadContent()
 
   -- // we show the good sub-menu (add a category, frame options, tab actions, ...)
   -- so first we hide each of them
-  for menuEnum,frame in pairs(menuFrames) do
-    if menuEnum ~= "selected" then frame:Hide() end
+  for menuEnum, menuFrame in pairs(menuFrames) do
+    if menuEnum ~= "selected" then menuFrame:Hide() end
   end
 
   -- and then we show the good one, if there is one to show
   if menuFrames.selected then
     local menu = menuFrames[menuFrames.selected]
     menu:Show()
-    tdlFrame.content.lineBottom:SetStartPoint("TOPLEFT", centerXOffset-lineOffset, -59 - menu:GetHeight())
-    tdlFrame.content.lineBottom:SetEndPoint("TOPLEFT", centerXOffset+lineOffset, -59 - menu:GetHeight())
+    tdlFrame.content.lineBottom:SetStartPoint("TOPLEFT", centerXOffset-lineOffset, -78 - menu:GetHeight())
+    tdlFrame.content.lineBottom:SetEndPoint("TOPLEFT", centerXOffset+lineOffset, -78 - menu:GetHeight())
   else
-    tdlFrame.content.lineBottom:SetStartPoint("TOPLEFT", centerXOffset-lineOffset, -59)
-    tdlFrame.content.lineBottom:SetEndPoint("TOPLEFT", centerXOffset+lineOffset, -59)
+    tdlFrame.content.lineBottom:SetStartPoint("TOPLEFT", centerXOffset-lineOffset, -78)
+    tdlFrame.content.lineBottom:SetEndPoint("TOPLEFT", centerXOffset+lineOffset, -78)
   end
 
   -- // nothing label ("There are no items!" / "(%i hidden item(s))")
@@ -540,32 +542,32 @@ local function loadList()
   for catOrder,catID in ipairs(tabData.orderedCatIDs) do
     contentWidgets[catID]:SetPoint("TOPLEFT", oldCatWidget, "TOPLEFT", newX, newY)
     contentWidgets[catID]:Show()
+
+    if oldCatWidget == tdlFrame.content.dummyFrame then -- if it's the first loaded cat widget
+      tutorialsManager:SetPoint("addItem", "RIGHT", contentWidgets[catID], "LEFT", -23, 0) -- we put the corresponding tuto on it
+    end
+
     oldCatWidget = contentWidgets[catID]
     newY = newY + ySpace
 
     local catData = contentWidgets[catID].catData
 
-    if catData.closedInTabIDs[tabID] then
+    if catData.closedInTabIDs[tabID] then -- if the cat is closed here, we just show the favsRemainingLabel
       contentWidgets[catID].favsRemainingLabel:Show()
-      goto nextCat
-    else
+    else -- if the cat is opened, we display all of its items
       contentWidgets[catID].favsRemainingLabel:Hide()
+
+      -- item widgets loop
+      newX = newX + xSpace
+      for itemOrder,itemID in ipairs(catData.orderedContentIDs) do -- TODO for now, only items
+        if not dataManager:IsHidden(itemID) then -- OPTIMIZE this func
+          contentWidgets[itemID]:SetPoint("TOPLEFT", oldCatWidget, "TOPLEFT", newX, newY)
+          contentWidgets[itemID]:Show()
+          newY = newY + ySpace
+        end
+      end
+      newX = newX - xSpace
     end
-
-    -- item widgets loop
-    newX = newX + xSpace
-    for itemOrder,itemID in ipairs(catData.orderedContentIDs) do -- TODO for now, only items
-      if dataManager:IsHidden(itemID) then goto nextItem end -- optimize this func
-
-      contentWidgets[itemID]:SetPoint("TOPLEFT", oldCatWidget, "TOPLEFT", newX, newY)
-      contentWidgets[itemID]:Show()
-      newY = newY + ySpace
-
-      ::nextItem::
-    end
-    newX = newX - xSpace
-
-    ::nextCat::
   end
 end
 
@@ -587,7 +589,7 @@ function mainFrame:DontRefreshNextTime()
 
   dontRefreshPls = dontRefreshPls + 1
 end
-
+local a = 0
 function mainFrame:Refresh()
   -- // THE refresh function, reloads the entire list's content in accordance to the current database
 
@@ -617,6 +619,9 @@ function mainFrame:Refresh()
   loadContent() -- content reloading (menus, buttons, ...)
   loadList() -- list reloading (categories, items, ...)
   mainFrame:UpdateVisuals() -- coloring...
+  print("mainFrame:Refresh()")
+  -- if a == 1 then error() end
+  a = a + 1
 end
 
 --/*******************/ FRAME CREATION /*************************/--
@@ -624,17 +629,10 @@ end
 -- // Content generation
 
 local function generateMenuAddACategory()
-  local content = tdlFrame.content
   local enum = enums.menus.addcat
-  menuFrames[enum] = CreateFrame("Frame", nil, content)
-  menuFrames[enum]:SetPoint("TOP", content.title, "TOP", 0, -59)
+  menuFrames[enum] = CreateFrame("Frame", nil, tdlFrame.content)
+  menuFrames[enum]:SetPoint("TOP", tdlFrame.content.title, "TOP", 0, -59)
   local menuframe = menuFrames[enum]
-
-  content.categoryButton = widgets:IconButton(content, "NysTDL_CategoryButton", L["Add a category"])
-  content.categoryButton:SetPoint("RIGHT", content.frameOptionsButton, "LEFT", 2, 0)
-  content.categoryButton:SetScript("OnClick", function()
-    menuClick(enums.menus.addcat)
-  end)
 
   --/************************************************/--
 
@@ -656,7 +654,7 @@ local function generateMenuAddACategory()
   menuframe.categoryEditBox:SetSize(257 - widgets:GetWidth(menuframe.labelCategoryName:GetText()) - 20, 30)
   menuframe.categoryEditBox:SetAutoFocus(false)
   menuframe.categoryEditBox:SetScript("OnKeyDown", function(_, key) if (key == "TAB") then widgets:SetFocusEditBox(menuframe.nameEditBox) end end) -- to switch easily between the two edit boxes
-  menuframe.categoryEditBox:SetScript("OnEnterPressed", addCategory) -- if we press enter, it's like we clicked on the add button
+  menuframe.categoryEditBox:SetScript("OnEnterPressed", addCategory) -- if we press enter, it's like we clicked on the add button -- TODO OULA
   menuframe.categoryEditBox:HookScript("OnEditFocusGained", function(self)
     if (NysTDL.db.profile.highlightOnFocus) then
       self:HighlightText()
@@ -850,20 +848,15 @@ local function generateMenuAddACategory()
   menuframe.addBtn = widgets:Button("addButton", menuframe, L["Add category"])
   menuframe.addBtn:SetPoint("TOP", menuframe.labelFirstItemName, "TOPLEFT", 140, -30)
   menuframe.addBtn:SetScript("onClick", addCategory) -- TODO oula
+
+  tutorialsManager:SetPoint("addCat", "TOP", menuframe.addBtn, "BOTTOM", 0, -22)
 end
 
 local function generateMenuFrameOptions()
-  local content = tdlFrame.content
   local enum = enums.menus.frameopt
-  menuFrames[enum] = CreateFrame("Frame", nil, content)
-  menuFrames[enum]:SetPoint("TOP", content.title, "TOP", 0, -59)
+  menuFrames[enum] = CreateFrame("Frame", nil, tdlFrame.content)
+  menuFrames[enum]:SetPoint("TOP", tdlFrame.content.title, "TOP", 0, -59)
   local menuframe = menuFrames[enum]
-
-  content.frameOptionsButton = widgets:IconButton(content, "NysTDL_FrameOptionsButton", L["Frame options"])
-  content.frameOptionsButton:SetPoint("RIGHT", content.helpButton, "LEFT", 2, 0)
-  content.frameOptionsButton:SetScript("OnClick", function()
-    menuClick(enums.menus.frameopt)
-  end)
 
   --/************************************************/--
 
@@ -942,8 +935,8 @@ local function generateMenuFrameOptions()
   menuframe.affectDesc:SetHitRectInsets(0, 0, 0, 0)
   menuframe.affectDesc:SetScript("OnClick", function(self)
     NysTDL.db.profile.affectDesc = self:GetChecked() -- TODO oula
-    mainFrame:Event_FrameAlphaSlider_OnValueChanged(nil, NysTDL.db.profile.frameAlpha)
-    mainFrame:Event_FrameContentAlphaSlider_OnValueChanged(nil, NysTDL.db.profile.frameContentAlpha)
+    mainFrame:Event_FrameAlphaSlider_OnValueChanged(NysTDL.db.profile.frameAlpha)
+    mainFrame:Event_FrameContentAlphaSlider_OnValueChanged(NysTDL.db.profile.frameContentAlpha)
   end)
   menuframe.affectDesc:SetChecked(NysTDL.db.profile.affectDesc)
 
@@ -955,18 +948,10 @@ local function generateMenuFrameOptions()
 end
 
 local function generateMenuTabActions()
-  local content = tdlFrame.content
   local enum = enums.menus.tabact
-  menuFrames[enum] = CreateFrame("Frame", nil, content)
-  menuFrames[enum]:SetPoint("TOP", content.title, "TOP", 0, -59)
+  menuFrames[enum] = CreateFrame("Frame", nil, tdlFrame.content)
+  menuFrames[enum]:SetPoint("TOP", tdlFrame.content.title, "TOP", 0, -59)
   local menuframe = menuFrames[enum]
-
-  content.tabActionsButton = widgets:IconButton(content, "NysTDL_TabActionsButton", L["Tab actions"])
-  content.tabActionsButton:SetPoint("RIGHT", content.undoButton, "LEFT", 2, 0)
-  content.tabActionsButton:SetScript("OnClick", function()
-    menuClick(enums.menus.tabact)
-  end)
-  content.tabActionsButton:Hide()
 
   --/************************************************/--
 
@@ -1029,15 +1014,40 @@ local function generateFrameContent()
   content.helpButton = widgets:HelpButton(content)
   content.helpButton:SetPoint("TOPRIGHT", content.title, "TOP", 140, -23)
   content.helpButton:SetScript("OnClick", function()
-    SlashCmdList["NysToDoList"](L["info"])
+    SlashCmdList.NysTDL(L["info"])
     tutorialsManager:Validate("getMoreInfo") -- tutorial
   end)
+
+  tutorialsManager:SetPoint("getMoreInfo", "LEFT", content.helpButton, "RIGHT", 18, 0)
+
+  content.frameOptionsButton = widgets:IconButton(content, "NysTDL_FrameOptionsButton", L["Frame options"])
+  content.frameOptionsButton:SetPoint("RIGHT", content.helpButton, "LEFT", 2, 0)
+  content.frameOptionsButton:SetScript("OnClick", function()
+    menuClick(enums.menus.frameopt)
+  end)
+
+  tutorialsManager:SetPoint("accessOptions", "BOTTOM", content.frameOptionsButton, "TOP", 0, 18)
+
+  content.categoryButton = widgets:IconButton(content, "NysTDL_CategoryButton", L["Add a category"])
+  content.categoryButton:SetPoint("RIGHT", content.frameOptionsButton, "LEFT", 2, 0)
+  content.categoryButton:SetScript("OnClick", function()
+    menuClick(enums.menus.addcat)
+  end)
+
+  tutorialsManager:SetPoint("addNewCat", "TOP", content.categoryButton, "BOTTOM", 0, -18)
 
   -- undo button
   content.undoButton = widgets:IconButton(content, "NysTDL_UndoButton", L["Undo last remove/clear"])
   content.undoButton:SetPoint("RIGHT", content.helpButton, "LEFT", 2, 0)
   content.undoButton:SetScript("OnClick", mainFrame.UndoRemove)
   content.undoButton:Hide()
+
+  content.tabActionsButton = widgets:IconButton(content, "NysTDL_TabActionsButton", L["Tab actions"])
+  content.tabActionsButton:SetPoint("RIGHT", content.undoButton, "LEFT", 2, 0)
+  content.tabActionsButton:SetScript("OnClick", function()
+    menuClick(enums.menus.tabact)
+  end)
+  content.tabActionsButton:Hide()
 
   -- add a category button
   generateMenuAddACategory()
@@ -1051,7 +1061,7 @@ local function generateFrameContent()
   content.lineBottom = widgets:ThemeLine(content, database.themes.theme, 0.7)
 
   content.nothingLabel = widgets:NothingLabel(content)
-  content.nothingLabel:SetPoint("TOP", tdlFrame.lineBottom, "TOP", 0, -20)
+  content.nothingLabel:SetPoint("TOP", content.lineBottom, "TOP", 0, -20)
 
   content.dummyFrame = widgets:Dummy(content, content.lineBottom, 0, 0)
   content.dummyFrame:SetPoint("TOPLEFT", content.lineBottom, "TOPLEFT", -35, -20) -- TODO redo?
@@ -1065,11 +1075,12 @@ function mainFrame:CreateTDLFrame()
   -- UIDropDownMenu_SetWidth(btn, 200)
   -- do return end
 
+  ctab = database.ctab -- alias
+
   -- as of wow 9.0, we need to import the backdrop template into our frames if we want to use it in them, it is not set by default, so that's what we are doing here
   tdlFrame = CreateFrame("Frame", "NysTDL_ToDoListFrame", UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil)
 
-  -- tutorial
-  tutorialsManager:Initialize()
+  tutorialsManager:SetPoint("ALTkey", "BOTTOM", tdlFrame, "TOP", 0, 18)
 
   -- background
   tdlFrame:SetBackdrop({bgFile = "Interface\\Tooltips\\UI-Tooltip-Background", edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", tile = false, tileSize = 1, edgeSize = 10, insets = { left = 1, right = 1, top = 1, bottom = 1 }})
@@ -1161,7 +1172,7 @@ function mainFrame:CreateTDLFrame()
   end)
   tdlFrame.resizeButton:RegisterForClicks("RightButtonUp")
   tdlFrame.resizeButton:HookScript("OnClick", function() -- reset size
-    tdlFrame:SetSize(340, 400)
+    tdlFrame:SetSize(enums.tdlFrameDefaultWidth, enums.tdlFrameDefaultHeight)
   end)
 
   -- // inside the scroll frame
@@ -1172,24 +1183,6 @@ function mainFrame:CreateTDLFrame()
 
   -- Initializing the frame with the current saved data
   mainFrame:Init()
-
-  -- when we're here, the list was just created, so it is opened by default already,
-  -- then we decide what we want to do with that
-  if NysTDL.db.profile.openByDefault then
-    mainFrame:Event_OnVisibilityUpdate()
-  elseif NysTDL.db.profile.keepOpen then
-    tdlFrame:SetShown(NysTDL.db.profile.lastListVisibility)
-  else
-    tdlFrame:Hide()
-  end
-end
-
---/*******************/ INITIALIZATION /*************************/--
-
-function mainFrame:Initialize()
-  ctab = database.ctab -- alias
-  mainFrame:CreateTDLFrame()
-  widgets:CreateTDLButton()
 end
 
 -- // Profile init & change
@@ -1210,10 +1203,9 @@ function mainFrame:ResetContent()
   -- 2 - reset every content variable to their default value
   dontRefreshPls = 0
   wipe(contentWidgets)
-  wipe(menuFrames)
 end
 
-function mainFrame:Init(profileChanged)
+function mainFrame:Init()
   -- // we start by setting everything to the saved variables
 
   -- we resize and scale the frame
@@ -1225,26 +1217,31 @@ function mainFrame:Init(profileChanged)
   tdlFrame:SetPoint(points.point, nil, points.relativePoint, points.xOffset, points.yOffset) -- relativeFrame = nil -> entire screen
 
   -- and update its elements opacity
-  mainFrame:Event_FrameAlphaSlider_OnValueChanged(nil, NysTDL.db.profile.frameAlpha)
-  mainFrame:Event_FrameContentAlphaSlider_OnValueChanged(nil, NysTDL.db.profile.frameContentAlpha)
+  mainFrame:Event_FrameAlphaSlider_OnValueChanged(NysTDL.db.profile.frameAlpha)
+  mainFrame:Event_FrameContentAlphaSlider_OnValueChanged(NysTDL.db.profile.frameContentAlpha)
   -- as well as updating the elements needing an update
-  tdlFrame.frameAlphaSlider:SetValue(NysTDL.db.profile.frameAlpha)
-  tdlFrame.frameContentAlphaSlider:SetValue(NysTDL.db.profile.frameContentAlpha)
-  tdlFrame.affectDesc:SetChecked(NysTDL.db.profile.affectDesc)
+  menuFrames[enums.menus.frameopt].frameAlphaSlider:SetValue(NysTDL.db.profile.frameAlpha)
+  menuFrames[enums.menus.frameopt].frameContentAlphaSlider:SetValue(NysTDL.db.profile.frameContentAlpha)
+  menuFrames[enums.menus.frameopt].affectDesc:SetChecked(NysTDL.db.profile.affectDesc)
 
   -- we generate the widgets once
   loadWidgets()
 
   --widgets:SetEditBoxesHyperlinksEnabled(true) -- see func details for why i'm not using it
 
-  -- // then we refresh everything
+  -- // and finally, we update the list's visibility
 
-  mainFrame:Refresh()
+  local oldShownState = tdlFrame:IsShown()
 
-  -- // and finally, when we're here the list already exists,
-  -- we just switched profiles and we need to update the new visibility
-  -- (we don't hide the list if it's already opened)
-  if profileChanged then
-    mainFrame:Event_OnVisibilityUpdate()
+  if NysTDL.db.profile.openByDefault then
+    tdlFrame:Show()
+  elseif NysTDL.db.profile.keepOpen then
+    tdlFrame:SetShown(NysTDL.db.profile.lastListVisibility)
+  else
+    tdlFrame:Hide()
+  end
+
+  if oldShownState == tdlFrame:IsShown() then -- if we didn't change the list's shown state, we manually call Event_TDLFrame_OnVisibilityUpdate to refresh everything
+    mainFrame:Event_TDLFrame_OnVisibilityUpdate()
   end
 end

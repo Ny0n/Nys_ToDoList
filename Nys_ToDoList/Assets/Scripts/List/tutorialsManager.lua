@@ -9,7 +9,6 @@ local tutorialsManager = addonTable.tutorialsManager
 
 -- Variables
 local L = addonTable.core.L
-local tdlFrame
 
 -- tutorial
 local tutorialFrames = {}
@@ -25,62 +24,31 @@ local tutorialOrder = {
 
 --/*******************/ FRAMES /*************************/--
 
-function tutorialsManager:GenerateFrames()
+function tutorialsManager:CreateTutoFrames()
   -- TUTO : How to add categories ("addNewCat")
-    -- frame
-    tutorialFrames.addNewCat = widgets:TutorialFrame("addNewCat", tdlFrame, false, "UP", L["Start by adding a new category!"], 190, 50)
-
-    -- targeted frame
-    tutorialFramesTarget.addNewCat = tdlFrame.categoryButton
-    tutorialFrames.addNewCat:SetPoint("TOP", tutorialFramesTarget.addNewCat, "BOTTOM", 0, -18)
+  tutorialFrames.addNewCat = widgets:TutorialFrame("addNewCat", false, "UP", L["Start by adding a new category!"], 190, 50)
 
   -- TUTO : Adding the categories ("addCat")
-    -- frame
-    tutorialFrames.addCat = widgets:TutorialFrame("addCat", tdlFrame, true, "UP", L["This will add your category and item to the current tab"], 240, 50)
-
-    -- targeted frame
-    tutorialFramesTarget.addCat = tdlFrame.addBtn
-    tutorialFrames.addCat:SetPoint("TOP", tutorialFramesTarget.addCat, "BOTTOM", 0, -22)
+  tutorialFrames.addCat = widgets:TutorialFrame("addCat", true, "UP", L["This will add your category and item to the current tab"], 240, 50)
 
   -- TUTO : adding an item to a category ("addItem")
-    -- frame
-    tutorialFrames.addItem = widgets:TutorialFrame("addItem", tdlFrame, false, "RIGHT", L["To add new items to existing categories, just right-click the category names!"], 220, 50)
-
-    -- targeted frame
-    -- THIS IS A SPECIAL TARGET THAT GETS UPDATED IN THE LOADCATEGORIES FUNCTION
+  tutorialFrames.addItem = widgets:TutorialFrame("addItem", false, "RIGHT", L["To add new items to existing categories, just right-click the category names!"], 220, 50)
 
   -- TUTO : getting more information ("getMoreInfo")
-    -- frame
-    tutorialFrames.getMoreInfo = widgets:TutorialFrame("getMoreInfo", tdlFrame, false, "LEFT", L["If you're having any problems, or you want more information on systems like favorites or descriptions, you can always click here to print help in the chat!"], 275, 50)
-
-    -- targeted frame
-    tutorialFramesTarget.getMoreInfo = tdlFrame.helpButton
-    tutorialFrames.getMoreInfo:SetPoint("LEFT", tutorialFramesTarget.getMoreInfo, "RIGHT", 18, 0)
+  tutorialFrames.getMoreInfo = widgets:TutorialFrame("getMoreInfo", false, "LEFT", L["If you're having any problems, or you want more information on systems like favorites or descriptions, you can always click here to print help in the chat!"], 275, 50)
 
   -- TUTO : accessing the options ("accessOptions")
-    -- frame
-    tutorialFrames.accessOptions = widgets:TutorialFrame("accessOptions", tdlFrame, false, "DOWN", L["You can access the options from here"], 220, 50)
-
-    -- targeted frame
-    tutorialFramesTarget.accessOptions = tdlFrame.frameOptionsButton
-    tutorialFrames.accessOptions:SetPoint("BOTTOM", tutorialFramesTarget.accessOptions, "TOP", 0, 18)
+  tutorialFrames.accessOptions = widgets:TutorialFrame("accessOptions", false, "DOWN", L["You can access the options from here"], 220, 50)
 
   -- TUTO : what does holding ALT do? ("ALTkey")
-    -- frame
-    tutorialFrames.ALTkey = widgets:TutorialFrame("ALTkey", tdlFrame, false, "DOWN", L["One more thing: if you hold ALT while the list is opened, some interesting buttons will appear!"], 220, 50)
-
-    -- targeted frame
-    tutorialFramesTarget.ALTkey = tdlFrame
-    tutorialFrames.ALTkey:SetPoint("BOTTOM", tutorialFramesTarget.ALTkey, "TOP", 0, 18)
+  tutorialFrames.ALTkey = widgets:TutorialFrame("ALTkey", false, "DOWN", L["One more thing: if you hold ALT while the list is opened, some interesting buttons will appear!"], 220, 50)
 end
 
-function tutorialsManager:SetTarget(tutoName, targetFrame)
-  -- changes the target frame for a given tutorial frame
-  local points = {tutorialFrames[tutoName]:GetPoint()}
-  points[2] = targetFrame
-  tutorialFramesTarget[tutoName] = targetFrame
+function tutorialsManager:SetPoint(tutoName, point, relativeTo, relativePoint, ofsx, ofsy)
+  -- sets the points and target frame of a given tutorial
+  tutorialFramesTarget[tutoName] = relativeTo
   tutorialFrames[tutoName]:ClearAllPoints()
-  tutorialFrames[tutoName]:SetPoint(unpack(points))
+  tutorialFrames[tutoName]:SetPoint(point, relativeTo, relativePoint, ofsx, ofsy)
 end
 
 function tutorialsManager:SetFramesScale(scale)
@@ -99,7 +67,7 @@ function tutorialsManager:UpdateFramesVisibility()
       local r = false
       if NysTDL.db.global.tuto_progression < i then -- if the current loop tutorial has not already been done
         if NysTDL.db.global.tuto_progression == i-1 then -- and the previous one has been done
-          if tutorialFramesTarget[v] ~= nil and tutorialFramesTarget[v]:IsShown() then -- and his corresponding target frame is currently shown
+          if tutorialFramesTarget[v] ~= nil and tutorialFramesTarget[v]:IsVisible() then -- and his corresponding target frame is currently visible
             r = true -- then we can show the tutorial frame
           end
         end
@@ -139,12 +107,5 @@ end
 function tutorialsManager:Reset()
   NysTDL.db.global.tuto_progression = 0
   mainFrame:Event_TDLFrame_OnVisibilityUpdate()
-  tdlFrame.ScrollFrame:SetVerticalScroll(0)
-end
-
---/*******************/ INIT /*************************/--
-
-function tutorialsManager:Initialize()
-  tdlFrame = mainFrame:GetFrame()
-  self:GenerateFrames()
+  mainFrame:GetFrame().ScrollFrame:SetVerticalScroll(0)
 end

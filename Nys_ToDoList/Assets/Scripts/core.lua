@@ -20,8 +20,10 @@ addonTable.core = {}
 -- addonTable aliases
 local core = addonTable.core
 local chat = addonTable.chat
-local database = addonTable.database
+local utils = addonTable.utils
 local events = addonTable.events
+local widgets = addonTable.widgets
+local database = addonTable.database
 local databroker = addonTable.databroker
 local optionsManager = addonTable.optionsManager
 
@@ -48,14 +50,14 @@ core.loaded = false
 BINDING_HEADER_NysTDL = core.toc.title
 BINDING_NAME_NysTDL = L["Show/Hide the To-Do List"]
 
--- Register new Slash Command
-SLASH_NysTDL1 = "/tdl"
-SlashCmdList.NysTDL = chat.HandleSlashCommands
-
 --/*******************/ INITIALIZATION /*************************/--
 
 function NysTDL:OnInitialize()
     -- Called when the addon has finished loading
+
+    -- Register new Slash Command
+    SLASH_NysTDL1 = "/tdl"
+    SlashCmdList.NysTDL = chat.HandleSlashCommands
 
     -- database #1
     database:Initialize()
@@ -66,11 +68,8 @@ function NysTDL:OnInitialize()
     -- events
     events:Initialize()
 
-    -- databroker #last
-    databroker:Initialize()
-
-    -- we create the main frame and everything that goes with it #last
-    mainFrame:Initialize()
+    -- we create every visual element #last
+    widgets:Initialize()
 
     -- // addon fully loaded!
 

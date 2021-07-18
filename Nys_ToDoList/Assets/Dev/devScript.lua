@@ -23,7 +23,11 @@ local L = core.L
 
 -- Tests function (for me :p)
 function Nys_Tests(yes)
-  if (yes == 1) then -- tests profile
+  if yes == 1 then -- tests profile
+    tutorialsManager:UpdateFramesVisibility()
+
+    do return end
+
     NysTDL.db.profile.minimap = { hide = false, minimapPos = 241, lock = false, tooltip = true }
     NysTDL.db.profile.framePos = { point = "CENTER", relativeTo = nil, relativePoint = "CENTER", xOffset = 0, yOffset = 0 }
     NysTDL.db.profile.frameSize = { width = 340, height = 400 }
