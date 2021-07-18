@@ -50,13 +50,13 @@ function chat:Warn()
       local warn = "--------------| |cffff0000"..L["WARNING"].."|r |--------------"
 
       if NysTDL.db.profile.favoritesWarning then -- and the user allowed this functionnality
-        local uncheckedFavs = dataManager:GetRemainingNumbers().uncheckedFavs
-        if uncheckedFavs > 0 then
+        local uncheckedFav = dataManager:GetRemainingNumbers().uncheckedFav
+        if uncheckedFav > 0 then
           local msg = ""
 
           local maxTime = time() + 86400
-          dataManager:DoIfFoundTabMatch(maxTime, "uncheckedFavs", function(tabID, tabData)
-            local nb = dataManager:GetRemainingNumbers(nil, tabID).uncheckedFavs
+          dataManager:DoIfFoundTabMatch(maxTime, "uncheckedFav", function(tabID, tabData)
+            local nb = dataManager:GetRemainingNumbers(nil, tabID).uncheckedFav
             if msg ~= "" then
               msg = msg.." + "
             end
@@ -74,13 +74,13 @@ function chat:Warn()
       end
 
       if NysTDL.db.profile.normalWarning then
-        local unchecked = dataManager:GetRemainingNumbers().unchecked
-        if unchecked > 0 then
+        local totalUnchecked = dataManager:GetRemainingNumbers().totalUnchecked
+        if totalUnchecked > 0 then
           local total = 0
 
           local maxTime = time() + 86400
-          dataManager:DoIfFoundTabMatch(maxTime, "unchecked", function(tabID, tabData)
-            local nb = dataManager:GetRemainingNumbers(nil, tabID).unchecked
+          dataManager:DoIfFoundTabMatch(maxTime, "totalUnchecked", function(tabID, tabData)
+            local nb = dataManager:GetRemainingNumbers(nil, tabID).totalUnchecked
             total = total + nb
           end, true)
 

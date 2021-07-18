@@ -410,6 +410,7 @@ function dataManager:MoveItem(itemID, oldPos, newPos, oldCatID, newCatID, oldTab
 	end
 
 	-- TODO message?
+	mainFrame:Refresh()
 end
 
 -- category
@@ -448,12 +449,15 @@ function dataManager:MoveCategory(catID, oldPos, newPos, oldParentID, newParentI
 	end
 
 	-- TODO message?
+	mainFrame:Refresh()
 end
 
 -- tab
 
 function dataManager:MoveTab(tabID, oldPos, newPos, oldGlobalState, newGlobalState)
 	-- TODO
+
+	mainFrame:Refresh()
 end
 
 -- // remove functions
@@ -687,6 +691,10 @@ function dataManager:IsProtected(ID)
 	end
 end
 
+function dataManager:GetNextFavPos(catID)
+	return dataManager:GetRemainingNumbers(nil, nil, catID).totalFav + 1
+end
+
 -- items
 
 function dataManager:ToggleChecked(itemID)
@@ -707,9 +715,26 @@ function dataManager:ToggleFavorite(itemID)
 	local itemData = select(3, dataManager:Find(itemID))
 	itemData.favorite = not itemData.favorite
 
+	-- we change the sort order of the item
+	if itemData.favorite then -- if we passed it from non-fav to fav
+		for catID in pairs(itemData.catIDs) do
+			local catData = select(3, dataManager:Find(catID))
+			tremove(catData.orderedContentIDs, select(2, utils:HasValue(catData.orderedContentIDs, itemID)))
+			tinsert(catData.orderedContentIDs, 1, itemID)
+			-- dataManager:MoveItem(itemID, select(2, utils:HasValue(catData.orderedContentIDs, itemID)), 1) -- OPTIMIZE MoveItem & MoveCategory
+		end
+	else -- if we passed it from fav to non-fav
+		for catID in pairs(itemData.catIDs) do
+			local catData = select(3, dataManager:Find(catID))
+			tremove(catData.orderedContentIDs, select(2, utils:HasValue(catData.orderedContentIDs, itemID)))
+			tinsert(catData.orderedContentIDs, dataManager:GetNextFavPos(catID), itemID)
+			-- dataManager:MoveItem(itemID, select(2, utils:HasValue(catData.orderedContentIDs, itemID)), dataManager:GetNextFavPos(catID)) -- OPTIMIZE MoveItem & MoveCategory
+		end
+	end
+
 	-- refresh the mainFrame
 	mainFrame:UpdateItemButtons(itemID)
-	mainFrame:Refresh() -- we refresh bc the sort order will change
+	mainFrame:Refresh()
 
 	return itemData.favorite
 end
@@ -874,13 +899,28 @@ function dataManager:GetRemainingNumbers(isGlobal, tabID, catID)
 
 	local t = T_GetRemainingNumbers
 	wipe(t)
-	t.checked = 0
-	t.checkedFavs = 0
+
+	-- // remaining numbers calculated:
+
+	-- desc items
+	t.totalDesc = nil
 	t.checkedDesc = 0
-	t.unchecked = 0
-	t.uncheckedFavs = 0
 	t.uncheckedDesc = 0
-	t.total = 0
+
+	-- fav items
+	t.totalFav = nil
+	t.checkedFav = 0
+	t.uncheckedFav = 0
+
+	-- items that are neither fav nor desc
+	t.totalNormal = nil
+	t.checkedNormal = 0
+	t.uncheckedNormal = 0
+
+	-- total
+	t.total = nil
+	t.totalChecked = 0
+	t.totalUnchecked = 0
 
 	local location = catID or tabID or isGlobal
 
@@ -888,18 +928,24 @@ function dataManager:GetRemainingNumbers(isGlobal, tabID, catID)
 		if tabID and not itemData.tabIDs[tabID] then goto next end
 
 		if itemData.checked then
-			t.checked = t.checked + 1
-			if itemData.favorite then t.checkedFavs = t.checkedFavs + 1 end
+			t.totalChecked = t.totalChecked + 1
 			if itemData.description then t.checkedDesc = t.checkedDesc + 1 end
+			if itemData.favorite then t.checkedFav = t.checkedFav + 1 end
+			if not itemData.description and not itemData.favorite then t.checkedNormal = t.checkedNormal + 1 end
 		else
-			t.unchecked = t.unchecked + 1
-			if itemData.favorite then t.uncheckedFavs = t.uncheckedFavs + 1 end
+			t.totalUnchecked = t.totalUnchecked + 1
 			if itemData.description then t.uncheckedDesc = t.uncheckedDesc + 1 end
+			if itemData.favorite then t.uncheckedFav = t.uncheckedFav + 1 end
+			if not itemData.description and not itemData.favorite then t.uncheckedNormal = t.uncheckedNormal + 1 end
 		end
-		t.total = t.total + 1
 
 		::next::
 	end
+
+	t.totalDesc = t.checkedDesc + t.uncheckedDesc
+	t.totalFav = t.checkedFav + t.uncheckedFav
+	t.totalNormal = t.checkedNormal + t.uncheckedNormal
+	t.total = t.totalChecked + t.totalUnchecked
 
 	return t
 end

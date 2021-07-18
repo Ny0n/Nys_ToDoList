@@ -773,7 +773,7 @@ function widgets:ItemWidget(itemID, parentFrame)
 
   -- / checkBtn
   itemWidget.checkBtn = CreateFrame("CheckButton", "noname", itemWidget, "UICheckButtonTemplate")
-  -- TODO setpoint in itemWidget, same pour cat
+  itemWidget.checkBtn:SetPoint("LEFT", itemWidget, "LEFT", 20, 0)
   itemWidget.checkBtn:SetScript("OnClick", function() dataManager:ToggleChecked(itemID) end)
 
   -- / interactiveLabel

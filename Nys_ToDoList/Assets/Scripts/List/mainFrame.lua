@@ -147,12 +147,12 @@ function mainFrame:UpdateRemainingNumberLabels()
 
   -- we update the numbers of remaining things to do in total for the current tab
   local numbers = dataManager:GetRemainingNumbers(nil, tabID)
-  tdlFrame.content.remainingNumber:SetText((numbers.unchecked > 0 and "|cffffffff" or "|cff00ff00")..numbers.unchecked.."|r")
-  tdlFrame.content.remainingFavsNumber:SetText(numbers.uncheckedFavs > 0 and "("..uncheckedFavs..")" or "")
+  tdlFrame.content.remainingNumber:SetText((numbers.totalUnchecked > 0 and "|cffffffff" or "|cff00ff00")..numbers.totalUnchecked.."|r")
+  tdlFrame.content.remainingFavsNumber:SetText(numbers.uncheckedFav > 0 and "("..numbers.uncheckedFav..")" or "")
 
   -- we update the remaining numbers of every category in the tab
   for catID,catData in dataManager:ForEach(enums.category, tabID) do
-    local nbFav = dataManager:GetRemainingNumbers(nil, tabID, catID).uncheckedFavs
+    local nbFav = dataManager:GetRemainingNumbers(nil, tabID, catID).uncheckedFav
     contentWidgets[catID].favsRemainingLabel:SetText(nbFav > 0 and "("..nbFav..")" or "")
   end
 end
@@ -511,11 +511,11 @@ local function loadContent()
     tdlFrame.content.nothingLabel:SetText(L["There are no items!"])
     tdlFrame.content.nothingLabel:Show()
   else -- if there are items in the tab
-    if numbers.checked == numbers.total then -- and if they are all checked ones
+    if numbers.totalChecked == numbers.total then -- and if they are all checked ones
       -- we check if they are hidden or not, and if they are, we show the nothing label with a different text
       local tabData = select(3, dataManager:Find(ctab()))
       if tabData.hideCheckedItems then -- TODO hide cat with items? / close it automatically with special label ?
-        tdlFrame.content.nothingLabel:SetText(utils:SafeStringFormat(L["(%i hidden item(s))"], numbers.checked))
+        tdlFrame.content.nothingLabel:SetText(utils:SafeStringFormat(L["(%i hidden item(s))"], numbers.totalChecked))
         tdlFrame.content.nothingLabel:Show()
       end
     end
