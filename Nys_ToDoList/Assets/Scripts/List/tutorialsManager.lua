@@ -107,5 +107,5 @@ end
 function tutorialsManager:Reset()
   NysTDL.db.global.tuto_progression = 0
   mainFrame:Event_TDLFrame_OnVisibilityUpdate()
-  mainFrame:GetFrame().ScrollFrame:SetVerticalScroll(0)
+  mainFrame.tdlFrame.ScrollFrame:SetVerticalScroll(0)
 end

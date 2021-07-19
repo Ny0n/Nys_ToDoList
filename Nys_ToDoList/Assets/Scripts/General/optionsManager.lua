@@ -23,10 +23,10 @@ function NysTDL:ToggleFrame()
 end
 
 function optionsManager:ToggleOptions(fromFrame)
-  if (InterfaceOptionsFrame:IsShown()) then -- if the interface options frame is currently opened
-    if (InterfaceOptionsFrameAddOns.selection ~= nil) then -- then we check if we're currently in the AddOns tab and if we are currently selecting an addon
-      if (InterfaceOptionsFrameAddOns.selection.name == core.toc.title) then -- and if we are, we check if we're looking at this addon
-        if (fromFrame) then return true end
+  if InterfaceOptionsFrame:IsShown() then -- if the interface options frame is currently opened
+    if InterfaceOptionsFrameAddOns.selection ~= nil then -- then we check if we're currently in the AddOns tab and if we are currently selecting an addon
+      if InterfaceOptionsFrameAddOns.selection.name == core.toc.title then -- and if we are, we check if we're looking at this addon
+        if fromFrame then return true end
         InterfaceOptionsFrame:Hide() -- and only if we are and we click again on the button, we close the interface options frame.
         return
       end
@@ -34,7 +34,7 @@ function optionsManager:ToggleOptions(fromFrame)
     InterfaceOptionsFrame_OpenToCategory(self.optionsFrame)
   else
     InterfaceOptionsFrame_OpenToCategory(self.optionsFrame)
-    if (InterfaceOptionsFrameAddOns.selection == nil) then -- for the first opening, we have to do it 2 time for it to correctly open our addon options page
+    if InterfaceOptionsFrameAddOns.selection == nil then -- for the first opening, we have to do it 2 time for it to correctly open our addon options page
       InterfaceOptionsFrame_OpenToCategory(self.optionsFrame)
     end
   end

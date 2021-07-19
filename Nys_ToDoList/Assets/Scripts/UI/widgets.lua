@@ -14,13 +14,22 @@ local tutorialsManager = addonTable.tutorialsManager
 -- Variables
 local L = core.L
 
-local dummyFrame = CreateFrame("Frame", nil, UIParent)
+widgets.frame = CreateFrame("Frame", nil, UIParent) -- utility frame
+local widgetsFrame = widgets.frame
+
+local tdlButton
 local hyperlinkEditBoxes = {}
 local descFrames = {}
 local descFrameLevelDiff = 20
 local categoryNameWidthMax = 220 -- TODO use those from dataManager?
 local itemNameWidthMax = 240
-local tdlButton
+
+local updateRate = 0.05
+local refreshRate = 1
+
+-- WoW APIs
+local PlaySound = PlaySound
+local CreateFrame, UIParent = CreateFrame, UIParent
 
 --/*******************/ MISC /*************************/--
 
@@ -102,10 +111,7 @@ function widgets:DescFrameHide(frameName)
     if frame:GetName() == frameName then
       frame:Hide()
       widgets:RemoveHyperlinkEditBox(frame.descriptionEditBox.EditBox)
-      table.remove(descFrames, pos) -- we remove the desc frame from its table
-      for pos2, frame2 in pairs(descFrames) do -- we update the frame levels
-        frame2:SetFrameLevel(300 + (pos2-1)*descFrameLevelDiff)
-      end
+      table.remove(descFrames, pos) -- we remove the desc frame from the descFrames table
       return true
     end
   end
@@ -165,7 +171,7 @@ end
 
 function widgets:GetWidth(text)
   -- not the length (#) of a string, but the width it takes when placed on the screen as a font string
-  local l = widgets:NoPointsLabel(dummyFrame, nil, text)
+  local l = widgets:NoPointsLabel(UIParent, nil, text)
   return l:GetWidth()
 end
 
@@ -184,7 +190,7 @@ end
 --/*******************/ FRAMES /*************************/--
 
 function widgets:TutorialFrame(tutoName, showCloseButton, arrowSide, text, width, height)
-  local tutoFrame = CreateFrame("Frame", "NysTDL_TutorialFrame_"..tutoName, dummyFrame, "NysTDL_HelpPlateTooltip")
+  local tutoFrame = CreateFrame("Frame", "NysTDL_TutorialFrame_"..tutoName, UIParent, "NysTDL_HelpPlateTooltip")
   tutoFrame:SetSize(width, height)
 
   if arrowSide == "UP" then tutoFrame.ArrowDOWN:Show()
@@ -208,7 +214,7 @@ function widgets:TutorialFrame(tutoName, showCloseButton, arrowSide, text, width
 end
 
 function widgets:DescriptionFrame(itemWidget)
-  -- the big function to create the description frame for each items
+  -- // the big function to create the description frame for each item
 
   local itemID = itemWidget.itemID
   local itemData = select(3, dataManager:Find(itemID))
@@ -229,12 +235,15 @@ function widgets:DescriptionFrame(itemWidget)
   descFrame:SetBackdropColor(0, 0, 0, 1)
 
   -- properties
-  descFrame:SetResizable(true)
-  descFrame:SetMinResize(descFrame:GetWidth(), descFrame:GetHeight())
-  descFrame:SetFrameLevel(300 + #descFrames*descFrameLevelDiff) -- TODO SetTopLevel avec frameStrata
+  descFrame:EnableMouse(true)
   descFrame:SetMovable(true)
   descFrame:SetClampedToScreen(true)
-  descFrame:EnableMouse(true)
+  descFrame:SetResizable(true)
+  descFrame:SetMinResize(descFrame:GetWidth(), descFrame:GetHeight())
+  descFrame:SetToplevel(true)
+  widgets:SetHyperlinksEnabled(descFrame, true)
+
+  -- frame vars
   descFrame.timeSinceLastUpdate = 0 -- for the updating of the title's color and alpha
   descFrame.opening = 0 -- for the scrolling up on opening
 
@@ -247,7 +256,6 @@ function widgets:DescriptionFrame(itemWidget)
   descFrame:SetScript("OnMouseUp", descFrame.StopMovingOrSizing)
 
   -- OnUpdate script
-  local tdlFrame = mainFrame:GetFrame()
   descFrame:SetScript("OnUpdate", function(self, elapsed)
     self.timeSinceLastUpdate = self.timeSinceLastUpdate + elapsed
 
@@ -266,14 +274,6 @@ function widgets:DescriptionFrame(itemWidget)
         end
       end
 
-      -- if the desc frame is the oldest (the first opened on screen, or subsequently the one who has the lowest frame level)
-      -- we use that one to cycle the rainbow colors if the list gets closed
-      if not tdlFrame:IsShown() then
-        if self:GetFrameLevel() == 300 then
-          if NysTDL.db.profile.rainbow then mainFrame:ApplyNewRainbowColor() end
-        end
-      end
-
       self.timeSinceLastUpdate = self.timeSinceLastUpdate - updateRate
     end
 
@@ -287,9 +287,10 @@ function widgets:DescriptionFrame(itemWidget)
   end)
 
   -- position
-  -- TODO redo itemWidget.descBtn line below?
-  descFrame:SetPoint("BOTTOMRIGHT", itemWidget.descBtn, "TOPLEFT", 0, 0) -- we spawn it basically at the cursor
-  descFrame:StartMoving() -- to unlink it from the tdlFrame
+  descFrame:SetPoint("BOTTOMRIGHT", itemWidget.descBtn, "TOPLEFT", 0, 0) -- we spawn it basically where we clicked
+
+  -- to unlink it from the itemWidget
+  descFrame:StartMoving()
   descFrame:StopMovingOrSizing()
 
   -- / content of the frame / --
@@ -329,7 +330,6 @@ function widgets:DescriptionFrame(itemWidget)
   descFrame.title:SetFontObject("GameFontNormalLarge")
   descFrame.title:SetPoint("TOPLEFT", descFrame, "TOPLEFT", 6, -5)
   descFrame.title:SetText(itemData.name)
-  widgets:SetHyperlinksEnabled(descFrame, true)
 
   -- description edit box
   descFrame.descriptionEditBox = CreateFrame("ScrollFrame", frameName.."_EditBox", descFrame, "InputScrollFrameTemplate")
@@ -454,10 +454,12 @@ end
 function widgets:CreateTDLButton()
   -- creating the big button to easily toggle the frame
   tdlButton = widgets:Button("tdlButton", UIParent, string.gsub(core.toc.title, "Ny's ", ""))
-  tdlButton:SetFrameLevel(100)
-  tdlButton:SetMovable(true)
+
+  -- properties
   tdlButton:EnableMouse(true)
+  tdlButton:SetMovable(true)
   tdlButton:SetClampedToScreen(true)
+  tdlButton:SetToplevel(true)
 
   -- drag
   tdlButton:RegisterForDrag("LeftButton")
@@ -911,13 +913,50 @@ end
 
 --/*******************/ INITIALIZATION /*************************/--
 
+local function OnUpdate(self, elapsed)
+  -- // called every frame
+  widgetsFrame.timeSinceLastUpdate = widgetsFrame.timeSinceLastUpdate + elapsed
+  widgetsFrame.timeSinceLastRefresh = widgetsFrame.timeSinceLastRefresh + elapsed
+
+  -- // every frame
+
+  -- tuto frames visibility
+  tutorialsManager:UpdateFramesVisibility()
+
+  while widgetsFrame.timeSinceLastUpdate > updateRate do
+    widgetsFrame.timeSinceLastUpdate = widgetsFrame.timeSinceLastUpdate - updateRate
+
+    -- // every 0.05 sec (instead of every frame which is every 1/144 (0.007) sec for a 144hz display... optimization :D)
+
+    -- rainbow update
+    if NysTDL.db.profile.rainbow then
+      if #descFrames > 0 or mainFrame.tdlFrame:IsShown() then -- we don't really need to update the color at all times
+        mainFrame:ApplyNewRainbowColor()
+      end
+    end
+
+    while widgetsFrame.timeSinceLastRefresh > refreshRate do
+      widgetsFrame.timeSinceLastRefresh = widgetsFrame.timeSinceLastRefresh - refreshRate
+
+      -- // every 1 sec
+      -- xxx
+    end
+  end
+end
+
 function widgets:Initialize()
+  -- first we create every visual widget of every file
   tutorialsManager:CreateTutoFrames()
   widgets:CreateTDLButton() -- TODO check callallgetters tdl button ?
   databroker:CreateDatabrokerObject()
   databroker:CreateTooltipFrame()
   databroker:CreateMinimapButton()
   mainFrame:CreateTDLFrame()
+
+  -- then we manage the widgetsFrame
+  widgetsFrame:SetScript("OnUpdate", OnUpdate)
+  widgetsFrame.timeSinceLastUpdate = 0
+  widgetsFrame.timeSinceLastRefresh = 0
 end
 
 function widgets:ProfileChanged()

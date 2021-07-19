@@ -24,7 +24,6 @@ local utils = addonTable.utils
 local events = addonTable.events
 local widgets = addonTable.widgets
 local database = addonTable.database
-local databroker = addonTable.databroker
 local optionsManager = addonTable.optionsManager
 
 --/*******************/ ADDON LIBS AND DATA HANDLER /*************************/--
@@ -59,16 +58,16 @@ function NysTDL:OnInitialize()
     SLASH_NysTDL1 = "/tdl"
     SlashCmdList.NysTDL = chat.HandleSlashCommands
 
-    -- database #1
+    -- #1 - database
     database:Initialize()
 
-    -- options #2
+    -- #2 - options
     optionsManager:Initialize()
 
     -- events
     events:Initialize()
 
-    -- we create every visual element #last
+    -- #last - widgets (we create every visual element)
     widgets:Initialize()
 
     -- // addon fully loaded!
