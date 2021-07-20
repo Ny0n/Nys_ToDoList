@@ -6,6 +6,7 @@ local core = addonTable.core
 local utils = addonTable.utils
 local enums = addonTable.enums
 local widgets = addonTable.widgets
+local database = addonTable.database
 local mainFrame = addonTable.mainFrame
 local databroker = addonTable.databroker
 local dataManager = addonTable.dataManager
@@ -231,7 +232,12 @@ function widgets:DescriptionFrame(itemWidget)
   descFrame:SetSize(w < 180 and 180+75 or w+75, 110) -- 75 is large enough to place the closebutton, clearbutton, and a little bit of space at the right of the name
 
   -- background
-  descFrame:SetBackdrop({bgFile = "Interface\\Tooltips\\UI-Tooltip-Background", edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", tile = false, tileSize = 1, edgeSize = 10, insets = { left = 1, right = 1, top = 1, bottom = 1 }})
+  descFrame:SetBackdrop({
+    bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+    edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+    tile = false, tileSize = 1, edgeSize = 10,
+    insets = { left = 1, right = 1, top = 1, bottom = 1 }
+  })
   descFrame:SetBackdropColor(0, 0, 0, 1)
 
   -- properties
@@ -269,7 +275,7 @@ function widgets:DescriptionFrame(itemWidget)
           local r, g, b = unpack(NysTDL.db.profile.favoritesColor)
           self.title:SetTextColor(r, g, b, currentAlpha)
         else
-          local r, g, b = unpack(config:ThemeDownTo01(config.database.theme_yellow))
+          local r, g, b = unpack(utils:ThemeDownTo01(database.themes.theme_yellow))
           self.title:SetTextColor(r, g, b, currentAlpha)
         end
       end
@@ -343,10 +349,12 @@ function widgets:DescriptionFrame(itemWidget)
   descFrame.descriptionEditBox:SetPoint("BOTTOMRIGHT", descFrame, "BOTTOMRIGHT", -10, 10)
   if itemData.description then -- if there is already a description for this item, we write it on frame creation
     descFrame.descriptionEditBox.EditBox:SetText(itemData.description)
+    descFrame.descriptionEditBox.EditBox.Instructions:Hide()
   end
   descFrame.descriptionEditBox.EditBox:SetScript("OnTextChanged", function(self)
     -- and here we save the description everytime the text is updated (best auto-save possible I think)
     dataManager:UpdateDescription(itemID, self:GetText())
+    self.Instructions:SetShown(self:GetText() == "") -- we show/hide the hint
   end)
   widgets:SetHyperlinksEnabled(descFrame.descriptionEditBox.EditBox, true)
   widgets:AddHyperlinkEditBox(descFrame.descriptionEditBox.EditBox)
@@ -356,10 +364,8 @@ function widgets:DescriptionFrame(itemWidget)
   -- // finished creating the frame
 
   -- we update the alpha if it needs to be
-  mainFrame:Event_FrameAlphaSlider_OnValueChanged(nil, NysTDL.db.profile.frameAlpha)
-  mainFrame:Event_FrameContentAlphaSlider_OnValueChanged(nil, NysTDL.db.profile.frameContentAlpha)
-
-  mainFrame:Refresh() -- we refresh the main frame to instantly display the changes -- XXX necessary?
+  mainFrame:Event_FrameAlphaSlider_OnValueChanged(NysTDL.db.profile.frameAlpha)
+  mainFrame:Event_FrameContentAlphaSlider_OnValueChanged(NysTDL.db.profile.frameContentAlpha)
 end
 
 function widgets:Dummy(parentFrame, relativeFrame, xOffset, yOffset)
@@ -482,9 +488,8 @@ end
 
 -- item buttons
 
-function widgets:RemoveButton(itemWidget)
-  local btn = CreateFrame("Button", nil, itemWidget.checkBtn, "NysTDL_RemoveButton")
-  btn:SetPoint("LEFT", itemWidget.checkBtn, "LEFT", -20, 0)
+function widgets:RemoveButton(widget)
+  local btn = CreateFrame("Button", nil, widget, "NysTDL_RemoveButton")
 
   -- these are for changing the color depending on the mouse actions (since they are custom xml)
   btn:HookScript("OnEnter", function(self)
@@ -633,6 +638,7 @@ contentWidgets = {
 
 function widgets:CategoryWidget(catID, parentFrame)
   local categoryWidget = CreateFrame("Frame", "noname", parentFrame, nil) -- TODO replace all "noname"
+  categoryWidget:SetSize(1, 1) -- so that its children are visible
 
   -- // data
 
@@ -645,7 +651,7 @@ function widgets:CategoryWidget(catID, parentFrame)
 
   -- / interactiveLabel
   categoryWidget.interactiveLabel = widgets:NoPointsInteractiveLabel(categoryWidget, "noname", catData.name, "GameFontHighlightLarge")
-  categoryWidget.interactiveLabel:SetPoint("LEFT", categoryWidget, "LEFT", 0, 0)
+  categoryWidget.interactiveLabel:SetPoint("LEFT", categoryWidget, "LEFT", 20, 0)
   categoryWidget.interactiveLabel.Button:SetScript("OnEnter", function(self)
     local r, g, b = unpack(utils:ThemeDownTo01(database.themes.theme))
     self:GetParent().Text:SetTextColor(r, g, b, 1) -- when we hover it, we color the label
@@ -662,12 +668,13 @@ function widgets:CategoryWidget(catID, parentFrame)
       catData.closedInTabIDs[database.ctab()] = not catData.closedInTabIDs[database.ctab()] or nil
       mainFrame:Refresh() -- we refresh the list
     elseif button == "RightButton" then -- we try to toggle the addEditBox
+      print("1")
       -- if the cat we right clicked on is NOT a closed category
       if catData.closedInTabIDs[database.ctab()] then return end
-
+      print("2")
       -- we toggle its edit box
       categoryWidget.addEditBox:SetShown(not categoryWidget.addEditBox:IsShown())
-
+      print("3")
       if categoryWidget.addEditBox:IsShown() then -- and if we are opening it
         tutorialsManager:Validate("addItem") -- tutorial
         widgets:SetFocusEditBox(categoryWidget.addEditBox) -- we give it the focus
@@ -709,14 +716,21 @@ function widgets:CategoryWidget(catID, parentFrame)
     end)
   end)
 
+  -- / removeBtn
+  categoryWidget.removeBtn = widgets:RemoveButton(categoryWidget)
+  categoryWidget.removeBtn:SetPoint("LEFT", categoryWidget.interactiveLabel, "LEFT", -20, 0)
+  categoryWidget.removeBtn:SetScript("OnClick", function() dataManager:DeleteCat(catID) end)
+
   -- / favsRemainingLabel
   categoryWidget.favsRemainingLabel = widgets:NoPointsLabel(categoryWidget, "noname", "")
   categoryWidget.favsRemainingLabel:SetPoint("LEFT", categoryWidget.interactiveLabel, "RIGHT", 6, 0)
 
   -- / addEditBox
-  categoryWidget.addEditBox = widgets:NoPointsCatEditBox("noname")
-  categoryWidget.addEditBox:SetPoint("RIGHT", categoryWidget.interactiveLabel, "LEFT", rightPointDistance, 0)
+  categoryWidget.addEditBox = widgets:NoPointsCatEditBox(categoryWidget)
+  categoryWidget.addEditBox:SetPoint("RIGHT", categoryWidget.interactiveLabel, "LEFT", 297, 0)
   categoryWidget.addEditBox:SetPoint("LEFT", categoryWidget.interactiveLabel, "RIGHT", 5, 0)
+  categoryWidget.addEditBox:SetSize(100, 30)
+  categoryWidget.addEditBox:Hide()
   -- TODO check this
   -- -- edit box width (we adapt it based on the category label's width)
   -- local labelWidth = tonumber(string.format("%i", categoryWidget.interactiveLabel.Text:GetWidth()))
@@ -728,7 +742,9 @@ function widgets:CategoryWidget(catID, parentFrame)
   --   categoryWidget.addEditBox:SetSize(editBoxAddItemWidth - 10, categoryWidget.interactiveLabel.Button:GetHeight())
   -- end
   categoryWidget.addEditBox:SetScript("OnEnterPressed", function(self)
-    dataManager:AddItem(dataManager:CreateItem(self:GetText(), database.ctab(), catID))
+    if dataManager:AddItem(dataManager:CreateItem(self:GetText(), database.ctab(), catID)) then
+      self:SetText("") -- we clear the box if the adding was a success
+    end
     self:Show() -- we keep it shown to add more items
     widgets:SetFocusEditBox(self)
   end)
@@ -740,6 +756,8 @@ function widgets:CategoryWidget(catID, parentFrame)
     self:GetScript("OnEscapePressed")(self)
   end)
   widgets:AddHyperlinkEditBox(categoryWidget.addEditBox)
+
+  return categoryWidget
 end
 
 --[[
@@ -766,13 +784,14 @@ contentWidgets = {
 
 function widgets:ItemWidget(itemID, parentFrame)
   local itemWidget = CreateFrame("Frame", "noname", parentFrame, nil)
+  itemWidget:SetSize(1, 1) -- so that its children are visible
 
   -- // data
 
   itemWidget.enum = enums.item
   itemWidget.itemID = itemID
   itemWidget.itemData = select(3, dataManager:Find(itemID))
-  local itemData = itemWidget.catData
+  local itemData = itemWidget.itemData
 
   -- // frames
 
@@ -809,7 +828,7 @@ function widgets:ItemWidget(itemID, parentFrame)
 
     -- then, we can create the new edit box to rename the item, where the label was
     local renameEditBox = widgets:NoPointsRenameEditBox(itemWidget, itemData.name, itemNameWidthMax, self:GetHeight())
-    renameEditBox:SetPoint("LEFT", itemWidget.checkBtn, "LEFT", 5, 0)
+    renameEditBox:SetPoint("LEFT", itemWidget.checkBtn, "RIGHT", 5, 0)
     -- widgets:SetHyperlinksEnabled(renameEditBox, true)
     widgets:AddHyperlinkEditBox(renameEditBox) -- so that we can add hyperlinks in it
 
@@ -847,6 +866,7 @@ function widgets:ItemWidget(itemID, parentFrame)
 
   -- / removeBtn
   itemWidget.removeBtn = widgets:RemoveButton(itemWidget)
+  itemWidget.removeBtn:SetPoint("LEFT", itemWidget.checkBtn, "LEFT", -20, 0)
   itemWidget.removeBtn:SetScript("OnClick", function() dataManager:DeleteItem(itemID) end)
 
   -- / favoriteBtn
@@ -858,6 +878,8 @@ function widgets:ItemWidget(itemID, parentFrame)
   itemWidget.descBtn = widgets:DescButton(itemWidget)
   itemWidget.descBtn:SetScript("OnClick", function() widgets:DescriptionFrame(itemWidget) end)
   itemWidget.descBtn:Hide()
+
+  return itemWidget
 end
 
 --/*******************/ EDIT BOXES /*************************/--
@@ -875,8 +897,8 @@ function widgets:NoPointsRenameEditBox(relativeFrame, text, width, height)
   return renameEditBox
 end
 
-function widgets:NoPointsCatEditBox(name)
-  local edb = CreateFrame("EditBox", name, nil, "InputBoxTemplate")
+function widgets:NoPointsCatEditBox(categoryWidget)
+  local edb = CreateFrame("EditBox", nil, categoryWidget, "InputBoxTemplate")
   edb:SetAutoFocus(false)
   -- edb:SetTextInsets(0, 15, 0, 0)
   -- local btn = CreateFrame("Button", nil, edb, "NysTDL_AddButton")

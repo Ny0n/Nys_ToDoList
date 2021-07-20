@@ -155,7 +155,7 @@ function mainFrame:updateFavsRemainingNumbersColor()
   tdlFrame.content.remainingFavsNumber:SetTextColor(unpack(NysTDL.db.profile.favoritesColor))
   for _, contentWidget in pairs(contentWidgets) do
     if contentWidget.enum == enums.category then -- for every category widgets
-      catWidget.favsRemainingLabel:SetTextColor(unpack(NysTDL.db.profile.favoritesColor))
+      contentWidget.favsRemainingLabel:SetTextColor(unpack(NysTDL.db.profile.favoritesColor))
     end
   end
 end
@@ -230,6 +230,32 @@ function mainFrame:ApplyNewRainbowColor()
   mainFrame:UpdateItemNamesColor()
 end
 
+-- TODO move this
+-- this table is to only update once the things concerned by the special key inputs instead of every frame
+local T_Event_TDLFrame_OnUpdate = {
+  other = function(self, x) -- returns true if an other argument than the given one or 'nothing' is true
+    for k,v in pairs(self) do
+      if type(v) == "boolean" then
+        if k ~= "nothing" and k ~= x and v then
+          return true
+        end
+      end
+    end
+    return false
+  end,
+  something = function(self, x) -- sets to true only the given argument, while falsing every other
+    for k,v in pairs(self) do
+      if type(v) == "boolean" then
+        self[k] = false
+      end
+    end
+    self[x] = true
+  end,
+  nothing = false,
+  shift = false,
+  ctrl = false,
+  alt = false,
+}
 function mainFrame:UpdateItemButtons(itemID)
   -- // shows the right button at the left of the given item
   local itemWidget = contentWidgets[itemID] -- we take the item widget
@@ -317,31 +343,6 @@ function mainFrame:Event_TDLFrame_OnSizeChanged(width, height)
   tutorialsManager:SetFramesScale(scale)
 end
 
--- this table is to only update once the things concerned by the special key inputs instead of every frame
-local T_Event_TDLFrame_OnUpdate = {
-  other = function(self, x) -- returns true if an other argument than the given one or 'nothing' is true
-    for k,v in pairs(self) do
-      if type(v) == "boolean" then
-        if k ~= "nothing" and k ~= x and v then
-          return true
-        end
-      end
-    end
-    return false
-  end,
-  something = function(self, x) -- sets to true only the given argument, while falsing every other
-    for k,v in pairs(self) do
-      if type(v) == "boolean" then
-        self[k] = false
-      end
-    end
-    self[x] = true
-  end,
-  nothing = false,
-  shift = false,
-  ctrl = false,
-  alt = false,
-}
 function mainFrame:Event_TDLFrame_OnUpdate()
   -- if (tdlFrame:IsMouseOver()) then
   --   tdlFrame.ScrollFrame.ScrollBar:Show()
@@ -378,10 +379,12 @@ function mainFrame:Event_TDLFrame_OnUpdate()
       T_Event_TDLFrame_OnUpdate:something("shift")
 
       -- we show the star (favorite) icon for every item
-      for itemID in dataManager:ForEach(enums.item) do
-        contentWidget[itemID].descBtn:Hide()
-        contentWidget[itemID].favoriteBtn:Show()
-        contentWidget[itemID].removeBtn:Hide()
+      for _, contentWidget in pairs(contentWidgets) do
+        if contentWidget.enum == enums.item then
+          contentWidget.descBtn:Hide()
+          contentWidget.favoriteBtn:Show()
+          contentWidget.removeBtn:Hide()
+        end
       end
     end
   elseif IsControlKeyDown() and not T_Event_TDLFrame_OnUpdate:other("ctrl") then
@@ -389,10 +392,12 @@ function mainFrame:Event_TDLFrame_OnUpdate()
       T_Event_TDLFrame_OnUpdate:something("ctrl")
 
       -- we show the paper (description) icon for every item
-      for itemID in dataManager:ForEach(enums.item) do
-        contentWidget[itemID].descBtn:Show()
-        contentWidget[itemID].favoriteBtn:Hide()
-        contentWidget[itemID].removeBtn:Hide()
+      for _, contentWidget in pairs(contentWidgets) do
+        if contentWidget.enum == enums.item then
+          contentWidget.descBtn:Show()
+          contentWidget.favoriteBtn:Hide()
+          contentWidget.removeBtn:Hide()
+        end
       end
     end
   elseif not T_Event_TDLFrame_OnUpdate.nothing then
@@ -417,6 +422,8 @@ end
 --/*******************/ LIST LOADING /*************************/--
 
 function mainFrame:UpdateWidget(ID, enum)
+  -- i take the enum here, and am not using Find just for optimization -- TODO nope?
+
   if contentWidgets[ID] then
     contentWidgets[ID]:ClearAllPoints()
     contentWidgets[ID]:Hide()
@@ -518,7 +525,8 @@ local function loadList()
 
   -- category widgets loop
   for catOrder,catID in ipairs(tabData.orderedCatIDs) do
-    contentWidgets[catID]:SetPoint("TOPLEFT", oldCatWidget, "TOPLEFT", newX, newY)
+    print("LOADING", catID)
+    contentWidgets[catID]:SetPoint("TOPLEFT", tdlFrame.content.dummyFrame, "TOPLEFT", newX, newY)
     contentWidgets[catID]:Show()
 
     if oldCatWidget == tdlFrame.content.dummyFrame then -- if it's the first loaded cat widget
@@ -526,7 +534,8 @@ local function loadList()
     end
 
     oldCatWidget = contentWidgets[catID]
-    newY = newY + ySpace
+    newY = newY - ySpace
+    print("CATAFTER", newY)
 
     local catData = contentWidgets[catID].catData
 
@@ -538,14 +547,16 @@ local function loadList()
       -- item widgets loop
       newX = newX + xSpace
       for itemOrder,itemID in ipairs(catData.orderedContentIDs) do -- TODO for now, only items
-        if not dataManager:IsHidden(itemID) then -- OPTIMIZE this func
-          contentWidgets[itemID]:SetPoint("TOPLEFT", oldCatWidget, "TOPLEFT", newX, newY)
+        if not dataManager:IsHidden(itemID, ctab()) then -- OPTIMIZE this func
+          contentWidgets[itemID]:SetPoint("TOPLEFT", tdlFrame.content.dummyFrame, "TOPLEFT", newX, newY)
           contentWidgets[itemID]:Show()
-          newY = newY + ySpace
+          newY = newY - ySpace
+          print("ITEMAFTER", newY)
         end
       end
       newX = newX - xSpace
     end
+    print("AFTER", newY)
   end
 end
 
@@ -573,6 +584,7 @@ function mainFrame:Refresh()
 
   -- anti-refresh for optimization
   if dontRefreshPls > 0 then
+    print("NO REFRESH --------")
     dontRefreshPls = dontRefreshPls - 1
     return
   end
@@ -627,9 +639,13 @@ local function generateMenuAddACategory()
   menuframe.categoryEditBox:SetSize(257 - widgets:GetWidth(menuframe.labelCategoryName:GetText()) - 20, 30)
   menuframe.categoryEditBox:SetAutoFocus(false)
   -- menuframe.categoryEditBox:SetScript("OnKeyDown", function(_, key) if (key == "TAB") then widgets:SetFocusEditBox(menuframe.nameEditBox) end end) XXX -- to switch easily between the two edit boxes
-  menuframe.categoryEditBox:SetScript("OnEnterPressed", addCategory) -- if we press enter, it's like we clicked on the add button -- TODO OULA
-  menuframe.categoryEditBox:HookScript("OnEditFocusGained", function(self)
-    if (NysTDL.db.profile.highlightOnFocus) then
+  menuframe.categoryEditBox:SetScript("OnEnterPressed", function(self) -- if we press enter, it's like we clicked on the add button
+    if dataManager:AddCategory(dataManager:CreateCategory(self:GetText(), ctab())) then
+      self:SetText("") -- we clear the box if the adding was a success
+    end
+  end)
+  menuframe.categoryEditBox:HookScript("OnEditFocusGained", function(self) -- TODO what is this
+    if NysTDL.db.profile.highlightOnFocus then
       self:HighlightText()
     else
       self:HighlightText(self:GetCursorPosition(), self:GetCursorPosition())
@@ -800,7 +816,11 @@ local function generateMenuAddACategory()
 
   menuframe.addBtn = widgets:Button("addButton", menuframe, L["Add category"])
   menuframe.addBtn:SetPoint("TOP", menuframe.menuTitle, "TOP", 0, -65)
-  menuframe.addBtn:SetScript("onClick", addCategory) -- TODO oula
+  menuframe.addBtn:SetScript("OnClick", function()
+    if dataManager:AddCategory(dataManager:CreateCategory(menuframe.categoryEditBox:GetText(), ctab())) then
+      menuframe.categoryEditBox:SetText("") -- we clear the box if the adding was a success
+    end
+  end)
 
   tutorialsManager:SetPoint("addCat", "TOP", menuframe.addBtn, "BOTTOM", 0, -22)
 end
@@ -986,7 +1006,7 @@ local function generateFrameContent()
   -- undo button
   content.undoButton = widgets:IconButton(content, "NysTDL_UndoButton", L["Undo last remove/clear"])
   content.undoButton:SetPoint("RIGHT", content.helpButton, "LEFT", 2, 0)
-  content.undoButton:SetScript("OnClick", mainFrame.UndoRemove)
+  content.undoButton:SetScript("OnClick", function() dataManager:Undo() end)
   content.undoButton:Hide()
 
   -- tab actions menu button
@@ -1046,18 +1066,43 @@ local function generateFrameContent()
   content.nothingLabel:SetPoint("TOP", content.lineBottom, "TOP", 0, -20)
 
   content.dummyFrame = widgets:Dummy(content, content.lineBottom, 0, 0)
-  content.dummyFrame:SetPoint("TOPLEFT", content.lineBottom, "TOPLEFT", -35, -20) -- TODO redo?
+  content.dummyFrame:SetPoint("TOPLEFT", content.lineBottom, "TOPLEFT", -30, -30) -- TODO redo?
 end
 
 -- // Creating the main frame
 
 function mainFrame:CreateTDLFrame()
+  -- TODO temp
+  ctab = database.ctab -- alias
+  mainFrame.tabSelect = CreateFrame("FRAME", nil, UIParent, "UIDropDownMenuTemplate")
+  UIDropDownMenu_SetWidth(mainFrame.tabSelect, 90)
+  UIDropDownMenu_SetText(mainFrame.tabSelect, select(3, dataManager:Find(ctab())).name)
+
+  -- Implement the function to change the weekly reset day, then refresh
+  local function setTab(self, tabID)
+    mainFrame:ChangeTab(tabID)
+    UIDropDownMenu_SetText(mainFrame.tabSelect, select(3, dataManager:Find(ctab())).name) -- Update the text
+  end
+
+  -- Create and bind the initialization function to the dropdown menu
+  UIDropDownMenu_Initialize(mainFrame.tabSelect, function(self, level, menuList)
+    local info = UIDropDownMenu_CreateInfo()
+
+    local tabsList = select(3, dataManager:GetData())
+    for _, tabID in ipairs(tabsList.orderedTabIDs) do
+      info.func = setTab
+      info.arg1 = tabID
+      info.text = select(3, dataManager:Find(tabID)).name
+      info.checked = ctab() == info.arg1
+      UIDropDownMenu_AddButton(info)
+    end
+  end)
+  mainFrame.tabSelect:SetPoint("CENTER", UIParent, "CENTER", 0, 300)
   -- local btn = CreateFrame("Frame", nil, UIParent, "LargeUIDropDownMenuTemplate")
   -- btn:SetPoint("CENTER")
   -- UIDropDownMenu_SetWidth(btn, 200)
   -- do return end
 
-  ctab = database.ctab -- alias
 
   -- background
   tdlFrame:SetBackdrop({
