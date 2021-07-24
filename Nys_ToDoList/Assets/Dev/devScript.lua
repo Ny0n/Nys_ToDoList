@@ -61,51 +61,27 @@ function Nys_Tests(yes)
       1, -- [3]
     }
     NysTDL:ProfileChanged()
-  elseif (yes == 2) then
+  elseif yes == 2 then
     LibStub("AceConfigDialog-3.0"):Open("Nys_ToDoListWIP")
-  elseif (yes == 3) then
+  elseif yes == 3 then
     UIFrameFadeOut(tdlFrame, 2)
       print(tdlFrame.fadeInfo.finishedFunc)
     tdlFrame.fadeInfo.finishedFunc = function(arg1)
       print("hey")
     end
     print(tdlFrame.fadeInfo.finishedFunc)
-  elseif (yes == 5) then -- EXPLOSION
-    if (not NysTDL.db.profile.itemsList["EXPLOSION"]) then
-    itemsFrame:AddItem("", {
-      ["catName"] = "EXPLOSION",
-      ["itemName"] = "1",
-      ["tabName"] = "All",
-      ["checked"] = false,
-    })
-
-    for i = 1, 99 do
-      itemsFrame:AddItem("", {
-        ["catName"] = "EXPLOSION",
-        ["itemName"] = tostring(tonumber(NysTDL.db.profile.itemsList["EXPLOSION"][#NysTDL.db.profile.itemsList["EXPLOSION"]]) + 1),
-        ["tabName"] = "All",
-        ["checked"] = false,
-      })
-    end
-
-    return
-    end
-
-    for i = 1, 100 do
-    itemsFrame:AddItem("", {
-      ["catName"] = "EXPLOSION",
-      ["itemName"] = tostring(tonumber(NysTDL.db.profile.itemsList["EXPLOSION"][#NysTDL.db.profile.itemsList["EXPLOSION"]]) + 1),
-      ["tabName"] = "All",
-      ["checked"] = false,
-    })
-    end
-  elseif (yes == 4) then
+  elseif yes == 4 then
     -- print("Daily:    "..tostringall(NysTDL.db.profile.autoReset["Daily"]))
     -- print("Weekly: "..tostringall(NysTDL.db.profile.autoReset["Weekly"]))
     -- print("Time:    "..tostringall(time()))
     -- local timeUntil = autoReset:GetSecondsToReset()
     -- print(timeUntil.hour, timeUntil.min + 1)
-
+  elseif yes == 5 then -- EXPLOSION
+    for i = 1, 100 do
+      mainFrame:DontRefreshNextTime()
+      dataManager:CreateItem(tostring(i), "2d26b6e9-ee14-47f9-a8ff-836acf35a8d6", "fbb780a7-701e-48d6-a1b9-a70092925370")
+    end
+    mainFrame:Refresh()
   end
   print("--Nys_Tests--")
 end

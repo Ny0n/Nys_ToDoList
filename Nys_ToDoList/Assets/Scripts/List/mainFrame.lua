@@ -123,6 +123,7 @@ end
 function mainFrame:ChangeTab(newTabID)
   ctab(newTabID)
   mainFrame:Refresh()
+  tdlFrame.content.menuFrames[enums.menus.addcat].categoryEditBox:SetText(newTabID) -- TODO remove
 end
 
 -- // frame color/visual update functions
@@ -525,7 +526,6 @@ local function loadList()
 
   -- category widgets loop
   for catOrder,catID in ipairs(tabData.orderedCatIDs) do
-    print("LOADING", catID)
     contentWidgets[catID]:SetPoint("TOPLEFT", tdlFrame.content.dummyFrame, "TOPLEFT", newX, newY)
     contentWidgets[catID]:Show()
 
@@ -535,7 +535,6 @@ local function loadList()
 
     oldCatWidget = contentWidgets[catID]
     newY = newY - ySpace
-    print("CATAFTER", newY)
 
     local catData = contentWidgets[catID].catData
 
@@ -547,16 +546,14 @@ local function loadList()
       -- item widgets loop
       newX = newX + xSpace
       for itemOrder,itemID in ipairs(catData.orderedContentIDs) do -- TODO for now, only items
-        if not dataManager:IsHidden(itemID, ctab()) then -- OPTIMIZE this func
+        if not contentWidgets[itemID].itemData.tabIDs[tabID] or not dataManager:IsHidden(itemID, tabID) then -- OPTIMIZE this func
           contentWidgets[itemID]:SetPoint("TOPLEFT", tdlFrame.content.dummyFrame, "TOPLEFT", newX, newY)
           contentWidgets[itemID]:Show()
           newY = newY - ySpace
-          print("ITEMAFTER", newY)
         end
       end
       newX = newX - xSpace
     end
-    print("AFTER", newY)
   end
 end
 
@@ -619,6 +616,14 @@ end
 local function generateMenuAddACategory()
   local menuframe = tdlFrame.content.menuFrames[enums.menus.addcat]
 
+  local function addCat() -- DRY
+    if dataManager:CreateCategory(menuframe.categoryEditBox:GetText(), ctab()) then
+      menuframe.categoryEditBox:SetText("") -- we clear the box if the adding was a success
+      tutorialsManager:Validate("addCat") -- tutorial
+    end
+    widgets:SetFocusEditBox(menuframe.categoryEditBox)
+  end
+
   --/************************************************/--
 
   -- title
@@ -639,11 +644,7 @@ local function generateMenuAddACategory()
   menuframe.categoryEditBox:SetSize(257 - widgets:GetWidth(menuframe.labelCategoryName:GetText()) - 20, 30)
   menuframe.categoryEditBox:SetAutoFocus(false)
   -- menuframe.categoryEditBox:SetScript("OnKeyDown", function(_, key) if (key == "TAB") then widgets:SetFocusEditBox(menuframe.nameEditBox) end end) XXX -- to switch easily between the two edit boxes
-  menuframe.categoryEditBox:SetScript("OnEnterPressed", function(self) -- if we press enter, it's like we clicked on the add button
-    if dataManager:AddCategory(dataManager:CreateCategory(self:GetText(), ctab())) then
-      self:SetText("") -- we clear the box if the adding was a success
-    end
-  end)
+  menuframe.categoryEditBox:SetScript("OnEnterPressed", addCat) -- if we press enter, it's like we clicked on the add button
   menuframe.categoryEditBox:HookScript("OnEditFocusGained", function(self) -- TODO what is this
     if NysTDL.db.profile.highlightOnFocus then
       self:HighlightText()
@@ -816,11 +817,7 @@ local function generateMenuAddACategory()
 
   menuframe.addBtn = widgets:Button("addButton", menuframe, L["Add category"])
   menuframe.addBtn:SetPoint("TOP", menuframe.menuTitle, "TOP", 0, -65)
-  menuframe.addBtn:SetScript("OnClick", function()
-    if dataManager:AddCategory(dataManager:CreateCategory(menuframe.categoryEditBox:GetText(), ctab())) then
-      menuframe.categoryEditBox:SetText("") -- we clear the box if the adding was a success
-    end
-  end)
+  menuframe.addBtn:SetScript("OnClick", addCat)
 
   tutorialsManager:SetPoint("addCat", "TOP", menuframe.addBtn, "BOTTOM", 0, -22)
 end

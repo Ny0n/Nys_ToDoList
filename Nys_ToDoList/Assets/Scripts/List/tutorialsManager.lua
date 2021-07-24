@@ -24,7 +24,7 @@ local tutorialOrder = {
 
 --/*******************/ FRAMES /*************************/--
 
-function tutorialsManager:CreateTutoFrames()
+function tutorialsManager:CreateTutoFrames() -- TODO redo tuto texts
   -- TUTO : How to add categories ("addNewCat")
   tutorialFrames.addNewCat = widgets:TutorialFrame("addNewCat", false, "UP", L["Start by adding a new category!"], 190, 50)
 

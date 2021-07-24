@@ -5,7 +5,7 @@ local addonName, addonTable = ...
 local enums = addonTable.enums
 
 -- unique enums (the value NEVER changes, but i can change the left name if i want to)
-
+-- TODO REDOOO THISSSS
 enums.item = "efd9f225-9a16-4a6b-97ac-1fc871974272" -- item type enum
 enums.category = "f1405b4b-367f-4c21-9bef-44c513afa9e1" -- category type enum
 enums.tab = "893a9824-8c91-4bae-9294-0e67eff014df" -- tab type enum

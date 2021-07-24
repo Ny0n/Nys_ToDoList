@@ -592,8 +592,7 @@ function database:CreateDefaultTabs()
 		local isGlobal = g == 2
 
 		-- Daily
-		local dailyTabData = dataManager:CreateTab("Daily") -- isSameEachDay already true
-		local dailyTabID = dataManager:AddTab(dailyTabData, isGlobal)
+		local dailyTabID, dailyTabData = dataManager:CreateTab("Daily", isGlobal) -- isSameEachDay already true
 		for i=1,7 do resetManager:UpdateResetDay(dailyTabID, i, true) end -- every day
 		resetManager:UpdateTimeData(dailyTabID, dailyTabData.reset.sameEachDay, 9, 0, 0)
     if not isGlobal then
@@ -601,14 +600,13 @@ function database:CreateDefaultTabs()
     end
     print("Daily")
 		-- Weekly
-		local weeklyTabData = dataManager:CreateTab("Weekly") -- isSameEachDay already true
-		local weeklyTabID = dataManager:AddTab(weeklyTabData, isGlobal)
+		local weeklyTabID, weeklyTabData = dataManager:CreateTab("Weekly", isGlobal) -- isSameEachDay already true
 		resetManager:UpdateResetDay(weeklyTabID, 4, true) -- only wednesday
 		resetManager:UpdateTimeData(weeklyTabID, weeklyTabData.reset.sameEachDay, 9, 0, 0)
 
     print("Weekly")
 		-- All
-		local allTabID = dataManager:AddTab(dataManager:CreateTab("All"), isGlobal)
+		local allTabID = dataManager:CreateTab("All", isGlobal)
 		dataManager:UpdateShownTabID(allTabID, dailyTabID, true)
 		dataManager:UpdateShownTabID(allTabID, weeklyTabID, true)
 

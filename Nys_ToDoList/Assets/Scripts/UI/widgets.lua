@@ -199,7 +199,7 @@ function widgets:TutorialFrame(tutoName, showCloseButton, arrowSide, text, width
   elseif arrowSide == "LEFT" then tutoFrame.ArrowRIGHT:Show()
   elseif arrowSide == "RIGHT" then tutoFrame.ArrowLEFT:Show() end
 
-  local tutoFrameRightDist = 10
+  local tutoFrameRightDist = 10 -- TODO redo this dist
   if showCloseButton then
     tutoFrameRightDist = 40
     tutoFrame.closeButton = CreateFrame("Button", "closeButton", tutoFrame, "UIPanelCloseButton")
@@ -665,6 +665,7 @@ function widgets:CategoryWidget(catID, parentFrame)
     if IsAltKeyDown() then return end
 
     if button == "LeftButton" then -- we open/close the category
+      categoryWidget.addEditBox:SetText(catID) -- TODO remove
       catData.closedInTabIDs[database.ctab()] = not catData.closedInTabIDs[database.ctab()] or nil
       mainFrame:Refresh() -- we refresh the list
     elseif button == "RightButton" then -- we try to toggle the addEditBox
@@ -742,7 +743,7 @@ function widgets:CategoryWidget(catID, parentFrame)
   --   categoryWidget.addEditBox:SetSize(editBoxAddItemWidth - 10, categoryWidget.interactiveLabel.Button:GetHeight())
   -- end
   categoryWidget.addEditBox:SetScript("OnEnterPressed", function(self)
-    if dataManager:AddItem(dataManager:CreateItem(self:GetText(), database.ctab(), catID)) then
+    if dataManager:CreateItem(self:GetText(), catData.originalTabID, catID) then
       self:SetText("") -- we clear the box if the adding was a success
     end
     self:Show() -- we keep it shown to add more items
