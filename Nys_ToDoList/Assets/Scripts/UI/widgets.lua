@@ -7,6 +7,7 @@ local utils = addonTable.utils
 local enums = addonTable.enums
 local widgets = addonTable.widgets
 local database = addonTable.database
+local dragndrop = addonTable.dragndrop
 local mainFrame = addonTable.mainFrame
 local databroker = addonTable.databroker
 local dataManager = addonTable.dataManager
@@ -652,6 +653,7 @@ function widgets:CategoryWidget(catID, parentFrame)
   -- / interactiveLabel
   categoryWidget.interactiveLabel = widgets:NoPointsInteractiveLabel(categoryWidget, "noname", catData.name, "GameFontHighlightLarge")
   categoryWidget.interactiveLabel:SetPoint("LEFT", categoryWidget, "LEFT", 20, 0)
+
   categoryWidget.interactiveLabel.Button:SetScript("OnEnter", function(self)
     local r, g, b = unpack(utils:ThemeDownTo01(database.themes.theme))
     self:GetParent().Text:SetTextColor(r, g, b, 1) -- when we hover it, we color the label
@@ -757,6 +759,9 @@ function widgets:CategoryWidget(catID, parentFrame)
     self:GetScript("OnEscapePressed")(self)
   end)
   widgets:AddHyperlinkEditBox(categoryWidget.addEditBox)
+
+  -- / drag&drop
+  dragndrop:RegisterForDrag(categoryWidget)
 
   return categoryWidget
 end
@@ -880,6 +885,9 @@ function widgets:ItemWidget(itemID, parentFrame)
   itemWidget.descBtn:SetScript("OnClick", function() widgets:DescriptionFrame(itemWidget) end)
   itemWidget.descBtn:Hide()
 
+  -- / drag&drop
+  dragndrop:RegisterForDrag(itemWidget)
+
   return itemWidget
 end
 
@@ -937,32 +945,38 @@ end
 --/*******************/ INITIALIZATION /*************************/--
 
 local function OnUpdate(self, elapsed)
-  -- // called every frame
   widgetsFrame.timeSinceLastUpdate = widgetsFrame.timeSinceLastUpdate + elapsed
   widgetsFrame.timeSinceLastRefresh = widgetsFrame.timeSinceLastRefresh + elapsed
 
-  -- // every frame
+  -- // every frame // --
 
   -- tuto frames visibility
   tutorialsManager:UpdateFramesVisibility()
 
+  -- // ----------- // --
+
   while widgetsFrame.timeSinceLastUpdate > updateRate do
     widgetsFrame.timeSinceLastUpdate = widgetsFrame.timeSinceLastUpdate - updateRate
 
-    -- // every 0.05 sec (instead of every frame which is every 1/144 (0.007) sec for a 144hz display... optimization :D)
+    -- // every 0.05 sec // -- (instead of every frame which is every 1/144 (0.007) sec for a 144hz display... optimization :D)
 
     -- rainbow update
     if NysTDL.db.profile.rainbow then
-      if #descFrames > 0 or mainFrame.tdlFrame:IsShown() then -- we don't really need to update the color at all times
+      if #descFrames > 0 or mainFrame:GetFrame():IsShown() then -- we don't really need to update the color at all times
         mainFrame:ApplyNewRainbowColor()
       end
     end
 
+    -- // -------------- // --
+
     while widgetsFrame.timeSinceLastRefresh > refreshRate do
       widgetsFrame.timeSinceLastRefresh = widgetsFrame.timeSinceLastRefresh - refreshRate
 
-      -- // every 1 sec
+      -- // every 1 sec // --
+
       -- xxx
+
+      -- // ----------- // --
     end
   end
 end
@@ -970,21 +984,23 @@ end
 function widgets:Initialize()
   -- first we create every visual widget of every file
   tutorialsManager:CreateTutoFrames()
-  widgets:CreateTDLButton() -- TODO check callallgetters tdl button ?
+  widgets:CreateTDLButton()
   databroker:CreateDatabrokerObject()
-  databroker:CreateTooltipFrame()
+  databroker:CreateTooltipFrame() -- TODO redo this later
   databroker:CreateMinimapButton()
   mainFrame:CreateTDLFrame()
 
   -- then we manage the widgetsFrame
-  widgetsFrame:SetScript("OnUpdate", OnUpdate)
   widgetsFrame.timeSinceLastUpdate = 0
   widgetsFrame.timeSinceLastRefresh = 0
+  widgetsFrame:SetScript("OnUpdate", OnUpdate)
 end
 
 function widgets:ProfileChanged()
   -- visual updates to match the new profile
   widgets:RefreshTDLButton() -- XXX
   databroker:SetMode(NysTDL.db.profile.databrokerMode) -- XXX a terme dans le callallgetters ?
+
+  widgets:WipeDescFrames()
   mainFrame:Init()
 end

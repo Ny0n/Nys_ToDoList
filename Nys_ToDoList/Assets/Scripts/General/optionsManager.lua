@@ -116,7 +116,7 @@ end
 
 function optionsManager:favoritesColorSET(info, ...)
   NysTDL.db.profile.favoritesColor = { ... }
-  mainFrame:UpdateVisuals()
+  -- mainFrame:UpdateVisuals() -- TODO unauthorised
 end
 
 -- tdlButtonShow
@@ -202,7 +202,6 @@ end
 function optionsManager:SetterTabs(info, ...)
   NysTDL.db.profile[info[#info]] = ...
   print("SetterTabs")
-  mainFrame:Refresh()
 end
 
 --/*******************/ INITIALIZATION /*************************/--

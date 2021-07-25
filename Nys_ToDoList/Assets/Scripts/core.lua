@@ -5,15 +5,16 @@ local addonName, addonTable = ...
 -- because i don't want to use a global variable
 addonTable.chat = {}
 addonTable.database = {}
+addonTable.dataManager = {}
 addonTable.enums = {}
 addonTable.events = {}
 addonTable.optionsManager = {}
 addonTable.resetManager = {}
+addonTable.tutorialsManager = {}
 addonTable.utils = {}
 addonTable.databroker = {}
-addonTable.dataManager = {}
+addonTable.dragndrop = {}
 addonTable.mainFrame = {}
-addonTable.tutorialsManager = {}
 addonTable.widgets = {}
 addonTable.core = {}
 
@@ -24,6 +25,7 @@ local utils = addonTable.utils
 local events = addonTable.events
 local widgets = addonTable.widgets
 local database = addonTable.database
+local resetManager = addonTable.resetManager
 local optionsManager = addonTable.optionsManager
 
 --/*******************/ ADDON LIBS AND DATA HANDLER /*************************/--
@@ -67,8 +69,11 @@ function NysTDL:OnInitialize()
     -- events
     events:Initialize()
 
-    -- #last - widgets (we create every visual element)
+    -- #last-1 - widgets (we create every visual element)
     widgets:Initialize()
+
+    -- #last - tabs resets
+    resetManager:Initialize()
 
     -- // addon fully loaded!
 

@@ -7,6 +7,7 @@ local enums = addonTable.enums
 local utils = addonTable.utils
 local widgets = addonTable.widgets
 local database = addonTable.database
+local dragndrop = addonTable.dragndrop
 local mainFrame = addonTable.mainFrame
 local dataManager = addonTable.dataManager
 local optionsManager = addonTable.optionsManager
@@ -18,10 +19,9 @@ local L = core.L
 local LDD = core.LDD
 
 -- THE frame
-mainFrame.tdlFrame = CreateFrame("Frame", "NysTDL_ToDoListFrame", UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil)
-local tdlFrame = mainFrame.tdlFrame
+local tdlFrame
 
--- profile-dependant variables (those are reset in mainFrame:ResetContent())
+-- profile-dependant variables (those are reset in mainFrame:Init())
 
 local dontRefreshPls = 0
 local contentWidgets = {}
@@ -113,6 +113,10 @@ end
 
 function mainFrame:GetFrame()
   return tdlFrame
+end
+
+function mainFrame:GetContentWidgets()
+  return contentWidgets
 end
 
 function mainFrame:Toggle()
@@ -328,6 +332,7 @@ function mainFrame:Event_TDLFrame_OnVisibilityUpdate()
   -- things to do when we hide/show the list
   menuClick() -- to close any opened menu and refresh the list
   NysTDL.db.profile.lastListVisibility = tdlFrame:IsShown()
+  dragndrop:StopDragging()
 end
 
 function mainFrame:Event_TDLFrame_OnSizeChanged(width, height)
@@ -1070,15 +1075,14 @@ end
 
 function mainFrame:CreateTDLFrame()
   -- TODO temp
-  ctab = database.ctab -- alias
   mainFrame.tabSelect = CreateFrame("FRAME", nil, UIParent, "UIDropDownMenuTemplate")
   UIDropDownMenu_SetWidth(mainFrame.tabSelect, 90)
-  UIDropDownMenu_SetText(mainFrame.tabSelect, select(3, dataManager:Find(ctab())).name)
+  UIDropDownMenu_SetText(mainFrame.tabSelect, select(3, dataManager:Find(database.ctab())).name)
 
   -- Implement the function to change the weekly reset day, then refresh
   local function setTab(self, tabID)
     mainFrame:ChangeTab(tabID)
-    UIDropDownMenu_SetText(mainFrame.tabSelect, select(3, dataManager:Find(ctab())).name) -- Update the text
+    UIDropDownMenu_SetText(mainFrame.tabSelect, select(3, dataManager:Find(database.ctab())).name) -- Update the text
   end
 
   -- Create and bind the initialization function to the dropdown menu
@@ -1090,7 +1094,7 @@ function mainFrame:CreateTDLFrame()
       info.func = setTab
       info.arg1 = tabID
       info.text = select(3, dataManager:Find(tabID)).name
-      info.checked = ctab() == info.arg1
+      info.checked = database.ctab() == info.arg1
       UIDropDownMenu_AddButton(info)
     end
   end)
@@ -1100,6 +1104,10 @@ function mainFrame:CreateTDLFrame()
   -- UIDropDownMenu_SetWidth(btn, 200)
   -- do return end
 
+  ctab = database.ctab -- alias
+
+  -- we create the list
+  tdlFrame = CreateFrame("Frame", "NysTDL_ToDoListFrame", UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil)
 
   -- background
   tdlFrame:SetBackdrop({
@@ -1209,26 +1217,21 @@ end
 
 -- // Profile init & change
 
-function mainFrame:ResetContent()
-  -- considering I don't want to reload the UI when we change the current profile,
-  -- we have to reset all of the frame ourserves, so that means:
+function mainFrame:Init()
+  -- // this func reloads the entire frame with the current database
 
-  -- 1 - having to hide everything in it
-  -- hide categories and items
+  -- / first we reset everything that is loadable
+
+  -- we delete and hide each widget
   for ID in pairs(contentWidgets) do
     mainFrame:DeleteWidget(ID)
   end
 
-  -- hide description frames
-  widgets:WipeDescFrames()
-
-  -- 2 - reset every content variable to their default value
+  -- then reset every content variable to their default value
   dontRefreshPls = 0
   wipe(contentWidgets)
-end
 
-function mainFrame:Init()
-  -- // we start by setting everything to the saved variables
+  -- / now for the frame, we start by setting everything to the saved variables
 
   -- we resize and scale the frame
   tdlFrame:SetSize(NysTDL.db.profile.frameSize.width, NysTDL.db.profile.frameSize.height)

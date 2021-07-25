@@ -447,7 +447,7 @@ function dataManager:MoveCategory(catID, oldPos, newPos, oldParentID, newParentI
 		catData.parentsInTabIDs[oldTabID] = oldParentID
 		catData.parentsInTabIDs[newTabID] = newParentID
 	end
-
+	
 	-- tab
 	if oldTabID ~= newTabID then
 		-- category part
@@ -659,7 +659,6 @@ end
 
 -- misc
 
-
 local function updateCatShownTabID(catID, catData, tabID, tabData, shownTabID, modif)
 	if catData.originalTabID == shownTabID then -- important
 		catData.tabIDs[tabID] = modif
@@ -769,6 +768,18 @@ end
 function dataManager:GetNextFavPos(catID)
 	-- TODO sub-cat ?
 	return dataManager:GetRemainingNumbers(nil, nil, catID).totalFav + 1
+end
+
+function dataManager:GetPos(ID)
+	local enum, _, data, _, categoriesList, tabsList = dataManager:Find(ID)
+
+	if enum == enums.item then
+		local catID = next(data.catIDs)
+		local catData = select(3, dataManager:Find(catID))
+		return select(2, utils:HasValue(catData.orderedContentIDs, ID))
+	elseif enum == enums.category then
+		return select(2, utils:HasValue(dataManager:GetCategoryOrdersLoc(ID, database.ctab()), ID))
+	end
 end
 
 -- items
