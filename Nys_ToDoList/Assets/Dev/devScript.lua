@@ -79,7 +79,7 @@ function Nys_Tests(yes)
   elseif yes == 5 then -- EXPLOSION
     for i = 1, 100 do
       mainFrame:DontRefreshNextTime()
-      dataManager:CreateItem(tostring(i), "2d26b6e9-ee14-47f9-a8ff-836acf35a8d6", "fbb780a7-701e-48d6-a1b9-a70092925370")
+      dataManager:CreateItem(tostring(i), "4b4b940e-bdd7-4650-b16d-2106c5af4616", "904ace6a-a5e6-41af-aa4b-b3395b3259ba")
     end
     mainFrame:Refresh()
   end

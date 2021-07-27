@@ -12,12 +12,12 @@ local dataManager = addonTable.dataManager
 
 -- // Variables
 
+local normalAlpha = 1
 local selectedDimAlpha = 0.5
 local forbiddenDimAlpha = 0.3
-local normalAlpha = 1
 
 local draggingWidget, oldPos -- dragging widget
-local dropTargetWidget, newPos -- dragging widget
+local dropTargetWidget, newPos -- drop target widget
 
 local dragUpdate = CreateFrame("Frame", nil, UIParent)
 local dropLine
@@ -27,8 +27,8 @@ local clickX, clickY -- for a clean drag&grop
 -- // WoW APIs
 
 local GetCursorPosition = GetCursorPosition
-local pairs = pairs
-local UIParent = UIParent
+local pairs, next = pairs, next
+local CreateFrame, UIParent = CreateFrame, UIParent
 
 --/***************/ DRAGGING /*****************/--
 
@@ -122,12 +122,43 @@ function startItemDragging()
     under = nil,
   }
 
+  local widgetScale, cursorX, cursorY
+  local function testDist(widget)
+    -- we get the distance between the widget's drop point and the cursor, to determine which is the closest to it
+    local widgetX, widgetY = widget.itemDropPoint:GetCenter()
+    local dropTargetWidgetDist = math.sqrt((cursorX-widgetX)^2+(cursorY-widgetY)^2)
+    if dropTargetWidgetDist < minDist.dist then
+      minDist.dist = dropTargetWidgetDist
+      minDist.widget = widget
+    end
+  end
+
+  local function isDropPointVisible(dropPoint)
+    -- returns true if the dropPoint is visible in the tdlFrame
+    -- (not :IsVisible(), i'm talking about wether it's currently visible in the scroll frame, or hidden because of SetClipsChildren)
+
+    local dropPointX, dropPointY = dropPoint:GetCenter()
+    local tdlFrameMinY = tdlFrame:GetBottom()
+    local tdlFrameMaxY    = tdlFrame:GetTop()
+    local tdlFrameMinX   = tdlFrame:GetLeft()
+    local tdlFrameMaxX  = tdlFrame:GetRight()
+
+    local margin = 8
+
+    if dropPointX - margin > tdlFrameMinX
+    and dropPointX + margin < tdlFrameMaxX
+    and dropPointY - margin > tdlFrameMinY
+    and dropPointY + margin < tdlFrameMaxY then
+      return true
+    end
+  end
+
   -- and finally, the drop position managment
   dragUpdate:SetScript("OnUpdate", function()
     if not tdlFrame:IsMouseOver() then return end
 
     -- cursor current pos (Y)
-    local widgetScale, cursorX, cursorY = draggingWidget:GetEffectiveScale(), GetCursorPosition() -- TODO redo scale later
+    widgetScale, cursorX, cursorY = draggingWidget:GetEffectiveScale(), GetCursorPosition() -- TODO redo scale later
     cursorX, cursorY = cursorX/widgetScale, cursorY/widgetScale
 
     if lastCursorPosY == cursorY then return end -- no need for an update
@@ -138,42 +169,43 @@ function startItemDragging()
 
     minDist.dist = 10000 -- we reset the dist every time we want do calculate the min dist
 
-    for itemID,widget in pairs(contentWidgets) do
-      if widget.enum == enums.item then
-        if draggingWidget.itemData.favorite and widget.itemData.favorite -- TODO maybe optimize with getlastfavpos
-        or not draggingWidget.itemData.favorite and not widget.itemData.favorite then
-          -- first we get the distance between the widget and the cursor, to determine which is the closest to it
-          if widget:IsVisible() then -- we only care about a widget if we can see it
-            local widgetX, widgetY = widget:GetCenter()
-            local dropTargetWidgetDist = math.sqrt((cursorX-widgetX)^2+(cursorY-widgetY)^2)
-            if dropTargetWidgetDist < minDist.dist then
-              minDist.dist = dropTargetWidgetDist
-              minDist.widget = widget
-              minDist.under = cursorY < widgetY
+    for _,widget in pairs(contentWidgets) do
+      if widget:IsVisible() and isDropPointVisible(widget.itemDropPoint) then -- we only care about a widget if we can see it
+        -- now we determine if we can use the current widget or not
+        if widget.enum == enums.item then
+          if (draggingWidget.itemData.favorite and widget.itemData.favorite)
+          or (not draggingWidget.itemData.favorite and not widget.itemData.favorite)
+          or ((not draggingWidget.itemData.favorite and widget.itemData.favorite)
+          and (dataManager:GetNextFavPos(next(widget.itemData.catIDs)) == dataManager:GetPos(widget.itemID)+1)) then
+            testDist(widget)
+          end
+        elseif widget.enum == enums.category then -- placing in first pos without other item widgets referencing the pos
+          if not widget.catData.closedInTabIDs[database.ctab()] then -- if the cat is not closed
+            if draggingWidget.itemData.favorite or (dataManager:GetNextFavPos(widget.catID) == 1) then -- and if we are dragging a non-fav, we also check if it is allowed in first pos
+              testDist(widget)
             end
           end
         end
       end
     end
 
+    if not minDist.widget then return end
+
     -- now that we have the closest widget, we update the positions, so that we are ready for the drop
     dropTargetWidget = minDist.widget
 
     dropLine:ClearAllPoints()
-    dropLine:SetPoint("LEFT", dropTargetWidget, "CENTER", 26, minDist.under and -11 or 17)
-
-    newPos = dataManager:GetPos(dropTargetWidget.itemID)
-
-    -- if we are planning to drop the widget further in its cat
-    if next(draggingWidget.itemData.catIDs) == next(dropTargetWidget.itemData.catIDs) then
-      if newPos > oldPos or (newPos == oldPos and minDist.under) then
-        newPos = newPos - 1 -- we remove a pos since the oldPos remove will remove a pos to everyone that's after it
+    dropLine:SetPoint("LEFT", dropTargetWidget.itemDropPoint, "CENTER")
+    if dropTargetWidget.enum == enums.item then
+      newPos = dataManager:GetPos(dropTargetWidget.itemID) + 1
+      -- if we are planning to drop the widget further in its cat
+      if next(draggingWidget.itemData.catIDs) == next(dropTargetWidget.itemData.catIDs) then
+        if newPos > oldPos then
+          newPos = newPos - 1 -- we remove a pos since the oldPos remove will remove a pos to everyone that's after it
+        end
       end
-    end
-
-    -- if we want to drop after the target widget, it's not the target widget pos, it's the pos after
-    if minDist.under then
-      newPos = newPos + 1
+    elseif dropTargetWidget.enum == enums.category then
+      newPos = 1 -- just under a cat, so first by definition
     end
   end)
 end
@@ -190,12 +222,15 @@ end
 function stopItemDragging()
   print("DRAGSTOP1-ITEM")
   if not draggingWidget or not dropTargetWidget then return end
-  dataManager:MoveItem(draggingWidget.itemID, oldPos, newPos, next(draggingWidget.itemData.catIDs), next(dropTargetWidget.itemData.catIDs), database.ctab(), database.ctab())
+
+  local targetCat = (dropTargetWidget.enum == enums.category) and dropTargetWidget.catID or next(dropTargetWidget.itemData.catIDs)
+  dataManager:MoveItem(draggingWidget.itemID, oldPos, newPos, next(draggingWidget.itemData.catIDs), targetCat, database.ctab(), database.ctab())
 end
 
 function dragndrop:StopDragging()
+  -- TODO replace by reset func, not a stop
   print("DRAGSTOP0")
-  if not draggingWidget then return end
+  if not draggingWidget then return end -- TODO check usefulness of all these checks
   local dragFrame = draggingWidget.interactiveLabel.Button
   dragFrame:GetScript("OnDragStop")(dragFrame)
 end
@@ -244,9 +279,22 @@ function dragndrop:RegisterForDrag(widget)
   if widget.enum == enums.category then
     dragFrame:HookScript("OnDragStart", startCategoryDragging)
     dragFrame:SetScript("OnDragStop", stopCategoryDragging)
+
+    -- drop points
+    widget.categoryDropPoint = CreateFrame("Frame", nil, widget)
+    widget.categoryDropPoint:SetPoint("CENTER", widget, "CENTER", 0, -11)
+    widget.categoryDropPoint:SetSize(1, 1)
+    widget.itemDropPoint = CreateFrame("Frame", nil, widget)
+    widget.itemDropPoint:SetPoint("CENTER", widget, "CENTER", 38, -11)
+    widget.itemDropPoint:SetSize(1, 1)
   elseif widget.enum == enums.item then
     dragFrame:HookScript("OnDragStart", startItemDragging)
     dragFrame:SetScript("OnDragStop", stopItemDragging)
+
+    -- drop point
+    widget.itemDropPoint = CreateFrame("Frame", nil, widget)
+    widget.itemDropPoint:SetPoint("CENTER", widget, "CENTER", 26, -11)
+    widget.itemDropPoint:SetSize(1, 1)
   end
 
   dragFrame:HookScript("OnDragStop", function()

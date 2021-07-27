@@ -88,17 +88,18 @@ function dataManager:IsGlobal(ID)
 	return (select(2, dataManager:Find(ID)))
 end
 
+local T_GetData = {}
 function dataManager:GetData(isGlobal, tableMode)
 	-- returns itemsList, categoriesList, and tabsList located either in the global or profile SV
 	-- as a table if asked so
 
 	local loc = isGlobal and NysTDL.db.global or NysTDL.db.profile
 	if tableMode then
-		return {
-			[enums.item] = loc.itemsList,
-			[enums.category] = loc.categoriesList,
-			[enums.tab] = loc.tabsList
-		}
+		wipe(T_GetData)
+		T_GetData[enums.item] = loc.itemsList
+		T_GetData[enums.category] = loc.categoriesList
+		T_GetData[enums.tab] = loc.tabsList
+		return T_GetData
 	else
 		return loc.itemsList, loc.categoriesList, loc.tabsList
 	end
@@ -175,7 +176,6 @@ function dataManager:ForEach(enum, location)
 	else
 		error("Forgot ForEach argument #1", 2)
 	end
-	-- print("NEWFOREACH")
 
 	-- // iteration part
 	local table, key, data = (select(getdatapos, dataManager:GetData(isGlobal)))
@@ -962,7 +962,6 @@ function dataManager:GetRemainingNumbers(isGlobal, tabID, catID)
 	t.totalUnchecked = 0
 
 	local location = catID or tabID or isGlobal
-
 	for itemID,itemData in dataManager:ForEach(enums.item, location) do -- for each item that is in the cat
 		if not tabID or itemData.tabIDs[tabID] then
 			if itemData.checked then
