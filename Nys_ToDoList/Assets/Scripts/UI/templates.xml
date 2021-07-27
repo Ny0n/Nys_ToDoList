@@ -552,4 +552,33 @@
 		</Frames>
 	</Frame>
 
+  <Frame name="NysTDL_DropLine" virtual="true">
+    <Size x="1" y="1"/> <!-- Just so that we see the content of the frame -->
+    <Layers>
+      <Layer level="BACKGROUND">
+        <Texture parentKey="Line" file="Interface\CovenantChoice\CovenantChoiceCelebration">
+          <TexCoords left="0.1" right="0.3" top="0.9" bottom="0.95"/>
+          <Size x="200" y="15"/>
+          <Anchors>
+            <Anchor point="LEFT" x="-5" y="0"/>
+          </Anchors>
+        </Texture>
+      </Layer>
+      <Layer level="ARTWORK">
+        <Texture parentKey="Arrow" file="Interface\Azerite\Azerite">
+          <TexCoords left="0.76" right="0.85" top="0.825" bottom="0.92"/>
+          <Size x="15" y="60"/>
+          <Anchors>
+            <Anchor point="CENTER" x="0" y="-11.7"/>
+          </Anchors>
+        </Texture>
+      </Layer>
+    </Layers>
+    <Scripts>
+			<OnLoad>
+				self.Arrow:SetRotation(0.78)
+			</OnLoad>
+		</Scripts>
+	</Frame>
+
 </Ui>

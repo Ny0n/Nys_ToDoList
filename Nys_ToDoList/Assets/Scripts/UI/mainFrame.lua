@@ -428,7 +428,7 @@ end
 --/*******************/ LIST LOADING /*************************/--
 
 function mainFrame:UpdateWidget(ID, enum)
-  -- i take the enum here, and am not using Find just for optimization -- TODO nope?
+  -- i take the enum here, and am not using Find just for optimization
 
   if contentWidgets[ID] then
     contentWidgets[ID]:ClearAllPoints()
@@ -437,6 +437,7 @@ function mainFrame:UpdateWidget(ID, enum)
 
   if enum == enums.item then
     contentWidgets[ID] = widgets:ItemWidget(ID, tdlFrame.content)
+    mainFrame:UpdateItemButtons(ID)
   elseif enum == enums.category then
     contentWidgets[ID] = widgets:CategoryWidget(ID, tdlFrame.content)
   end

@@ -358,6 +358,7 @@ function resetManager:Initialize(profileChanged)
 		for timerPos,targetTime in pairs(tabData.reset.nextResetTimes) do
 			if currentTime > targetTime then
 				dataManager:UncheckTab(tabID)
+        print("ResetManager: UncheckTab")
 				autoResetedThisSession = true -- TODO redo??
 				break
 			end

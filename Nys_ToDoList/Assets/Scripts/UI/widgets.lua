@@ -107,10 +107,10 @@ function widgets:SetDescFramesContentAlpha(alpha)
   end
 end
 
-function widgets:DescFrameHide(frameName)
+function widgets:DescFrameHide(itemID)
   -- here, if the name matches one of the opened description frames, we hide that frame, delete it from memory and reupdate the levels of every other active ones
-  for pos, frame in pairs(descFrames) do
-    if frame:GetName() == frameName then
+  for pos, frame in ipairs(descFrames) do
+    if frame.itemID == itemID then
       frame:Hide()
       widgets:RemoveHyperlinkEditBox(frame.descriptionEditBox.EditBox)
       table.remove(descFrames, pos) -- we remove the desc frame from the descFrames table
@@ -220,15 +220,14 @@ function widgets:DescriptionFrame(itemWidget)
 
   local itemID = itemWidget.itemID
   local itemData = select(3, dataManager:Find(itemID))
-  local frameName = "NysTDL_DescFrame_"..tostring(itemID)
 
   -- first we check if it's already opened, in which case we act as a toggle, and hide it
-  if widgets:DescFrameHide(frameName) then return end
+  if widgets:DescFrameHide(itemID) then return end
 
   -- // creating the frame and all of its content
 
   -- we create the mini frame holding the name of the item and his description in an edit box
-  local descFrame = CreateFrame("Frame", frameName, UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil) -- importing the backdrop in the desc frames, as of wow 9.0
+  local descFrame = CreateFrame("Frame", nil, UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil) -- importing the backdrop in the desc frames, as of wow 9.0
   local w = widgets:GetWidth(itemData.name)
   descFrame:SetSize(w < 180 and 180+75 or w+75, 110) -- 75 is large enough to place the closebutton, clearbutton, and a little bit of space at the right of the name
 
@@ -240,6 +239,10 @@ function widgets:DescriptionFrame(itemWidget)
     insets = { left = 1, right = 1, top = 1, bottom = 1 }
   })
   descFrame:SetBackdropColor(0, 0, 0, 1)
+
+  -- quick access
+  descFrame.itemID = itemID
+  descFrame.itemData = itemData
 
   -- properties
   descFrame:EnableMouse(true)
@@ -319,9 +322,7 @@ function widgets:DescriptionFrame(itemWidget)
   -- close button
   descFrame.closeButton = CreateFrame("Button", "closeButton", descFrame, "NysTDL_CloseButton")  -- TODO icon button? voir aussi sur tdlFrame
   descFrame.closeButton:SetPoint("TOPRIGHT", descFrame, "TOPRIGHT", -2, -2)
-  descFrame.closeButton:SetScript("OnClick", function()
-      widgets:DescFrameHide(frameName)
-  end)
+  descFrame.closeButton:SetScript("OnClick", function() widgets:DescFrameHide(itemID) end)
 
   -- clear button
   descFrame.clearButton = CreateFrame("Button", "clearButton", descFrame, "NysTDL_ClearButton") -- TODO icon button?
@@ -333,13 +334,13 @@ function widgets:DescriptionFrame(itemWidget)
   end)
 
   -- item label
-  descFrame.title = descFrame:CreateFontString(frameName.."_Title")
+  descFrame.title = descFrame:CreateFontString(nil)
   descFrame.title:SetFontObject("GameFontNormalLarge")
   descFrame.title:SetPoint("TOPLEFT", descFrame, "TOPLEFT", 6, -5)
   descFrame.title:SetText(itemData.name)
 
   -- description edit box
-  descFrame.descriptionEditBox = CreateFrame("ScrollFrame", frameName.."_EditBox", descFrame, "InputScrollFrameTemplate")
+  descFrame.descriptionEditBox = CreateFrame("ScrollFrame", nil, descFrame, "InputScrollFrameTemplate")
   descFrame.descriptionEditBox.EditBox:SetFontObject("ChatFontNormal")
   descFrame.descriptionEditBox.EditBox:SetAutoFocus(false)
   descFrame.descriptionEditBox.EditBox:SetMaxLetters(0)
@@ -638,7 +639,7 @@ contentWidgets = {
 ]]
 
 function widgets:CategoryWidget(catID, parentFrame)
-  local categoryWidget = CreateFrame("Frame", "noname", parentFrame, nil) -- TODO replace all "noname"
+  local categoryWidget = CreateFrame("Frame", nil, parentFrame, nil)
   categoryWidget:SetSize(1, 1) -- so that its children are visible
 
   -- // data
@@ -651,15 +652,17 @@ function widgets:CategoryWidget(catID, parentFrame)
   -- // frames
 
   -- / interactiveLabel
-  categoryWidget.interactiveLabel = widgets:NoPointsInteractiveLabel(categoryWidget, "noname", catData.name, "GameFontHighlightLarge")
+  categoryWidget.interactiveLabel = widgets:NoPointsInteractiveLabel(categoryWidget, nil, catData.name, "GameFontHighlightLarge")
   categoryWidget.interactiveLabel:SetPoint("LEFT", categoryWidget, "LEFT", 20, 0)
 
   categoryWidget.interactiveLabel.Button:SetScript("OnEnter", function(self)
     local r, g, b = unpack(utils:ThemeDownTo01(database.themes.theme))
     self:GetParent().Text:SetTextColor(r, g, b, 1) -- when we hover it, we color the label
+    print("enter")
   end)
   categoryWidget.interactiveLabel.Button:SetScript("OnLeave", function(self)
     self:GetParent().Text:SetTextColor(1, 1, 1, 1) -- back to the default color
+    print("leave")
   end)
   categoryWidget.interactiveLabel.Button:SetScript("OnClick", function(_, button)
     -- we don't do any of the OnClick code if we have the Alt key down,
@@ -725,7 +728,7 @@ function widgets:CategoryWidget(catID, parentFrame)
   categoryWidget.removeBtn:SetScript("OnClick", function() dataManager:DeleteCat(catID) end)
 
   -- / favsRemainingLabel
-  categoryWidget.favsRemainingLabel = widgets:NoPointsLabel(categoryWidget, "noname", "")
+  categoryWidget.favsRemainingLabel = widgets:NoPointsLabel(categoryWidget, nil, "")
   categoryWidget.favsRemainingLabel:SetPoint("LEFT", categoryWidget.interactiveLabel, "RIGHT", 6, 0)
 
   -- / addEditBox
@@ -789,7 +792,7 @@ contentWidgets = {
 ]]
 
 function widgets:ItemWidget(itemID, parentFrame)
-  local itemWidget = CreateFrame("Frame", "noname", parentFrame, nil)
+  local itemWidget = CreateFrame("Frame", nil, parentFrame, nil)
   itemWidget:SetSize(1, 1) -- so that its children are visible
 
   -- // data
@@ -802,12 +805,12 @@ function widgets:ItemWidget(itemID, parentFrame)
   -- // frames
 
   -- / checkBtn
-  itemWidget.checkBtn = CreateFrame("CheckButton", "noname", itemWidget, "UICheckButtonTemplate")
+  itemWidget.checkBtn = CreateFrame("CheckButton", nil, itemWidget, "UICheckButtonTemplate")
   itemWidget.checkBtn:SetPoint("LEFT", itemWidget, "LEFT", 20, 0)
   itemWidget.checkBtn:SetScript("OnClick", function() dataManager:ToggleChecked(itemID) end)
 
   -- / interactiveLabel
-  itemWidget.interactiveLabel = widgets:NoPointsInteractiveLabel(itemWidget, "noname", itemData.name, "GameFontNormalLarge")
+  itemWidget.interactiveLabel = widgets:NoPointsInteractiveLabel(itemWidget, nil, itemData.name, "GameFontNormalLarge")
   itemWidget.interactiveLabel:SetPoint("LEFT", itemWidget.checkBtn, "RIGHT")
   itemWidget.interactiveLabel.Text:SetPoint("LEFT", itemWidget.checkBtn, "RIGHT", 20, 0) -- TODO why this line?
 

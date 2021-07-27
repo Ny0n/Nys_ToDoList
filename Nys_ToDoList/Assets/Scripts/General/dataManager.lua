@@ -447,7 +447,7 @@ function dataManager:MoveCategory(catID, oldPos, newPos, oldParentID, newParentI
 		catData.parentsInTabIDs[oldTabID] = oldParentID
 		catData.parentsInTabIDs[newTabID] = newParentID
 	end
-	
+
 	-- tab
 	if oldTabID ~= newTabID then
 		-- category part
@@ -502,6 +502,9 @@ function dataManager:DeleteItem(itemID)
 
 	dataManager:AddUndo(undoData)
   itemsList[itemID] = nil -- delete action
+
+	-- we hide a potentially opened desc frame
+	widgets:DescFrameHide(itemID)
 
 	-- refresh the mainFrame
 	mainFrame:DeleteWidget(itemID)
@@ -868,7 +871,7 @@ function dataManager:UncheckTab(tabID)
 	end
 
 	-- refresh the mainFrame
-	mainFrame:Refresh()
+	mainFrame:UpdateVisuals()
 end
 
 function dataManager:CheckTab(tabID)
