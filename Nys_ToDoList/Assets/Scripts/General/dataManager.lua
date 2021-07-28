@@ -714,14 +714,6 @@ function dataManager:UpdateTabsDisplay(shownTabID, modif, ID)
 	end
 end
 
-function dataManager:GetCategoryOrdersLoc(catID, tabID)
-	-- since categories are either located in an other category (as a sub-category) or in a tab,
-	-- this is to easily get the good orders table where a category is in a certain tab
-	local catData, _, categoriesList, tabsList = select(3, dataManager:Find(catID))
-	local parentCatID = catData.parentsInTabIDs[tabID] -- nil or parentCatID
-	return parentCatID and categoriesList[parentCatID].orderedContentIDs or tabsList[tabID].orderedCatIDs
-end
-
 function dataManager:CheckName(name, enum)
 	if #name == 0 then -- empty
 		print("Name is empty")
@@ -841,6 +833,18 @@ function dataManager:UpdateDescription(itemID, description)
 end
 
 -- categories
+
+function dataManager:GetCategoryOrdersLoc(catID, tabID)
+	-- since categories are either located in an other category (as a sub-category) or in a tab,
+	-- this is to easily get the good orders table where a category is in a certain tab
+	local catData, _, categoriesList, tabsList = select(3, dataManager:Find(catID))
+	local parentCatID = catData.parentsInTabIDs[tabID] -- nil or parentCatID
+	return parentCatID and categoriesList[parentCatID].orderedContentIDs or tabsList[tabID].orderedCatIDs
+end
+
+function dataManager:GetNbCategory(tabID)
+	return #select(3, dataManager:Find(tabID)).orderedCatIDs -- TODO redo with GetCategoryOrdersLoc
+end
 
 -- tabs
 

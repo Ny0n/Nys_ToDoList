@@ -130,6 +130,26 @@ function mainFrame:ChangeTab(newTabID)
   tdlFrame.content.menuFrames[enums.menus.addcat].categoryEditBox:SetText(newTabID) -- TODO remove
 end
 
+function mainFrame:IsVisible(frame, margin)
+  -- returns true if the frame is visible in the tdlFrame
+  -- (not :IsVisible(), i'm talking about wether it's currently visible in the scroll frame, or hidden because of SetClipsChildren)
+  margin = margin or 0
+
+  local frameX, frameY = frame:GetCenter()
+
+  local tdlFrameMinY = tdlFrame:GetBottom()
+  local tdlFrameMaxY    = tdlFrame:GetTop()
+  local tdlFrameMinX   = tdlFrame:GetLeft()
+  local tdlFrameMaxX  = tdlFrame:GetRight()
+
+  if frameX - margin > tdlFrameMinX
+  and frameX + margin < tdlFrameMaxX
+  and frameY - margin > tdlFrameMinY
+  and frameY + margin < tdlFrameMaxY then
+    return true
+  end
+end
+
 -- // frame color/visual update functions
 
 function mainFrame:UpdateCheckedStates()

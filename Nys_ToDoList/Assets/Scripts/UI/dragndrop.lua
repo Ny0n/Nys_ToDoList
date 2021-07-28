@@ -18,9 +18,11 @@ local forbiddenDimAlpha = 0.3
 
 local draggingWidget, oldPos -- dragging widget
 local dropTargetWidget, newPos -- drop target widget
+local targetWidgetDropPoint
 
 local dragUpdate = CreateFrame("Frame", nil, UIParent)
 local dropLine
+local minDist = 10000
 
 local clickX, clickY -- for a clean drag&grop
 
@@ -29,6 +31,19 @@ local clickX, clickY -- for a clean drag&grop
 local GetCursorPosition = GetCursorPosition
 local pairs, next = pairs, next
 local CreateFrame, UIParent = CreateFrame, UIParent
+
+--/***************/ MISC /*****************/--
+
+local function testDist(widget, dropPoint, cursorX, cursorY)
+  -- we get the distance between the widget's drop point and the cursor, to determine which is the closest to it
+  local widgetX, widgetY = dropPoint:GetCenter()
+  local dropTargetWidgetDist = math.sqrt((cursorX-widgetX)^2+(cursorY-widgetY)^2)
+  if dropTargetWidgetDist < minDist then
+    dropTargetWidget = widget
+    targetWidgetDropPoint = dropPoint
+    minDist = dropTargetWidgetDist
+  end
+end
 
 --/***************/ DRAGGING /*****************/--
 
@@ -58,20 +73,62 @@ function startCategoryDragging()
     end
   end
 
+  -- we create the drop line
+  dropLine = CreateFrame("Frame", nil, mainFrame:GetFrame().content, "NysTDL_DropLine")
+
+  -- we only need to get the old pos one time
+  oldPos = dataManager:GetPos(draggingWidget.catID)
+
+  -- loop variables
+  local tdlFrame = mainFrame:GetFrame()
+  local lastCursorPosY
+
   -- and finally, the drop position managment
   dragUpdate:SetScript("OnUpdate", function()
-    do return end
+    if not tdlFrame:IsMouseOver() then return end
+
+    -- cursor current pos (Y)
+    local widgetScale, cursorX, cursorY = draggingWidget:GetEffectiveScale(), GetCursorPosition() -- TODO redo scale later
+    cursorX, cursorY = cursorX/widgetScale, cursorY/widgetScale
+
+    if lastCursorPosY == cursorY then return end -- no need for an update
+    lastCursorPosY = cursorY
+
+    minDist = 10000 -- we reset the dist every time
+
+    -- // let's go!
+    print("ONUPDATE")
+
     for _,widget in pairs(contentWidgets) do
-      if widget.enum == enums.category then
-        if widget.interactiveLabel.Button:IsMouseOver() and widget ~= draggingWidget then
-          dropTargetWidget = widget
-          local oldPos = dataManager:GetPos(draggingWidget.catID)
-          local newPos = dataManager:GetPos(dropTargetWidget.catID)
-          dataManager:MoveCategory(draggingWidget.catID, oldPos, newPos, nil, nil, database.ctab(), database.ctab())
-          dragndrop:StopDragging()
+      if widget:IsVisible() then -- we only care about a widget if we can see it (wocaawiwcse #1)
+        -- now we determine if we can use the current widget or not
+        if widget.enum == enums.category then
+          if mainFrame:IsVisible(widget.categoryDropPointTop, 8) then -- wocaawiwcse #2
+            testDist(widget, widget.categoryDropPointTop, cursorX, cursorY)
+          end
+          if mainFrame:IsVisible(widget.categoryDropPointBottom, 8) then -- wocaawiwcse #3
+            if dataManager:GetPos(widget.catID) == dataManager:GetNbCategory(database.ctab()) then -- if the cat is the last one, we also test under it for a drop point
+              testDist(widget, widget.categoryDropPointBottom, cursorX, cursorY)
+            end
+          end
         end
       end
     end
+
+    if not dropTargetWidget then return end -- just in case we didn't find anything
+
+    -- now that we have the closest widget, we update the positions, so that we are ready for the drop
+    dropLine:ClearAllPoints()
+    dropLine:SetPoint("LEFT", targetWidgetDropPoint, "CENTER")
+    newPos = dataManager:GetPos(dropTargetWidget.catID)
+    if targetWidgetDropPoint == dropTargetWidget.categoryDropPointBottom then -- not optimal, but it's just testing (again) if it's the last possible position
+      newPos = newPos + 1
+    end
+    -- TODO test if same tab
+    if newPos > oldPos then
+      newPos = newPos - 1 -- we remove a pos since the oldPos remove will remove a pos to everyone that's after it
+    end
+    print(newPos)
   end)
 end
 
@@ -116,86 +173,48 @@ function startItemDragging()
   -- loop variables
   local tdlFrame = mainFrame:GetFrame()
   local lastCursorPosY
-  local minDist = {
-    dist = nil,
-    widget = nil,
-    under = nil,
-  }
-
-  local widgetScale, cursorX, cursorY
-  local function testDist(widget)
-    -- we get the distance between the widget's drop point and the cursor, to determine which is the closest to it
-    local widgetX, widgetY = widget.itemDropPoint:GetCenter()
-    local dropTargetWidgetDist = math.sqrt((cursorX-widgetX)^2+(cursorY-widgetY)^2)
-    if dropTargetWidgetDist < minDist.dist then
-      minDist.dist = dropTargetWidgetDist
-      minDist.widget = widget
-    end
-  end
-
-  local function isDropPointVisible(dropPoint)
-    -- returns true if the dropPoint is visible in the tdlFrame
-    -- (not :IsVisible(), i'm talking about wether it's currently visible in the scroll frame, or hidden because of SetClipsChildren)
-
-    local dropPointX, dropPointY = dropPoint:GetCenter()
-    local tdlFrameMinY = tdlFrame:GetBottom()
-    local tdlFrameMaxY    = tdlFrame:GetTop()
-    local tdlFrameMinX   = tdlFrame:GetLeft()
-    local tdlFrameMaxX  = tdlFrame:GetRight()
-
-    local margin = 8
-
-    if dropPointX - margin > tdlFrameMinX
-    and dropPointX + margin < tdlFrameMaxX
-    and dropPointY - margin > tdlFrameMinY
-    and dropPointY + margin < tdlFrameMaxY then
-      return true
-    end
-  end
 
   -- and finally, the drop position managment
   dragUpdate:SetScript("OnUpdate", function()
     if not tdlFrame:IsMouseOver() then return end
 
     -- cursor current pos (Y)
-    widgetScale, cursorX, cursorY = draggingWidget:GetEffectiveScale(), GetCursorPosition() -- TODO redo scale later
+    local widgetScale, cursorX, cursorY = draggingWidget:GetEffectiveScale(), GetCursorPosition() -- TODO redo scale later
     cursorX, cursorY = cursorX/widgetScale, cursorY/widgetScale
 
     if lastCursorPosY == cursorY then return end -- no need for an update
     lastCursorPosY = cursorY
 
+    minDist = 10000 -- we reset the dist every time
+
     -- // let's go!
     print("ONUPDATE")
 
-    minDist.dist = 10000 -- we reset the dist every time we want do calculate the min dist
-
     for _,widget in pairs(contentWidgets) do
-      if widget:IsVisible() and isDropPointVisible(widget.itemDropPoint) then -- we only care about a widget if we can see it
+      if widget:IsVisible() and mainFrame:IsVisible(widget.itemDropPoint, 8) then -- we only care about a widget if we can see it
         -- now we determine if we can use the current widget or not
         if widget.enum == enums.item then
           if (draggingWidget.itemData.favorite and widget.itemData.favorite)
           or (not draggingWidget.itemData.favorite and not widget.itemData.favorite)
           or ((not draggingWidget.itemData.favorite and widget.itemData.favorite)
           and (dataManager:GetNextFavPos(next(widget.itemData.catIDs)) == dataManager:GetPos(widget.itemID)+1)) then
-            testDist(widget)
+            testDist(widget, widget.itemDropPoint, cursorX, cursorY)
           end
         elseif widget.enum == enums.category then -- placing in first pos without other item widgets referencing the pos
           if not widget.catData.closedInTabIDs[database.ctab()] then -- if the cat is not closed
             if draggingWidget.itemData.favorite or (dataManager:GetNextFavPos(widget.catID) == 1) then -- and if we are dragging a non-fav, we also check if it is allowed in first pos
-              testDist(widget)
+              testDist(widget, widget.itemDropPoint, cursorX, cursorY)
             end
           end
         end
       end
     end
 
-    if not minDist.widget then return end
+    if not dropTargetWidget then return end -- just in case we didn't find anything
 
     -- now that we have the closest widget, we update the positions, so that we are ready for the drop
-    dropTargetWidget = minDist.widget
-
     dropLine:ClearAllPoints()
-    dropLine:SetPoint("LEFT", dropTargetWidget.itemDropPoint, "CENTER")
+    dropLine:SetPoint("LEFT", targetWidgetDropPoint, "CENTER")
     if dropTargetWidget.enum == enums.item then
       newPos = dataManager:GetPos(dropTargetWidget.itemID) + 1
       -- if we are planning to drop the widget further in its cat
@@ -216,7 +235,7 @@ function stopCategoryDragging()
   print("DRAGSTOP1-CAT")
   if not draggingWidget or not dropTargetWidget then return end
 
-  print("STOP_DRAG_CAT")
+  dataManager:MoveCategory(draggingWidget.catID, oldPos, newPos, nil, nil, database.ctab(), database.ctab())
 end
 
 function stopItemDragging()
@@ -281,9 +300,12 @@ function dragndrop:RegisterForDrag(widget)
     dragFrame:SetScript("OnDragStop", stopCategoryDragging)
 
     -- drop points
-    widget.categoryDropPoint = CreateFrame("Frame", nil, widget)
-    widget.categoryDropPoint:SetPoint("CENTER", widget, "CENTER", 0, -11)
-    widget.categoryDropPoint:SetSize(1, 1)
+    widget.categoryDropPointTop = CreateFrame("Frame", nil, widget)
+    widget.categoryDropPointTop:SetPoint("CENTER", widget, "CENTER", 0, 16)
+    widget.categoryDropPointTop:SetSize(1, 1)
+    widget.categoryDropPointBottom = CreateFrame("Frame", nil, widget)
+    widget.categoryDropPointBottom:SetPoint("CENTER", widget, "CENTER", 0, -11)
+    widget.categoryDropPointBottom:SetSize(1, 1)
     widget.itemDropPoint = CreateFrame("Frame", nil, widget)
     widget.itemDropPoint:SetPoint("CENTER", widget, "CENTER", 38, -11)
     widget.itemDropPoint:SetSize(1, 1)
@@ -301,22 +323,25 @@ function dragndrop:RegisterForDrag(widget)
     print("DRAGSTOP2")
     if not draggingWidget then return end
 
-    -- we hide the dragging widget, ad well as the drop line
-    draggingWidget:ClearAllPoints() draggingWidget:Hide()
-    dropLine:ClearAllPoints() dropLine:Hide()
-
     -- we reset the alpha states
     local contentWidgets = mainFrame:GetContentWidgets()
     for _,widget in pairs(contentWidgets) do
       widget:SetAlpha(normalAlpha)
     end
 
-    -- we reset everything
+    -- // we reset everything
+
+    -- we hide the dragging widget, as well as the drop line
+    draggingWidget:ClearAllPoints() draggingWidget:Hide()
+    dropLine:ClearAllPoints() dropLine:Hide()
+
+    -- variables
     dragUpdate:SetScript("OnUpdate", nil)
     draggingWidget, oldPos = nil, nil
     dropTargetWidget, newPos = nil, nil
+    targetWidgetDropPoint = nil
 
-    -- refresh the mainFrame
+    -- // refresh the mainFrame
     mainFrame:Refresh()
   end)
 end
