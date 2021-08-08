@@ -581,6 +581,11 @@ local function loadList()
       newX = newX - xSpace
     end
   end
+
+  -- drag&drop
+  if dragndrop.dragging then
+    dragndrop:UpdateDropFrames()
+  end
 end
 
 -- // frame refresh
@@ -974,7 +979,8 @@ local function generateFrameContent()
 
   -- creating content, scroll child of ScrollFrame (everything will be inside of it)
   tdlFrame.content = CreateFrame("Frame", nil, tdlFrame.ScrollFrame)
-  tdlFrame.content:SetSize(310, 1) -- y is determined by number of elements inside of it
+  tdlFrame.content:SetSize(310, 2000) -- y is determined by number of elements inside of it
+  -- tdlFrame.content:SetSize(310, 1) -- y is determined by number of elements inside of it
   tdlFrame.ScrollFrame:SetScrollChild(tdlFrame.content)
   local content = tdlFrame.content
 
