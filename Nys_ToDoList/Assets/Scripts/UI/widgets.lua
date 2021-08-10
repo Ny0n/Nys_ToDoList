@@ -658,11 +658,11 @@ function widgets:CategoryWidget(catID, parentFrame)
   categoryWidget.interactiveLabel.Button:SetScript("OnEnter", function(self)
     local r, g, b = unpack(utils:ThemeDownTo01(database.themes.theme))
     self:GetParent().Text:SetTextColor(r, g, b, 1) -- when we hover it, we color the label
-    print("enter")
+    --print("enter")
   end)
   categoryWidget.interactiveLabel.Button:SetScript("OnLeave", function(self)
     self:GetParent().Text:SetTextColor(1, 1, 1, 1) -- back to the default color
-    print("leave")
+    --print("leave")
   end)
   categoryWidget.interactiveLabel.Button:SetScript("OnClick", function(_, button)
     -- we don't do any of the OnClick code if we have the Alt key down,
@@ -674,13 +674,10 @@ function widgets:CategoryWidget(catID, parentFrame)
       catData.closedInTabIDs[database.ctab()] = not catData.closedInTabIDs[database.ctab()] or nil
       mainFrame:Refresh() -- we refresh the list
     elseif button == "RightButton" then -- we try to toggle the addEditBox
-      print("1")
       -- if the cat we right clicked on is NOT a closed category
       if catData.closedInTabIDs[database.ctab()] then return end
-      print("2")
       -- we toggle its edit box
       categoryWidget.addEditBox:SetShown(not categoryWidget.addEditBox:IsShown())
-      print("3")
       if categoryWidget.addEditBox:IsShown() then -- and if we are opening it
         tutorialsManager:Validate("addItem") -- tutorial
         widgets:SetFocusEditBox(categoryWidget.addEditBox) -- we give it the focus

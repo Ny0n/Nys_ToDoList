@@ -352,7 +352,7 @@ function mainFrame:Event_TDLFrame_OnVisibilityUpdate()
   -- things to do when we hide/show the list
   menuClick() -- to close any opened menu and refresh the list
   NysTDL.db.profile.lastListVisibility = tdlFrame:IsShown()
-  dragndrop:StopDragging()
+  if dragndrop.dragging then dragndrop:CancelDragging() end
 end
 
 function mainFrame:Event_TDLFrame_OnSizeChanged(width, height)
@@ -612,7 +612,7 @@ function mainFrame:Refresh()
 
   -- anti-refresh for optimization
   if dontRefreshPls > 0 then
-    print("NO REFRESH --------")
+    --print("NO REFRESH --------")
     dontRefreshPls = dontRefreshPls - 1
     return
   end
@@ -637,7 +637,7 @@ function mainFrame:Refresh()
   loadContent() -- content reloading (menus, buttons, ...)
   loadList() -- list reloading (categories, items, ...)
   mainFrame:UpdateVisuals() -- coloring...
-  print("mainFrame:Refresh()")
+  --print("mainFrame:Refresh()")
 end
 
 --/*******************/ FRAME CREATION /*************************/--

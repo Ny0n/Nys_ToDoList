@@ -13,25 +13,35 @@ local dataManager = addonTable.dataManager
 -- // Variables
 
 dragndrop.dragging = false -- ez access
+dragndrop.cancelling = false
+
+-- DRY
 
 local normalAlpha = 1
 local selectedDimAlpha = 0.5
 local forbiddenDimAlpha = 0.3
 
-local draggingWidget, oldPos, newPos
-local targetDropFrame
+local catTopPos = { 0, 16 }
+local catBottomPos = { 0, -11 }
+local catItemPos = { 38, -11 }
+local itemPos = { 26, -11 }
+local itemCatPos = { -10, -11 } -- TODO redo clean
+
+-- drag&drop data
+
+local draggingWidget, oldPos
+local targetDropFrame, newPos
 
 local dragUpdate = CreateFrame("Frame", nil, UIParent)
 local dropLine
 local minDist = 10000
 
 local clickX, clickY -- for a clean drag&grop
-local dropFrameNb = 0
 
-local dropFrames = {
-  -- [1] = frame or CreateFrame(),
-  -- [2] = frame or CreateFrame(),
-  -- [3] = frame or CreateFrame(),
+local dropFrameNb = 0
+local dropFramesBank = { -- IMPORTANT drop frames are basically drop points
+  -- [1] = CreateDropFrame() (existing frame or new one),
+  -- [2] = CreateDropFrame() (existing frame or new one),
   -- ...
 }
 
@@ -39,11 +49,11 @@ local categoryDropFrames = {}
 local favsDropFrames = {}
 local itemsDropFrames = {}
 
-local catTopPos = { 0, 16 }
-local catBottomPos = { 0, -11 }
-local catItemPos = { 38, -11 }
-local itemPos = { 26, -11 }
-local itemCatPos = { -10, -11 } -- TODO redo clean
+-- dragUpdateFunc vars
+
+local dropFrames
+local lastCursorPosY
+local tdlFrame
 
 -- // WoW & Lua APIs
 
@@ -55,20 +65,69 @@ local CreateFrame, UIParent = CreateFrame, UIParent
 --/***************/ MISC /*****************/--
 
 local function testDist(dropFrame, cursorX, cursorY)
-  -- we get the distance between the drop frame and the cursor, to determine which one is the closest to it
+  -- we get the distance between the given drop frame and the cursor,
+  -- to determine which one is the closest to it
+
   local dropFrameX, dropFrameY = dropFrame:GetCenter()
-  local targetDropFrameDist = math.sqrt((cursorX-dropFrameX)^2+(cursorY-dropFrameY)^2)
-  if targetDropFrameDist < minDist then
+  local targetDropFrameDist = math.sqrt((cursorX-dropFrameX)^2+(cursorY-dropFrameY)^2) -- dist
+
+  if targetDropFrameDist < minDist then -- new minimum?
     targetDropFrame = dropFrame
     minDist = targetDropFrameDist
   end
 end
 
+local function createDuplicate(enum, ID)
+  -- first in each drag, since we are stealing the widget we are dragging from the frame,
+  -- we create a new one to replace it
+
+  local contentWidgets = mainFrame:GetContentWidgets()
+  contentWidgets[ID] = nil
+  mainFrame:UpdateWidget(ID, enum)
+  mainFrame:Refresh() -- IMPORTANT this refresh also acts as the call to UpdateDropFrames!
+
+  -- after this, now that we are dragging a duplicate widget, and the list looks like nothing changed,
+  -- we start the real dragging work
+end
+
+local function dragUpdateFunc()
+  if not tdlFrame:IsMouseOver() then return end
+
+  -- cursor current pos (Y)
+  local widgetScale, cursorX, cursorY = draggingWidget:GetEffectiveScale(), GetCursorPosition() -- TODO redo scale later
+  cursorX, cursorY = cursorX/widgetScale, cursorY/widgetScale
+
+  if lastCursorPosY == cursorY then return end -- no need for an update if we didn't move the cursor up or down
+  lastCursorPosY = cursorY
+
+  -- // let's go!
+
+  minDist = 10000 -- we reset the dist to find the closest drop point each frame
+  for _,dropFrame in pairs(dropFrames) do
+    if dropFrame:IsVisible() and mainFrame:IsVisible(dropFrame, 8) then -- we only care about a drop point if we can see it
+      testDist(dropFrame, cursorX, cursorY)
+    end
+  end
+
+  if not targetDropFrame then return end -- just in case we didn't find anything
+
+  -- now that we have the closest widget, we update the positions, so that we are ready for the drop
+  dropLine:ClearAllPoints()
+  dropLine:SetPoint("LEFT", targetDropFrame, "CENTER")
+  newPos = targetDropFrame.dropData.pos
+end
+
+--/***************/ DROP FRAMES /*****************/--
+
 function dragndrop:UpdateDropFrames()
-  -- this is done once, each time we start a drag&drop OR we are dragging&dropping and there is a frame refresh -- TODO NOW
+  -- this is done once, each time we start a new drag&drop
+  -- OR we are dragging&dropping and there is a frame refresh
+
+  -- getting the data
   local tabID, tabData = database.ctab(), select(3, dataManager:Find(database.ctab()))
   local tdlFrame, contentWidgets = mainFrame:GetFrame(), mainFrame:GetContentWidgets()
 
+  -- resetting the drop frames, before updating them
   wipe(categoryDropFrames)
   wipe(favsDropFrames)
   wipe(itemsDropFrames)
@@ -76,48 +135,58 @@ function dragndrop:UpdateDropFrames()
   dropFrameNb = 0
   local newDropFrame, lastWidget
 
-  -- category widgets loop
-  for catOrder,catID in ipairs(tabData.orderedCatIDs) do
+  -- // this is basically the same loop as the one in mainFrame,
+  -- but instead of adding drag&drop code in that file,
+  -- i prefer to put everything here
+
+  -- i am looping on every widget in order,
+  -- while figuring out every drop point, their data (pos), and UI positioning
+
+  for catOrder,catID in ipairs(tabData.orderedCatIDs) do -- for every category
+    -- // ********** categories ********** // --
     local catWidget = contentWidgets[catID]
     lastWidget = catWidget
 
-    newDropFrame = dragndrop:SetAndGetDropFrame(catWidget, unpack(catTopPos))
+    newDropFrame = dragndrop:CreateDropFrame(catWidget, unpack(catTopPos)) -- /*cat/ over each cat
     dragndrop:SetDropFrameData(newDropFrame, tabID, nil, catOrder)
     tinsert(categoryDropFrames, newDropFrame)
+    -- // ******************************** // --
 
     local catData = contentWidgets[catID].catData
-    if not catData.closedInTabIDs[tabID] then
-      newDropFrame = dragndrop:SetAndGetDropFrame(catWidget, unpack(catItemPos))
+    if not catData.closedInTabIDs[tabID] then -- if the category is not closed
+      -- // ********** items ********** // --
+      newDropFrame = dragndrop:CreateDropFrame(catWidget, unpack(catItemPos)) -- /*item/ first item, under the cat
       dragndrop:SetDropFrameData(newDropFrame, tabID, catID, 1)
 
-      tinsert(favsDropFrames, newDropFrame)
+      tinsert(favsDropFrames, newDropFrame) -- favs can always be placed first
       if dataManager:GetNextFavPos(catID) == 1 then
-        tinsert(itemsDropFrames, newDropFrame)
+        tinsert(itemsDropFrames, newDropFrame) -- and normal items only if there are no favs
       end
 
-      -- item widgets loop
-      for itemOrder,itemID in ipairs(catData.orderedContentIDs) do -- TODO for now, only items
+      for itemOrder,itemID in ipairs(catData.orderedContentIDs) do -- and recursively, for everything inside of them -- TODO for now, only items
         local itemWidget = contentWidgets[itemID]
         lastWidget = itemWidget
 
         if not itemWidget.itemData.tabIDs[tabID] or not dataManager:IsHidden(itemID, tabID) then -- OPTIMIZE this func
-          newDropFrame = dragndrop:SetAndGetDropFrame(itemWidget, unpack(itemPos))
+          newDropFrame = dragndrop:CreateDropFrame(itemWidget, unpack(itemPos)) -- /*item/ under each item
           dragndrop:SetDropFrameData(newDropFrame, tabID, catID, itemOrder+1)
 
           if itemWidget.itemData.favorite then
-            tinsert(favsDropFrames, newDropFrame)
-            if dataManager:GetNextFavPos(catID) == itemOrder+1 then -- if it's the last fav in the cat, we can drop a normal item below it
+            tinsert(favsDropFrames, newDropFrame) -- we can always place a fav item below a fav item
+            if dataManager:GetNextFavPos(catID) == itemOrder+1 then -- if it's the last fav in the cat, we can drop a normal item below it as well
               tinsert(itemsDropFrames, newDropFrame)
             end
           else
-            tinsert(itemsDropFrames, newDropFrame)
+            tinsert(itemsDropFrames, newDropFrame) -- we can always place a normal item below a normal item
           end
         end
       end
+      -- // *************************** // --
     end
   end
 
-  if lastWidget then -- for the last cat drop point
+  -- this part is specifically for the last category drop point (under the last shown item/cat)
+  if lastWidget then
     local offset, catID
     if lastWidget.enum == enums.category then
       offset = catBottomPos
@@ -126,38 +195,61 @@ function dragndrop:UpdateDropFrames()
       offset = itemCatPos
       catID = next(lastWidget.itemData.catIDs)
     end
-    print("yup")
-    newDropFrame = dragndrop:SetAndGetDropFrame(lastWidget, unpack(offset))
+
+    newDropFrame = dragndrop:CreateDropFrame(lastWidget, unpack(offset)) -- /*cat/ under the last category
     dragndrop:SetDropFrameData(newDropFrame, tabID, nil, dataManager:GetPos(catID)+1)
     tinsert(categoryDropFrames, newDropFrame)
   end
+
+  -- // debug stuff
+  -- print("-----------------")
+  -- print(#categoryDropFrames)
+  -- print(#favsDropFrames)
+  -- print(#itemsDropFrames)
+  -- print(#dropFramesBank)
+  -- for k,v in pairs(dropFramesBank) do
+  --   local a, x, b, c, d = v:GetPoint()
+  --   if x.enum == enums.category then
+  --     x = x.catData.name
+  --   elseif x.enum == enums.item then
+  --     x = x.itemData.name
+  --   end
+  --   print(a, x, b, c, d)
+  -- end
 end
 
-function dragndrop:SetAndGetDropFrame(parent, ofsx, ofsy)
-  -- here we get a drop point frame, or create one if it doesn't exist
+function dragndrop:CreateDropFrame(parent, ofsx, ofsy)
+  -- here we get a drop frame (basically a drop point), or create one if it doesn't exist
   dropFrameNb = dropFrameNb + 1
+
+  -- default values (just in case)
   parent = parent or UIParent
   ofsx = ofsx or 0
   ofsy = ofsy or 0
 
+  -- create new or get next one
   local dropFrame
-  if dropFrames[dropFrameNb] then
-    dropFrame = dropFrames[dropFrameNb]
+  if dropFramesBank[dropFrameNb] then
+    dropFrame = dropFramesBank[dropFrameNb]
   else
     dropFrame = CreateFrame("Frame", nil, parent)
     dropFrame:SetSize(1, 1)
     dropFrame.dropData = {}
 
-    tinsert(dropFrames, dropFrame)
+    tinsert(dropFramesBank, dropFrame)
   end
 
   dropFrame:ClearAllPoints()
+  dropFrame:SetParent(parent)
   dropFrame:SetPoint("CENTER", parent, "CENTER", ofsx, ofsy)
   return dropFrame
 end
 
 function dragndrop:SetDropFrameData(frame, tab, cat, pos)
+  -- each drop frame has all the data necessary to understand where it is,
+  -- so that i don't have to find out the drop pos again at drop time
   if not frame or not frame.dropData then return end
+
   frame.dropData.tab = tab
   frame.dropData.cat = cat
   frame.dropData.pos = pos
@@ -165,25 +257,18 @@ end
 
 --/***************/ DRAGGING /*****************/--
 
-function startCategoryDragging()
-  print("START_DRAG_CAT")
+function initCategoryDrag()
+  -- creating the duplicate, and getting the dragging's widget current position
+  createDuplicate(enums.category, draggingWidget.catID)
+  oldPos = dataManager:GetPos(draggingWidget.catID)
 
-  local contentWidgets = mainFrame:GetContentWidgets()
-
-  -- first, since we are stealing the widget we are dragging from the frame,
-  -- we create a new one to replace it
-  contentWidgets[draggingWidget.catID] = nil
-  mainFrame:UpdateWidget(draggingWidget.catID, enums.category)
-  mainFrame:Refresh()
-
-  -- now that we are dragging a duplicate widget, and the list looks like nothing changed,
-  -- we start the real dragging work
-
+  -- this is to recolor white the cat widget, since dragging it might have turned it blue bc of the mouseover
   print("CALL leave") -- TODO NOW
   local btn = draggingWidget.interactiveLabel.Button
   btn:GetScript("OnLeave")(btn)
 
   -- when we are dragging a category, we dim every place we can't drag it to (for a visual feedback)
+  local contentWidgets = mainFrame:GetContentWidgets()
   contentWidgets[draggingWidget.catID]:SetAlpha(selectedDimAlpha)
   for _,widget in pairs(contentWidgets) do
     if widget.enum == enums.item then
@@ -191,65 +276,17 @@ function startCategoryDragging()
     end
   end
 
-  -- we create the drop line
-  dropLine = CreateFrame("Frame", nil, mainFrame:GetFrame().content, "NysTDL_DropLine")
-
-  -- we only need to get the old pos one time
-  oldPos = dataManager:GetPos(draggingWidget.catID)
-
-  -- loop variables
-  local tdlFrame = mainFrame:GetFrame()
-  local lastCursorPosY
-
-  -- and finally, the drop position managment
-  dragUpdate:SetScript("OnUpdate", function()
-    if not tdlFrame:IsMouseOver() then return end
-
-    -- cursor current pos (Y)
-    local widgetScale, cursorX, cursorY = draggingWidget:GetEffectiveScale(), GetCursorPosition() -- TODO redo scale later
-    cursorX, cursorY = cursorX/widgetScale, cursorY/widgetScale
-
-    if lastCursorPosY == cursorY then return end -- no need for an update
-    lastCursorPosY = cursorY
-
-    minDist = 10000 -- we reset the dist every time
-
-    -- // let's go!
-
-    for _,dropFrame in pairs(categoryDropFrames) do
-      if dropFrame:IsVisible() and mainFrame:IsVisible(dropFrame, 8) then -- we only care about a drop point if we can see it (wocaadpiwcse #1)
-        testDist(dropFrame, cursorX, cursorY)
-      end
-    end
-
-    if not targetDropFrame then return end -- just in case we didn't find anything
-
-    -- now that we have the closest widget, we update the positions, so that we are ready for the drop
-    dropLine:ClearAllPoints()
-    dropLine:SetPoint("LEFT", targetDropFrame, "CENTER")
-    newPos = targetDropFrame.dropData.pos
-    -- TODO test if same tab
-    if newPos > oldPos then
-      newPos = newPos - 1 -- we remove a pos since the oldPos remove will remove a pos to everyone that's after it
-    end
-  end)
+  -- selecting the right drop frames to check
+  dropFrames = categoryDropFrames
 end
 
-function startItemDragging()
-  print("START_DRAG_ITEM")
-
-  local contentWidgets = mainFrame:GetContentWidgets()
-
-  -- first, since we are stealing the widget we are dragging from the frame,
-  -- we create a new one to replace it
-  contentWidgets[draggingWidget.itemID] = nil
-  mainFrame:UpdateWidget(draggingWidget.itemID, enums.item)
-  mainFrame:Refresh()
-
-  -- now that we are dragging a duplicate widget, and the list looks like nothing changed,
-  -- we start the real dragging work
+function initItemDrag()
+  -- creating the duplicate, and getting the dragging's widget current position
+  createDuplicate(enums.item, draggingWidget.itemID)
+  oldPos = dataManager:GetPos(draggingWidget.itemID)
 
   -- when we are dragging an item, we dim every place we can't drag it to (for a visual feedback)
+  local contentWidgets = mainFrame:GetContentWidgets()
   contentWidgets[draggingWidget.itemID]:SetAlpha(selectedDimAlpha)
   for _,widget in pairs(contentWidgets) do
     if widget.enum == enums.category then
@@ -267,81 +304,48 @@ function startItemDragging()
     end
   end
 
-  -- we create the drop line
-  dropLine = CreateFrame("Frame", nil, mainFrame:GetFrame().content, "NysTDL_DropLine")
-
-  -- we only need to get the old pos one time
-  oldPos = dataManager:GetPos(draggingWidget.itemID)
-
-  -- loop variables
-  local tdlFrame = mainFrame:GetFrame()
-  local lastCursorPosY
-
-  local dropFrames
+  -- selecting the right drop frames to check
   if draggingWidget.itemData.favorite then
     dropFrames = favsDropFrames
   else
     dropFrames = itemsDropFrames
   end
-
-  -- and finally, the drop position managment
-  dragUpdate:SetScript("OnUpdate", function()
-    if not tdlFrame:IsMouseOver() then return end
-
-    -- cursor current pos (Y)
-    local widgetScale, cursorX, cursorY = draggingWidget:GetEffectiveScale(), GetCursorPosition() -- TODO redo scale later
-    cursorX, cursorY = cursorX/widgetScale, cursorY/widgetScale
-
-    if lastCursorPosY == cursorY then return end -- no need for an update
-    lastCursorPosY = cursorY
-
-    minDist = 10000 -- we reset the dist every time
-
-    -- // let's go!
-
-    for _,dropFrame in pairs(dropFrames) do
-      if dropFrame:IsVisible() and mainFrame:IsVisible(dropFrame, 8) then -- we only care about a drop point if we can see it
-        testDist(dropFrame, cursorX, cursorY)
-      end
-    end
-
-    if not targetDropFrame then return end -- just in case we didn't find anything
-
-    -- now that we have the closest widget, we update the positions, so that we are ready for the drop
-    dropLine:ClearAllPoints()
-    dropLine:SetPoint("LEFT", targetDropFrame, "CENTER")
-    newPos = targetDropFrame.dropData.pos
-    if next(draggingWidget.itemData.catIDs) == targetDropFrame.dropData.cat then -- if it's the same cat we're talking about
-      if newPos > oldPos then
-        newPos = newPos - 1 -- we remove a pos since the oldPos remove will remove a pos to everyone that's after it
-      end
-    end
-  end)
 end
 
 --/***************/ DROPPING /*****************/--
 
-function stopCategoryDragging()
-  print("DRAGSTOP1-CAT")
-  if not draggingWidget then return end
+function dropCategory()
+  -- oldPos and newPos are constantly updated while dragging,
+  -- now we do the actual moving
+  if not dragndrop.dragging or dragndrop.cancelling then return end
+  if not targetDropFrame then return end -- just in case we didn't find anything
+  if not mainFrame:GetFrame():IsMouseOver() then return end -- we cancel the drop if we were out of the frame
 
+  -- TODO test if same tab
+  if newPos > oldPos then
+    newPos = newPos - 1 -- we remove a pos since the oldPos remove will remove a pos to everyone that's after it
+  end
+
+  mainFrame:DontRefreshNextTime()
   dataManager:MoveCategory(draggingWidget.catID, oldPos, newPos, nil, nil, database.ctab(), database.ctab())
 end
 
-function stopItemDragging()
-  print("DRAGSTOP1-ITEM")
-  if not draggingWidget then return end
+function dropItem()
+  -- oldPos and newPos are constantly updated while dragging,
+  -- now we do the actual moving
+  if not dragndrop.dragging or dragndrop.cancelling then return end
+  if not targetDropFrame then return end -- just in case we didn't find anything
+  if not mainFrame:GetFrame():IsMouseOver() then return end -- we cancel the drop if we were out of the frame
+
+  if next(draggingWidget.itemData.catIDs) == targetDropFrame.dropData.cat then -- if it's the same cat we're talking about
+    if newPos > oldPos then
+      newPos = newPos - 1 -- we remove a pos since the oldPos remove will remove a pos to everyone that's after it
+    end
+  end
 
   local targetCat = targetDropFrame.dropData.cat
+  mainFrame:DontRefreshNextTime()
   dataManager:MoveItem(draggingWidget.itemID, oldPos, newPos, next(draggingWidget.itemData.catIDs), targetCat, database.ctab(), database.ctab())
-end
-
-function dragndrop:StopDragging()
-  -- TODO replace by reset func, not a stop
-  print("DRAGSTOP0")
-  if not draggingWidget then return end -- TODO check usefulness of all these checks
-  local dragFrame = draggingWidget.interactiveLabel.Button
-  dragFrame:GetScript("OnDragStop")(dragFrame)
 end
 
 --/***************/ START&STOP /*****************/--
@@ -360,17 +364,26 @@ function dragndrop:RegisterForDrag(widget)
     clickX, clickY = x/scale, y/scale
   end)
 
-  -- drag scripts
+  -- // drag scripts
+
+  -- / register
   dragFrame:RegisterForDrag("LeftButton")
 
+  -- / start
   dragFrame:SetScript("OnDragStart", function()
-    print("DRAG 00")
-    draggingWidget = widget
-    dragndrop:UpdateDropFrames()
+    -- drag init
     dragndrop.dragging = true
+
+    -- vars reset & init
+    dropFrames = nil
+    lastCursorPosY = nil
+    tdlFrame = mainFrame:GetFrame()
+    draggingWidget, oldPos = widget, nil
+    targetDropFrame, newPos = nil, nil
+    dropLine = dropLine or CreateFrame("Frame", nil, tdlFrame.content, "NysTDL_DropLine") -- creating the drop line
+    dropLine:Show()
   end)
   dragFrame:HookScript("OnDragStart", function()
-    print("DRAG 1")
     -- we snap the one we are dragging to the current cursor position,
     -- where the widget was first clicked on before the drag, and we start moving it
     -- (it is a dummy widget, perfect duplicate just for a visual feedback, but it doesn't actually do anything)
@@ -391,17 +404,23 @@ function dragndrop:RegisterForDrag(widget)
 
   -- specific
   if widget.enum == enums.category then
-    dragFrame:HookScript("OnDragStart", startCategoryDragging)
-    dragFrame:SetScript("OnDragStop", stopCategoryDragging)
+    dragFrame:HookScript("OnDragStart", initCategoryDrag)
+    dragFrame:SetScript("OnDragStop", dropCategory)
   elseif widget.enum == enums.item then
-    dragFrame:HookScript("OnDragStart", startItemDragging)
-    dragFrame:SetScript("OnDragStop", stopItemDragging)
+    dragFrame:HookScript("OnDragStart", initItemDrag)
+    dragFrame:SetScript("OnDragStop", dropItem)
   end
 
+  dragFrame:HookScript("OnDragStart", function()
+    -- and finally, when everything is set up, we start the drop update managment
+    dragUpdate:SetScript("OnUpdate", dragUpdateFunc)
+  end)
+
+  -- / stop
   dragFrame:HookScript("OnDragStop", function()
-    print("DRAGSTOP2")
-    if not dragndrop.dragging then return end
     dragndrop.dragging = false
+
+    -- // we reset everything
 
     -- we reset the alpha states
     local contentWidgets = mainFrame:GetContentWidgets()
@@ -409,18 +428,23 @@ function dragndrop:RegisterForDrag(widget)
       widget:SetAlpha(normalAlpha)
     end
 
-    -- // we reset everything
-
     -- we hide the dragging widget, as well as the drop line
-    draggingWidget:ClearAllPoints() draggingWidget:Hide()
-    dropLine:ClearAllPoints() dropLine:Hide()
+    if draggingWidget then draggingWidget:ClearAllPoints() draggingWidget:Hide() end
+    if dropLine then dropLine:ClearAllPoints() dropLine:Hide() end
 
-    -- variables
+    -- we stop the dragUpdate
     dragUpdate:SetScript("OnUpdate", nil)
-    draggingWidget, oldPos, newPos = nil, nil, nil
-    targetDropFrame = nil
 
     -- // refresh the mainFrame
     mainFrame:Refresh()
   end)
+end
+
+function dragndrop:CancelDragging()
+  if not dragndrop.dragging then return end
+
+  dragndrop.cancelling = true
+  local dragFrame = draggingWidget.interactiveLabel.Button
+  dragFrame:GetScript("OnDragStop")(dragFrame)
+  dragndrop.cancelling = false
 end
