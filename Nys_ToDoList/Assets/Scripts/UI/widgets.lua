@@ -695,10 +695,6 @@ function widgets:CategoryWidget(catID, parentFrame)
     local renameEditBox = widgets:NoPointsRenameEditBox(categoryWidget, catData.name, categoryNameWidthMax, self:GetHeight())
     renameEditBox:SetPoint("LEFT", categoryWidget, "LEFT", 5, 0)
 
-    -- we move the favs remaining label to the right of the edit box while it's shown
-    categoryWidget.favsRemainingLabel:ClearAllPoints()
-    categoryWidget.favsRemainingLabel:SetPoint("LEFT", renameEditBox, "RIGHT", 6, 0)
-
     -- let's go!
     renameEditBox:SetScript("OnEnterPressed", function(self)
       dataManager:Rename(catID, self:GetText()) -- TODO verify if it closes the box when it doesn't work
@@ -709,10 +705,6 @@ function widgets:CategoryWidget(catID, parentFrame)
       -- we hide the edit box and show the label
       self:Hide()
       categoryWidget.interactiveLabel:Show()
-
-      -- when hiding the edit box, we reset the pos of the favsRemainingLabel
-      categoryWidget.favsRemainingLabel:ClearAllPoints()
-      categoryWidget.favsRemainingLabel:SetPoint("LEFT", categoryWidget.interactiveLabel, "RIGHT", 6, 0)
     end)
     renameEditBox:HookScript("OnEditFocusLost", function(self)
       self:GetScript("OnEscapePressed")(self)
@@ -725,8 +717,12 @@ function widgets:CategoryWidget(catID, parentFrame)
   categoryWidget.removeBtn:SetScript("OnClick", function() dataManager:DeleteCat(catID) end)
 
   -- / favsRemainingLabel
-  categoryWidget.favsRemainingLabel = widgets:NoPointsLabel(categoryWidget, nil, "")
+  categoryWidget.favsRemainingLabel = widgets:NoPointsLabel(categoryWidget.interactiveLabel, nil, "")
   categoryWidget.favsRemainingLabel:SetPoint("LEFT", categoryWidget.interactiveLabel, "RIGHT", 6, 0)
+
+  -- / originalTabLabel
+  categoryWidget.originalTabLabel = widgets:NoPointsLabel(categoryWidget.interactiveLabel, nil, "")
+  categoryWidget.originalTabLabel:SetTextColor(0.5, 0.5, 0.5, 0.5)
 
   -- / addEditBox
   categoryWidget.addEditBox = widgets:NoPointsCatEditBox(categoryWidget)

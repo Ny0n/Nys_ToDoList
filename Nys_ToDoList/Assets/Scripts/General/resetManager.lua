@@ -11,6 +11,8 @@ local resetManager = addonTable.resetManager
 -- Variables
 local L = core.L
 
+local private = {}
+
 local autoResetedThisSession = false
 
 --/*******************/ TABS RESET MANAGMENT /*************************/--
@@ -23,7 +25,7 @@ end
 
 -- managment
 
-function resetManager:NewRawTimeData()
+function private:NewRawTimeData()
 	return {
 		hour = 0,
 		min = 0,
@@ -31,27 +33,19 @@ function resetManager:NewRawTimeData()
 	}
 end
 
-function resetManager:UpdateTimeData(tabID, timeData, hour, min, sec)
-	timeData.hour = utils:Clamp(hour, 0, 23)
-	timeData.min = utils:Clamp(min, 0, 59)
-	timeData.sec = utils:Clamp(sec, 0, 59)
-
-	resetManager:StartNextTimers(tabID) -- update
-end
-
-function resetManager:NewResetData()
+function private:NewResetData()
 	local resetData = {
-		isInterval = false,
-		interval = resetManager:NewRawTimeData(), -- used for the interval reset data
+		-- isInterval = false,
+		-- interval = private:NewRawTimeData(), -- used for the interval reset data
 		resetTimes = {
-			["Reset 1"] = resetManager:NewRawTimeData(), -- min 1 reset, can be renamed / removed / added
+			["Reset 1"] = private:NewRawTimeData(), -- min 1 reset, can be renamed / removed / added
 			-- ...
 		},
 	}
 
   -- reset = { -- key in tab
   --   isSameEachDay = true,
-  --   sameEachDay = resetManager:NewResetData(), -- isSameEachDay reset data
+  --   sameEachDay = private:NewResetData(), -- isSameEachDay reset data
   --   days = { -- the actual reset times used for the auto reset on each given day
 	--	 -- [2] = resetData,
 	--	 -- [3] = resetData,
@@ -67,7 +61,7 @@ function resetManager:NewResetData()
   return resetData
 end
 
--- interval
+-- interval -- TODO future update
 
 function resetManager:UpdateIsInterval(resetData, state)
 	if state == nil then state = false end
@@ -82,14 +76,14 @@ function resetManager:AddResetTime(tabID, resetData, resetTimeName)
 		return false
 	end
 
-	resetData.resetTimes[resetTimeName] = resetManager:NewRawTimeData()
+	resetData.resetTimes[resetTimeName] = private:NewRawTimeData()
 
-	resetManager:StartNextTimers(tabID) -- update
+	private:StartNextTimers(tabID) -- update
 
 	return resetData.resetTimes[resetTimeName]
 end
 
-function resetManager:CanRemoveResetTime(tabID, resetData)
+function private:CanRemoveResetTime(resetData)
   return not #resetData.resetTimes <= 1
 end
 
@@ -100,11 +94,14 @@ function resetManager:RemoveResetTime(tabID, resetData, resetTimeName)
 		return true
 	end
 
-  if not resetManager:CanRemoveResetTime(resetData) then return false end -- safety check
+  if not private:CanRemoveResetTime(resetData) then -- safety check
+    -- TODO message?
+    return false
+  end
 
 	resetData.resetTimes[resetTimeName] = nil
 
-	resetManager:StartNextTimers(tabID) -- update
+	private:StartNextTimers(tabID) -- update
 
 	return true
 end
@@ -121,11 +118,20 @@ function resetManager:RenameResetTime(tabID, resetData, oldResetTimeName, newRes
 	return true
 end
 
+function resetManager:UpdateTimeData(tabID, timeData, hour, min, sec)
+  if not timeData.hour or not timeData.min or not timeData.sec then error("UpdateTimeData error: timeData is not valid") end
+
+	timeData.hour = utils:Clamp(hour, 0, 23)
+	timeData.min = utils:Clamp(min, 0, 59)
+	timeData.sec = utils:Clamp(sec, 0, 59)
+
+	private:StartNextTimers(tabID) -- update
+end
+
 -- // reset days
 
 function resetManager:UpdateIsSameEachDay(tabID, state)
   -- state means checking / unchecking the isSameEachDay checkbox for the tab tabID
-  -- resetData is the selected reset data to share
   local tabData = select(3, dataManager:Find(tabID))
   tabData.reset.isSameEachDay = state
 
@@ -141,11 +147,11 @@ function resetManager:UpdateIsSameEachDay(tabID, state)
 	else
 		-- when unchecking, we reapply the saved data, or create a new one if there isn't any
 		for day in pairs(tabData.reset.days) do
-			tabData.reset.days[day] = tabData.reset.saves[day] or resetManager:NewResetData()
+			tabData.reset.days[day] = tabData.reset.saves[day] or private:NewResetData()
 	  end
 	end
 
-	resetManager:StartNextTimers(tabID) -- update
+	private:StartNextTimers(tabID) -- update
 end
 
 function resetManager:UpdateResetDay(tabID, day, state)
@@ -154,13 +160,13 @@ function resetManager:UpdateResetDay(tabID, day, state)
   local tabData = select(3, dataManager:Find(tabID))
 
 	if state then -- when adding a new day
-	  tabData.reset.days[day] = tabData.reset.isSameEachDay and tabData.reset.sameEachDay or tabData.reset.saves[day] or resetManager:NewResetData()
+	  tabData.reset.days[day] = tabData.reset.isSameEachDay and tabData.reset.sameEachDay or tabData.reset.saves[day] or private:NewResetData()
 	else -- when removing a day
 		tabData.reset.saves[day] = tabData.reset.days[day] -- we save it just in case
 		tabData.reset.days[day] = nil -- and we delete it
 	end
 
-	resetManager:StartNextTimers(tabID) -- update
+	private:StartNextTimers(tabID) -- update
 end
 
 --/*******************/ AUTOMATIC RESET MANAGMENT /*************************/--
@@ -173,6 +179,10 @@ local activeTimerIDs = {
 }
 
 local function getDiff(max, current, target)
+  -- time is looping (each 60 sec or 60 min or 24 hours or 7 days we loop back)
+  -- so this is to get the pure distance between two of those
+  -- ex: getDiff between hour (current) 22 and hour (target) 7 is not 22-7, but 22h TO 7h, which is 9h
+
 	if target > current then
 		return target - current
 	elseif target < current then
@@ -183,12 +193,13 @@ local function getDiff(max, current, target)
 end
 
 local function removeOne(timeUntil, type, max)
+  -- removes one hour/min/sec to the timeUntil data
 	timeUntil[type] = timeUntil[type] - 1
   if timeUntil[type] == -1 then timeUntil[type] = max-1 end
 end
 
-local T_GetSecondsUntil = {}
-function resetManager:GetSecondsUntil(currentDate, targetDay, resetTime)
+local T_getSecondsUntil = {}
+local function getSecondsUntil(currentDate, targetDay, resetTime)
 	-- returns the number of seconds between the currentDate and the targetDate (wday, hour, min, sec)
 	-- FORWARD TIME, meaning not the pure distance between the two dates, but the distance looping at weeks!
 	-- (sunday -> monday = 1 day, monday -> sunday = 6 days)
@@ -207,7 +218,7 @@ function resetManager:GetSecondsUntil(currentDate, targetDay, resetTime)
 	-- 	end
 	-- end
 
-	local timeUntil = T_GetSecondsUntil
+	local timeUntil = T_getSecondsUntil
 	wipe(timeUntil)
 
 	timeUntil.days = getDiff(7, currentDate.wday, targetDay)
@@ -244,7 +255,7 @@ function resetManager:GetSecondsUntil(currentDate, targetDay, resetTime)
 	return secondsUntil
 end
 
-function resetManager:StartNextTimers(tabID)
+function private:StartNextTimers(tabID)
 	-- // the big important function to manage each tab's resets
 
 	-- variables
@@ -274,8 +285,8 @@ function resetManager:StartNextTimers(tabID)
 				if currentDate.hour <= resetTime.hour and currentDate.min <= resetTime.min and currentDate.sec <= resetTime.sec then
 					-- if the targeted reset time is still ahead of us
 					-- then we start a timer for it
-					local secondsUntil = resetManager:GetSecondsUntil(currentDate, targetDay, resetTime)
-					resetManager:StartTimer(tabID, currentTime, secondsUntil)
+					local secondsUntil = getSecondsUntil(currentDate, targetDay, resetTime)
+					private:StartTimer(tabID, currentTime, secondsUntil)
 					foundOne = true
 				end
 			end
@@ -290,20 +301,20 @@ function resetManager:StartNextTimers(tabID)
 
 		-- then we start every timer for the targeted day (can be one week later at maximum)
 		for name,resetTime in pairs(reset.days[targetDay].resetTimes) do -- for each of them
-			local secondsUntil = resetManager:GetSecondsUntil(currentDate, targetDay, resetTime)
-			resetManager:StartTimer(tabID, currentTime, secondsUntil)
+			local secondsUntil = getSecondsUntil(currentDate, targetDay, resetTime)
+			private:StartTimer(tabID, currentTime, secondsUntil)
 		end
 	end
 end
 
-function resetManager:StartTimer(tabID, currentTime, secondsUntil)
+function private:StartTimer(tabID, currentTime, secondsUntil)
 	-- TODO min 1 sec ?
 	local tabData = select(3, dataManager:Find(tabID))
 	local nextResetTimes = tabData.reset.nextResetTimes
 	if not nextResetTimes.n then nextResetTimes.n = 0 end -- timers pos init
 	nextResetTimes.n = nextResetTimes.n + 1
 
-	local timerID = NysTDL:ScheduleTimer("StartResetTimer", secondsUntil, tabID, nextResetTimes.n, resetManager.ResetTab)
+	local timerID = NysTDL:ScheduleTimer("Timer_ResetTab", secondsUntil, tabID, nextResetTimes.n)
 	activeTimerIDs[tabID][nextResetTimes.n] = timerID -- we keep track of the timerIDs
 
 	-- and we keep track of the targeted time of the timer,
@@ -312,27 +323,26 @@ function resetManager:StartTimer(tabID, currentTime, secondsUntil)
 	nextResetTimes[nextResetTimes.n] = targetTime
 end
 
-function resetManager.ResetTab(tabID, timerPos)
-	-- auto reset function, called by timers
+function NysTDL:Timer_ResetTab(tabID, timerPos)
+  -- auto reset function, called by timers
+  -- (there are some checks to make sure that the func was indeed called by timers, and not by the player in-game)
+  if not tabID or not timerPos then return end
 
-	-- first we uncheck the tab
-	dataManager:UncheckTab(tabID)
-
-	-- then we remove the nextResetTime corresponding to the current reset
-	local tabData = select(3, dataManager:Find(tabID))
+	-- first we remove the nextResetTime corresponding to the current reset
+	local tabData = select(3, dataManager:Find(tabID)) -- this will error if the ID is not valid
+  if not tabData.reset.nextResetTimes[timerPos] then return end
 	tabData.reset.nextResetTimes[timerPos] = nil
 
-	-- we remove the current timer from the active ones
+  -- as well as removing the current timer from the active ones
 	activeTimerIDs[tabID][timerPos] = nil
 
-	-- and finally, we check if we need to restart timers for the tab
-	if not next(tabData.reset.nextResetTimes) then -- so if the last reset for the day was done
-		resetManager:StartNextTimers(tabID) -- we find the next valid day and restart new timers
-	end
-end
+	-- then we uncheck the tab (this is the auto-uncheck func after all)
+	dataManager:UncheckTab(tabID)
 
-function NysTDL:StartResetTimer()
-  -- body...
+	-- and finally, we check if we need to restart timers for the tab
+	if not next(tabData.reset.nextResetTimes) then -- if the last reset for the day was done
+		private:StartNextTimers(tabID) -- we find the next valid day and restart new timers
+	end
 end
 
 --/*******************/ INITIALIZATION /*************************/--
@@ -355,7 +365,8 @@ function resetManager:Initialize(profileChanged)
 	for tabID, tabData in dataManager:ForEach(enums.tab, profileChanged) do -- for every concerned tab
 		-- first we check if we already passed a previously reset time,
 		-- in which case we uncheck the tab
-		for timerPos,targetTime in pairs(tabData.reset.nextResetTimes) do
+		for timerPos,targetTime in ipairs(tabData.reset.nextResetTimes) do
+      print(timerPos, targetTime)
 			if currentTime > targetTime then
 				dataManager:UncheckTab(tabID)
         print("ResetManager: UncheckTab")
@@ -365,7 +376,46 @@ function resetManager:Initialize(profileChanged)
 		end
 		wipe(tabData.reset.nextResetTimes)
 
+    -- and by the way, we also relink our tables refs (see func details)
+    private:RelinkIsSameEachDay(tabData)
+
 		-- then we start the new timers
-		resetManager:StartNextTimers(tabID)
+		private:StartNextTimers(tabID)
 	end
+end
+
+function resetManager:InitTabData(tabData)
+  -- creates the reset data associated with tabs
+  tabData.reset = { -- content is user set
+    isSameEachDay = true,
+    sameEachDay = private:NewResetData(), -- isSameEachDay reset data
+    days = { -- the actual reset times used for the auto reset on each given day
+      -- [2] = resetData,
+      -- [3] = resetData,
+      -- ...
+    },
+    saves = { -- so that when we uncheck isSameEachDay, we recover each day's own reset data
+      -- [2] = resetData,
+      -- [3] = resetData,
+      -- ...
+    },
+    nextResetTimes = { -- for when we log on or reload the addon, we first check if a reset date has passed
+      n = 0,
+      -- [1 (n++)] = 115884212 (time() + timeUntil)
+      -- [2 (n++)] = 115847721 (time() + timeUntil)
+      -- ...
+    },
+  }
+end
+
+function private:RelinkIsSameEachDay(tabData)
+  -- this is necessary because for this feature i'm using refs with tables
+  -- and since it's saved in the saved variables files at the end of the day,
+  -- the refs dissapear, so i'm relinking them at addon reload here
+  local reset = tabData.reset
+  if not reset.isSameEachDay then return end
+
+  for day in pairs(reset.days) do
+    reset.days[day] = reset.sameEachDay
+  end
 end

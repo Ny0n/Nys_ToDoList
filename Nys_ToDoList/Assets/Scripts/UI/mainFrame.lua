@@ -171,7 +171,19 @@ function mainFrame:UpdateRemainingNumberLabels()
   -- we update the remaining numbers of every category in the tab
   for catID,catData in dataManager:ForEach(enums.category, tabID) do
     local nbFav = dataManager:GetRemainingNumbers(nil, tabID, catID).uncheckedFav
-    contentWidgets[catID].favsRemainingLabel:SetText(nbFav > 0 and "("..nbFav..")" or "")
+    local text = nbFav > 0 and "("..nbFav..")" or ""
+    contentWidgets[catID].favsRemainingLabel:SetText(text)
+
+    local catData = contentWidgets[catID].catData
+    if not catData.closedInTabIDs[tabID] or text == "" then -- if the category is opened or the label shows nothing
+      contentWidgets[catID].favsRemainingLabel:Hide()
+      contentWidgets[catID].originalTabLabel:ClearAllPoints()
+      contentWidgets[catID].originalTabLabel:SetPoint("LEFT", contentWidgets[catID].interactiveLabel, "RIGHT", 6, 0)
+    else -- if the category is closed and the label shows something
+      contentWidgets[catID].favsRemainingLabel:Show()
+      contentWidgets[catID].originalTabLabel:ClearAllPoints()
+      contentWidgets[catID].originalTabLabel:SetPoint("LEFT", contentWidgets[catID].favsRemainingLabel, "RIGHT", 6, 0)
+    end
   end
 end
 
@@ -564,11 +576,15 @@ local function loadList()
 
     local catData = contentWidgets[catID].catData
 
-    if catData.closedInTabIDs[tabID] then -- if the cat is closed here, we just show the favsRemainingLabel
-      contentWidgets[catID].favsRemainingLabel:Show()
-    else -- if the cat is opened, we display all of its items
-      contentWidgets[catID].favsRemainingLabel:Hide()
+    local originalTabName = select(3, dataManager:Find(catData.originalTabID)).name
+    if originalTabName == tabData.name then
+      contentWidgets[catID].originalTabLabel:Hide()
+    else -- if the tab is showing a cat that was not created here, we show the label specifying the cat's original tab
+      contentWidgets[catID].originalTabLabel:SetText("("..originalTabName.." tab)") -- TODO locale
+      contentWidgets[catID].originalTabLabel:Show()
+    end
 
+    if not catData.closedInTabIDs[tabID] then -- if the cat is opened, we display all of its items
       -- item widgets loop
       newX = newX + xSpace
       for itemOrder,itemID in ipairs(catData.orderedContentIDs) do -- TODO for now, only items

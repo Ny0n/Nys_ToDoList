@@ -18,7 +18,7 @@ dragndrop.cancelling = false
 -- DRY
 
 local normalAlpha = 1
-local selectedDimAlpha = 0.5
+local selectedDimAlpha = 0 -- TODO idk what is nicer here
 local forbiddenDimAlpha = 0.3
 
 local catTopPos = { 0, 16 }

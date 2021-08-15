@@ -47,6 +47,7 @@ local random = math.random
 
 -- id func
 function dataManager:NewID()
+	-- uuid
 	local template ='xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
 	return (select(1, string.gsub(template, '[xy]', function(c)
 		local v = (c == 'x') and random(0, 0xf) or random(8, 0xb)
@@ -122,6 +123,26 @@ end
 -- 		number => iterate over the coresponding number's ID tables, while adding checks
 
 function dataManager:ForEach(enum, location)
+	--[[
+	* this func is used everywhere to loop through items, categories and tabs.
+	this is used in a for loop like pairs():
+	for itemID,itemData in dataManager:ForEach(enums.item) do
+		-- body...
+	end
+	* every time, the loop variables are the ID and the DATA of the targeted loop thing
+
+	* usage:
+	enum 			==> either enums.item, enums.category, or enums.tab (depending on what you want to loop on)
+	location 	==> can be multiple things:
+		-> **nil/false/true** (will loop in either profile+global/profile/global saved variables)
+		-> if the enum is enums.item:
+				--> **ID** (specific tab or cat ID, we will only loop through items that are in the given cat, or that are in the given tab)
+		-> if the enum is enums.category:
+				--> **ID** (specific tab ID, we will only loop through categories that are in the given tab)
+		-> if the enum is enums.tab:
+				--> **ID** (specific shown tab ID, we will only loop through tabs that are showing the given tab)
+	]]
+
 	-- // check part
 	local isGlobal, getdatapos, checkFunc = location
 	if enum == enums.item then
@@ -371,27 +392,6 @@ function dataManager:CreateTab(tabName, isGlobal)
       -- [catID], -- [2]
       -- ... -- [...]
     },
-    -- reset data
-    reset = { -- content is user set
-      isSameEachDay = true,
-      sameEachDay = resetManager:NewResetData(), -- isSameEachDay reset data
-      days = { -- the actual reset times used for the auto reset on each given day
-        -- [2] = resetData,
-        -- [3] = resetData,
-        -- ...
-      },
-			saves = { -- so that when we uncheck isSameEachDay, we recover each day's own reset data
-				-- [2] = resetData,
-				-- [3] = resetData,
-				-- ...
-			},
-			nextResetTimes = { -- for when we log on or reload the addon, we first check if a reset date has passed
-				n = 0,
-				-- [1 (n++)] = 115884212 (time() + timeUntil)
-				-- [2 (n++)] = 115847721 (time() + timeUntil)
-				-- ...
-			},
-    },
 		-- tab specific data
 		shownIDs = { -- user set
       -- [tabID] = true,
@@ -400,6 +400,8 @@ function dataManager:CreateTab(tabName, isGlobal)
     hideCheckedItems = false, -- user set
     deleteCheckedItems = false, -- user set
   }
+
+	resetManager:InitTabData(tabData)
 
 	return addTab(dataManager:NewID(), tabData, isGlobal)
 end
@@ -517,6 +519,7 @@ end
 
 function dataManager:DeleteCat(catID)
 	if dataManager:IsProtected(catID) then return end
+	print("delete")
 
 	local catData, _, categoriesList = select(3, dataManager:Find(catID))
 
@@ -525,8 +528,8 @@ function dataManager:DeleteCat(catID)
 	-- we delete everything inside the category, even sub-categories recursively
 	local nbToDelete = #catData.orderedContentIDs
 	for i=1,nbToDelete do -- not pairs bc im deleting things in the same table i would be looping on
-		local _,contentID = next(catData.orderedContentIDs) -- so i just use next
-		if not dataManager:IsProtected(catID) then -- if the thing we're about to delete is not protected (pre-check so that i can call DontRefreshNextTime not for nothing)
+		local _,contentID = next(catData.orderedContentIDs) -- so i just use next -- TODO NOW fox all these isProtec and dont refresh
+		if not dataManager:IsProtected(contentID) then -- if the thing we're about to delete is not protected (pre-check so that i can call DontRefreshNextTime not for nothing)
 			mainFrame:DontRefreshNextTime()
 			if dataManager:Find(contentID) == enums.category then -- current ID is a sub-category
 				dataManager:DeleteCat(contentID)
@@ -889,7 +892,8 @@ end
 
 function dataManager:ClearTab(tabID)
 	local removed = 0
-	for catID,catData in dataManager:ForEach(enums.category, tabID) do
+	for catID,catData in dataManager:ForEach(enums.category, tabID) do -- TODO NOW FIX CLEAR
+		print("CLEAR CAT")
 		mainFrame:DontRefreshNextTime() -- TODO OULA protected?
 		if dataManager:DeleteCat(catID) then
 			removed = removed + 1

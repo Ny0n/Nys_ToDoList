@@ -35,7 +35,6 @@ database.defaults = {
     latestVersion = "", -- used to update the global saved variables once after each addon update
 
     -- // GLOBAL DATA
-    nextID = 2, -- unique id used for everything in the list, will be incremented towards infinity
     itemsList = {},
     categoriesList = {},
     tabsList = {
@@ -461,6 +460,11 @@ database.options = {
 function database:DBInit()
   dataManager.authorized = false -- there's no calling mainFrame funcs while we're tampering with the database!
 
+  -- default tabs creation
+  if database.ctab() == "TOSET" then
+    database:CreateDefaultTabs()
+  end
+
   -- checking for an addon update, globally
   if NysTDL.db.global.latestVersion ~= core.toc.version then
     self:GlobalNewVersion()
@@ -475,11 +479,6 @@ function database:DBInit()
   end
 
   -- // initialization of elements that need to be updated correctly when the profile changes
-
-  -- default tabs creation
-  if database.ctab() == "TOSET" then
-    database:CreateDefaultTabs()
-  end
 
   -- remember undos
   if not NysTDL.db.profile.rememberUndo then
@@ -521,41 +520,44 @@ function database:ProfileNewVersion() -- profile
   -- updates each profile saved variables once after an update
 
   -- // VAR VERSIONS MIGRATION
+  local db = NysTDL.db
+  local global = db.global
+  local profile = db.profile
 
   -- / no migration from versions older than 5.0
 
   -- / migration from 5.0+ to 5.5+
-  if (NysTDL.db.profile.itemsDaily or NysTDL.db.profile.itemsWeekly or NysTDL.db.profile.itemsFavorite or NysTDL.db.profile.itemsDesc or NysTDL.db.profile.checkedButtons) then
+  if (profile.itemsDaily or profile.itemsWeekly or profile.itemsFavorite or profile.itemsDesc or profile.checkedButtons) then
     -- we need to change the saved variables to the new format
-    local oldItemsList = utils:Deepcopy(NysTDL.db.profile.itemsList)
-    NysTDL.db.profile.itemsList = {}
+    local oldItemsList = utils:Deepcopy(profile.itemsList)
+    profile.itemsList = {}
 
     for catName, itemNames in pairs(oldItemsList) do -- for every cat we had
-      NysTDL.db.profile.itemsList[catName] = {}
+      profile.itemsList[catName] = {}
       for _, itemName in pairs(itemNames) do -- and for every item we had
         -- first we get the previous data elements from the item
         -- / tabName
         local tabName = "All"
-        if (utils:HasValue(NysTDL.db.profile.itemsDaily, itemName)) then
+        if (utils:HasValue(profile.itemsDaily, itemName)) then
           tabName = "Daily"
-        elseif (utils:HasValue(NysTDL.db.profile.itemsWeekly, itemName)) then
+        elseif (utils:HasValue(profile.itemsWeekly, itemName)) then
           tabName = "Weekly"
         end
         -- / checked
-        local checked = utils:HasValue(NysTDL.db.profile.checkedButtons, itemName)
+        local checked = utils:HasValue(profile.checkedButtons, itemName)
         -- / favorite
         local favorite = nil
-        if (utils:HasValue(NysTDL.db.profile.itemsFavorite, itemName)) then
+        if (utils:HasValue(profile.itemsFavorite, itemName)) then
           favorite = true
         end
         -- / description
         local description = nil
-        if (utils:HasKey(NysTDL.db.profile.itemsDesc, itemName)) then
-          description = NysTDL.db.profile.itemsDesc[itemName]
+        if (utils:HasKey(profile.itemsDesc, itemName)) then
+          description = profile.itemsDesc[itemName]
         end
 
         -- then we replace it by the new var
-        NysTDL.db.profile.itemsList[catName][itemName] = {
+        profile.itemsList[catName][itemName] = {
           ["tabName"] = tabName,
           ["checked"] = checked,
           ["favorite"] = favorite,
@@ -565,15 +567,94 @@ function database:ProfileNewVersion() -- profile
     end
 
     -- bye bye
-    NysTDL.db.profile.itemsDaily = nil
-    NysTDL.db.profile.itemsWeekly = nil
-    NysTDL.db.profile.itemsFavorite = nil
-    NysTDL.db.profile.itemsDesc = nil
-    NysTDL.db.profile.checkedButtons = nil
+    profile.itemsDaily = nil
+    profile.itemsWeekly = nil
+    profile.itemsFavorite = nil
+    profile.itemsDesc = nil
+    profile.checkedButtons = nil
   end
 
   -- / migration from 5.5+ to 6.0+
-  -- TODO can't do here, tabs are created after
+  if profile.closedCategories then
+    -- first we get the itemsList and delete it, so that we can start filling it correctly
+    local itemsList = profile.itemsList
+    profile.itemsList = nil -- reset
+    profile.itemsList = {}
+
+    -- we get the necessary tab IDs
+    local allTabID, dailyTabID, weeklyTabID
+    for tabID,tabData in dataManager:ForEach(enums.tab, false) do
+      if tabData.name == "All" then
+        allTabID = tabID
+      elseif tabData.name == "Daily" then
+        dailyTabID = tabID
+      elseif tabData.name == "Weekly" then
+        weeklyTabID = tabID
+      end
+    end
+
+    local contentTabs = {}
+
+    -- we recreate every cat, and every item
+    for catName,items in pairs(itemsList) do
+      -- first things first, we do a loop to get every tab the cat is in (by checking the items data)
+      wipe(contentTabs)
+      for _,itemData in pairs(items) do
+        if not utils:HasValue(contentTabs, itemData.tabName) then
+          table.insert(contentTabs, itemData.tabName)
+        end
+      end
+
+      -- then we add the cat to each of those found tabs
+      local allCatID, dailyCatID, weeklyCatID
+      for _,tabName in pairs(contentTabs) do
+        if tabName == "All" then
+          allCatID = dataManager:CreateCategory(catName, allTabID)
+        elseif tabName == "Daily" then
+          dailyCatID = dataManager:CreateCategory(catName, dailyTabID)
+        elseif tabName == "Weekly" then
+          weeklyCatID = dataManager:CreateCategory(catName, weeklyTabID)
+        end
+      end
+
+      for itemName,itemData in pairs(items) do -- for every item
+        -- tab & cat
+        local itemTabID, itemCatID
+        if itemData.tabName == "All" then
+          itemTabID = allTabID
+          itemCatID = allCatID
+        elseif itemData.tabName == "Daily" then
+          itemTabID = dailyTabID
+          itemCatID = dailyCatID
+        elseif itemData.tabName == "Weekly" then
+          itemTabID = weeklyTabID
+          itemCatID = weeklyCatID
+        end
+
+        -- / creation
+        local itemID = dataManager:CreateItem(itemName, itemTabID, itemCatID)
+
+        -- checked
+        if itemData.checked then
+          dataManager:ToggleChecked(itemID)
+        end
+
+        -- favorite
+        if itemData.favorite then
+          dataManager:ToggleFavorite(itemID)
+        end
+
+        -- description
+        if itemData.description then
+          dataManager:UpdateDescription(itemID, itemData.description)
+        end
+      end
+    end
+
+    -- bye bye
+    profile.closedCategories = nil
+    profile.lastLoadedTab = nil
+  end
 end
 
 -- // specific functions
@@ -596,7 +677,7 @@ function database:CreateDefaultTabs()
 		-- Daily
 		local dailyTabID, dailyTabData = dataManager:CreateTab("Daily", isGlobal) -- isSameEachDay already true
 		for i=1,7 do resetManager:UpdateResetDay(dailyTabID, i, true) end -- every day
-		resetManager:UpdateTimeData(dailyTabID, dailyTabData.reset.sameEachDay, 9, 0, 0)
+		resetManager:UpdateTimeData(dailyTabID, dailyTabData.reset.sameEachDay.resetTimes["Reset 1"], 9, 0, 0)
 
     if not isGlobal then
       selectedtabID = dailyTabID -- default tab
@@ -605,7 +686,7 @@ function database:CreateDefaultTabs()
 		-- Weekly
 		local weeklyTabID, weeklyTabData = dataManager:CreateTab("Weekly", isGlobal) -- isSameEachDay already true
 		resetManager:UpdateResetDay(weeklyTabID, 4, true) -- only wednesday
-		resetManager:UpdateTimeData(weeklyTabID, weeklyTabData.reset.sameEachDay, 9, 0, 0)
+		resetManager:UpdateTimeData(weeklyTabID, weeklyTabData.reset.sameEachDay.resetTimes["Reset 1"], 9, 0, 0)
 
 		-- All
 		local allTabID = dataManager:CreateTab("All", isGlobal)
