@@ -6,7 +6,7 @@ local core = addonTable.core
 local chat = addonTable.chat
 local events = addonTable.events
 local widgets = addonTable.widgets
-local database = addonTable.database
+local optionsManager = addonTable.optionsManager
 
 -- Variables
 local L = core.L
@@ -15,7 +15,7 @@ local warnTimerTime = 3600 -- in seconds (1 hour)
 --/*******************/ EVENT HANDLERS /*************************/--
 
 function NysTDL:PLAYER_LOGIN()
-  local disabled = database.options.args.main.args.chat.args.groupWarnings.args.hourlyReminder.disabled
+  local disabled = optionsManager.optionsTable.args.main.args.chat.args.groupWarnings.args.hourlyReminder.disabled
   if (NysTDL.db.global.UI_reloading) then -- just to be sure that it wasn't a reload, but a genuine player log in
     NysTDL.db.global.UI_reloading = false
 

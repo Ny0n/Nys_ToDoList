@@ -9,6 +9,7 @@ local widgets = addonTable.widgets
 local database = addonTable.database
 local dataManager = addonTable.dataManager
 local resetManager = addonTable.resetManager
+local optionsManager = addonTable.optionsManager
 
 -- the access to mainFrame is controlled:
 -- this file can only call mainFrame funcs if it is specifically authorized to do so,
@@ -61,9 +62,10 @@ end
 
 function dataManager:IsID(ID)
 	if type(ID) ~= enums.idtype then return end
-	return string.match(ID, '^[0-9a-f]+-[0-9a-f]+-[0-5][0-9a-f]+-[089ab][0-9a-f]+-[0-9a-f]+$')
+	if not string.match(ID, '^[0-9a-f]+-[0-9a-f]+-[0-5][0-9a-f]+-[089ab][0-9a-f]+-[0-9a-f]+$') then return end
+	if not pcall(dataManager.Find, dataManager, ID) then return end -- raises an error if the ID is not found
 
-	-- return type(ID) == enums.idtype
+	return true
 end
 
 -- misc functions
@@ -82,7 +84,7 @@ function dataManager:Find(ID)
 		end
 	end
 
-	error("ID not found, please post the trace as an issue on GitHub")
+	error("ID not found")
 end
 
 function dataManager:IsGlobal(ID)
@@ -368,7 +370,7 @@ local function addTab(tabID, tabData, isGlobal)
 	for shownID in pairs(tabData.shownIDs) do
 		dataManager:UpdateShownTabID(tabID, shownID, true)
 	end
-	tinsert(tabsList.orderedTabIDs, #tabsList.orderedTabIDs + 1, tabID) -- position (last)
+	tinsert(tabsList.orderedTabIDs, #tabsList.orderedTabIDs + 1, tabID) -- position (last) -- TODO NOW redo
 
 	-- refresh the mainFrame
 	database.ctab(tabID)
@@ -526,9 +528,9 @@ function dataManager:DeleteCat(catID)
   -- we delete the category and all its related data
 
 	-- we delete everything inside the category, even sub-categories recursively
-	local nbToDelete = #catData.orderedContentIDs
+	local nbToDelete, key, contentID = #catData.orderedContentIDs
 	for i=1,nbToDelete do -- not pairs bc im deleting things in the same table i would be looping on
-		local _,contentID = next(catData.orderedContentIDs) -- so i just use next -- TODO NOW fox all these isProtec and dont refresh
+		key, contentID = next(catData.orderedContentIDs, key) -- so i just use next
 		if not dataManager:IsProtected(contentID) then -- if the thing we're about to delete is not protected (pre-check so that i can call DontRefreshNextTime not for nothing)
 			mainFrame:DontRefreshNextTime()
 			if dataManager:Find(contentID) == enums.category then -- current ID is a sub-category
@@ -539,7 +541,7 @@ function dataManager:DeleteCat(catID)
 		end
 	end
 
-	local undoData = dataManager:CreateUndo(catID)
+	local undoData, result = dataManager:CreateUndo(catID)
 
 	if #catData.orderedContentIDs == 0 then -- we removed everything from the cat, now we delete it
 		-- we update its data (pretty much the reverse actions of the Add func)
@@ -550,6 +552,7 @@ function dataManager:DeleteCat(catID)
 	  categoriesList[catID] = nil -- delete action
 
 		mainFrame:DeleteWidget(catID)
+		result = true
 	end
 
 	dataManager:AddUndo(nbToDelete - #catData.orderedContentIDs) -- to undo in one go everything that was removed
@@ -557,7 +560,7 @@ function dataManager:DeleteCat(catID)
 	-- refresh the mainFrame
 	mainFrame:Refresh()
 
-	return true
+	return result
 end
 
 -- tab
@@ -570,9 +573,9 @@ function dataManager:DeleteTab(tabID)
   -- we delete the tab and all its related data
 
  	-- we delete everything inside the tab, this means every category inside of it
-	local nbToDelete = #tabData.orderedCatIDs
+	local nbToDelete, key, catID = #tabData.orderedCatIDs
 	for i=1,nbToDelete do
-		local _,catID = next(tabData.orderedCatIDs)
+		key, catID = next(tabData.orderedCatIDs, key)
 		if categoriesList[catID].originalTabID == tabID then --  (SPECIFIC: a tab deletion only deletes what's original to the tab, not everything that's shown inside of it)
 			if not dataManager:IsProtected(catID) then -- if the thing we're about to delete is not protected (pre-check so that i can call DontRefreshNextTime not for nothing)
 				mainFrame:DontRefreshNextTime()
@@ -581,7 +584,7 @@ function dataManager:DeleteTab(tabID)
 		end
 	end
 
-	local undoData = dataManager:CreateUndo(tabID)
+	local undoData, result = dataManager:CreateUndo(tabID)
 
 	if #tabData.orderedCatIDs == 0 then -- we removed everything from the tab, now we delete it
 		-- we update its data (pretty much the reverse actions of the Add func)
@@ -596,17 +599,19 @@ function dataManager:DeleteTab(tabID)
 
 		dataManager:AddUndo(undoData)
 		nbToDelete = nbToDelete + 1
+
 	  tabsList[tabID] = nil -- delete action
 
 		database.ctab(tabsList.orderedTabIDs[tabPos-1]) -- when deleting a tab, we refocus a new tab (by default, the previous one)
+		result = true
 	end
 
-	dataManager:AddUndo(nbToDelete - #tabsList.orderedCatIDs) -- to undo in one go everything that was removed
+	dataManager:AddUndo(nbToDelete - #tabData.orderedCatIDs) -- to undo in one go everything that was removed
 
 	-- refresh the mainFrame
 	mainFrame:Refresh()
 
-	return true
+	return result
 end
 
 -- // undo feature
@@ -849,6 +854,23 @@ function dataManager:GetNbCategory(tabID)
 	return #select(3, dataManager:Find(tabID)).orderedCatIDs -- TODO redo with GetCategoryOrdersLoc
 end
 
+function dataManager:ToggleClosed(catID, tabID, state)
+	-- state can be:
+	-- 	nil -> toggle
+	-- 	false -> close
+	-- 	true -> open
+
+	dataManager:Find(tabID) -- raises an error if the ID is not valid
+	local catData = select(3, dataManager:Find(catID))
+	if state == nil then
+		catData.closedInTabIDs[tabID] = not catData.closedInTabIDs[tabID] or nil
+	elseif state == false then
+		catData.closedInTabIDs[tabID] = true
+	elseif state == true then
+		catData.closedInTabIDs[tabID] = nil
+	end
+end
+
 -- tabs
 
 function dataManager:UpdateShownTabID(tabID, shownTabID, state)
@@ -892,11 +914,12 @@ end
 
 function dataManager:ClearTab(tabID)
 	local removed = 0
-	for catID,catData in dataManager:ForEach(enums.category, tabID) do -- TODO NOW FIX CLEAR
-		print("CLEAR CAT")
-		mainFrame:DontRefreshNextTime() -- TODO OULA protected?
-		if dataManager:DeleteCat(catID) then
-			removed = removed + 1
+	for catID,catData in dataManager:ForEach(enums.category, tabID) do
+		if not dataManager:IsProtected(catID) then
+			mainFrame:DontRefreshNextTime()
+			if dataManager:DeleteCat(catID) then
+				removed = removed + 1
+			end
 		end
 	end
 	dataManager:AddUndo(removed)

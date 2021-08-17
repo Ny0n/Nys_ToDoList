@@ -1118,6 +1118,7 @@ end
 
 function mainFrame:CreateTDLFrame()
   -- TODO temp
+  -- profile
   mainFrame.tabSelect = CreateFrame("FRAME", nil, UIParent, "UIDropDownMenuTemplate")
   UIDropDownMenu_SetWidth(mainFrame.tabSelect, 90)
   UIDropDownMenu_SetText(mainFrame.tabSelect, select(3, dataManager:Find(database.ctab())).name)
@@ -1142,6 +1143,32 @@ function mainFrame:CreateTDLFrame()
     end
   end)
   mainFrame.tabSelect:SetPoint("CENTER", UIParent, "CENTER", 0, 300)
+
+  -- global
+  mainFrame.tabSelectGlobal = CreateFrame("FRAME", nil, UIParent, "UIDropDownMenuTemplate")
+  UIDropDownMenu_SetWidth(mainFrame.tabSelectGlobal, 90)
+  UIDropDownMenu_SetText(mainFrame.tabSelectGlobal, select(3, dataManager:Find(database.ctab())).name)
+
+  -- Implement the function to change the weekly reset day, then refresh
+  local function setTab2(self, tabID)
+    mainFrame:ChangeTab(tabID)
+    UIDropDownMenu_SetText(mainFrame.tabSelectGlobal, select(3, dataManager:Find(database.ctab())).name) -- Update the text
+  end
+
+  -- Create and bind the initialization function to the dropdown menu
+  UIDropDownMenu_Initialize(mainFrame.tabSelectGlobal, function(self, level, menuList)
+    local info = UIDropDownMenu_CreateInfo()
+
+    local tabsList = select(3, dataManager:GetData(true))
+    for _, tabID in ipairs(tabsList.orderedTabIDs) do
+      info.func = setTab2
+      info.arg1 = tabID
+      info.text = select(3, dataManager:Find(tabID)).name
+      info.checked = database.ctab() == info.arg1
+      UIDropDownMenu_AddButton(info)
+    end
+  end)
+  mainFrame.tabSelectGlobal:SetPoint("CENTER", UIParent, "CENTER", 0, 250)
   -- local btn = CreateFrame("Frame", nil, UIParent, "LargeUIDropDownMenuTemplate")
   -- btn:SetPoint("CENTER")
   -- UIDropDownMenu_SetWidth(btn, 200)

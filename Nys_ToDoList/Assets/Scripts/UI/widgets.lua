@@ -671,7 +671,7 @@ function widgets:CategoryWidget(catID, parentFrame)
 
     if button == "LeftButton" then -- we open/close the category
       categoryWidget.addEditBox:SetText(catID) -- TODO remove
-      catData.closedInTabIDs[database.ctab()] = not catData.closedInTabIDs[database.ctab()] or nil
+      dataManager:ToggleClosed(catID, database.ctab())
       mainFrame:Refresh() -- we refresh the list
     elseif button == "RightButton" then -- we try to toggle the addEditBox
       -- if the cat we right clicked on is NOT a closed category
