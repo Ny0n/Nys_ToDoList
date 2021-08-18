@@ -144,12 +144,12 @@ function widgets:RefreshTDLButton()
   widgets:UpdateTDLButtonColor()
 end
 
-function widgets:UpdateTDLButtonColor()
+function widgets:UpdateTDLButtonColor() -- TODO fix calcul (red even when all checked)
   -- the TDL button red option, if any tab has a reset in less than 24 hours,
   -- and also has unchecked items, we color in red the text of the tdl button
 
+  tdlButton:SetNormalFontObject("GameFontNormalLarge") -- by default, we reset the color of the TDL button to yellow
   if NysTDL.db.profile.tdlButton.red then -- if the option is checked
-    tdlButton:SetNormalFontObject("GameFontNormalLarge") -- by default, we reset the color of the TDL button to yellow
     local maxTime = time() + 86400
     dataManager:DoIfFoundTabMatch(maxTime, "totalUnchecked", function()
       -- we color the button in red
@@ -994,8 +994,10 @@ end
 
 function widgets:ProfileChanged()
   -- visual updates to match the new profile
-  widgets:RefreshTDLButton() -- XXX
-  databroker:SetMode(NysTDL.db.profile.databrokerMode) -- XXX a terme dans le callallgetters ?
+  widgets:RefreshTDLButton()
+  databroker:SetMode(NysTDL.db.profile.databrokerMode)
+  -- TODO a terme ici ligne pr refresh tooltip frame de databroker
+  databroker:RefreshMinimapButton()
 
   widgets:WipeDescFrames()
   mainFrame:Init()

@@ -677,23 +677,27 @@ end
 
 -- misc
 
-local function updateCatShownTabID(catID, catData, tabID, tabData, shownTabID, modif)
+local function updateCatShownTabID(catID, catData, tabID, tabData, shownTabID, modif, specific)
 	if catData.originalTabID == shownTabID then -- important
-		catData.tabIDs[tabID] = modif
-		if not catData.parentsInTabIDs[catData.originalTabID] then -- if it's not a sub-category, we edit it in its tab orders
-			if modif and not utils:HasValue(tabData.orderedCatIDs, catID) then
-				-- we add it ordered in the tab if it wasn't here already
-				tinsert(tabData.orderedCatIDs, 1, catID) -- TODO later, IF i do cat fav it's not pos 1
-			elseif not modif then
-				tremove(tabData.orderedCatIDs, select(2, utils:HasValue(tabData.orderedCatIDs, catID)))
+		if tabID ~= catData.originalTabID or modif or specific then -- this is to protect cats from being hidden in their original tab
+			catData.tabIDs[tabID] = modif
+			if not catData.parentsInTabIDs[catData.originalTabID] then -- if it's not a sub-category, we edit it in its tab orders
+				if modif and not utils:HasValue(tabData.orderedCatIDs, catID) then
+					-- we add it ordered in the tab if it wasn't here already
+					tinsert(tabData.orderedCatIDs, 1, catID) -- TODO later, IF i do cat fav it's not pos 1
+				elseif not modif then
+					tremove(tabData.orderedCatIDs, select(2, utils:HasValue(tabData.orderedCatIDs, catID)))
+				end
 			end
 		end
 	end
 end
 
-local function updateItemShownTabID(itemID, itemData, tabID, tabData, shownTabID, modif)
+local function updateItemShownTabID(itemID, itemData, tabID, tabData, shownTabID, modif, specific)
 	if itemData.originalTabID == shownTabID then -- important
-		itemData.tabIDs[tabID] = modif
+		if tabID ~= itemData.originalTabID or modif or specific then  -- this is to protect items from being hidden in their original tab
+			itemData.tabIDs[tabID] = modif
+		end
 	end
 end
 
@@ -712,9 +716,9 @@ function dataManager:UpdateTabsDisplay(shownTabID, modif, ID) -- TODO fix remove
 
 		if ID then -- if it concerns only one ID
 			if enum == enums.category then -- single category
-				updateCatShownTabID(ID, data, tabID, tabData, shownTabID, modif)
+				updateCatShownTabID(ID, data, tabID, tabData, shownTabID, modif, true)
 			elseif enum == enums.item then -- single item
-				updateItemShownTabID(ID, data, tabID, tabData, shownTabID, modif)
+				updateItemShownTabID(ID, data, tabID, tabData, shownTabID, modif, true)
 			end
 		else -- if it concerns everything
 			-- categories
@@ -794,12 +798,24 @@ end
 
 -- items
 
-function dataManager:ToggleChecked(itemID)
+function dataManager:ToggleChecked(itemID, state)
+	-- state can be:
+	-- 	nil -> toggle
+	-- 	false -> uncheck
+	-- 	true -> check
+
 	local itemData = select(3, dataManager:Find(itemID))
-	itemData.checked = not itemData.checked
+
+	if state == nil then
+		itemData.checked = not itemData.checked
+	elseif state == false then
+		itemData.checked = false
+	elseif state == true then
+		itemData.checked = true
+	end
 
 	-- refresh the mainFrame
-	if NysTDL.db.profile.instantRefresh then -- TODO redo?
+	if NysTDL.db.profile.instantRefresh then
 		mainFrame:Refresh()
 	else
 		mainFrame:UpdateVisuals()
@@ -901,18 +917,20 @@ function dataManager:UpdateShownTabID(tabID, shownTabID, state)
 	mainFrame:Refresh()
 end
 
-function dataManager:UncheckTab(tabID)
-	for itemID,itemData in dataManager:ForEach(enums.item, tabID) do
-		itemData.checked = false
-	end
+function dataManager:ToggleTabChecked(tabID, state)
+	-- state can be:
+	-- 	nil -> toggle
+	-- 	false -> uncheck
+	-- 	true -> check
 
-	-- refresh the mainFrame
-	mainFrame:UpdateVisuals()
-end
-
-function dataManager:CheckTab(tabID)
-	for itemID,itemData in dataManager:ForEach(enums.item, tabID) do
-		itemData.checked = true
+	for itemID, itemData in dataManager:ForEach(enums.item, tabID) do
+		if state == nil then
+			itemData.checked = not itemData.checked
+		elseif state == false then
+			itemData.checked = false
+		elseif state == true then
+			itemData.checked = true
+		end
 	end
 
 	-- refresh the mainFrame
@@ -920,8 +938,13 @@ function dataManager:CheckTab(tabID)
 end
 
 function dataManager:ClearTab(tabID)
-	local removed = 0
+	local copy = {}
 	for catID,catData in dataManager:ForEach(enums.category, tabID) do
+		copy[catID] = catData
+	end
+
+	local removed = 0
+	for catID in pairs(copy) do
 		if not dataManager:IsProtected(catID) then
 			mainFrame:DontRefreshNextTime()
 			if dataManager:DeleteCat(catID) then
@@ -929,6 +952,7 @@ function dataManager:ClearTab(tabID)
 			end
 		end
 	end
+
 	dataManager:AddUndo(removed)
 
 	-- refresh the mainFrame

@@ -63,6 +63,14 @@ function private:NewResetData()
   return resetData
 end
 
+function resetManager:GetNbResetTimes(resetData)
+  local nb = 0
+  for _ in pairs(resetData.resetTimes) do
+    nb = nb + 1
+  end
+  return nb
+end
+
 -- interval -- TODO future update
 
 function resetManager:UpdateIsInterval(resetData, state)
@@ -73,11 +81,8 @@ end
 -- reset times
 
 function resetManager:AddResetTime(tabID, resetData)
-  local nb = 0
-  for _ in pairs(resetData.resetTimes) do
-    nb = nb + 1
-  end
-
+  -- first we find a good name for the new reset
+  local nb = resetManager:GetNbResetTimes(resetData)
   local resetTimeName
   repeat
     resetTimeName = "Reset"..' '..tostring(nb+1)
@@ -91,12 +96,8 @@ function resetManager:AddResetTime(tabID, resetData)
 	return resetData.resetTimes[resetTimeName]
 end
 
-function private:CanRemoveResetTime(resetData)
-  local nb = 0
-  for _ in pairs(resetData.resetTimes) do
-    nb = nb + 1
-  end
-  return not (nb <= 1)
+function resetManager:CanRemoveResetTime(resetData)
+  return not (resetManager:GetNbResetTimes(resetData) <= 1)
 end
 
 function resetManager:RemoveResetTime(tabID, resetData, resetTimeName)
@@ -106,7 +107,7 @@ function resetManager:RemoveResetTime(tabID, resetData, resetTimeName)
 		return true
 	end
 
-  if not private:CanRemoveResetTime(resetData) then -- safety check
+  if not resetManager:CanRemoveResetTime(resetData) then -- safety check
     -- TODO message?
     print("Cannot remove reset -- there must be at least one")
     return false
@@ -350,7 +351,7 @@ function NysTDL:Timer_ResetTab(tabID, timerPos)
 	activeTimerIDs[tabID][timerPos] = nil
 
 	-- then we uncheck the tab (this is the auto-uncheck func after all)
-	dataManager:UncheckTab(tabID)
+	dataManager:ToggleTabChecked(ctab(), false)
 
 	-- and finally, we check if we need to restart timers for the tab
 	if not next(tabData.reset.nextResetTimes) then -- if the last reset for the day was done
@@ -381,7 +382,7 @@ function resetManager:Initialize(profileChanged)
 		for timerPos,targetTime in ipairs(tabData.reset.nextResetTimes) do
       print(timerPos, targetTime)
 			if currentTime > targetTime then
-				dataManager:UncheckTab(tabID)
+				dataManager:ToggleTabChecked(ctab(), false)
         print("ResetManager: UncheckTab")
 				autoResetedThisSession = true -- TODO redo??
 				break

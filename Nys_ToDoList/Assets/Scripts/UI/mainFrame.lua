@@ -642,8 +642,11 @@ function mainFrame:Refresh()
   if tabData.deleteCheckedItems then
     for itemID,itemData in dataManager:ForEach(enums.item, tabID) do -- for each item in the tab
       if itemData.originalTabID == tabID and itemData.checked then -- if the item is native to the tab and checked
-        mainFrame:DontRefreshNextTime() -- TODO fix IsProtected
-        dataManager:DeleteItem(itemID)
+        if not dataManager:IsProtected(itemID) then
+          mainFrame:DontRefreshNextTime()
+          itemData.checked = false
+          dataManager:DeleteItem(itemID)
+        end
       end
     end
   end
@@ -979,11 +982,11 @@ local function generateMenuTabActions()
 
   menuframe.btnCheck = widgets:Button("btnCheck_menuframe", menuframe, L["Check"], "Interface\\BUTTONS\\UI-CheckBox-Check")
   menuframe.btnCheck:SetPoint("TOP", menuframe.menuTitle, "TOP", 0, -35)
-  menuframe.btnCheck:SetScript("OnClick", function() dataManager:CheckTab(ctab()) end)
+  menuframe.btnCheck:SetScript("OnClick", function() dataManager:ToggleTabChecked(ctab(), true) end)
 
   menuframe.btnUncheck = widgets:Button("btnUncheck_menuframe", menuframe, L["Uncheck"], "Interface\\BUTTONS\\UI-CheckBox-Check-Disabled")
   menuframe.btnUncheck:SetPoint("TOP", menuframe.btnCheck, "TOP", 0, -40)
-  menuframe.btnUncheck:SetScript("OnClick", function() dataManager:UncheckTab(ctab()) end)
+  menuframe.btnUncheck:SetScript("OnClick", function() dataManager:ToggleTabChecked(ctab(), false) end)
 
   menuframe.btnClear = widgets:Button("clearButton", menuframe, L["Clear"], "Interface\\GLUES\\LOGIN\\Glues-CheckBox-Check")
   menuframe.btnClear:SetPoint("TOP", menuframe.btnUncheck, "TOP", 0, -40)

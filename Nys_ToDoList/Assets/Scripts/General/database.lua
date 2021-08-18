@@ -149,13 +149,12 @@ function database:ProfileChanged(_, profile)
   -- // here we update (basically in the same order as the core init) everything
   -- that needs an update after a database change
   print("PROFILE: ", profile)
-  print("PROFILE CHANGE")
 
   -- #1 - database (always init a database)
   database:DBInit()
 
   -- #2 - options
-  optionsManager:CallAllGETTERS()
+  LibStub("AceConfigRegistry-3.0"):NotifyChange(addonName)
 
   -- #last-1 - widgets (we update che changes to the UI elements)
   widgets:ProfileChanged()

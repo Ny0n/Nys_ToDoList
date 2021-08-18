@@ -248,7 +248,7 @@ local tabManagementTable = {
               local _, tabData = getTabInfo(info)
               tabData.reset.configureDay = value
             end,
-            disabled = function(info)
+            hidden = function(info)
               local _, tabData = getTabInfo(info)
               return tabData.reset.isSameEachDay
             end,
@@ -283,6 +283,10 @@ local tabManagementTable = {
               local tabID, tabData, resetData = getTabInfo(info)
               resetManager:RemoveResetTime(tabID, resetData, tabData.reset.configureResetTime)
             end,
+            hidden = function(info)
+              local _, _, resetData = getTabInfo(info)
+              return not resetManager:CanRemoveResetTime(resetData)
+            end
           },
           configureResetTimeSelect = {
             order = 1.5,
@@ -475,8 +479,12 @@ local function createAddonOptionsTable()
     handler = optionsManager,
     type = "group",
     name = core.toc.title.." ("..core.toc.version..")",
-    get = "Getter",
-    set = "Setter",
+    get = function(info) return NysTDL.db.profile[info[#info]] end,
+    set = function(info, ...)
+      if NysTDL.db.profile[info[#info]] ~= nil then
+        NysTDL.db.profile[info[#info]] = ...
+      end
+    end,
     args = {
       main = {
         order = 0,
@@ -522,8 +530,11 @@ local function createAddonOptionsTable()
                 type = "color",
                 name = L["Favorites color"],
                 desc = L["Change the color for the favorite items"],
-                get = "favoritesColorGET",
-                set = "favoritesColorSET",
+                get = function() return unpack(NysTDL.db.profile.favoritesColor) end,
+                set = function(info, ...)
+                  NysTDL.db.profile.favoritesColor = { ... }
+                  mainFrame:UpdateVisuals()
+                end,
                 disabled = function() return NysTDL.db.profile.rainbow end,
               }, -- favoritesColor
               rainbow = {
@@ -547,16 +558,22 @@ local function createAddonOptionsTable()
                 type = "toggle",
                 name = L["Show TDL button"],
                 desc = L["Toggles the display of the 'To-Do List' button"],
-                get = "tdlButtonShowGET",
-                set = "tdlButtonShowSET",
+                get = function() return NysTDL.db.profile.tdlButton.show end,
+                set = function(info, value)
+                  NysTDL.db.profile.tdlButton.show = value
+                  widgets:RefreshTDLButton()
+                end,
               }, -- tdlButtonShow
               tdlButtonRed = {
                 order = 2.4,
                 type = "toggle",
                 name = L["Red"],
                 desc = L["Changes the color of the TDL button if there are items left to do before tomorrow"],
-                get = "tdlButtonRedGET",
-                set = "tdlButtonRedSET",
+                get = function() return NysTDL.db.profile.tdlButton.red end,
+                set = function(info, value)
+                  NysTDL.db.profile.tdlButton.red = value
+                  widgets:UpdateTDLButtonColor()
+                end,
                 hidden = function() return not NysTDL.db.profile.tdlButton.show end
               }, -- tdlButtonShow
               minimapButtonHide = {
@@ -564,8 +581,11 @@ local function createAddonOptionsTable()
                 type = "toggle",
                 name = L["Show minimap button"],
                 desc = L["Toggles the display of the minimap button"],
-                get = function(info) return not optionsManager:minimapButtonHideGET(info) end,
-                set = function(info, newValue) optionsManager:minimapButtonHideSET(info, not newValue) end,
+                get = function() return not NysTDL.db.profile.minimap.hide end,
+                set = function(_, value)
+                  NysTDL.db.profile.minimap.hide = not value
+                  databroker:RefreshMinimapButton()
+                end,
               }, -- minimapButtonHide
               minimapButtonTooltip = {
                 order = 2.2,
@@ -573,16 +593,40 @@ local function createAddonOptionsTable()
                 type = "toggle",
                 name = L["Show tooltip"],
                 desc = L["Show the tooltip of the minimap/databroker button"],
-                get = "minimapButtonTooltipGET",
-                set = "minimapButtonTooltipSET",
+                get = function() return NysTDL.db.profile.minimap.tooltip end,
+                set = function(_, value)
+                  NysTDL.db.profile.minimap.tooltip = value
+                  databroker:RefreshMinimapButton()
+                end,
               }, -- minimapButtonTooltip
               keyBind = {
                 type = "keybinding",
                 name = L["Show/Hide the list"],
                 desc = L["Bind a key to toggle the list"]..'\n'..L["(independant from profile)"],
                 order = 1.1,
-                get = "keyBindGET",
-                set = "keyBindSET",
+                get = function() return GetBindingKey("NysTDL") end,
+                set = function(info, newKey)
+                  -- we only want one key to be ever bound to this
+                  local key1, key2 = GetBindingKey("NysTDL") -- so first we get both keys associated to thsi addon (in case there are)
+                  -- then we delete their binding from this addon (we clear every binding from this addon)
+                  if key1 then SetBinding(key1) end
+                  if key2 then SetBinding(key2) end
+
+                  -- and finally we set the new binding key
+                  if newKey ~= '' then -- considering we pressed one (not ESC)
+                    SetBinding(newKey, "NysTDL")
+                  end
+
+                  -- and save the changes
+
+                  --@retail@
+                  SaveBindings(GetCurrentBindingSet())
+                  --@end-retail@
+
+                  --[===[@non-retail@
+                  AttemptToSaveBindings(GetCurrentBindingSet())
+                  --@end-non-retail@]===]
+                end,
               }, -- keyBind
 
               -- / layout widgets / --
@@ -653,8 +697,6 @@ local function createAddonOptionsTable()
             order = 1,
             type = "group",
             name = L["Tabs"],
-            get = "GetterTabs",
-            set = "SetterTabs",
             args = {
               optionsUpdater = {
                 order = 0.1,
@@ -820,43 +862,6 @@ function optionsManager:ToggleOptions(fromFrame)
   end
 end
 
---/*******************/ GETTERS/SETTERS /*************************/--
-
--- for each of the getters, we also call the setters to set the value to the current one,
--- just to update them (in case we switched profiles or something happened and only the getters are called,
--- the actual states of the buttons are not updated), this allows us to not call a special function to
--- reupdate everything right when we switch profiles: this is now done automatically.
-
-function optionsManager:CallAllGETTERS()
-  -- this simply calls every getters of every options in the options table
-  -- (and so updates them, since I also call the setters like explained before)
-
-  local info = {}
-
-  local function recursiveGet(argName, argTable, getter)
-    getter = argTable.get or getter
-    table.wipe(info)
-    table.insert(info, argName)
-
-    if (argTable.type == "group") then
-      for subArgName, subArgTable in pairs(argTable.args) do
-        recursiveGet(subArgName, subArgTable, getter)
-      end
-    else
-      if (argTable.type ~= "description" and argTable.type ~= "header" and argName ~= "profiles") then
-        if (type(getter) == "string") then
-          if getter == "GetCurrentProfile" then return end -- TODO hmmmm?
-          optionsManager[getter](optionsManager, info)
-        elseif(type(getter) == "function") then
-          getter(info)
-        end
-      end
-    end
-  end
-
-  recursiveGet("options", optionsManager.optionsTable)
-end
-
 function optionsManager:InitializeOptionsWidthRecursive(table, wDef)
   for _,v in pairs(table) do
     if (v.type == "group") then
@@ -874,118 +879,6 @@ function optionsManager:InitializeOptionsWidthRecursive(table, wDef)
   end
 end
 
--- // global getters and setters // --
-
-function optionsManager:Getter(info)
-  self:Setter(info, NysTDL.db.profile[info[#info]])
-  return NysTDL.db.profile[info[#info]]
-end
-
-function optionsManager:Setter(info, ...)
-  NysTDL.db.profile[info[#info]] = ...
-  print("Setter")
-end
-
--- // specific getters and setters // --
-
--- // 'General' tab // --
-
---favoritesColor
-function optionsManager:favoritesColorGET(info)
-  self:favoritesColorSET(info, unpack(NysTDL.db.profile.favoritesColor))
-  return unpack(NysTDL.db.profile.favoritesColor)
-end
-
-function optionsManager:favoritesColorSET(info, ...)
-  NysTDL.db.profile.favoritesColor = { ... }
-  -- mainFrame:UpdateVisuals() -- TODO unauthorised
-end
-
--- tdlButtonShow
-function optionsManager:tdlButtonShowGET(info)
-  self:tdlButtonShowSET(info, NysTDL.db.profile.tdlButton.show)
-  return NysTDL.db.profile.tdlButton.show
-end
-
-function optionsManager:tdlButtonShowSET(info, newValue)
-  NysTDL.db.profile.tdlButton.show = newValue
-  widgets:RefreshTDLButton()
-end
-
--- tdlButtonRed
-function optionsManager:tdlButtonRedGET(info)
-  self:tdlButtonRedSET(info, NysTDL.db.profile.tdlButton.red)
-  return NysTDL.db.profile.tdlButton.red
-end
-
-function optionsManager:tdlButtonRedSET(info, newValue)
-  NysTDL.db.profile.tdlButton.red = newValue
-  widgets:UpdateTDLButtonColor()
-end
-
--- minimapButtonHide
-function optionsManager:minimapButtonHideGET(info)
-  self:minimapButtonHideSET(info, NysTDL.db.profile.minimap.hide)
-  return NysTDL.db.profile.minimap.hide
-end
-
-function optionsManager:minimapButtonHideSET(info, newValue)
-  NysTDL.db.profile.minimap.hide = newValue
-  databroker:RefreshMinimapButton()
-end
-
--- minimapButtonTooltip
-function optionsManager:minimapButtonTooltipGET(info)
-  self:minimapButtonTooltipSET(info, NysTDL.db.profile.minimap.tooltip)
-  return NysTDL.db.profile.minimap.tooltip
-end
-
-function optionsManager:minimapButtonTooltipSET(info, newValue)
-  NysTDL.db.profile.minimap.tooltip = newValue
-  databroker:RefreshMinimapButton() -- XXX
-end
-
--- keyBind
-function optionsManager:keyBindGET(info)
-  -- here we don't need to call the SET since the key binding is independant of profiles
-  return GetBindingKey("NysTDL")
-end
-
-function optionsManager:keyBindSET(info, newKey)
-  -- we only want one key to be ever bound to this
-  local key1, key2 = GetBindingKey("NysTDL") -- so first we get both keys associated to thsi addon (in case there are)
-  -- then we delete their binding from this addon (we clear every binding from this addon)
-  if key1 then SetBinding(key1) end
-  if key2 then SetBinding(key2) end
-
-  -- and finally we set the new binding key
-  if (newKey ~= '') then -- considering we pressed one (not ESC)
-    SetBinding(newKey, "NysTDL")
-  end
-
-  -- and save the changes
-
-  --@retail@
-  SaveBindings(GetCurrentBindingSet())
-  --@end-retail@
-
-  --[===[@non-retail@
-  AttemptToSaveBindings(GetCurrentBindingSet())
-  --@end-non-retail@]===]
-end
-
--- // 'Tabs' tab // --
-
-function optionsManager:GetterTabs(info)
-  self:SetterTabs(info, NysTDL.db.profile[info[#info]])
-  return NysTDL.db.profile[info[#info]]
-end
-
-function optionsManager:SetterTabs(info, ...)
-  NysTDL.db.profile[info[#info]] = ...
-  print("SetterTabs")
-end
-
 --/*******************/ INITIALIZATION /*************************/--
 
 function optionsManager:Initialize()
@@ -994,7 +887,7 @@ function optionsManager:Initialize()
 
   -- this is for adapting the width of the widgets to the length of their respective names (that can change with the locale)
   local wDef = { toggle = 160, select = 265, range = 200, keybinding = 200, color = 180 }
-  self:InitializeOptionsWidthRecursive(optionsManager.optionsTable.args.main.args, wDef)
+  optionsManager:InitializeOptionsWidthRecursive(optionsManager.optionsTable.args.main.args, wDef)
 
   -- we register our options table for AceConfig
   LibStub("AceConfigRegistry-3.0"):ValidateOptionsTable(optionsManager.optionsTable, addonName)
