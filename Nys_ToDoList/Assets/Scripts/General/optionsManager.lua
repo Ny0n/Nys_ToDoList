@@ -9,12 +9,15 @@ local widgets = addonTable.widgets
 local mainFrame = addonTable.mainFrame
 local databroker = addonTable.databroker
 local dataManager = addonTable.dataManager
+local resetManager = addonTable.resetManager
 local optionsManager = addonTable.optionsManager
 
 -- Variables
 local L = core.L
 local LDB = core.LDB
 local LDBIcon = core.LDBIcon
+
+local private = {}
 
 --/*******************/ OPTIONS TABLES /*************************/--
 
@@ -26,32 +29,384 @@ function getLeaf(info, x)
   return tbl
 end
 
+local function getTabInfo(info)
+  local tabID = getLeaf(info, 4).arg
+  local tabData = select(3, dataManager:Find(tabID))
+  local resetData
+  if tabData.reset.isSameEachDay then
+    resetData = tabData.reset.sameEachDay
+  else
+    resetData = tabData.reset.days[tabData.reset.configureDay]
+  end
+  return tabID, tabData, resetData
+end
+
 local tabManagementTable = {
-  addInput = {
+  -- / settings / --
+
+  settingsTab = {
     order = 1.1,
-    type = "execute",
-    name = "hey",
-    func = function(...)
-      print(...)
-      for k,v in pairs(...) do
-        print(k,v)
-      end
-    end,
+    type = "group",
+    name = "Settings",
+    args = {
+      removeTabExecute = {
+        order = 1.1,
+        type = "execute",
+        name = "Remove tab",
+        func = function(info)
+          local tabID = getTabInfo(info)
+          print(getLeaf(info, 4).arg)
+          print(info.arg)
+          print(info[#info-1].arg)
+          dataManager:DeleteTab(tabID)
+          private:RefreshTabManagement()
+        end,
+      },
+      renameTabInput = {
+        order = 1.2,
+        type = "input",
+        name = "Rename",
+        get = function(info)
+          local _, tabData = getTabInfo(info)
+          return tabData.name
+        end,
+        set = function(info, newName)
+          local tabID = getTabInfo(info)
+          dataManager:Rename(tabID, newName)
+        end,
+      },
+      instantRefreshToggle = {
+        order = 1.3,
+        type = "toggle",
+        name = "Instant refresh",
+        get = function(info)
+          return NysTDL.db.profile.instantRefresh
+        end,
+        set = function(info, state)
+          NysTDL.db.profile.instantRefresh = state
+        end,
+      },
+      deleteCheckedItemsToggle = {
+        order = 1.4,
+        type = "toggle",
+        name = "Delete checked items",
+        get = function(info)
+          local _, tabData = getTabInfo(info)
+          return tabData.deleteCheckedItems
+        end,
+        set = function(info, state)
+          local _, tabData = getTabInfo(info)
+          tabData.deleteCheckedItems = state
+          if state then
+            tabData.hideCheckedItems = false
+          end
+        end,
+        disabled = function(info)
+          local _, tabData = getTabInfo(info)
+          return tabData.hideCheckedItems
+        end,
+      },
+      hideCheckedItemsToggle = {
+        order = 1.5,
+        type = "toggle",
+        name = "Hide checked items",
+        get = function(info)
+          local _, tabData = getTabInfo(info)
+          return tabData.hideCheckedItems
+        end,
+        set = function(info, state)
+          local _, tabData = getTabInfo(info)
+          tabData.hideCheckedItems = state
+          if state then
+            tabData.deleteCheckedItems = false
+          end
+        end,
+        disabled = function(info)
+          local _, tabData = getTabInfo(info)
+          return tabData.deleteCheckedItems
+        end,
+      },
+      shownTabsMultiSelect = {
+        order = 1.6,
+        type = "multiselect",
+        name = "Shown tabs",
+        values = function(info)
+          local originalTabID, tabData = getTabInfo(info)
+          local shownIDs = {}
+          for tabID,tabData in dataManager:ForEach(enums.tab, getLeaf(info, 3).arg) do
+            if tabID ~= originalTabID then
+              shownIDs[tabID] = tabData.name
+            end
+          end
+          return shownIDs
+        end,
+        get = function(info, key)
+          local tabID, tabData = getTabInfo(info)
+          return not not tabData.shownIDs[key]
+        end,
+        set = function(info, key, state)
+          local tabID, tabData = getTabInfo(info)
+      		dataManager:UpdateShownTabID(tabID, key, state)
+        end,
+      },
+
+      -- / layout widgets / --
+
+      -- spacers
+      spacer111 = {
+        order = 1.11,
+        type = "description",
+        width = "full",
+        name = "",
+      },
+      spacer122 = {
+        order = 1.22,
+        type = "description",
+        width = "full",
+        name = "",
+      },
+      spacer133 = {
+        order = 1.33,
+        type = "description",
+        width = "full",
+        name = "",
+      },
+      spacer144 = {
+        order = 1.44,
+        type = "description",
+        width = "full",
+        name = "",
+      },
+      spacer155 = {
+        order = 1.55,
+        type = "description",
+        width = "full",
+        name = "",
+      },
+    },
   },
-  removeButton = {
-    order = 1.1,
-    type = "execute",
-    name = "Remove tab",
-    func = function(info)
-      local tabID = getLeaf(info, 4).arg
-      dataManager:DeleteTab(tabID)
-      local tbl1 = optionsManager.optionsTable.args.main.args.tabs.args["groupProfileTabManagement"]
-      local tbl2 = optionsManager.optionsTable.args.main.args.tabs.args["groupGlobalTabManagement"]
-      optionsManager:UpdateTabsInOptions(tbl1)
-      optionsManager:UpdateTabsInOptions(tbl2)
-      LibStub("AceConfigRegistry-3.0"):NotifyChange(addonName)
-    end,
+
+  -- / auto-reset / --
+
+  autoResetTab = {
+    order = 1.2,
+    type = "group",
+    name = "Auto-Reset",
+    args = {
+      resetDaysSelect = {
+        order = 2.1,
+        type = "multiselect",
+        name = "Reset days",
+        values = function(info)
+          local days = {
+            "Sunday",
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday",
+          }
+          return days
+        end,
+        get = function(info, key)
+          local _, tabData = getTabInfo(info)
+          return not not tabData.reset.days[key]
+        end,
+        set = function(info, key, state)
+          local tabID = getTabInfo(info)
+      		resetManager:UpdateResetDay(tabID, key, state)
+        end,
+      },
+      configureResetGroup = {
+        order = 2.2,
+        type = "group",
+        name = "Configure reset times",
+        inline = true,
+        args = {
+          configureDaySelect = {
+            order = 1.1,
+            type = "select",
+            name = "Configure day",
+            values = function(info)
+              local _, tabData = getTabInfo(info)
+              local days = {}
+              for day in pairs(tabData.reset.days) do
+                days[day] = utils:GetDayByNumber(day)
+              end
+              if not days[tabData.reset.configureDay] then
+                tabData.reset.configureDay = next(days)
+                print("SET CONFIGURE DAY", tabData.reset.configureDay)
+              end
+              return days
+            end,
+            get = function(info)
+              local _, tabData = getTabInfo(info)
+              return tabData.reset.configureDay
+            end,
+            set = function(info, value)
+              local _, tabData = getTabInfo(info)
+              tabData.reset.configureDay = value
+            end,
+            disabled = function(info)
+              local _, tabData = getTabInfo(info)
+              return tabData.reset.isSameEachDay
+            end,
+          },
+          isSameEachDayToggle = {
+            order = 1.2,
+            type = "toggle",
+            name = "Is same each day",
+            get = function(info)
+              local _, tabData = getTabInfo(info)
+              return tabData.reset.isSameEachDay
+            end,
+            set = function(info, state)
+              local tabID = getTabInfo(info)
+              resetManager:UpdateIsSameEachDay(tabID, state)
+            end,
+          },
+          addNewResetTimeExecute = {
+            order = 1.3,
+            type = "execute",
+            name = "Add new reset",
+            func = function(info)
+              local tabID, _, resetData = getTabInfo(info)
+              resetManager:AddResetTime(tabID, resetData)
+            end,
+          },
+          removeResetTimeExecute = {
+            order = 1.4,
+            type = "execute",
+            name = "Remove reset",
+            func = function(info)
+              local tabID, tabData, resetData = getTabInfo(info)
+              resetManager:RemoveResetTime(tabID, resetData, tabData.reset.configureResetTime)
+            end,
+          },
+          configureResetTimeSelect = {
+            order = 1.5,
+            type = "select",
+            name = "Configure reset",
+            values = function(info)
+              local _, tabData, resetData = getTabInfo(info)
+              local resets = {}
+              for resetTimeName in pairs(resetData.resetTimes) do
+                resets[resetTimeName] = resetTimeName
+              end
+              if not resets[tabData.reset.configureResetTime] then
+                tabData.reset.configureResetTime = next(resets)
+              end
+              return resets
+            end,
+            get = function(info)
+              local _, tabData = getTabInfo(info)
+              return tabData.reset.configureResetTime
+            end,
+            set = function(info, value)
+              local _, tabData = getTabInfo(info)
+              tabData.reset.configureResetTime = value
+            end,
+          },
+          renameResetTimeInput = {
+            order = 1.6,
+            type = "input",
+            name = "Rename",
+            get = function(info)
+              local _, tabData = getTabInfo(info)
+              return tabData.reset.configureResetTime
+            end,
+            set = function(info, newName)
+              local tabID, tabData, resetData = getTabInfo(info)
+              resetManager:RenameResetTime(tabID, resetData, tabData.reset.configureResetTime, newName)
+            end,
+          },
+          hourResetTimeRange = {
+            order = 1.7,
+            type = "range",
+            name = "Hour",
+            min = 0,
+            max = 23,
+            step = 1,
+            get = function(info)
+              local _, tabData, resetData = getTabInfo(info)
+              return resetData.resetTimes[tabData.reset.configureResetTime].hour
+            end,
+            set = function(info, value)
+              local tabID, tabData, resetData = getTabInfo(info)
+              local timeData = resetData.resetTimes[tabData.reset.configureResetTime]
+              resetManager:UpdateTimeData(tabID, timeData, value)
+            end,
+          },
+          minResetTimeRange = {
+            order = 1.8,
+            type = "range",
+            name = "Min",
+            min = 0,
+            max = 59,
+            step = 1,
+            get = function(info)
+              local _, tabData, resetData = getTabInfo(info)
+              return resetData.resetTimes[tabData.reset.configureResetTime].min
+            end,
+            set = function(info, value)
+              local tabID, tabData, resetData = getTabInfo(info)
+              local timeData = resetData.resetTimes[tabData.reset.configureResetTime]
+              resetManager:UpdateTimeData(tabID, timeData, nil, value)
+            end,
+          },
+          secResetTimeRange = {
+            order = 1.9,
+            type = "range",
+            name = "Sec",
+            min = 0,
+            max = 59,
+            step = 1,
+            get = function(info)
+              local _, tabData, resetData = getTabInfo(info)
+              return resetData.resetTimes[tabData.reset.configureResetTime].sec
+            end,
+            set = function(info, value)
+              local tabID, tabData, resetData = getTabInfo(info)
+              local timeData = resetData.resetTimes[tabData.reset.configureResetTime]
+              resetManager:UpdateTimeData(tabID, timeData, nil, nil, value)
+            end,
+          },
+
+          -- / layout widgets / --
+
+          spacer171 = {
+            order = 1.71,
+            type = "description",
+            width = "full",
+            name = "",
+          },
+          spacer181 = {
+            order = 1.81,
+            type = "description",
+            width = "full",
+            name = "",
+          },
+        },
+        hidden = function(info)
+          local _, tabData = getTabInfo(info)
+          return not next(tabData.reset.days) -- the configure group only appears if there is at least one day selected
+        end,
+      },
+    },
   },
+
+  -- -- headers
+  -- header1 = {
+  --   order = 1,
+  --   type = "header",
+  --   name = "Settings",
+  -- },
+  -- header2 = {
+  --   order = 2,
+  --   type = "header",
+  --   name = "Auto-Reset",
+  -- },
 }
 
 local tabAddTable = {
@@ -60,10 +415,6 @@ local tabAddTable = {
     type = "input",
     name = "Tab name",
     get = function(info)
-      local tbl1 = optionsManager.optionsTable.args.main.args.tabs.args["groupProfileTabManagement"]
-      local tbl2 = optionsManager.optionsTable.args.main.args.tabs.args["groupGlobalTabManagement"]
-      optionsManager:UpdateTabsInOptions(tbl1)
-      optionsManager:UpdateTabsInOptions(tbl2)
       return ""
     end,
     set = function(info, tabName)
@@ -73,7 +424,7 @@ local tabAddTable = {
 
   -- / layout widgets / --
 
-  -- -- spacers
+  -- spacers
   -- spacer099 = {
   --   order = 0.99,
   --   type = "description",
@@ -89,12 +440,11 @@ local tabAddTable = {
   }, -- header1
 }
 
-function optionsManager:UpdateTabsInOptions(options)
+function private:UpdateTabsInOptions(options)
   -- local options = getLeaf(info, 3)
   local arg, args = options.arg, options.args
 
   for k,v in pairs(args) do
-    print("try to nil")
     if v.type == "group" then
       args[k] = nil
     end
@@ -104,13 +454,20 @@ function optionsManager:UpdateTabsInOptions(options)
     args[tabID] = {
       order = 1.1,
       type = "group",
+      childGroups = "tab",
       name = tabData.name,
       arg = tabID,
       args = tabManagementTable,
     }
   end
+end
 
-  LibStub("AceConfigRegistry-3.0"):NotifyChange(addonName)
+function private:RefreshTabManagement()
+  local profile = optionsManager.optionsTable.args.main.args.tabs.args["groupProfileTabManagement"]
+  local global = optionsManager.optionsTable.args.main.args.tabs.args["groupGlobalTabManagement"]
+  private:UpdateTabsInOptions(profile)
+  private:UpdateTabsInOptions(global)
+  -- LibStub("AceConfigRegistry-3.0"):NotifyChange(addonName) -- TODO NOW? FIX (visual glitch)
 end
 
 local function createAddonOptionsTable()
@@ -299,12 +656,13 @@ local function createAddonOptionsTable()
             get = "GetterTabs",
             set = "SetterTabs",
             args = {
-              instantRefresh = {
+              optionsUpdater = {
                 order = 0.1,
                 type = "toggle",
-                name = L["Instant refresh"],
-                desc = L["Applies the following settings instantly when checking items, instead of waiting for any other action"],
-              }, -- instantRefresh
+                name = "options updater",
+                -- hidden = true,
+                get = function() private:RefreshTabManagement() end
+              }, -- optionsUpdater
               groupProfileTabManagement = {
                 order = 1.1,
                 type = "group",
@@ -323,12 +681,12 @@ local function createAddonOptionsTable()
               -- / layout widgets / --
 
               -- spacers
-              spacer099 = {
-                order = 0.99,
-                type = "description",
-                width = "full",
-                name = "\n",
-              }, -- spacer099
+              -- spacer111 = {
+              --   order = 1.11,
+              --   type = "description",
+              --   width = "full",
+              --   name = "\n",
+              -- }, -- spacer111
 
               -- headers
               header1 = {

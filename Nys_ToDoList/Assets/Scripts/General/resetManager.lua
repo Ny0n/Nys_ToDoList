@@ -44,6 +44,8 @@ function private:NewResetData()
 	}
 
   -- reset = { -- key in tab
+  --   configureDay = {1-7},
+  --   configureResetTime = resetTimeName,
   --   isSameEachDay = true,
   --   sameEachDay = private:NewResetData(), -- isSameEachDay reset data
   --   days = { -- the actual reset times used for the auto reset on each given day
@@ -70,11 +72,17 @@ end
 
 -- reset times
 
-function resetManager:AddResetTime(tabID, resetData, resetTimeName)
-	if resetData.resetTimes[resetTimeName] then
-		-- TODO message
-		return false
-	end
+function resetManager:AddResetTime(tabID, resetData)
+  local nb = 0
+  for _ in pairs(resetData.resetTimes) do
+    nb = nb + 1
+  end
+
+  local resetTimeName
+  repeat
+    resetTimeName = "Reset"..' '..tostring(nb+1)
+    nb = nb + 1
+  until not resetData.resetTimes[resetTimeName]
 
 	resetData.resetTimes[resetTimeName] = private:NewRawTimeData()
 
@@ -84,7 +92,11 @@ function resetManager:AddResetTime(tabID, resetData, resetTimeName)
 end
 
 function private:CanRemoveResetTime(resetData)
-  return not #resetData.resetTimes <= 1
+  local nb = 0
+  for _ in pairs(resetData.resetTimes) do
+    nb = nb + 1
+  end
+  return not (nb <= 1)
 end
 
 function resetManager:RemoveResetTime(tabID, resetData, resetTimeName)
@@ -96,6 +108,7 @@ function resetManager:RemoveResetTime(tabID, resetData, resetTimeName)
 
   if not private:CanRemoveResetTime(resetData) then -- safety check
     -- TODO message?
+    print("Cannot remove reset -- there must be at least one")
     return false
   end
 
@@ -121,9 +134,9 @@ end
 function resetManager:UpdateTimeData(tabID, timeData, hour, min, sec)
   if not timeData.hour or not timeData.min or not timeData.sec then error("UpdateTimeData error: timeData is not valid") end
 
-	timeData.hour = utils:Clamp(hour, 0, 23)
-	timeData.min = utils:Clamp(min, 0, 59)
-	timeData.sec = utils:Clamp(sec, 0, 59)
+  if hour then timeData.hour = utils:Clamp(hour, 0, 23) end
+	if min then timeData.min = utils:Clamp(min, 0, 59) end
+	if sec then timeData.sec = utils:Clamp(sec, 0, 59) end
 
 	private:StartNextTimers(tabID) -- update
 end
@@ -387,6 +400,8 @@ end
 function resetManager:InitTabData(tabData)
   -- creates the reset data associated with tabs
   tabData.reset = { -- content is user set
+    configureDay = nil,
+    configureResetTime = nil,
     isSameEachDay = true,
     sameEachDay = private:NewResetData(), -- isSameEachDay reset data
     days = { -- the actual reset times used for the auto reset on each given day

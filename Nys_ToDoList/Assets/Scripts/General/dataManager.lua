@@ -34,7 +34,7 @@ local L = core.L
 local maxNameWidth = {
 	[enums.item] = 240,
 	[enums.category] = 220,
-	[enums.tab] = 80,
+	[enums.tab] = 150,
 }
 
 -- global aliases
@@ -48,12 +48,19 @@ local random = math.random
 
 -- id func
 function dataManager:NewID()
-	-- uuid
-	local template ='xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
-	return (select(1, string.gsub(template, '[xy]', function(c)
-		local v = (c == 'x') and random(0, 0xf) or random(8, 0xb)
+	-- no dashes uuid
+	local template ='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+	return (select(1, string.gsub(template, 'x', function(c)
+		local v = random(0, 0xf)
 		return string.format('%x', v)
 	end)))
+
+	-- -- uuid
+	-- local template ='xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
+	-- return (select(1, string.gsub(template, '[xy]', function(c)
+	-- 	local v = (c == 'x') and random(0, 0xf) or random(8, 0xb)
+	-- 	return string.format('%x', v)
+	-- end)))
 
 	-- local newID = NysTDL.db.global.nextID
 	-- NysTDL.db.global.nextID = NysTDL.db.global.nextID + 1
@@ -62,7 +69,7 @@ end
 
 function dataManager:IsID(ID)
 	if type(ID) ~= enums.idtype then return end
-	if not string.match(ID, '^[0-9a-f]+-[0-9a-f]+-[0-5][0-9a-f]+-[089ab][0-9a-f]+-[0-9a-f]+$') then return end
+	-- if not string.match(ID, '^[0-9a-f]+-[0-9a-f]+-[0-5][0-9a-f]+-[089ab][0-9a-f]+-[0-9a-f]+$') then return end
 	if not pcall(dataManager.Find, dataManager, ID) then return end -- raises an error if the ID is not found
 
 	return true
@@ -690,7 +697,7 @@ local function updateItemShownTabID(itemID, itemData, tabID, tabData, shownTabID
 	end
 end
 
-function dataManager:UpdateTabsDisplay(shownTabID, modif, ID)
+function dataManager:UpdateTabsDisplay(shownTabID, modif, ID) -- TODO fix remove
 	-- // big important func to update what is shown in what tab
 
 	-- both shownTabID and ID are the same global or profile state

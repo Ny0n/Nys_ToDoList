@@ -642,8 +642,8 @@ function mainFrame:Refresh()
   if tabData.deleteCheckedItems then
     for itemID,itemData in dataManager:ForEach(enums.item, tabID) do -- for each item in the tab
       if itemData.originalTabID == tabID and itemData.checked then -- if the item is native to the tab and checked
-        mainFrame:DontRefreshNextTime()
-        mainFrame:RemoveItem(itemID)
+        mainFrame:DontRefreshNextTime() -- TODO fix IsProtected
+        dataManager:DeleteItem(itemID)
       end
     end
   end
@@ -1142,7 +1142,7 @@ function mainFrame:CreateTDLFrame()
       UIDropDownMenu_AddButton(info)
     end
   end)
-  mainFrame.tabSelect:SetPoint("CENTER", UIParent, "CENTER", 0, 300)
+  mainFrame.tabSelect:SetPoint("CENTER", UIParent, "CENTER", 0, 450)
 
   -- global
   mainFrame.tabSelectGlobal = CreateFrame("FRAME", nil, UIParent, "UIDropDownMenuTemplate")
@@ -1168,7 +1168,7 @@ function mainFrame:CreateTDLFrame()
       UIDropDownMenu_AddButton(info)
     end
   end)
-  mainFrame.tabSelectGlobal:SetPoint("CENTER", UIParent, "CENTER", 0, 250)
+  mainFrame.tabSelectGlobal:SetPoint("CENTER", UIParent, "CENTER", 0, 400)
   -- local btn = CreateFrame("Frame", nil, UIParent, "LargeUIDropDownMenuTemplate")
   -- btn:SetPoint("CENTER")
   -- UIDropDownMenu_SetWidth(btn, 200)
