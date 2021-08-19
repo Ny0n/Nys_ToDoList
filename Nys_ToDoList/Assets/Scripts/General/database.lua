@@ -250,6 +250,8 @@ function database:ProfileNewVersion() -- profile
       end
     end
 
+    -- TODO NOW delete / hide checked items & check every var diff
+
     local contentTabs = {}
 
     -- we recreate every cat, and every item

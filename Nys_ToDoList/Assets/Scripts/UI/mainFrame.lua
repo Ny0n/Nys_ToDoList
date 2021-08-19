@@ -616,11 +616,14 @@ function mainFrame:UpdateVisuals()
   widgets:UpdateTDLButtonColor()
 end
 
-function mainFrame:DontRefreshNextTime()
-  -- // this func is for optimization:
-  -- as an example, i sometimes only need to refresh the list one time after 10 operations instead of 10 times
+function mainFrame:DontRefreshNextTime(nb)
+  -- // this func's sole purpose is optimization:
+  -- ex: i sometimes only need to refresh the list one time after 10 operations instead of 10 times
+  if type(nb) ~= "number" then
+    nb = 1
+  end
 
-  dontRefreshPls = dontRefreshPls + 1
+  dontRefreshPls = dontRefreshPls + nb
 end
 
 function mainFrame:Refresh()
@@ -628,7 +631,6 @@ function mainFrame:Refresh()
 
   -- anti-refresh for optimization
   if dontRefreshPls > 0 then
-    --print("NO REFRESH --------")
     dontRefreshPls = dontRefreshPls - 1
     return
   end
@@ -639,24 +641,13 @@ function mainFrame:Refresh()
   local tabData = select(3, dataManager:Find(tabID))
 
   -- TAB OPTION: delete checked items
-  if tabData.deleteCheckedItems then
-    for itemID,itemData in dataManager:ForEach(enums.item, tabID) do -- for each item in the tab
-      if itemData.originalTabID == tabID and itemData.checked then -- if the item is native to the tab and checked
-        if not dataManager:IsProtected(itemID) then
-          mainFrame:DontRefreshNextTime()
-          itemData.checked = false
-          dataManager:DeleteItem(itemID)
-        end
-      end
-    end
-  end
+  if tabData.deleteCheckedItems then dataManager:DeleteCheckedItems(tabID) end
 
   -- // ************************************************************* // --
 
   loadContent() -- content reloading (menus, buttons, ...)
   loadList() -- list reloading (categories, items, ...)
   mainFrame:UpdateVisuals() -- coloring...
-  --print("mainFrame:Refresh()")
 end
 
 --/*******************/ FRAME CREATION /*************************/--

@@ -77,11 +77,31 @@ function Nys_Tests(yes)
     -- local timeUntil = autoReset:GetSecondsToReset()
     -- print(timeUntil.hour, timeUntil.min + 1)
   elseif yes == 5 then -- EXPLOSION
-    for i = 1, 100 do
-      mainFrame:DontRefreshNextTime()
-      dataManager:CreateItem(tostring(i), "4b4b940e-bdd7-4650-b16d-2106c5af4616", "904ace6a-a5e6-41af-aa4b-b3395b3259ba")
+    local refreshID = dataManager:SetRefresh(false)
+
+    -- local itemTabID, itemCatID
+    -- for tabID,tabData in dataManager:ForEach(enums.tab) do
+    --   if tabData.name == "All" then
+    --     itemCatID = dataManager:CreateCategory("EXPLOSION", tabID)
+    --     itemTabID = tabID
+    --   end
+    -- end
+    -- for i = 1, 100 do
+    --   dataManager:CreateItem(tostring(i), itemTabID, itemCatID)
+    -- end
+
+    for i=1,2000 do
+      dataManager:Undo()
     end
+
+  	dataManager:SetRefresh(true, refreshID)
+
     mainFrame:Refresh()
+  elseif yes == 6 then
+    print("<Undo Table>")
+    for k,v in pairs(NysTDL.db.profile.undoTable) do
+      print(k, v)
+    end
   end
   print("--Nys_Tests--")
 end

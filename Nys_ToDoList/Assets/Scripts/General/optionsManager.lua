@@ -61,9 +61,22 @@ local tabManagementTable = {
           dataManager:DeleteTab(tabID)
           private:RefreshTabManagement()
         end,
+        disabled = function(info)
+          local tabID = getTabInfo(info)
+          return dataManager:IsProtected(tabID)
+        end,
+      },
+      removeTabDescription = {
+        order = 1.2,
+        type = "description",
+        name = "Cannot remove this tab, there must be at least one left",
+        hidden = function(info)
+          local tabID = getTabInfo(info)
+          return not dataManager:IsProtected(tabID)
+        end,
       },
       renameTabInput = {
-        order = 1.2,
+        order = 1.3,
         type = "input",
         name = "Rename",
         get = function(info)
@@ -76,7 +89,7 @@ local tabManagementTable = {
         end,
       },
       instantRefreshToggle = {
-        order = 1.3,
+        order = 1.4,
         type = "toggle",
         name = "Instant refresh",
         get = function(info)
@@ -87,7 +100,7 @@ local tabManagementTable = {
         end,
       },
       deleteCheckedItemsToggle = {
-        order = 1.4,
+        order = 1.5,
         type = "toggle",
         name = "Delete checked items",
         get = function(info)
@@ -107,7 +120,7 @@ local tabManagementTable = {
         end,
       },
       hideCheckedItemsToggle = {
-        order = 1.5,
+        order = 1.6,
         type = "toggle",
         name = "Hide checked items",
         get = function(info)
@@ -127,7 +140,7 @@ local tabManagementTable = {
         end,
       },
       shownTabsMultiSelect = {
-        order = 1.6,
+        order = 1.7,
         type = "multiselect",
         name = "Shown tabs",
         values = function(info)
@@ -153,32 +166,32 @@ local tabManagementTable = {
       -- / layout widgets / --
 
       -- spacers
-      spacer111 = {
-        order = 1.11,
+      spacer121 = {
+        order = 1.21,
         type = "description",
         width = "full",
         name = "",
       },
-      spacer122 = {
-        order = 1.22,
+      spacer131 = {
+        order = 1.31,
         type = "description",
         width = "full",
         name = "",
       },
-      spacer133 = {
-        order = 1.33,
+      spacer141 = {
+        order = 1.41,
         type = "description",
         width = "full",
         name = "",
       },
-      spacer144 = {
-        order = 1.44,
+      spacer151 = {
+        order = 1.51,
         type = "description",
         width = "full",
         name = "",
       },
-      spacer155 = {
-        order = 1.55,
+      spacer161 = {
+        order = 1.61,
         type = "description",
         width = "full",
         name = "",
