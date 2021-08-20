@@ -71,11 +71,16 @@ function Nys_Tests(yes)
     end
     print(tdlFrame.fadeInfo.finishedFunc)
   elseif yes == 4 then
-    -- print("Daily:    "..tostringall(NysTDL.db.profile.autoReset["Daily"]))
-    -- print("Weekly: "..tostringall(NysTDL.db.profile.autoReset["Weekly"]))
-    -- print("Time:    "..tostringall(time()))
-    -- local timeUntil = autoReset:GetSecondsToReset()
-    -- print(timeUntil.hour, timeUntil.min + 1)
+  	for tabID, tabData in dataManager:ForEach(enums.tab, false) do
+      if next(tabData.reset.days) then
+        print(">================<")
+        print(tabData.name.." tab next reset times:")
+    		for timerResetID,targetTime in pairs(tabData.reset.nextResetTimes) do
+          resetManager:PrintTimeDiff(timerResetID, targetTime)
+    		end
+      end
+    end
+    print("<================>")
   elseif yes == 5 then -- EXPLOSION
     local refreshID = dataManager:SetRefresh(false)
 

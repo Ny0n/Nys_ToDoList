@@ -15,6 +15,26 @@ local private = {}
 
 local autoResetedThisSession = false
 
+function resetManager:PrintTimeDiff(timerResetID, ttime)
+  local ctime = time()
+  local days, hours, mins, secs = 0, 0, 0, 0
+  local diff = math.abs(ttime - ctime)
+  while diff>=86400 do
+    diff = diff - 86400
+    days = days + 1
+  end
+  while diff>=3600 do
+    diff = diff - 3600
+    hours = hours + 1
+  end
+  while diff>=60 do
+    diff = diff - 60
+    mins = mins + 1
+  end
+  secs = diff
+  print(string.sub(timerResetID, 1, 3), string.format("Difference: (%s) %d days, %d hours, %d mins, %d secs", ttime > ctime and '+' or '-', days, hours, mins, secs))
+end
+
 --/*******************/ TABS RESET MANAGMENT /*************************/--
 
 -- // reset data
@@ -92,6 +112,10 @@ function resetManager:AddResetTime(tabID, resetData)
 	resetData.resetTimes[resetTimeName] = private:NewRawTimeData()
 
 	private:StartNextTimers(tabID) -- update
+
+  -- we select the new reset time
+  local tabData = select(3, dataManager:Find(tabID))
+  tabData.reset.configureResetTime = resetTimeName
 
 	return resetData.resetTimes[resetTimeName]
 end
@@ -187,8 +211,16 @@ end
 
 -- this table is to keep track of every currently active timer IDs for every tab
 local activeTimerIDs = {
-	-- [tabID] = { 5, 22, 45 }, (timerIDs)
-	-- [tabID] = { 1, 78, 12 }, (timerIDs)
+	-- [tabID] = { -- (timerIDs)
+  --   [timerResetID] = 5,
+  --   [timerResetID] = 22,
+  --   [timerResetID] = 45
+  -- },
+	-- [tabID] = { -- (timerIDs)
+  --   [timerResetID] = 1,
+  --   [timerResetID] = 78,
+  --   [timerResetID] = 12
+  -- },
 	-- ...
 }
 
@@ -281,7 +313,7 @@ function private:StartNextTimers(tabID)
 	-- first we cancel every active timer for the tab (if there were any),
 	-- as well as removing the content of the saved tab data (nextResetTimes), since we're gonna refill it anyways
 	if type(activeTimerIDs[tabID]) ~= "table" then activeTimerIDs[tabID] = {} end -- local var init
-	for timerPos,timerID in pairs(activeTimerIDs[tabID]) do
+	for _,timerID in pairs(activeTimerIDs[tabID]) do
 		NysTDL:CancelTimer(timerID)
 	end
 	wipe(activeTimerIDs[tabID])
@@ -296,15 +328,27 @@ function private:StartNextTimers(tabID)
 		if reset.days[targetDay] then
 			local foundOne = false
 			for name,resetTime in pairs(reset.days[currentDate.wday].resetTimes) do -- for each of them
-				if currentDate.hour <= resetTime.hour and currentDate.min <= resetTime.min and currentDate.sec <= resetTime.sec then
-					-- if the targeted reset time is still ahead of us
+				local secondsUntil = getSecondsUntil(currentDate, targetDay, resetTime)
+        if secondsUntil <= 86400 and secondsUntil > 0 then
+          -- if the targeted reset time is still ahead of us
 					-- then we start a timer for it
-					local secondsUntil = getSecondsUntil(currentDate, targetDay, resetTime)
 					private:StartTimer(tabID, currentTime, secondsUntil)
 					foundOne = true
 				end
 			end
-			if foundOne then return end
+			if foundOne then
+        for tabID, tabData in dataManager:ForEach(enums.tab, false) do
+          if next(tabData.reset.days) then
+            print(">================<")
+            print(tabData.name.." tab next reset times:")
+            for timerResetID,targetTime in pairs(tabData.reset.nextResetTimes) do
+              resetManager:PrintTimeDiff(timerResetID, targetTime)
+            end
+          end
+        end
+        print("<================>")
+        return
+      end
 		end
 
 		-- if it's not today, then we find the next reset day, in order
@@ -316,45 +360,62 @@ function private:StartNextTimers(tabID)
 		-- then we start every timer for the targeted day (can be one week later at maximum)
 		for name,resetTime in pairs(reset.days[targetDay].resetTimes) do -- for each of them
 			local secondsUntil = getSecondsUntil(currentDate, targetDay, resetTime)
+      if secondsUntil == 0 then secondsUntil = 604800 end
 			private:StartTimer(tabID, currentTime, secondsUntil)
 		end
 	end
+
+  for tabID, tabData in dataManager:ForEach(enums.tab, false) do
+    if next(tabData.reset.days) then
+      print(">================<")
+      print(tabData.name.." tab next reset times:")
+      for timerResetID,targetTime in pairs(tabData.reset.nextResetTimes) do
+        resetManager:PrintTimeDiff(timerResetID, targetTime)
+      end
+    end
+  end
+  print("<================>")
 end
 
 function private:StartTimer(tabID, currentTime, secondsUntil)
-	-- TODO min 1 sec ?
-	local tabData = select(3, dataManager:Find(tabID))
-	local nextResetTimes = tabData.reset.nextResetTimes
-	if not nextResetTimes.n then nextResetTimes.n = 0 end -- timers pos init
-	nextResetTimes.n = nextResetTimes.n + 1
+	-- IMPORTANT this func will never be called with secondsUntil == 0, it's at least 1 sec
+  -- (i'm doing specific verifications for this at the places i'm calling this func)
+  -- this means that we can't start a timer that will instantly finish, it will either find an other one (the next one) or make it loop one week
 
-	local timerID = NysTDL:ScheduleTimer("Timer_ResetTab", secondsUntil, tabID, nextResetTimes.n)
-	activeTimerIDs[tabID][nextResetTimes.n] = timerID -- we keep track of the timerIDs
+  local timerResetID = dataManager:NewID()
+	local timerID = NysTDL:ScheduleTimer("Timer_ResetTab", secondsUntil, tabID, timerResetID)
+	activeTimerIDs[tabID][timerResetID] = timerID -- we keep track of the timerIDs
 
 	-- and we keep track of the targeted time of the timer,
 	-- this if to know if we need to reset tabs at log-in (or profile switch)
+	local tabData = select(3, dataManager:Find(tabID))
 	local targetTime = currentTime + secondsUntil
-	nextResetTimes[nextResetTimes.n] = targetTime
+	tabData.reset.nextResetTimes[timerResetID] = targetTime
 end
 
-function NysTDL:Timer_ResetTab(tabID, timerPos)
+function NysTDL:Timer_ResetTab(tabID, timerResetID)
   -- auto reset function, called by timers
   -- (there are some checks to make sure that the func was indeed called by timers, and not by the player in-game)
-  if not tabID or not timerPos then return end
+  if not tabID or not timerResetID then return end
 
 	-- first we remove the nextResetTime corresponding to the current reset
 	local tabData = select(3, dataManager:Find(tabID)) -- this will error if the ID is not valid
-  if not tabData.reset.nextResetTimes[timerPos] then return end
-	tabData.reset.nextResetTimes[timerPos] = nil
+  if not tabData.reset.nextResetTimes[timerResetID] then return end
+	tabData.reset.nextResetTimes[timerResetID] = nil
 
   -- as well as removing the current timer from the active ones
-	activeTimerIDs[tabID][timerPos] = nil
+	activeTimerIDs[tabID][timerResetID] = nil
 
 	-- then we uncheck the tab (this is the auto-uncheck func after all)
-	dataManager:ToggleTabChecked(ctab(), false)
+	dataManager:ToggleTabChecked(tabID, false)
 
 	-- and finally, we check if we need to restart timers for the tab
+  print("Timer_ResetTab", timerResetID)
+  for k,v in pairs(tabData.reset.nextResetTimes) do
+    print(k,v)
+  end
 	if not next(tabData.reset.nextResetTimes) then -- if the last reset for the day was done
+    print("Timer_ResetTab RESTART")
 		private:StartNextTimers(tabID) -- we find the next valid day and restart new timers
 	end
 end
@@ -368,7 +429,7 @@ function resetManager:Initialize(profileChanged)
 		-- when we're here, it means that the profile just changed,
 		-- so we cancel every timer we had started, without removing the saved var data in each tab
 		for _,timerIDs in pairs(activeTimerIDs) do
-			for timerPos,timerID in pairs(timerIDs) do
+			for _,timerID in pairs(timerIDs) do
 				NysTDL:CancelTimer(timerID)
 			end
 		end
@@ -376,14 +437,13 @@ function resetManager:Initialize(profileChanged)
 	end
 
 	local currentTime = time()
-	for tabID, tabData in dataManager:ForEach(enums.tab, profileChanged) do -- for every concerned tab
-		-- first we check if we already passed a previously reset time,
+	for tabID,tabData in dataManager:ForEach(enums.tab, profileChanged) do -- for every concerned tab
+		-- first we check if we already passed a previous reset time,
 		-- in which case we uncheck the tab
-		for timerPos,targetTime in ipairs(tabData.reset.nextResetTimes) do
-      print(timerPos, targetTime)
-			if currentTime > targetTime then
-				dataManager:ToggleTabChecked(ctab(), false)
-        print("ResetManager: UncheckTab")
+		for _,targetTime in pairs(tabData.reset.nextResetTimes) do
+			if currentTime >= targetTime then
+				dataManager:ToggleTabChecked(tabID, false)
+        print("ResetManager: Uncheck "..tabData.name.." tab")
 				autoResetedThisSession = true -- TODO redo??
 				break
 			end
@@ -416,9 +476,8 @@ function resetManager:InitTabData(tabData)
       -- ...
     },
     nextResetTimes = { -- for when we log on or reload the addon, we first check if a reset date has passed
-      n = 0,
-      -- [1 (n++)] = 115884212 (time() + timeUntil)
-      -- [2 (n++)] = 115847721 (time() + timeUntil)
+      -- [timerResetID] = 115884212 (time() + timeUntil)
+      -- [timerResetID] = 115847721 (time() + timeUntil)
       -- ...
     },
   }

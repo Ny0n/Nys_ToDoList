@@ -52,7 +52,9 @@ local tabManagementTable = {
       removeTabExecute = {
         order = 1.1,
         type = "execute",
-        name = "Remove tab",
+        name = "Delete tab",
+        confirm = true,
+        confirmText = "Deleting this tab will delete everything that was created in it.\nAre you sure?",
         func = function(info)
           local tabID = getTabInfo(info)
           print(getLeaf(info, 4).arg)
@@ -210,6 +212,7 @@ local tabManagementTable = {
         order = 2.1,
         type = "multiselect",
         name = "Reset days",
+        width = "full",
         values = function(info)
           local days = {
             "Sunday",
@@ -241,6 +244,7 @@ local tabManagementTable = {
             order = 1.1,
             type = "select",
             name = "Configure day",
+            width = 0.9,
             values = function(info)
               local _, tabData = getTabInfo(info)
               local days = {}
@@ -269,7 +273,8 @@ local tabManagementTable = {
           isSameEachDayToggle = {
             order = 1.2,
             type = "toggle",
-            name = "Is same each day",
+            name = "Same each day",
+            width = 0.9,
             get = function(info)
               local _, tabData = getTabInfo(info)
               return tabData.reset.isSameEachDay
@@ -283,6 +288,7 @@ local tabManagementTable = {
             order = 1.3,
             type = "execute",
             name = "Add new reset",
+            width = 0.9,
             func = function(info)
               local tabID, _, resetData = getTabInfo(info)
               resetManager:AddResetTime(tabID, resetData)
@@ -292,6 +298,7 @@ local tabManagementTable = {
             order = 1.4,
             type = "execute",
             name = "Remove reset",
+            width = 0.9,
             func = function(info)
               local tabID, tabData, resetData = getTabInfo(info)
               resetManager:RemoveResetTime(tabID, resetData, tabData.reset.configureResetTime)
@@ -305,6 +312,7 @@ local tabManagementTable = {
             order = 1.5,
             type = "select",
             name = "Configure reset",
+            width = 0.9,
             values = function(info)
               local _, tabData, resetData = getTabInfo(info)
               local resets = {}
@@ -329,6 +337,7 @@ local tabManagementTable = {
             order = 1.6,
             type = "input",
             name = "Rename",
+            width = 0.9,
             get = function(info)
               local _, tabData = getTabInfo(info)
               return tabData.reset.configureResetTime
@@ -392,6 +401,24 @@ local tabManagementTable = {
 
           -- / layout widgets / --
 
+          spacer121 = {
+            order = 1.21,
+            type = "description",
+            width = "full",
+            name = "",
+          },
+          spacer141 = {
+            order = 1.41,
+            type = "description",
+            width = "full",
+            name = "",
+          },
+          spacer161 = {
+            order = 1.61,
+            type = "description",
+            width = "full",
+            name = "",
+          },
           spacer171 = {
             order = 1.71,
             type = "description",
