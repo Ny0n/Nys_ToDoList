@@ -547,6 +547,42 @@ local function loadContent()
   end
 end
 
+local function recursiveLoad(tabID, catWidget, p)
+  local catData = catWidget.catData
+  if catData.closedInTabIDs[tabID] then
+    catWidget.emptyLabel:Hide()
+    p.newY = p.newY - enums.ofsyCat
+  else -- if the cat is opened, we display all of its content
+    p.newY = p.newY - enums.ofsyCatContent
+
+    if not next(catData.orderedContentIDs) then -- if there's nothing in the category, we show the empty label
+      catWidget.emptyLabel:Show()
+      p.newY = p.newY - enums.ofsyContentCat
+    else
+      catWidget.emptyLabel:Hide()
+
+      -- item widgets loop
+      p.newX = p.newX + enums.ofsxContent
+      for contentOrder,contentID in ipairs(catData.orderedContentIDs) do -- for everything in a base category
+        local contentWidget = contentWidgets[contentID]
+        if not dataManager:IsHidden(contentID, tabID) then -- if it's not hidden, we show the corresponding widget
+          contentWidget:SetPoint("TOPLEFT", tdlFrame.content.loadOrigin, "TOPLEFT", p.newX, p.newY)
+          contentWidget:Show()
+
+          if contentWidget.enum == enums.category then -- sub-category
+            recursiveLoad(tabID, contentWidget, p)
+          elseif contentWidget.enum == enums.item then -- item
+            p.newY = p.newY - enums.ofsyContent
+          end
+        end
+      end
+      p.newX = p.newX - enums.ofsxContent
+      p.newY = p.newY + enums.ofsyContent -- TODO take last used offset
+      p.newY = p.newY - enums.ofsyContentCat
+    end
+  end
+end
+
 local function loadList()
   -- // generating all of the content (items, checkboxes, editboxes, category labels...)
   -- it's the big big important generation loop (oof)
@@ -559,43 +595,31 @@ local function loadList()
 
   -- let's go!
   local tabID, tabData = ctab(), select(3, dataManager:Find(ctab()))
-  local newX, xSpace, newY, ySpace = 0, 12, 0, 28
-  local oldCatWidget = tdlFrame.content.dummyFrame -- starting point
+  local p = { -- pos table
+    newX = 0,
+    newY = 0,
+  }
 
   -- category widgets loop
   for catOrder,catID in ipairs(tabData.orderedCatIDs) do
-    contentWidgets[catID]:SetPoint("TOPLEFT", tdlFrame.content.dummyFrame, "TOPLEFT", newX, newY)
-    contentWidgets[catID]:Show()
+    local catWidget = contentWidgets[catID]
 
-    if oldCatWidget == tdlFrame.content.dummyFrame then -- if it's the first loaded cat widget
-      tutorialsManager:SetPoint("addItem", "RIGHT", contentWidgets[catID], "LEFT", -23, 0) -- we put the corresponding tuto on it
+    catWidget:SetPoint("TOPLEFT", tdlFrame.content.loadOrigin, "TOPLEFT", p.newX, p.newY)
+    catWidget:Show()
+
+    if catOrder == 1 then -- if it's the first loaded cat widget
+      tutorialsManager:SetPoint("addItem", "RIGHT", catWidget, "LEFT", -23, 0) -- we put the corresponding tuto on it
     end
 
-    oldCatWidget = contentWidgets[catID]
-    newY = newY - ySpace
-
-    local catData = contentWidgets[catID].catData
-
-    local originalTabName = select(3, dataManager:Find(catData.originalTabID)).name
+    local originalTabName = select(3, dataManager:Find(catWidget.catData.originalTabID)).name
     if originalTabName == tabData.name then
-      contentWidgets[catID].originalTabLabel:Hide()
+      catWidget.originalTabLabel:Hide()
     else -- if the tab is showing a cat that was not created here, we show the label specifying the cat's original tab
-      contentWidgets[catID].originalTabLabel:SetText("("..originalTabName.." tab)") -- TODO locale
-      contentWidgets[catID].originalTabLabel:Show()
+      catWidget.originalTabLabel:SetText("("..originalTabName.." tab)") -- TODO locale
+      catWidget.originalTabLabel:Show()
     end
 
-    if not catData.closedInTabIDs[tabID] then -- if the cat is opened, we display all of its items
-      -- item widgets loop
-      newX = newX + xSpace
-      for itemOrder,itemID in ipairs(catData.orderedContentIDs) do -- TODO for now, only items
-        if not contentWidgets[itemID].itemData.tabIDs[tabID] or not dataManager:IsHidden(itemID, tabID) then -- OPTIMIZE this func
-          contentWidgets[itemID]:SetPoint("TOPLEFT", tdlFrame.content.dummyFrame, "TOPLEFT", newX, newY)
-          contentWidgets[itemID]:Show()
-          newY = newY - ySpace
-        end
-      end
-      newX = newX - xSpace
-    end
+    recursiveLoad(tabID, catWidget, p)
   end
 
   -- drag&drop
@@ -1104,8 +1128,8 @@ local function generateFrameContent()
   content.nothingLabel = widgets:NothingLabel(content)
   content.nothingLabel:SetPoint("TOP", content.lineBottom, "TOP", 0, -20)
 
-  content.dummyFrame = widgets:Dummy(content, content.lineBottom, 0, 0)
-  content.dummyFrame:SetPoint("TOPLEFT", content.lineBottom, "TOPLEFT", -30, -30) -- TODO redo?
+  content.loadOrigin = widgets:Dummy(content, content.lineBottom, 0, 0)
+  content.loadOrigin:SetPoint("TOPLEFT", content.lineBottom, "TOPLEFT", -30, -30) -- TODO redo?
 end
 
 -- // Creating the main frame

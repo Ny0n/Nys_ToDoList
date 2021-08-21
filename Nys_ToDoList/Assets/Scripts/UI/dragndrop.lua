@@ -21,11 +21,11 @@ local normalAlpha = 1
 local selectedDimAlpha = 0 -- TODO idk what is nicer here
 local forbiddenDimAlpha = 0.3
 
-local catTopPos = { 0, 16 }
-local catBottomPos = { 0, -11 }
-local catItemPos = { 38, -11 }
-local itemPos = { 26, -11 }
-local itemCatPos = { -10, -11 } -- TODO redo clean
+local catTopPos = { 0, enums.ofsyCat/2 }
+local catBottomPos = { 0, -enums.ofsyCat/2 }
+local catItemPos = { 38, -enums.ofsyCatContent/2+4 }
+local itemPos = { 26, -enums.ofsyContent/2+4 }
+local itemCatPos = { -enums.ofsxContent, -enums.ofsyContentCat/2 }
 
 -- drag&drop data
 
@@ -119,13 +119,51 @@ end
 
 --/***************/ DROP FRAMES /*****************/--
 
+local function recursiveUpdate(tabID, catWidget, w)
+  local catID, catData, newDropFrame = catWidget.catID, catWidget.catData
+  local contentWidgets = mainFrame:GetContentWidgets()
+
+  if not catData.closedInTabIDs[tabID] then -- if the cat is not closed
+    newDropFrame = dragndrop:CreateDropFrame(catWidget, unpack(catItemPos)) -- /*item/ first item, under the cat
+    dragndrop:SetDropFrameData(newDropFrame, tabID, catID, 1)
+
+    tinsert(favsDropFrames, newDropFrame) -- favs can always be placed first
+    if dataManager:GetNextFavPos(catID) == 1 then
+      tinsert(itemsDropFrames, newDropFrame) -- and normal items only if there are no favs
+    end
+
+    -- content widgets loop
+    for contentOrder,contentID in ipairs(catData.orderedContentIDs) do -- for everything in a base category
+      local contentWidget = contentWidgets[contentID]
+      w.lastWidget = contentWidget
+
+      if not dataManager:IsHidden(contentID, tabID) then -- if it's not hidden, we show the corresponding widget
+        if contentWidget.enum == enums.category then -- sub-category
+          recursiveUpdate(tabID, contentWidget, w)
+        elseif contentWidget.enum == enums.item then -- item
+          newDropFrame = dragndrop:CreateDropFrame(contentWidget, unpack(itemPos)) -- /*item/ under each item
+          dragndrop:SetDropFrameData(newDropFrame, tabID, catID, contentOrder+1)
+
+          if contentWidget.itemData.favorite then
+            tinsert(favsDropFrames, newDropFrame) -- we can always place a fav item below a fav item
+            if dataManager:GetNextFavPos(catID) == contentOrder+1 then -- if it's the last fav in the cat, we can drop a normal item below it as well
+              tinsert(itemsDropFrames, newDropFrame)
+            end
+          else
+            tinsert(itemsDropFrames, newDropFrame) -- we can always place a normal item below a normal item
+          end
+        end
+      end
+    end
+  end
+end
+
 function dragndrop:UpdateDropFrames()
   -- this is done once, each time we start a new drag&drop
   -- OR we are dragging&dropping and there is a frame refresh
 
   -- getting the data
   local tabID, tabData = database.ctab(), select(3, dataManager:Find(database.ctab()))
-  local tdlFrame, contentWidgets = mainFrame:GetFrame(), mainFrame:GetContentWidgets()
 
   -- resetting the drop frames, before updating them
   wipe(categoryDropFrames)
@@ -133,7 +171,10 @@ function dragndrop:UpdateDropFrames()
   wipe(itemsDropFrames)
 
   dropFrameNb = 0
-  local newDropFrame, lastWidget
+  local contentWidgets = mainFrame:GetContentWidgets()
+  local w = {
+    lastWidget = nil,
+  }
 
   -- // this is basically the same loop as the one in mainFrame,
   -- but instead of adding drag&drop code in that file,
@@ -143,60 +184,30 @@ function dragndrop:UpdateDropFrames()
   -- while figuring out every drop point, their data (pos), and UI positioning
 
   for catOrder,catID in ipairs(tabData.orderedCatIDs) do -- for every category
-    -- // ********** categories ********** // --
+    -- // categories
     local catWidget = contentWidgets[catID]
-    lastWidget = catWidget
+    w.lastWidget = catWidget
 
-    newDropFrame = dragndrop:CreateDropFrame(catWidget, unpack(catTopPos)) -- /*cat/ over each cat
+    local newDropFrame = dragndrop:CreateDropFrame(catWidget, unpack(catTopPos)) -- /*cat/ over each cat
     dragndrop:SetDropFrameData(newDropFrame, tabID, nil, catOrder)
     tinsert(categoryDropFrames, newDropFrame)
-    -- // ******************************** // --
 
-    local catData = contentWidgets[catID].catData
-    if not catData.closedInTabIDs[tabID] then -- if the category is not closed
-      -- // ********** items ********** // --
-      newDropFrame = dragndrop:CreateDropFrame(catWidget, unpack(catItemPos)) -- /*item/ first item, under the cat
-      dragndrop:SetDropFrameData(newDropFrame, tabID, catID, 1)
-
-      tinsert(favsDropFrames, newDropFrame) -- favs can always be placed first
-      if dataManager:GetNextFavPos(catID) == 1 then
-        tinsert(itemsDropFrames, newDropFrame) -- and normal items only if there are no favs
-      end
-
-      for itemOrder,itemID in ipairs(catData.orderedContentIDs) do -- and recursively, for everything inside of them -- TODO for now, only items
-        local itemWidget = contentWidgets[itemID]
-        lastWidget = itemWidget
-
-        if not itemWidget.itemData.tabIDs[tabID] or not dataManager:IsHidden(itemID, tabID) then -- OPTIMIZE this func
-          newDropFrame = dragndrop:CreateDropFrame(itemWidget, unpack(itemPos)) -- /*item/ under each item
-          dragndrop:SetDropFrameData(newDropFrame, tabID, catID, itemOrder+1)
-
-          if itemWidget.itemData.favorite then
-            tinsert(favsDropFrames, newDropFrame) -- we can always place a fav item below a fav item
-            if dataManager:GetNextFavPos(catID) == itemOrder+1 then -- if it's the last fav in the cat, we can drop a normal item below it as well
-              tinsert(itemsDropFrames, newDropFrame)
-            end
-          else
-            tinsert(itemsDropFrames, newDropFrame) -- we can always place a normal item below a normal item
-          end
-        end
-      end
-      -- // *************************** // --
-    end
+    -- // content
+    recursiveUpdate(tabID, catWidget, w)
   end
 
   -- this part is specifically for the last category drop point (under the last shown item/cat)
-  if lastWidget then
+  if w.lastWidget then
     local offset, catID
-    if lastWidget.enum == enums.category then
+    if w.lastWidget.enum == enums.category then
       offset = catBottomPos
-      catID = lastWidget.catID
-    elseif lastWidget.enum == enums.item then
+      catID = w.lastWidget.catID
+    elseif w.lastWidget.enum == enums.item then
       offset = itemCatPos
-      catID = next(lastWidget.itemData.catIDs)
+      catID = next(w.lastWidget.itemData.catIDs)
     end
 
-    newDropFrame = dragndrop:CreateDropFrame(lastWidget, unpack(offset)) -- /*cat/ under the last category
+    local newDropFrame = dragndrop:CreateDropFrame(w.lastWidget, unpack(offset)) -- /*cat/ under the last category
     dragndrop:SetDropFrameData(newDropFrame, tabID, nil, dataManager:GetPos(catID)+1)
     tinsert(categoryDropFrames, newDropFrame)
   end

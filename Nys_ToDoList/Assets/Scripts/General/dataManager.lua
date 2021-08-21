@@ -337,6 +337,11 @@ local function addCategory(catID, catData)
 
 	-- then we update its data
 	dataManager:UpdateTabsDisplay(catData.originalTabID, true, catID)
+	if catData.parentCatID then
+		-- we add it ordered in its category/categories
+		local catOrder = dataManager:GetNextFavPos(catData.parentCatID)
+		tinsert(categoriesList[catData.parentCatID].orderedContentIDs, catOrder, catID)
+	end
 
 	-- refresh the mainFrame
 	mainFrame:UpdateWidget(catID, enums.category)
@@ -355,6 +360,10 @@ function dataManager:CreateCategory(catName, tabID, parentCatID)
 
 	-- first, we check what needs to be checked
 	if not dataManager:CheckName(catName, enums.category) then return end
+	if parentCatID and not dataManager:IsID(parentCatID) then
+		print(tostring(parentCatID).." is not a category ID")
+		return
+	end
 
 	local catData = { -- catData
     name = catName,
@@ -367,11 +376,7 @@ function dataManager:CreateCategory(catName, tabID, parentCatID)
       -- [tabID] = true,
       -- ...
     },
-    parentsInTabIDs = {
-      -- [tabID] = parentCatID, -- in tabID tab, the category has a parent, and it's catID
-      -- [tabID] = nil, -- in tabID tab, the category is not a sub-category
-      -- ...
-		},
+    parentCatID = parentCatID,
     orderedContentIDs = { -- content of the cat, ordered (tinsert(contentOrderedIDs, 1, ID)), SECOND LOOP ON THIS FOR ITEMS AND RECURSIVELY ON SUB-CATEGORIES
       -- [catID or itemID], -- [1]
       -- [catID or itemID], -- [2]
@@ -380,7 +385,6 @@ function dataManager:CreateCategory(catName, tabID, parentCatID)
   }
 
 	catData.tabIDs[tabID] = true
-	catData.parentsInTabIDs[tabID] = parentCatID -- nil or parentCatID
 
 	return addCategory(dataManager:NewID(), catData)
 end
@@ -478,8 +482,7 @@ function dataManager:MoveCategory(catID, oldPos, newPos, oldParentID, newParentI
 		local newOrdersLoc = newParentID and categoriesList[newParentID].orderedContentIDs or tabsList[newTabID].orderedCatIDs
 		tremove(oldOrdersLoc, oldPos)
 		tinsert(newOrdersLoc, newPos, catID)
-		catData.parentsInTabIDs[oldTabID] = oldParentID
-		catData.parentsInTabIDs[newTabID] = newParentID
+		catData.parentCatID = newParentID
 	end
 
 	-- tab
@@ -733,7 +736,7 @@ local function updateCatShownTabID(catID, catData, tabID, tabData, shownTabID, m
 	if catData.originalTabID == shownTabID then -- important
 		if tabID ~= catData.originalTabID or modif or specific then -- this is to protect cats from being hidden in their original tab
 			catData.tabIDs[tabID] = modif
-			if not catData.parentsInTabIDs[catData.originalTabID] then -- if it's not a sub-category, we edit it in its tab orders
+			if not catData.parentCatID then -- if it's not a sub-category, we edit it in its tab orders
 				if modif and not utils:HasValue(tabData.orderedCatIDs, catID) then
 					-- we add it ordered in the tab if it wasn't here already
 					tinsert(tabData.orderedCatIDs, 1, catID) -- TODO later, IF i do cat fav it's not pos 1
@@ -791,6 +794,10 @@ function dataManager:CheckName(name, enum)
 		-- TODO message
 		return false
 	elseif widgets:GetWidth(name) > maxNameWidth[enum] then -- width
+		if utils:HasHyperlink(name) then -- this is for making more space for items that have hyperlinks in them
+	    if widgets:GetWidth(name) > maxNameWidth[enum] + 100 then return false
+			else return true end
+		end
 		print("Name is too large")
 		-- TODO redo this? if it has an hyperlink in it and it's too big, we allow it to be a little longer, considering hyperlinks take more place
 		-- if l:GetWidth() > itemNameWidthMax and utils:HasHyperlink(newItemName) then
@@ -921,7 +928,7 @@ function dataManager:GetCategoryOrdersLoc(catID, tabID)
 	-- since categories are either located in an other category (as a sub-category) or in a tab,
 	-- this is to easily get the good orders table where a category is in a certain tab
 	local catData, _, categoriesList, tabsList = select(3, dataManager:Find(catID))
-	local parentCatID = catData.parentsInTabIDs[tabID] -- nil or parentCatID
+	local parentCatID = catData.parentCatID -- nil or parentCatID
 	return parentCatID and categoriesList[parentCatID].orderedContentIDs or tabsList[tabID].orderedCatIDs
 end
 
@@ -1081,7 +1088,7 @@ function dataManager:DoIfFoundTabMatch(maxTime, checkedType, callback, doAll)
 	end
 end
 
-function dataManager:IsHidden(itemID, tabID)
+function dataManager:IsHidden(itemID, tabID) -- OPTIMIZE this func
 	local itemData = select(3, dataManager:Find(itemID))
 	local tabData = select(3, dataManager:Find(tabID))
 	return tabData.hideCheckedItems and itemData.checked

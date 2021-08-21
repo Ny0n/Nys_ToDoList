@@ -656,6 +656,7 @@ function widgets:CategoryWidget(catID, parentFrame)
   categoryWidget.interactiveLabel:SetPoint("LEFT", categoryWidget, "LEFT", 20, 0)
 
   categoryWidget.interactiveLabel.Button:SetScript("OnEnter", function(self)
+    if IsAltKeyDown() then return end
     local r, g, b = unpack(utils:ThemeDownTo01(database.themes.theme))
     self:GetParent().Text:SetTextColor(r, g, b, 1) -- when we hover it, we color the label
     --print("enter")
@@ -678,6 +679,7 @@ function widgets:CategoryWidget(catID, parentFrame)
       if catData.closedInTabIDs[database.ctab()] then return end
       -- we toggle its edit box
       categoryWidget.addEditBox:SetShown(not categoryWidget.addEditBox:IsShown())
+      categoryWidget.addCatEditBox:SetShown(not categoryWidget.addCatEditBox:IsShown())
       if categoryWidget.addEditBox:IsShown() then -- and if we are opening it
         tutorialsManager:Validate("addItem") -- tutorial
         widgets:SetFocusEditBox(categoryWidget.addEditBox) -- we give it the focus
@@ -693,7 +695,7 @@ function widgets:CategoryWidget(catID, parentFrame)
 
     -- then, we can create the new edit box to rename the category, where the label was
     local renameEditBox = widgets:NoPointsRenameEditBox(categoryWidget, catData.name, categoryNameWidthMax, self:GetHeight())
-    renameEditBox:SetPoint("LEFT", categoryWidget, "LEFT", 5, 0)
+    renameEditBox:SetPoint("LEFT", categoryWidget.removeBtn, "LEFT", 25, 0)
 
     -- let's go!
     renameEditBox:SetScript("OnEnterPressed", function(self)
@@ -724,10 +726,15 @@ function widgets:CategoryWidget(catID, parentFrame)
   categoryWidget.originalTabLabel = widgets:NoPointsLabel(categoryWidget.interactiveLabel, nil, "")
   categoryWidget.originalTabLabel:SetTextColor(0.5, 0.5, 0.5, 0.5)
 
+  -- / emptyLabel
+  categoryWidget.emptyLabel = widgets:NoPointsLabel(categoryWidget, nil, "this category is empty")
+  categoryWidget.emptyLabel:SetPoint("LEFT", categoryWidget, "TOPLEFT", enums.ofsxContent, -enums.ofsyCatContent)
+  categoryWidget.emptyLabel:SetTextColor(0.5, 0.5, 0.5, 0.5)
+
   -- / addEditBox
   categoryWidget.addEditBox = widgets:NoPointsCatEditBox(categoryWidget)
-  categoryWidget.addEditBox:SetPoint("RIGHT", categoryWidget.interactiveLabel, "LEFT", 297, 0)
-  categoryWidget.addEditBox:SetPoint("LEFT", categoryWidget.interactiveLabel, "RIGHT", 5, 0)
+  categoryWidget.addEditBox:SetPoint("RIGHT", categoryWidget.interactiveLabel, "LEFT", 270, 0)
+  categoryWidget.addEditBox:SetPoint("LEFT", categoryWidget.interactiveLabel, "RIGHT", 10, 0)
   categoryWidget.addEditBox:SetSize(100, 30)
   categoryWidget.addEditBox:Hide()
   -- TODO check this
@@ -755,6 +762,27 @@ function widgets:CategoryWidget(catID, parentFrame)
     self:GetScript("OnEscapePressed")(self)
   end)
   widgets:AddHyperlinkEditBox(categoryWidget.addEditBox)
+
+  -- / addCatEditBox
+  categoryWidget.addCatEditBox = widgets:NoPointsCatEditBox(categoryWidget)
+  categoryWidget.addCatEditBox:SetPoint("RIGHT", categoryWidget.interactiveLabel, "LEFT", 270, -20)
+  categoryWidget.addCatEditBox:SetPoint("LEFT", categoryWidget.interactiveLabel, "RIGHT", 10, -20)
+  categoryWidget.addCatEditBox:SetSize(100, 30)
+  categoryWidget.addCatEditBox:Hide()
+  categoryWidget.addCatEditBox:SetScript("OnEnterPressed", function(self)
+    if dataManager:CreateCategory(self:GetText(), catData.originalTabID, catID) then
+      self:SetText("") -- we clear the box if the adding was a success
+    end
+    self:Show() -- we keep it shown to add more categories
+    widgets:SetFocusEditBox(self)
+  end)
+  -- cancelling
+  categoryWidget.addCatEditBox:SetScript("OnEscapePressed", function(self)
+    self:Hide()
+  end)
+  categoryWidget.addCatEditBox:HookScript("OnEditFocusLost", function(self)
+    self:GetScript("OnEscapePressed")(self)
+  end)
 
   -- / drag&drop
   dragndrop:RegisterForDrag(categoryWidget)
@@ -799,8 +827,12 @@ function widgets:ItemWidget(itemID, parentFrame)
 
   -- / checkBtn
   itemWidget.checkBtn = CreateFrame("CheckButton", nil, itemWidget, "UICheckButtonTemplate")
+  -- itemWidget.checkBtn = CreateFrame("CheckButton", nil, itemWidget, "ChatConfigCheckButtonTemplate")
+  -- itemWidget.checkBtn = CreateFrame("CheckButton", nil, itemWidget, "OptionsCheckButtonTemplate")
   itemWidget.checkBtn:SetPoint("LEFT", itemWidget, "LEFT", 20, 0)
   itemWidget.checkBtn:SetScript("OnClick", function() dataManager:ToggleChecked(itemID) end)
+  -- itemWidget.checkBtn:SetSize(26, 26)
+  -- itemWidget.checkBtn:SetHitRectInsets(0, -widgets:GetWidth(itemData.name), 0, 0)
 
   -- / interactiveLabel
   itemWidget.interactiveLabel = widgets:NoPointsInteractiveLabel(itemWidget, nil, itemData.name, "GameFontNormalLarge")
