@@ -995,17 +995,25 @@ local function generateMenuTabActions()
 
   --/************************************************/--
 
-  menuframe.btnCheck = widgets:Button("btnCheck_menuframe", menuframe, L["Check"], "Interface\\BUTTONS\\UI-CheckBox-Check")
+  menuframe.btnCheck = widgets:Button("NysTDL_menuframe_btnCheck", menuframe, L["Check"], "Interface\\BUTTONS\\UI-CheckBox-Check")
   menuframe.btnCheck:SetPoint("TOP", menuframe.menuTitle, "TOP", 0, -35)
   menuframe.btnCheck:SetScript("OnClick", function() dataManager:ToggleTabChecked(ctab(), true) end)
 
-  menuframe.btnUncheck = widgets:Button("btnUncheck_menuframe", menuframe, L["Uncheck"], "Interface\\BUTTONS\\UI-CheckBox-Check-Disabled")
+  menuframe.btnUncheck = widgets:Button("NysTDL_menuframe_btnUncheck", menuframe, L["Uncheck"], "Interface\\BUTTONS\\UI-CheckBox-Check-Disabled")
   menuframe.btnUncheck:SetPoint("TOP", menuframe.btnCheck, "TOP", 0, -40)
   menuframe.btnUncheck:SetScript("OnClick", function() dataManager:ToggleTabChecked(ctab(), false) end)
 
-  menuframe.btnClear = widgets:Button("clearButton", menuframe, L["Clear"], "Interface\\GLUES\\LOGIN\\Glues-CheckBox-Check")
+  menuframe.btnClear = widgets:Button("NysTDL_menuframe_btnClear", menuframe, L["Clear"], "Interface\\GLUES\\LOGIN\\Glues-CheckBox-Check")
   menuframe.btnClear:SetPoint("TOP", menuframe.btnUncheck, "TOP", 0, -40)
   menuframe.btnClear:SetScript("OnClick", function() dataManager:ClearTab(ctab()) end)
+
+  menuframe.btnCloseCat = widgets:Button("NysTDL_menuframe_btnCloseCat", menuframe, "Close All", "Interface\\BUTTONS\\Arrow-Up-Disabled")
+  menuframe.btnCloseCat:SetPoint("TOP", menuframe.btnClear, "TOP", 0, -40)
+  menuframe.btnCloseCat:SetScript("OnClick", function() dataManager:ToggleTabClosed(ctab(), false) end)
+
+  menuframe.btnOpenCat = widgets:Button("NysTDL_menuframe_btnOpenCat", menuframe, "Open All", "Interface\\BUTTONS\\Arrow-Down-Up")
+  menuframe.btnOpenCat:SetPoint("TOP", menuframe.btnCloseCat, "TOP", 0, -40)
+  menuframe.btnOpenCat:SetScript("OnClick", function() dataManager:ToggleTabClosed(ctab(), true) end)
 end
 
 local function generateFrameContent()
@@ -1118,7 +1126,7 @@ local function generateFrameContent()
   menuEnum = enums.menus.tabact
   content.menuFrames[menuEnum] = CreateFrame("Frame", nil, tdlFrame.content)
   content.menuFrames[menuEnum]:SetPoint("TOPLEFT", tdlFrame.content, "TOPLEFT", 0, -78)
-  content.menuFrames[menuEnum]:SetSize(contentWidth, 160) -- CVAL
+  content.menuFrames[menuEnum]:SetSize(contentWidth, 240) -- CVAL
 
   generateMenuTabActions()
 

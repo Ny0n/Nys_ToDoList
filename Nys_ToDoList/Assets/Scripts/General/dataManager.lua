@@ -42,6 +42,8 @@ local maxNameWidth = {
 -- global aliases
 local wipe = wipe
 local unpack = unpack
+local select = select
+local type = type
 local tinsert = table.insert
 local tremove = table.remove
 local random = math.random
@@ -161,7 +163,7 @@ function dataManager:ForEach(enum, location)
 	for itemID,itemData in dataManager:ForEach(enums.item) do
 		-- body...
 	end
-	* every time, the loop variables are the ID and the DATA of the targeted loop thing
+	* every time, the loop variables are the ID and the DATA of the targeted loop object
 
 	* usage:
 	enum 			==> either enums.item, enums.category, or enums.tab (depending on what you want to loop on)
@@ -181,17 +183,18 @@ function dataManager:ForEach(enum, location)
 		getdatapos = 1
 		if dataManager:IsID(location) then -- specific tab or cat ID
 			enum, isGlobal = dataManager:Find(location)
-			local loc
 			if enum == enums.category then
-				loc = "catIDs"
+				checkFunc = function(ID, data)
+					if data.catID ~= location then return false end
+					return true
+				end
 			elseif enum == enums.tab then
-				loc = "tabIDs"
+				checkFunc = function(ID, data)
+					if not data.tabIDs[location] then return false end
+					return true
+				end
 			else
 				error("Coding error, bad ID", 2)
-			end
-			checkFunc = function(ID, data)
-				if not data[loc][location] then return false end
-				return true
 			end
 		end
 	elseif enum == enums.category then
@@ -262,7 +265,7 @@ end
 
 local function addItem(itemID, itemData)
 	wipe(itemData.tabIDs)
-	itemData.tabIDs[itemData.originalTabID] = true -- by default, an item/cat can only be added to one tab, the shown tab IDs do the rest after
+	itemData.tabIDs[itemData.originalTabID] = true -- by default, an item/cat can only be added to one tab, the shownTabIDs do the rest after
 
 	-- we get where we are
 	local itemsList, categoriesList = select(4, dataManager:Find(itemData.originalTabID))
@@ -273,11 +276,9 @@ local function addItem(itemID, itemData)
 
 	-- then we update its data
 	dataManager:UpdateTabsDisplay(itemData.originalTabID, true, itemID)
-	for catID in pairs(itemData.catIDs) do
-		-- we add it ordered in its category/categories
-		local itemOrder = dataManager:GetNextFavPos(catID)
-		tinsert(categoriesList[catID].orderedContentIDs, itemOrder, itemID)
-	end
+	-- we add it ordered in its category
+	local itemOrder = dataManager:GetNextFavPos(itemData.catID)
+	tinsert(categoriesList[itemData.catID].orderedContentIDs, itemOrder, itemID)
 
 	-- refresh the mainFrame
 	mainFrame:UpdateWidget(itemID, enums.item)
@@ -301,10 +302,7 @@ function dataManager:CreateItem(itemName, tabID, catID)
 			-- [tabID] = true,
 			-- ...
 		},
-    catIDs = { -- for convenience when deleting items, so that we can remove them from their respective categories easily
-      -- [catID] = true,
-			-- ...
-    },
+    catID = catID, -- for convenience when deleting items, so that we can remove them from its respective category easily
     -- item specific data
     checked = false,
     accountWide = false, -- user set, used in global tabs
@@ -317,8 +315,6 @@ function dataManager:CreateItem(itemName, tabID, catID)
     description = false,
   }
 
-	itemData.catIDs[catID] = true
-
 	return addItem(dataManager:NewID(), itemData)
 end
 
@@ -326,7 +322,7 @@ end
 
 local function addCategory(catID, catData)
 	wipe(catData.tabIDs)
-	catData.tabIDs[catData.originalTabID] = true -- by default, an item/cat can only be added to one tab, the shown tab IDs do the rest after
+	catData.tabIDs[catData.originalTabID] = true -- by default, an item/cat can only be added to one tab, the shownTabIDs do the rest after
 
 	-- we get where we are
 	local categoriesList = select(5, dataManager:Find(catData.originalTabID))
@@ -446,61 +442,175 @@ end
 
 -- item
 
-function dataManager:MoveItem(itemID, oldPos, newPos, oldCatID, newCatID, oldTabID, newTabID)
+function dataManager:MoveItem(itemID, newPos, newCatID)
+	-- // this func is used to move items from one cat to another, and/or from one position to an other
+	-- usage: dataManager:MoveItem(itemID, [newPos], [newCatID])
+
+	-- / *** first things first, we validate all of the data *** /
+
 	local itemData = select(3, dataManager:Find(itemID))
 
-	-- position (order)
-	if oldCatID ~= newCatID or oldPos ~= newPos then
-		local oldCatData = select(3, dataManager:Find(oldCatID))
-		local newCatData = select(3, dataManager:Find(newCatID))
-		tremove(oldCatData.orderedContentIDs, oldPos)
-		tinsert(newCatData.orderedContentIDs, newPos, itemID)
-		-- cat
-		itemData.catIDs[oldCatID] = nil
-		itemData.catIDs[newCatID] = true
+	--> old data
+
+	-- loc, pos, cat
+	local oldLoc, oldPos = dataManager:GetPosData(itemID)
+	local oldCatID = itemData.catID
+
+	--> new data
+
+	-- cat
+	newCatID = newCatID or oldCatID
+
+	-- loc
+	local newLoc = select(3, dataManager:Find(newCatID)).orderedContentIDs
+
+	-- pos
+	if type(newPos) ~= "number" then
+		newPos = 1
+	else
+		newPos = utils:Clamp(newPos, 1, #newLoc + 1)
 	end
 
-	-- tab
-	if oldTabID ~= newTabID then
-		dataManager:UpdateTabsDisplay(oldTabID, false, itemID)
-		itemData.originalTabID = newTabID
-		dataManager:UpdateTabsDisplay(newTabID, true, itemID)
+	-- this check is to place the object correctly in case we just move its position inside its table,
+	-- because when we'll remove it from the oldPos, everything will go down by one, the newPos too
+	if newLoc == oldLoc
+	and newPos > oldPos then
+		newPos = newPos - 1
 	end
+
+	-- / *** then, we can start moving *** /
+
+	tremove(oldLoc, oldPos)
+	tinsert(newLoc, newPos, itemID)
+	itemData.catID = newCatID
+	dataManager:UpdateItemTab(itemID)
 
 	-- TODO message?
 	mainFrame:Refresh()
 end
 
+function dataManager:UpdateItemTab(itemID)
+	-- to update an item's originalTabID and everything that goes with it
+	-- considering it's the same tab as the originalTabID of the category it is in
+
+	local itemData = select(3, dataManager:Find(itemID))
+	local catData = select(3, dataManager:Find(itemData.catID))
+
+	local oldTabID = itemData.originalTabID
+	local newTabID = catData.originalTabID
+
+	dataManager:UpdateTabsDisplay(oldTabID, false, itemID)
+	itemData.originalTabID = newTabID
+	dataManager:UpdateTabsDisplay(newTabID, true, itemID)
+end
+
 -- category
 
-function dataManager:MoveCategory(catID, oldPos, newPos, oldParentID, newParentID, oldTabID, newTabID)
-	local catData, itemsList, categoriesList, tabsList = select(3, dataManager:Find(catID))
+function dataManager:MoveCategory(catID, newPos, newParentID, fromTabID, toTabID)
+	-- // this is the big func used to move categories from:
+	--	- sub-cat 		--> normal cat
+	--	- normal cat 	--> sub-cat
+	--	- sub-cat 		--> sub-cat (order change in parent cat)
+	-- 	- normal cat 	--> normal cat (order change in tab)
+	-- this func also does the modifications to change the original tab of a category
+	-- usage: dataManager:MoveCategory(catID, [newPos], [newParentID], [fromTabID], [toTabID])
+	-- newParentID == nil --> ignore, newParentID == false --> no parent, newParentID == ID --> new parent
 
-	-- position (order)
-	if oldPos ~= newPos or oldParentID ~= newParentID then
-		local oldOrdersLoc = oldParentID and categoriesList[oldParentID].orderedContentIDs or tabsList[oldTabID].orderedCatIDs
-		local newOrdersLoc = newParentID and categoriesList[newParentID].orderedContentIDs or tabsList[newTabID].orderedCatIDs
-		tremove(oldOrdersLoc, oldPos)
-		tinsert(newOrdersLoc, newPos, catID)
-		catData.parentCatID = newParentID
+	-- / *** first things first, we validate all of the data *** /
+
+	local catData, _, categoriesList, tabsList = select(3, dataManager:Find(catID))
+
+	--> old data
+
+	-- fromTab
+	fromTabID = fromTabID or database.ctab()
+
+	-- loc, pos, parentCat
+	local oldLoc, oldPos = dataManager:GetPosData(catID, fromTabID)
+	local oldParentID = catData.parentCatID
+
+	--> new data
+
+	-- toTab
+	toTabID = toTabID or database.ctab() -- XXX or fromTabID?
+
+	-- parentCat
+	if newParentID == nil then
+		newParentID = oldParentID -- ignore arg, we don't update the parent state
+	elseif newParentID == false then
+		newParentID = nil
 	end
 
+	-- loc
+	if not tabsList[toTabID] then error("Wrong tab ID") end
+	local newLoc = newParentID and categoriesList[newParentID].orderedContentIDs or tabsList[toTabID].orderedCatIDs
+
+	-- pos
+	if type(newPos) ~= "number" then
+		newPos = 1
+	else
+		newPos = utils:Clamp(newPos, 1, #newLoc + 1)
+	end
+
+	-- this check is to place the object correctly in case we just move its position inside its table,
+	-- because when we'll remove it from the oldPos, everything will go down by one, the newPos too
+	if newLoc == oldLoc -- TODO check if same tab????? remove this comm if it works
+	and newPos > oldPos then
+		newPos = newPos - 1
+	end
+
+	-- / *** then, we can start moving (oof) *** /
+
+	-- position (order)
+	if oldParentID and not newParentID then -- from sub-cat to normal cat
+		tremove(oldLoc, oldPos)
+
+		-- SPECIAL INSERT:
+		-- since we're transforming the cat from a sub-cat to a normal one,
+		-- we have to insert it back in each tab it is shown in
+		tinsert(newLoc, newPos, catID)
+		local firstParentID = tremove(dataManager:GetParents(catID))
+		for tabID in pairs(catData.tabIDs) do
+			if tabID ~= toTabID then -- if it's not the tab where we specifically decided to put it to newPos
+				local loc, pos = dataManager:GetPosData(firstParentID, tabID)
+				tinsert(loc, pos, catID) -- we put it over the cat we just extracted it from
+			end
+		end
+	elseif not oldParentID and newParentID then -- from normal cat to sub-cat
+		-- SPECIAL REMOVE:
+		-- since we're transforming the cat from a normal cat to a sub one,
+		-- we have to remove it from each tab it was shown in
+		for tabID in pairs(catData.tabIDs) do
+			local loc, pos = dataManager:GetPosData(catID, tabID)
+			tremove(loc, pos)
+		end
+
+		tinsert(newLoc, newPos, catID)
+	else -- from sub-cat to (maybe other) sub-cat (pos change) OR from normal cat to normal cat (pos change)
+		tremove(oldLoc, oldPos)
+		tinsert(newLoc, newPos, catID)
+	end
+
+	catData.parentCatID = newParentID
+
 	-- tab
-	if oldTabID ~= newTabID then
+	if fromTabID ~= toTabID then
 		-- category part
-		dataManager:UpdateTabsDisplay(oldTabID, false, catID)
-		catData.originalTabID = newTabID
-		dataManager:UpdateTabsDisplay(newTabID, true, catID)
-		catData.closedInTabIDs[newTabID] = catData.closedInTabIDs[oldTabID] -- we keep the closed state
-		catData.closedInTabIDs[oldTabID] = nil
+		dataManager:UpdateTabsDisplay(fromTabID, false, catID)
+		catData.originalTabID = toTabID
+		dataManager:UpdateTabsDisplay(toTabID, true, catID)
+
+	 	-- we keep the closed state
+		catData.closedInTabIDs[toTabID] = catData.closedInTabIDs[fromTabID]
+		catData.closedInTabIDs[fromTabID] = nil
 
 		-- content part
 		for _,contentID in pairs(catData.orderedContentIDs) do
 			local enum = dataManager:Find(contentID)
 			if enum == enums.category then -- category
-				dataManager:MoveCategory(contentID, nil, nil, nil, nil, oldTabID, newTabID)
+				dataManager:MoveCategory(contentID, nil, nil, fromTabID, toTabID)
 			else -- item
-				dataManager:MoveItem(contentID, nil, nil, nil, nil, oldTabID, newTabID)
+				dataManager:UpdateItemTab(contentID)
 			end
 		end
 	end
@@ -511,9 +621,32 @@ end
 
 -- tab
 
-function dataManager:MoveTab(tabID, oldPos, newPos, oldGlobalState, newGlobalState)
-	-- TODO
+function dataManager:MoveTab(tabID, newPos)
+	local loc, oldPos = dataManager:GetPosData(tabID)
 
+	-- pos
+	if type(newPos) ~= "number" then
+		newPos = 1
+	else
+		newPos = utils:Clamp(newPos, 1, #loc + 1)
+	end
+
+	if newPos > oldPos then
+		newPos = newPos - 1
+	end
+
+	tremove(loc, oldPos)
+	tinsert(loc, newPos, tabID)
+
+	-- TODO message?
+	mainFrame:Refresh()
+end
+
+function dataManager:ChangeTabGlobalState(tabID, newGlobalState)
+	local oldGlobalState, tabData = select(2, dataManager:Find(tabID))
+	-- TDLATER
+
+	-- TDLATER message?
 	mainFrame:Refresh()
 end
 
@@ -532,10 +665,8 @@ function dataManager:DeleteItem(itemID)
 
 	-- we update its data (pretty much the reverse actions of the Add func)
 	dataManager:UpdateTabsDisplay(itemData.originalTabID, false, itemID)
-	for catID in pairs(itemData.catIDs) do
-		local cIDs = categoriesList[catID].orderedContentIDs
-  	tremove(cIDs, select(2, utils:HasValue(cIDs, itemID)))
-	end
+	local cIDs = categoriesList[itemData.catID].orderedContentIDs
+	tremove(cIDs, select(2, utils:HasValue(cIDs, itemID)))
 
 	dataManager:AddUndo(undoData)
   itemsList[itemID] = nil -- delete action
@@ -575,7 +706,7 @@ function dataManager:DeleteCat(catID)
 		else -- current ID is an item
 			result = dataManager:DeleteItem(contentID)
 		end
-		nbToUndo = nbToUndo + nb -- TDLATER redo when sub-cats are here
+		nbToUndo = nbToUndo + nb
 		if result then nbToUndo = nbToUndo + 1 end
 	end
 
@@ -732,31 +863,27 @@ end
 
 -- misc
 
-local function updateCatShownTabID(catID, catData, tabID, tabData, shownTabID, modif, specific)
+local function updateCatShownTabID(catID, catData, tabID, tabData, shownTabID, modif)
 	if catData.originalTabID == shownTabID then -- important
-		if tabID ~= catData.originalTabID or modif or specific then -- this is to protect cats from being hidden in their original tab
-			catData.tabIDs[tabID] = modif
-			if not catData.parentCatID then -- if it's not a sub-category, we edit it in its tab orders
-				if modif and not utils:HasValue(tabData.orderedCatIDs, catID) then
-					-- we add it ordered in the tab if it wasn't here already
-					tinsert(tabData.orderedCatIDs, 1, catID) -- TODO later, IF i do cat fav it's not pos 1
-				elseif not modif then
-					tremove(tabData.orderedCatIDs, select(2, utils:HasValue(tabData.orderedCatIDs, catID)))
-				end
+		catData.tabIDs[tabID] = modif
+		if not catData.parentCatID then -- if it's not a sub-category, we edit it in its tab orders
+			if modif and not utils:HasValue(tabData.orderedCatIDs, catID) then
+				-- we add it ordered in the tab if it wasn't here already
+				tinsert(tabData.orderedCatIDs, 1, catID) -- TDLATER, IF i ever do cat fav it's not pos 1
+			elseif not modif and utils:HasValue(tabData.orderedCatIDs, catID) then
+				tremove(tabData.orderedCatIDs, select(2, utils:HasValue(tabData.orderedCatIDs, catID)))
 			end
 		end
 	end
 end
 
-local function updateItemShownTabID(itemID, itemData, tabID, tabData, shownTabID, modif, specific)
+local function updateItemShownTabID(itemID, itemData, tabID, tabData, shownTabID, modif)
 	if itemData.originalTabID == shownTabID then -- important
-		if tabID ~= itemData.originalTabID or modif or specific then  -- this is to protect items from being hidden in their original tab
-			itemData.tabIDs[tabID] = modif
-		end
+		itemData.tabIDs[tabID] = modif
 	end
 end
 
-function dataManager:UpdateTabsDisplay(shownTabID, modif, ID) -- TODO fix remove
+function dataManager:UpdateTabsDisplay(shownTabID, modif, ID)
 	-- // big important func to update what is shown in what tab
 
 	-- both shownTabID and ID are the same global or profile state
@@ -771,18 +898,20 @@ function dataManager:UpdateTabsDisplay(shownTabID, modif, ID) -- TODO fix remove
 
 		if ID then -- if it concerns only one ID
 			if enum == enums.category then -- single category
-				updateCatShownTabID(ID, data, tabID, tabData, shownTabID, modif, true)
+				updateCatShownTabID(ID, data, tabID, tabData, shownTabID, modif)
 			elseif enum == enums.item then -- single item
-				updateItemShownTabID(ID, data, tabID, tabData, shownTabID, modif, true)
+				updateItemShownTabID(ID, data, tabID, tabData, shownTabID, modif)
 			end
 		else -- if it concerns everything
-			-- categories
-			for catID,catData in dataManager:ForEach(enums.category, isGlobal) do
-				updateCatShownTabID(catID, catData, tabID, tabData, shownTabID, modif)
-			end
-			-- items
-			for itemID,itemData in dataManager:ForEach(enums.item, isGlobal) do
-				updateItemShownTabID(itemID, itemData, tabID, tabData, shownTabID, modif)
+			if tabID ~= shownTabID then -- if the tab is NOT the original shownTabID
+				-- categories
+				for catID,catData in dataManager:ForEach(enums.category, isGlobal) do
+					updateCatShownTabID(catID, catData, tabID, tabData, shownTabID, modif)
+				end
+				-- items
+				for itemID,itemData in dataManager:ForEach(enums.item, isGlobal) do
+					updateItemShownTabID(itemID, itemData, tabID, tabData, shownTabID, modif)
+				end
 			end
 		end
 	end
@@ -795,7 +924,7 @@ function dataManager:CheckName(name, enum)
 		return false
 	elseif widgets:GetWidth(name) > maxNameWidth[enum] then -- width
 		if utils:HasHyperlink(name) then -- this is for making more space for items that have hyperlinks in them
-	    if widgets:GetWidth(name) > maxNameWidth[enum] + 100 then return false
+	    if widgets:GetWidth(name) > maxNameWidth[enum] + 100 then return false -- TODO redo
 			else return true end
 		end
 		print("Name is too large")
@@ -838,20 +967,32 @@ function dataManager:IsProtected(ID)
 	-- TODO message "xxx is protected" ?
 end
 
-function dataManager:GetNextFavPos(catID)
-	-- TODO sub-cat ?
-	return dataManager:GetRemainingNumbers(nil, nil, catID).totalFav + 1
-end
+function dataManager:GetPosData(ID, tabID, onlyPos)
+	-- // returns the position data (location & number) of a given ID
+	-- usage: local loc, pos = dataManager:GetPosData(ID)
+	-- usage2: local pos = dataManager:GetPosData(ID, nil, true)
+	-- loc is the table the object is located in
+	-- // if the ID is a CATEGORY, then we can specify in which tab we want to know where it is,
+	-- or the current tab if none is given (since it can be either a sub-cat with a parent order, or a normal cat with a tab order)
+	tabID = tabID or database.ctab()
 
-function dataManager:GetPos(ID)
 	local enum, _, data, _, categoriesList, tabsList = dataManager:Find(ID)
 
-	if enum == enums.item then
-		local catID = next(data.catIDs)
-		local catData = select(3, dataManager:Find(catID))
-		return select(2, utils:HasValue(catData.orderedContentIDs, ID))
-	elseif enum == enums.category then
-		return select(2, utils:HasValue(dataManager:GetCategoryOrdersLoc(ID, database.ctab()), ID))
+	local loc
+	if enum == enums.item then -- item
+		loc = select(3, dataManager:Find(data.catID)).orderedContentIDs
+	elseif enum == enums.category then -- category
+		if not tabsList[tabID] then error("Wrong tab ID") end
+		loc = data.parentCatID and categoriesList[data.parentCatID].orderedContentIDs or tabsList[tabID].orderedCatIDs
+	elseif enum == enums.tab then -- tab
+		loc = tabsList.orderedTabIDs
+	end
+
+	local pos = select(2, utils:HasValue(loc, ID))
+	if onlyPos then
+		return pos
+	else
+		return loc, pos
 	end
 end
 
@@ -889,19 +1030,9 @@ function dataManager:ToggleFavorite(itemID)
 
 	-- we change the sort order of the item
 	if itemData.favorite then -- if we passed it from non-fav to fav
-		for catID in pairs(itemData.catIDs) do
-			local catData = select(3, dataManager:Find(catID))
-			tremove(catData.orderedContentIDs, select(2, utils:HasValue(catData.orderedContentIDs, itemID)))
-			tinsert(catData.orderedContentIDs, 1, itemID)
-			-- dataManager:MoveItem(itemID, select(2, utils:HasValue(catData.orderedContentIDs, itemID)), 1) -- OPTIMIZE MoveItem & MoveCategory
-		end
+		dataManager:MoveItem(itemID, 1)
 	else -- if we passed it from fav to non-fav
-		for catID in pairs(itemData.catIDs) do
-			local catData = select(3, dataManager:Find(catID))
-			tremove(catData.orderedContentIDs, select(2, utils:HasValue(catData.orderedContentIDs, itemID)))
-			tinsert(catData.orderedContentIDs, dataManager:GetNextFavPos(catID), itemID)
-			-- dataManager:MoveItem(itemID, select(2, utils:HasValue(catData.orderedContentIDs, itemID)), dataManager:GetNextFavPos(catID)) -- OPTIMIZE MoveItem & MoveCategory
-		end
+		dataManager:MoveItem(itemID, dataManager:GetNextFavPos(itemData.catID))
 	end
 
 	-- refresh the mainFrame
@@ -924,16 +1055,8 @@ end
 
 -- categories
 
-function dataManager:GetCategoryOrdersLoc(catID, tabID)
-	-- since categories are either located in an other category (as a sub-category) or in a tab,
-	-- this is to easily get the good orders table where a category is in a certain tab
-	local catData, _, categoriesList, tabsList = select(3, dataManager:Find(catID))
-	local parentCatID = catData.parentCatID -- nil or parentCatID
-	return parentCatID and categoriesList[parentCatID].orderedContentIDs or tabsList[tabID].orderedCatIDs
-end
-
 function dataManager:GetNbCategory(tabID)
-	return #select(3, dataManager:Find(tabID)).orderedCatIDs -- TODO redo with GetCategoryOrdersLoc
+	return #select(3, dataManager:Find(tabID)).orderedCatIDs
 end
 
 function dataManager:ToggleClosed(catID, tabID, state)
@@ -951,6 +1074,47 @@ function dataManager:ToggleClosed(catID, tabID, state)
 	elseif state == true then
 		catData.closedInTabIDs[tabID] = nil
 	end
+
+	-- refresh the mainFrame
+	mainFrame:Refresh()
+end
+
+function dataManager:GetNextFavPos(catID)
+	local catData = select(3, dataManager:Find(catID))
+	local lastFavPos = 0
+	for contentOrder,contentID in ipairs(catData.orderedContentIDs) do -- for everything that is in the cat
+		local enum, _, contentData = dataManager:Find(contentID)
+		if enum == enums.item then
+			if contentData.favorite then
+				lastFavPos = contentOrder
+			end
+		end
+	end
+
+	return lastFavPos + 1
+end
+
+local T_GetParents = {}
+function dataManager:GetParents(ID)
+	local enum, _, data = dataManager:Find(ID)
+
+	wipe(T_GetParents)
+
+	local parentCatID
+	if enum == enums.category then
+		tinsert(T_GetParents, ID)
+		parentCatID	= data.parentCatID
+	elseif enum == enums.item then
+		parentCatID	= data.catID
+	end
+
+	while parentCatID ~= nil do
+		tinsert(T_GetParents, parentCatID)
+		local parentCatData = select(3, dataManager:Find(parentCatID))
+		parentCatID = parentCatData.parentCatID
+	end
+
+	return T_GetParents
 end
 
 -- tabs
@@ -995,12 +1159,12 @@ function dataManager:ToggleTabChecked(tabID, state)
 	mainFrame:Refresh()
 end
 
-function dataManager:ToggleTabClosed(tabID, state) -- TODO buttons
+function dataManager:ToggleTabClosed(tabID, state)
 	-- opens/closes/toggles every category in the tab to match state,
 	-- state can be:
 	-- 	nil -> toggle
-	-- 	false -> uncheck
-	-- 	true -> check
+	-- 	false -> close
+	-- 	true -> open
 
 	local refreshID = dataManager:SetRefresh(false)
 
@@ -1151,6 +1315,49 @@ function dataManager:GetRemainingNumbers(isGlobal, tabID, catID)
 	t.totalFav = t.checkedFav + t.uncheckedFav
 	t.totalNormal = t.checkedNormal + t.uncheckedNormal
 	t.total = t.totalChecked + t.totalUnchecked
+
+	return t
+end
+
+local T_GetCatNumbers = {}
+function dataManager:GetCatNumbers(catID)
+	-- // less hardcore than GetRemainingNumbers, this func returns the general content of a given gategory
+	-- returns a table containing the following keys:
+	-- - total 			-- subCats + items
+	-- 	- subCats 	-- nb of subCats
+	-- 	- items 		-- nb of items
+	-- 		- desc 		-- at least have a desc
+	-- 		- favs 		-- at least is fav
+	-- 		- normal 	-- no desc and not fav
+
+	local t = T_GetCatNumbers
+	wipe(t)
+
+	-- // numbers calculated:
+
+	t.total = nil
+	t.subCats = 0
+	t.items = 0
+	t.desc = 0
+	t.favs = 0
+	t.normal = 0
+
+	local catData = select(3, dataManager:Find(catID))
+	local contentWidgets = mainFrame:GetContentWidgets() -- to avoid using dataManager:Find() for each loop item (it's just for optimization)
+	for contentOrder,contentID in ipairs(catData.orderedContentIDs) do -- for everything that is in the cat
+		local widget = contentWidgets[contentID]
+		if widget.enum == enums.category then
+			t.subCats = t.subCats + 1
+		elseif widget.enum == enums.item then
+			t.items = t.items + 1
+			local itemData = widget.itemData
+			if itemData.description then t.desc = t.desc + 1 end
+			if itemData.favorite then t.favs = t.favs + 1 end
+			if not itemData.description and not itemData.favorite then t.normal = t.normal + 1 end
+		end
+	end
+
+	t.total = t.subCats + t.items
 
 	return t
 end

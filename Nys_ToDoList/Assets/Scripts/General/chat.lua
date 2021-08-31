@@ -68,7 +68,7 @@ function chat:Warn()
 
           if msg ~= "" then
             local hex = utils:RGBToHex({ NysTDL.db.profile.favoritesColor[1]*255, NysTDL.db.profile.favoritesColor[2]*255, NysTDL.db.profile.favoritesColor[3]*255} )
-            msg = msging.format("|cff%s%s|r", hex, msg)
+            msg = string.format("|cff%s%s|r", hex, msg)
             if not haveWarned then self:PrintForced(warn) haveWarned = true end
             self:PrintForced(utils:SafeStringFormat(L["You still have %s favorite item(s) to do before the next reset, don't forget them!"], msg))
           end

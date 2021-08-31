@@ -22,7 +22,7 @@ local L = core.L
 -- ============================================ --
 
 -- Tests function (for me :p)
-function Nys_Tests(yes)
+function Nys_Tests(yes, ...)
   if yes == 1 then -- tests profile
     print(mainFrame:GetFrame():GetFrameStrata())
     -- tutorialsManager:UpdateFramesVisibility()
@@ -71,16 +71,23 @@ function Nys_Tests(yes)
     end
     print(tdlFrame.fadeInfo.finishedFunc)
   elseif yes == 4 then
-  	for tabID, tabData in dataManager:ForEach(enums.tab, false) do
-      if next(tabData.reset.days) then
-        print(">================<")
-        print(tabData.name.." tab next reset times:")
-    		for timerResetID,targetTime in pairs(tabData.reset.nextResetTimes) do
-          resetManager:PrintTimeDiff(timerResetID, targetTime)
-    		end
-      end
+    local catData = select(3, dataManager:Find(...))
+  	for contentOrder,contentID in ipairs(catData.orderedContentIDs) do
+      local enum, _, contentData = dataManager:Find(contentID)
+      print(contentOrder, enum, contentData.name)
     end
-    print("<================>")
+
+
+  	-- for tabID, tabData in dataManager:ForEach(enums.tab, false) do
+    --   if next(tabData.reset.days) then
+    --     print(">================<")
+    --     print(tabData.name.." tab next reset times:")
+    -- 		for timerResetID,targetTime in pairs(tabData.reset.nextResetTimes) do
+    --       resetManager:PrintTimeDiff(timerResetID, targetTime)
+    -- 		end
+    --   end
+    -- end
+    -- print("<================>")
   elseif yes == 5 then -- EXPLOSION
     local refreshID = dataManager:SetRefresh(false)
 

@@ -673,13 +673,13 @@ function widgets:CategoryWidget(catID, parentFrame)
     if button == "LeftButton" then -- we open/close the category
       categoryWidget.addEditBox:SetText(catID) -- TODO remove
       dataManager:ToggleClosed(catID, database.ctab())
-      mainFrame:Refresh() -- we refresh the list
     elseif button == "RightButton" then -- we try to toggle the addEditBox
       -- if the cat we right clicked on is NOT a closed category
       if catData.closedInTabIDs[database.ctab()] then return end
       -- we toggle its edit box
       categoryWidget.addEditBox:SetShown(not categoryWidget.addEditBox:IsShown())
-      categoryWidget.addCatEditBox:SetShown(not categoryWidget.addCatEditBox:IsShown())
+      -- categoryWidget.addCatEditBox:SetShown(not categoryWidget.addCatEditBox:IsShown()) -- TDLATER
+
       if categoryWidget.addEditBox:IsShown() then -- and if we are opening it
         tutorialsManager:Validate("addItem") -- tutorial
         widgets:SetFocusEditBox(categoryWidget.addEditBox) -- we give it the focus
@@ -763,26 +763,27 @@ function widgets:CategoryWidget(catID, parentFrame)
   end)
   widgets:AddHyperlinkEditBox(categoryWidget.addEditBox)
 
-  -- / addCatEditBox
-  categoryWidget.addCatEditBox = widgets:NoPointsCatEditBox(categoryWidget)
-  categoryWidget.addCatEditBox:SetPoint("RIGHT", categoryWidget.interactiveLabel, "LEFT", 270, -20)
-  categoryWidget.addCatEditBox:SetPoint("LEFT", categoryWidget.interactiveLabel, "RIGHT", 10, -20)
-  categoryWidget.addCatEditBox:SetSize(100, 30)
-  categoryWidget.addCatEditBox:Hide()
-  categoryWidget.addCatEditBox:SetScript("OnEnterPressed", function(self)
-    if dataManager:CreateCategory(self:GetText(), catData.originalTabID, catID) then
-      self:SetText("") -- we clear the box if the adding was a success
-    end
-    self:Show() -- we keep it shown to add more categories
-    widgets:SetFocusEditBox(self)
-  end)
-  -- cancelling
-  categoryWidget.addCatEditBox:SetScript("OnEscapePressed", function(self)
-    self:Hide()
-  end)
-  categoryWidget.addCatEditBox:HookScript("OnEditFocusLost", function(self)
-    self:GetScript("OnEscapePressed")(self)
-  end)
+  -- TDLATER sub-cat creation
+  -- -- / addCatEditBox
+  -- categoryWidget.addCatEditBox = widgets:NoPointsCatEditBox(categoryWidget)
+  -- categoryWidget.addCatEditBox:SetPoint("RIGHT", categoryWidget.interactiveLabel, "LEFT", 270, -20)
+  -- categoryWidget.addCatEditBox:SetPoint("LEFT", categoryWidget.interactiveLabel, "RIGHT", 10, -20)
+  -- categoryWidget.addCatEditBox:SetSize(100, 30)
+  -- categoryWidget.addCatEditBox:Hide()
+  -- categoryWidget.addCatEditBox:SetScript("OnEnterPressed", function(self)
+  --   if dataManager:CreateCategory(self:GetText(), catData.originalTabID, catID) then
+  --     self:SetText("") -- we clear the box if the adding was a success
+  --   end
+  --   self:Show() -- we keep it shown to add more categories
+  --   widgets:SetFocusEditBox(self)
+  -- end)
+  -- -- cancelling
+  -- categoryWidget.addCatEditBox:SetScript("OnEscapePressed", function(self)
+  --   self:Hide()
+  -- end)
+  -- categoryWidget.addCatEditBox:HookScript("OnEditFocusLost", function(self)
+  --   self:GetScript("OnEscapePressed")(self)
+  -- end)
 
   -- / drag&drop
   dragndrop:RegisterForDrag(categoryWidget)
