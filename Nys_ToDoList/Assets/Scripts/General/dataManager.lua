@@ -33,13 +33,8 @@ local mainFrame = setmetatable({}, {
 -- Variables
 local L = core.L
 
-local maxNameWidth = {
-	[enums.item] = 240,
-	[enums.category] = 220,
-	[enums.tab] = 150,
-}
+-- // WoW & Lua APIs
 
--- global aliases
 local wipe = wipe
 local unpack = unpack
 local select = select
@@ -657,7 +652,7 @@ end
 function dataManager:DeleteItem(itemID)
 	if dataManager:IsProtected(itemID) then return end
 
-	local itemData, itemsList, categoriesList = select(3, dataManager:Find(itemID))
+	local itemData, itemsList = select(3, dataManager:Find(itemID))
 
   -- we delete the item and all its related data
 
@@ -665,8 +660,7 @@ function dataManager:DeleteItem(itemID)
 
 	-- we update its data (pretty much the reverse actions of the Add func)
 	dataManager:UpdateTabsDisplay(itemData.originalTabID, false, itemID)
-	local cIDs = categoriesList[itemData.catID].orderedContentIDs
-	tremove(cIDs, select(2, utils:HasValue(cIDs, itemID)))
+	tremove(dataManager:GetPosData(itemID))
 
 	dataManager:AddUndo(undoData)
   itemsList[itemID] = nil -- delete action
@@ -710,7 +704,8 @@ function dataManager:DeleteCat(catID)
 		if result then nbToUndo = nbToUndo + 1 end
 	end
 
-	local undoData, result = dataManager:CreateUndo(catID)
+	local undoData = dataManager:CreateUndo(catID)
+	local result
 
 	if #catData.orderedContentIDs == 0 then -- we removed everything from the cat, now we delete it
 		-- we update its data (pretty much the reverse actions of the Add func)
@@ -757,7 +752,7 @@ function dataManager:DeleteTab(tabID)
 	local nbToUndo = 0
 
 	for _,catID in pairs(copy) do
-		if categoriesList[catID].originalTabID == tabID then --  (SPECIFIC: a tab deletion only deletes what's original to the tab, not everything that's shown inside of it)
+		if categoriesList[catID].originalTabID == tabID then -- (SPECIFIC: a tab deletion only deletes what's original to the tab, not everything that's shown inside of it)
 			local result, nb = dataManager:DeleteCat(catID)
 			if result or nb > 0 then
 				nbToUndo = nbToUndo + 1
@@ -765,7 +760,8 @@ function dataManager:DeleteTab(tabID)
 		end
 	end
 
-	local undoData, result = dataManager:CreateUndo(tabID)
+	local undoData = dataManager:CreateUndo(tabID)
+	local result
 
 	if #tabData.orderedCatIDs == 0 then -- we removed everything from the tab, now we delete it
 		-- we update its data (pretty much the reverse actions of the Add func)
@@ -778,12 +774,9 @@ function dataManager:DeleteTab(tabID)
 				end
 			end
 		end
-
-		local tabPos = select(2, utils:HasValue(tabsList.orderedTabIDs, tabID))
-		tremove(tabsList.orderedTabIDs, tabPos)
+		tremove(dataManager:GetPosData(tabID))
 
 		dataManager:AddUndo(undoData)
-
 	  tabsList[tabID] = nil -- delete action
 		print("delete tab")
 
@@ -804,7 +797,7 @@ end
 -- // undo feature
 
 function dataManager:CreateUndo(ID)
-	local enum, isGlobal, tableData, _, categoriesList, tabsList = dataManager:Find(ID)
+	local enum, isGlobal, tableData = dataManager:Find(ID)
 
 	local newUndo = { -- number for clears, table for single data
     enum = enum, -- what are we saving to undo?
@@ -919,20 +912,14 @@ end
 
 function dataManager:CheckName(name, enum)
 	if #name == 0 then -- empty
-		print("Name is empty")
-		-- TODO message
+		print("Name is empty") -- TODO replace prints
 		return false
-	elseif widgets:GetWidth(name) > maxNameWidth[enum] then -- width
+	elseif widgets:GetWidth(name) > enums.maxNameWidth[enum] then -- width
 		if utils:HasHyperlink(name) then -- this is for making more space for items that have hyperlinks in them
-	    if widgets:GetWidth(name) > maxNameWidth[enum] + 100 then return false -- TODO redo
+	    if widgets:GetWidth(name) > enums.maxNameWidth[enum] + 100 then return false -- TODO redo
 			else return true end
 		end
 		print("Name is too large")
-		-- TODO redo this? if it has an hyperlink in it and it's too big, we allow it to be a little longer, considering hyperlinks take more place
-		-- if l:GetWidth() > itemNameWidthMax and utils:HasHyperlink(newItemName) then
-		-- 	l:SetFontObject("GameFontNormal")
-		-- end
-		-- TODO message
 		return false
 	end
 

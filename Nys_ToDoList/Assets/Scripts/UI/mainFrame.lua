@@ -21,6 +21,8 @@ local LDD = core.LDD
 -- THE frame
 local tdlFrame
 
+mainFrame.editMode = false
+
 -- profile-dependant variables (those are reset in mainFrame:Init())
 
 local dontRefreshPls = 0
@@ -298,26 +300,35 @@ function mainFrame:UpdateItemButtons(itemID)
   local itemWidget = contentWidgets[itemID] -- we take the item widget
   if not itemWidget then return end -- just in case
 
+  if mainFrame.editMode then
+    itemWidget.descBtn:Show()
+    itemWidget.favoriteBtn:Show()
+    return
+  end
+
   -- first we hide each button to show the good one afterwards
   itemWidget.descBtn:Hide()
   itemWidget.favoriteBtn:Hide()
-  itemWidget.removeBtn:Hide()
-
-  if T_Event_TDLFrame_OnUpdate.ctrl then -- if ctrl is pressed and is the priority
-    itemWidget.descBtn:Show() -- we force the paper (description)
-    return
-  elseif T_Event_TDLFrame_OnUpdate.shift then -- if shift is pressed and is the priority
-    itemWidget.favoriteBtn:Show() -- we force the star (favorite)
-    return
-  end
 
   local itemData = itemWidget.itemData
   if itemData.description then -- the paper (description) icon takes the lead
     itemWidget.descBtn:Show()
   elseif itemData.favorite then -- then the star (favorite) icon
     itemWidget.favoriteBtn:Show()
-  else -- or the cross (remove) icon by default
-    itemWidget.removeBtn:Show()
+  end
+end
+
+function mainFrame:ToggleEditMode(state)
+  local orig = mainFrame.editMode
+  if type(state) == "boolean" then
+    mainFrame.editMode = state
+  else
+    mainFrame.editMode = not mainFrame.editMode
+  end
+  if orig == mainFrame.editMode then return end -- if we didn't change the edit mode
+
+  for _,contentWidget in pairs(contentWidgets) do
+    contentWidget:SetEditMode(mainFrame.editMode)
   end
 end
 
@@ -412,32 +423,32 @@ function mainFrame:Event_TDLFrame_OnUpdate()
       tdlFrame.ScrollFrame.ScrollBar:SetPoint("BOTTOMRIGHT", tdlFrame.ScrollFrame, "BOTTOMRIGHT", - 7, 32)
       tdlFrame.resizeButton:Show()
     end
-  elseif IsShiftKeyDown() and not T_Event_TDLFrame_OnUpdate:other("shift") then
-    if not T_Event_TDLFrame_OnUpdate.shift then
-      T_Event_TDLFrame_OnUpdate:something("shift")
-
-      -- we show the star (favorite) icon for every item
-      for _, contentWidget in pairs(contentWidgets) do
-        if contentWidget.enum == enums.item then
-          contentWidget.descBtn:Hide()
-          contentWidget.favoriteBtn:Show()
-          contentWidget.removeBtn:Hide()
-        end
-      end
-    end
-  elseif IsControlKeyDown() and not T_Event_TDLFrame_OnUpdate:other("ctrl") then
-    if not T_Event_TDLFrame_OnUpdate.ctrl then
-      T_Event_TDLFrame_OnUpdate:something("ctrl")
-
-      -- we show the paper (description) icon for every item
-      for _, contentWidget in pairs(contentWidgets) do
-        if contentWidget.enum == enums.item then
-          contentWidget.descBtn:Show()
-          contentWidget.favoriteBtn:Hide()
-          contentWidget.removeBtn:Hide()
-        end
-      end
-    end
+  -- elseif IsShiftKeyDown() and not T_Event_TDLFrame_OnUpdate:other("shift") then
+  --   if not T_Event_TDLFrame_OnUpdate.shift then
+  --     T_Event_TDLFrame_OnUpdate:something("shift")
+  --
+  --     -- we show the star (favorite) icon for every item
+  --     for _, contentWidget in pairs(contentWidgets) do
+  --       if contentWidget.enum == enums.item then
+  --         contentWidget.descBtn:Hide()
+  --         contentWidget.favoriteBtn:Show()
+  --         contentWidget.removeBtn:Hide()
+  --       end
+  --     end
+  --   end
+  -- elseif IsControlKeyDown() and not T_Event_TDLFrame_OnUpdate:other("ctrl") then
+  --   if not T_Event_TDLFrame_OnUpdate.ctrl then
+  --     T_Event_TDLFrame_OnUpdate:something("ctrl")
+  --
+  --     -- we show the paper (description) icon for every item
+  --     for _, contentWidget in pairs(contentWidgets) do
+  --       if contentWidget.enum == enums.item then
+  --         contentWidget.descBtn:Show()
+  --         contentWidget.favoriteBtn:Hide()
+  --         contentWidget.removeBtn:Hide()
+  --       end
+  --     end
+  --   end
   elseif not T_Event_TDLFrame_OnUpdate.nothing then
     T_Event_TDLFrame_OnUpdate:something("nothing")
 
@@ -1053,7 +1064,6 @@ local function generateFrameContent()
     SlashCmdList.NysTDL(L["info"])
     tutorialsManager:Validate("getMoreInfo") -- tutorial
   end)
-
   tutorialsManager:SetPoint("getMoreInfo", "LEFT", content.helpButton, "RIGHT", 18, 0)
 
   -- frame options menu button
@@ -1062,7 +1072,6 @@ local function generateFrameContent()
   content.frameOptionsButton:SetScript("OnClick", function()
     menuClick(enums.menus.frameopt)
   end)
-
   tutorialsManager:SetPoint("accessOptions", "BOTTOM", content.frameOptionsButton, "TOP", 0, 18)
 
   -- category menu button
@@ -1071,8 +1080,12 @@ local function generateFrameContent()
   content.categoryButton:SetScript("OnClick", function()
     menuClick(enums.menus.addcat)
   end)
-
   tutorialsManager:SetPoint("addNewCat", "TOP", content.categoryButton, "BOTTOM", 0, -18)
+
+  -- edit mode button
+  content.editModeButton = widgets:IconButton(content, "NysTDL_EditModeButton", "Toggle edit mode")
+  content.editModeButton:SetPoint("RIGHT", content.categoryButton, "LEFT", 2, 0)
+  content.editModeButton:SetScript("OnClick", function() mainFrame:ToggleEditMode() end)
 
   -- undo button
   content.undoButton = widgets:IconButton(content, "NysTDL_UndoButton", L["Undo last remove/clear"])
@@ -1106,10 +1119,6 @@ local function generateFrameContent()
   content.menuFrames[menuEnum] = CreateFrame("Frame", nil, tdlFrame.content)
   content.menuFrames[menuEnum]:SetPoint("TOPLEFT", tdlFrame.content, "TOPLEFT", 0, -78)
   content.menuFrames[menuEnum]:SetSize(contentWidth, 110) -- CVAL (coded value, non automatic)
-  -- content.menuFrames[menuEnum]:SetHeight(300)
-  -- content.menuFrames[menuEnum]:SetPoint("TOPLEFT", tdlFrame.content, "TOPLEFT", 0, -70)
-  -- content.menuFrames[menuEnum]:SetPoint("BOTTOMRIGHT", tdlFrame.content.title, "TOPLEFT", 200, -140)
-
   generateMenuAddACategory()
 
   -- / frame options sub-menu
@@ -1118,7 +1127,6 @@ local function generateFrameContent()
   content.menuFrames[menuEnum] = CreateFrame("Frame", nil, tdlFrame.content)
   content.menuFrames[menuEnum]:SetPoint("TOPLEFT", tdlFrame.content, "TOPLEFT", 0, -78)
   content.menuFrames[menuEnum]:SetSize(contentWidth, 260) -- CVAL
-
   generateMenuFrameOptions()
 
   -- / tab actions sub-menu
@@ -1127,7 +1135,6 @@ local function generateFrameContent()
   content.menuFrames[menuEnum] = CreateFrame("Frame", nil, tdlFrame.content)
   content.menuFrames[menuEnum]:SetPoint("TOPLEFT", tdlFrame.content, "TOPLEFT", 0, -78)
   content.menuFrames[menuEnum]:SetSize(contentWidth, 240) -- CVAL
-
   generateMenuTabActions()
 
   -- below the menus
@@ -1137,7 +1144,7 @@ local function generateFrameContent()
   content.nothingLabel:SetPoint("TOP", content.lineBottom, "TOP", 0, -20)
 
   content.loadOrigin = widgets:Dummy(content, content.lineBottom, 0, 0)
-  content.loadOrigin:SetPoint("TOPLEFT", content.lineBottom, "TOPLEFT", -30, -30) -- TODO redo?
+  content.loadOrigin:SetPoint("TOPLEFT", content.lineBottom, "TOPLEFT", -34, -30) -- TODO redo?
 end
 
 -- // Creating the main frame

@@ -15,7 +15,7 @@ local private = {}
 
 local autoResetedThisSession = false
 
-function resetManager:PrintTimeDiff(timerResetID, ttime)
+function resetManager:PrintTimeDiff(timerResetID, ttime) -- TODO remove/comment, debug func
   local ctime = time()
   local days, hours, mins, secs = 0, 0, 0, 0
   local diff = math.abs(ttime - ctime)
@@ -91,7 +91,7 @@ function resetManager:GetNbResetTimes(resetData)
   return nb
 end
 
--- interval -- TODO future update
+-- interval -- TDLATER future update
 
 function resetManager:UpdateIsInterval(resetData, state)
 	if state == nil then state = false end

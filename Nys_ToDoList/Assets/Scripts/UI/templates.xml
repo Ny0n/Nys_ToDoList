@@ -199,6 +199,25 @@
     </Layers>
   </Button>
 
+  <!-- Edit Mode button -->
+  <Button name="NysTDL_EditModeButton" inherits="NysTDL_IconButtonTemplate, NysTDL_IconButtonTooltipScripts, NysTDL_IconButtonPositionScripts" virtual="true">
+    <Size x="32" y="32"/>
+    <KeyValues>
+      <KeyValue key="tooltip" value=""/>
+      <KeyValue key="name" value="EditModeButton"/>
+    </KeyValues>
+    <Layers>
+      <Layer level="OVERLAY">
+        <Texture parentKey="Icon" file="Interface\BUTTONS\UI-OptionsButton">
+          <Size x="14" y="14"/>
+          <Anchors>
+            <Anchor point="CENTER"/>
+          </Anchors>
+        </Texture>
+      </Layer>
+    </Layers>
+  </Button>
+
   <!-- Frame Options button -->
   <Button name="NysTDL_FrameOptionsButton" inherits="NysTDL_IconButtonTemplate, NysTDL_IconButtonTooltipScripts, NysTDL_IconButtonPositionScripts" virtual="true">
     <Size x="32" y="32"/>

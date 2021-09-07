@@ -390,6 +390,77 @@ end
 
 --/***************/ START&STOP /*****************/--
 
+local function dragStart(dragFrame)
+  -- drag init
+  dragndrop.dragging = true
+
+  -- vars reset & init
+  dropFrames = nil
+  lastCursorPosX = nil
+  lastCursorPosY = nil
+  tdlFrame = mainFrame:GetFrame()
+  draggingWidget = dragFrame:GetParent():GetParent()
+  targetDropFrame, newPos = nil, nil
+  startingTab, currentTab = nil, nil
+  dropLine = dropLine or CreateFrame("Frame", nil, tdlFrame.content, "NysTDL_DropLine") -- creating the drop line
+  dropLine:Show()
+end
+
+local function dragStop()
+  dragndrop.dragging = false
+
+  -- // we reset everything
+
+  if targetDropFrame then
+    print("--------- Drop data: ----------")
+    print("tab", targetDropFrame.dropData.tabID and select(3, dataManager:Find(targetDropFrame.dropData.tabID)).name or nil)
+    print("cat", targetDropFrame.dropData.catID and select(3, dataManager:Find(targetDropFrame.dropData.catID)).name or nil)
+    print("pos", targetDropFrame.dropData.pos)
+    print("-------------------------------")
+  end
+
+  -- we reset the alpha states
+  local contentWidgets = mainFrame:GetContentWidgets()
+  for _,widget in pairs(contentWidgets) do
+    widget:SetAlpha(normalAlpha)
+  end
+
+  -- we hide the dragging widget, as well as the drop line
+  if draggingWidget then draggingWidget:ClearAllPoints() draggingWidget:Hide() end
+  if dropLine then dropLine:ClearAllPoints() dropLine:Hide() end
+
+  -- we stop the dragUpdate
+  dragUpdate:SetScript("OnUpdate", nil)
+
+  -- // refresh the mainFrame
+  mainFrame:Refresh()
+end
+
+local function dragMouseDown(dragFrame)
+  -- this is for snapping the widget on the cursor, where we started to drag it
+  local scale, x, y = dragFrame:GetParent():GetParent():GetEffectiveScale(), GetCursorPosition()
+  clickX, clickY = x/scale, y/scale
+end
+
+local function dragMouseStart()
+  -- we snap the one we are dragging to the current cursor position,
+  -- where the widget was first clicked on before the drag, and we start moving it
+  -- (it is a dummy widget, perfect duplicate just for a visual feedback, but it doesn't actually do anything)
+  local widgetX, widgetY = draggingWidget:GetCenter()
+  local ofsx, ofsy = clickX - widgetX, clickY - widgetY
+
+  draggingWidget:SetParent(UIParent)
+  draggingWidget:ClearAllPoints()
+
+  local widgetScale, cursorX, cursorY = draggingWidget:GetEffectiveScale() , GetCursorPosition()
+  draggingWidget:SetPoint("CENTER", nil, "BOTTOMLEFT", (cursorX/widgetScale)-ofsx, (cursorY/widgetScale)-ofsy)
+
+  draggingWidget:StartMoving()
+  draggingWidget:SetUserPlaced(false)
+  draggingWidget:SetToplevel(true)
+  draggingWidget:Raise()
+end
+
 function dragndrop:RegisterForDrag(widget)
   -- drag properties
   widget:EnableMouse(true)
@@ -398,51 +469,15 @@ function dragndrop:RegisterForDrag(widget)
   -- we detect the dragging on the label of the widget
   local dragFrame = widget.interactiveLabel.Button
 
-  -- this is for snapping the widget on the cursor, where we started to drag it
-  dragFrame:HookScript("OnMouseDown", function()
-    local scale, x, y = widget:GetEffectiveScale(), GetCursorPosition()
-    clickX, clickY = x/scale, y/scale
-  end)
-
   -- // drag scripts
 
   -- / register
   dragFrame:RegisterForDrag("LeftButton")
 
   -- / start
-  dragFrame:SetScript("OnDragStart", function()
-    -- drag init
-    dragndrop.dragging = true
-
-    -- vars reset & init
-    dropFrames = nil
-    lastCursorPosX = nil
-    lastCursorPosY = nil
-    tdlFrame = mainFrame:GetFrame()
-    draggingWidget = widget
-    targetDropFrame, newPos = nil, nil
-    startingTab, currentTab = nil, nil
-    dropLine = dropLine or CreateFrame("Frame", nil, tdlFrame.content, "NysTDL_DropLine") -- creating the drop line
-    dropLine:Show()
-  end)
-  dragFrame:HookScript("OnDragStart", function()
-    -- we snap the one we are dragging to the current cursor position,
-    -- where the widget was first clicked on before the drag, and we start moving it
-    -- (it is a dummy widget, perfect duplicate just for a visual feedback, but it doesn't actually do anything)
-    local widgetX, widgetY = draggingWidget:GetCenter()
-    local ofsx, ofsy = clickX - widgetX, clickY - widgetY
-
-    draggingWidget:SetParent(UIParent)
-    draggingWidget:ClearAllPoints()
-
-    local widgetScale, cursorX, cursorY = draggingWidget:GetEffectiveScale() , GetCursorPosition()
-    draggingWidget:SetPoint("CENTER", nil, "BOTTOMLEFT", (cursorX/widgetScale)-ofsx, (cursorY/widgetScale)-ofsy)
-
-    draggingWidget:StartMoving()
-    draggingWidget:SetUserPlaced(false)
-    draggingWidget:SetToplevel(true)
-    draggingWidget:Raise()
-  end)
+  dragFrame:SetScript("OnDragStart", dragStart)
+  dragFrame:HookScript("OnMouseDown", dragMouseDown)
+  dragFrame:HookScript("OnDragStart", dragMouseStart)
 
   -- specific
   if widget.enum == enums.category then
@@ -459,35 +494,7 @@ function dragndrop:RegisterForDrag(widget)
   end)
 
   -- / stop
-  dragFrame:HookScript("OnDragStop", function()
-    dragndrop.dragging = false
-
-    -- // we reset everything
-
-    if targetDropFrame then
-      print("--------- Drop data: ----------")
-      print("tab", targetDropFrame.dropData.tabID and select(3, dataManager:Find(targetDropFrame.dropData.tabID)).name or nil)
-      print("cat", targetDropFrame.dropData.catID and select(3, dataManager:Find(targetDropFrame.dropData.catID)).name or nil)
-      print("pos", targetDropFrame.dropData.pos)
-      print("-------------------------------")
-    end
-
-    -- we reset the alpha states
-    local contentWidgets = mainFrame:GetContentWidgets()
-    for _,widget in pairs(contentWidgets) do
-      widget:SetAlpha(normalAlpha)
-    end
-
-    -- we hide the dragging widget, as well as the drop line
-    if draggingWidget then draggingWidget:ClearAllPoints() draggingWidget:Hide() end
-    if dropLine then dropLine:ClearAllPoints() dropLine:Hide() end
-
-    -- we stop the dragUpdate
-    dragUpdate:SetScript("OnUpdate", nil)
-
-    -- // refresh the mainFrame
-    mainFrame:Refresh()
-  end)
+  dragFrame:HookScript("OnDragStop", dragStop)
 end
 
 function dragndrop:CancelDragging()

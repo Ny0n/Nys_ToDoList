@@ -23,15 +23,16 @@ local tdlButton
 local hyperlinkEditBoxes = {}
 local descFrames = {}
 local descFrameLevelDiff = 20
-local categoryNameWidthMax = 220 -- TODO use those from dataManager?
-local itemNameWidthMax = 240
 
 local updateRate = 0.05
 local refreshRate = 1
 
--- WoW APIs
-local PlaySound = PlaySound
+-- // WoW & Lua APIs
+
+local PlaySound = PlaySound -- TDLATER
+local IsAltKeyDown = IsAltKeyDown
 local CreateFrame, UIParent = CreateFrame, UIParent
+local select = select
 
 --/*******************/ MISC /*************************/--
 
@@ -490,8 +491,8 @@ end
 
 -- item buttons
 
-function widgets:RemoveButton(widget)
-  local btn = CreateFrame("Button", nil, widget, "NysTDL_RemoveButton")
+function widgets:RemoveButton(widget, parent)
+  local btn = CreateFrame("Button", nil, parent, "NysTDL_RemoveButton")
 
   -- these are for changing the color depending on the mouse actions (since they are custom xml)
   btn:HookScript("OnEnter", function(self)
@@ -513,14 +514,13 @@ function widgets:RemoveButton(widget)
   return btn
 end
 
-function widgets:FavoriteButton(itemWidget)
-  local btn = CreateFrame("Button", nil, itemWidget.checkBtn, "NysTDL_FavoriteButton")
-  btn:SetPoint("LEFT", itemWidget.checkBtn, "LEFT", -20, -2)
+function widgets:FavoriteButton(widget, parent)
+  local btn = CreateFrame("Button", nil, parent, "NysTDL_FavoriteButton")
 
   -- these are for changing the color depending on the mouse actions (since they are custom xml)
   -- and yea, this one's a bit complicated because I wanted its look to be really precise...
   btn:HookScript("OnEnter", function(self)
-    if not itemWidget.itemData.favorite then -- not favorited
+    if not widget.itemData.favorite then -- not favorited
       self.Icon:SetDesaturated(nil)
       self.Icon:SetVertexColor(1, 1, 1)
     else
@@ -528,7 +528,7 @@ function widgets:FavoriteButton(itemWidget)
     end
   end)
   btn:HookScript("OnLeave", function(self)
-    if not itemWidget.itemData.favorite then
+    if not widget.itemData.favorite then
       if tonumber(string.format("%.1f", self.Icon:GetAlpha())) ~= 0.5 then -- if we are currently clicking on the button
         self.Icon:SetDesaturated(1)
         self.Icon:SetVertexColor(0.4, 0.4, 0.4)
@@ -540,7 +540,7 @@ function widgets:FavoriteButton(itemWidget)
    btn:HookScript("OnMouseUp", function(self)
      if self.name == "FavoriteButton" then
        self:SetAlpha(1)
-       if not itemWidget.itemData.favorite then
+       if not widget.itemData.favorite then
          self.Icon:SetDesaturated(1)
          self.Icon:SetVertexColor(0.4, 0.4, 0.4)
        end
@@ -554,7 +554,7 @@ function widgets:FavoriteButton(itemWidget)
   btn:HookScript("OnShow", function(self)
     -- if not utils:ItemExists(catName, itemName) then return end -- TODO verify if its necessary
     self:SetAlpha(1)
-    if not itemWidget.itemData.favorite then
+    if not widget.itemData.favorite then
       self.Icon:SetDesaturated(1)
       self.Icon:SetVertexColor(0.4, 0.4, 0.4)
     else
@@ -565,14 +565,13 @@ function widgets:FavoriteButton(itemWidget)
   return btn
 end
 
-function widgets:DescButton(itemWidget)
-  local btn = CreateFrame("Button", nil, itemWidget.checkBtn, "NysTDL_DescButton")
-  btn:SetPoint("LEFT", itemWidget.checkBtn, "LEFT", -20, 0)
+function widgets:DescButton(widget, parent)
+  local btn = CreateFrame("Button", nil, parent, "NysTDL_DescButton")
 
   -- these are for changing the color depending on the mouse actions (since they are custom xml)
   -- and yea, this one's a bit complicated too because it works in very specific ways
   btn:HookScript("OnEnter", function(self)
-    if not itemWidget.itemData.description then -- no description
+    if not widget.itemData.description then -- no description
       self.Icon:SetDesaturated(nil)
       self.Icon:SetVertexColor(1, 1, 1)
     else
@@ -580,7 +579,7 @@ function widgets:DescButton(itemWidget)
     end
   end)
   btn:HookScript("OnLeave", function(self)
-    if not itemWidget.itemData.description then
+    if not widget.itemData.description then
       if tonumber(string.format("%.1f", self.Icon:GetAlpha())) ~= 0.5 then -- if we are currently clicking on the button
         self.Icon:SetDesaturated(1)
         self.Icon:SetVertexColor(0.4, 0.4, 0.4)
@@ -592,7 +591,7 @@ function widgets:DescButton(itemWidget)
    btn:HookScript("OnMouseUp", function(self)
      if self.name == "DescButton" then
        self:SetAlpha(1)
-       if not itemWidget.itemData.description then
+       if not widget.itemData.description then
          self.Icon:SetDesaturated(1)
          self.Icon:SetVertexColor(0.4, 0.4, 0.4)
        end
@@ -605,7 +604,7 @@ function widgets:DescButton(itemWidget)
    end)
   btn:HookScript("OnShow", function(self)
     self:SetAlpha(1)
-    if not itemWidget.itemData.description then
+    if not widget.itemData.description then
       self.Icon:SetDesaturated(1)
       self.Icon:SetVertexColor(0.4, 0.4, 0.4)
     else
@@ -632,11 +631,22 @@ contentWidgets = {
     interactiveLabel,
     favsRemainingLabel,
     addEditBox,
+    ...
   },
   ...
 }
 
 ]]
+
+local function category_setEditMode(self, state)
+  if state then
+    self.editModeFrame:Show()
+    self.interactiveLabel:SetPoint("LEFT", self.editModeFrame, "RIGHT", 0, 0)
+  else
+    self.editModeFrame:Hide()
+    self.interactiveLabel:SetPoint("LEFT", self, "LEFT", 0, 0)
+  end
+end
 
 function widgets:CategoryWidget(catID, parentFrame)
   local categoryWidget = CreateFrame("Frame", nil, parentFrame, nil)
@@ -653,22 +663,26 @@ function widgets:CategoryWidget(catID, parentFrame)
 
   -- / interactiveLabel
   categoryWidget.interactiveLabel = widgets:NoPointsInteractiveLabel(categoryWidget, nil, catData.name, "GameFontHighlightLarge")
-  categoryWidget.interactiveLabel:SetPoint("LEFT", categoryWidget, "LEFT", 20, 0)
 
+  -- / interactiveLabel.Button
   categoryWidget.interactiveLabel.Button:SetScript("OnEnter", function(self)
-    if IsAltKeyDown() then return end
+    if mainFrame.editMode then return end
+
     local r, g, b = unpack(utils:ThemeDownTo01(database.themes.theme))
     self:GetParent().Text:SetTextColor(r, g, b, 1) -- when we hover it, we color the label
     --print("enter")
   end)
   categoryWidget.interactiveLabel.Button:SetScript("OnLeave", function(self)
+    if mainFrame.editMode then return end
+
     self:GetParent().Text:SetTextColor(1, 1, 1, 1) -- back to the default color
     --print("leave")
   end)
   categoryWidget.interactiveLabel.Button:SetScript("OnClick", function(_, button)
-    -- we don't do any of the OnClick code if we have the Alt key down,
-    -- bc it means that we may want to rename the category by double clicking
-    if IsAltKeyDown() then return end
+    -- we don't do any of the OnClick code if we are in edit mode
+    -- bc it means that we may want to rename the category by double clicking,
+    -- or just drag it
+    if mainFrame.editMode then return end
 
     if button == "LeftButton" then -- we open/close the category
       categoryWidget.addEditBox:SetText(catID) -- TODO remove
@@ -687,14 +701,14 @@ function widgets:CategoryWidget(catID, parentFrame)
     end
   end)
   categoryWidget.interactiveLabel.Button:SetScript("OnDoubleClick", function(self)
-    -- we don't do any of the OnDoubleClick code if we don't have the Alt key down
-    if not IsAltKeyDown() then return end
+    -- we don't do any of the OnDoubleClick code if we're not in edit mode
+    if not mainFrame.editMode then return end
 
     -- first, we hide the interactiveLabel
     self:GetParent():Hide()
 
     -- then, we can create the new edit box to rename the category, where the label was
-    local renameEditBox = widgets:NoPointsRenameEditBox(categoryWidget, catData.name, categoryNameWidthMax, self:GetHeight())
+    local renameEditBox = widgets:NoPointsRenameEditBox(categoryWidget, catData.name, enums.maxNameWidth[enums.category], self:GetHeight())
     renameEditBox:SetPoint("LEFT", categoryWidget.removeBtn, "LEFT", 25, 0)
 
     -- let's go!
@@ -713,9 +727,15 @@ function widgets:CategoryWidget(catID, parentFrame)
     end)
   end)
 
+  -- / editModeFrame
+  categoryWidget.editModeFrame = CreateFrame("Frame", nil, categoryWidget, nil)
+  categoryWidget.editModeFrame:SetPoint("LEFT", categoryWidget, "LEFT", 0, 0)
+  categoryWidget.editModeFrame:SetSize(20, 20) -- CVAL
+  local emf = categoryWidget.editModeFrame
+
   -- / removeBtn
-  categoryWidget.removeBtn = widgets:RemoveButton(categoryWidget)
-  categoryWidget.removeBtn:SetPoint("LEFT", categoryWidget.interactiveLabel, "LEFT", -20, 0)
+  categoryWidget.removeBtn = widgets:RemoveButton(categoryWidget, emf)
+  categoryWidget.removeBtn:SetPoint("LEFT", emf, "LEFT", 0, 0)
   categoryWidget.removeBtn:SetScript("OnClick", function() dataManager:DeleteCat(catID) end)
 
   -- / favsRemainingLabel
@@ -788,6 +808,10 @@ function widgets:CategoryWidget(catID, parentFrame)
   -- / drag&drop
   dragndrop:RegisterForDrag(categoryWidget)
 
+  -- / edit mode
+  categoryWidget.SetEditMode = category_setEditMode
+  categoryWidget:SetEditMode(mainFrame.editMode)
+
   return categoryWidget
 end
 
@@ -796,7 +820,7 @@ end
 -- // itemWidget example:
 
 contentWidgets = {
-  [itemID] = { -- widgets:CategoryWidget(catID)
+  [itemID] = { -- widgets:ItemWidget(itemID)
     -- data
     enum = enums.item,
     itemID = itemID,
@@ -807,11 +831,52 @@ contentWidgets = {
     removeBtn,
     favoriteBtn,
     descBtn,
+    ...
   },
   ...
 }
 
 ]]
+
+local function item_setCheckBtnExtended(self, state)
+  if state then
+    self.checkBtn:SetHitRectInsets(0, -enums.maxNameWidth[enums.item], 0, 0)
+  else
+    self.checkBtn:SetHitRectInsets(0, 0, 0, 0)
+  end
+end
+
+local function item_setEditMode(self, state)
+  if state then
+    self.editModeFrame:Show()
+    self.favoriteBtn:SetParent(self.editModeFrame)
+    self.favoriteBtn:SetPoint("LEFT", self.removeBtn, "LEFT", 20, -3)
+    self.descBtn:SetParent(self.editModeFrame)
+    self.descBtn:SetPoint("LEFT", self.favoriteBtn, "LEFT", 20, 3)
+
+    -- self.checkBtn:Hide()
+    self.checkBtn:Show()
+    self.checkBtn:SetPoint("LEFT", self.editModeFrame, "RIGHT", 0, 0)
+
+    self.interactiveLabel:SetPoint("LEFT", self.checkBtn, "RIGHT", 1, 0)
+    -- self.interactiveLabel:SetPoint("LEFT", self.editModeFrame, "RIGHT", 0, 0)
+    self.interactiveLabel.Button:Show()
+  else
+    self.editModeFrame:Hide()
+    self.favoriteBtn:SetParent(self)
+    self.favoriteBtn:SetPoint("LEFT", self, "LEFT", -14, -3)
+    self.descBtn:SetParent(self)
+    self.descBtn:SetPoint("LEFT", self, "LEFT", -14, 0)
+
+    self.checkBtn:Show()
+    self.checkBtn:SetPoint("LEFT", self, "LEFT", 0, 0)
+
+    self.interactiveLabel:SetPoint("LEFT", self.checkBtn, "RIGHT", 1, 0)
+    self.interactiveLabel.Button:Hide()
+  end
+  item_setCheckBtnExtended(self, not state)
+  mainFrame:UpdateItemButtons(self.itemID) -- TODO redo clean
+end
 
 function widgets:ItemWidget(itemID, parentFrame)
   local itemWidget = CreateFrame("Frame", nil, parentFrame, nil)
@@ -830,28 +895,31 @@ function widgets:ItemWidget(itemID, parentFrame)
   itemWidget.checkBtn = CreateFrame("CheckButton", nil, itemWidget, "UICheckButtonTemplate")
   -- itemWidget.checkBtn = CreateFrame("CheckButton", nil, itemWidget, "ChatConfigCheckButtonTemplate")
   -- itemWidget.checkBtn = CreateFrame("CheckButton", nil, itemWidget, "OptionsCheckButtonTemplate")
-  itemWidget.checkBtn:SetPoint("LEFT", itemWidget, "LEFT", 20, 0)
   itemWidget.checkBtn:SetScript("OnClick", function() dataManager:ToggleChecked(itemID) end)
-  -- itemWidget.checkBtn:SetSize(26, 26)
-  -- itemWidget.checkBtn:SetHitRectInsets(0, -widgets:GetWidth(itemData.name), 0, 0)
+  itemWidget.checkBtn:SetPoint("LEFT", itemWidget, "LEFT", 0, 0)
+  itemWidget.checkBtn:SetSize(28, 28)
+  itemWidget.SetCheckBtnExtended = item_setCheckBtnExtended
+  itemWidget:SetCheckBtnExtended(true)
 
   -- / interactiveLabel
   itemWidget.interactiveLabel = widgets:NoPointsInteractiveLabel(itemWidget, nil, itemData.name, "GameFontNormalLarge")
-  itemWidget.interactiveLabel:SetPoint("LEFT", itemWidget.checkBtn, "RIGHT")
-  itemWidget.interactiveLabel.Text:SetPoint("LEFT", itemWidget.checkBtn, "RIGHT", 20, 0) -- TODO why this line?
+  itemWidget.interactiveLabel.Button:Hide() -- we are not in edit mode by default
 
   if utils:HasHyperlink(itemData.name) then -- this is for making more space for items that have hyperlinks in them
-    if itemWidget.interactiveLabel.Text:GetWidth() > itemNameWidthMax then
+    if itemWidget.interactiveLabel.Text:GetWidth() > enums.maxNameWidth[enums.item] then
       itemWidget.interactiveLabel.Text:SetFontObject("GameFontNormal")
     end
 
-    -- and also to deactivate the InteractiveLabel's Button, so that we can actually click on the links
-    -- unless we are holding Alt, and to detect this, we actually put on them an OnUpdate script
+    -- also we allow the click on the hyperlink if we are holding alt,
+    -- and to detect this, we use an OnUpdate script -- TODO for everyone?
+    local alt = false
     itemWidget.interactiveLabel:SetScript("OnUpdate", function(self) -- TODO OULA
-      if IsAltKeyDown() then
-        self.Button:Show()
-      else
-        self.Button:Hide()
+      if IsAltKeyDown() and not alt then
+        itemWidget:SetCheckBtnExtended(false)
+        alt = true
+      elseif not IsAltKeyDown() and alt then
+        itemWidget:SetCheckBtnExtended(true)
+        alt = false
       end
     end)
   end
@@ -862,8 +930,8 @@ function widgets:ItemWidget(itemID, parentFrame)
     self:GetParent():Hide()
 
     -- then, we can create the new edit box to rename the item, where the label was
-    local renameEditBox = widgets:NoPointsRenameEditBox(itemWidget, itemData.name, itemNameWidthMax, self:GetHeight())
-    renameEditBox:SetPoint("LEFT", itemWidget.checkBtn, "RIGHT", 5, 0)
+    local renameEditBox = widgets:NoPointsRenameEditBox(itemWidget, itemData.name, enums.maxNameWidth[enums.item], self:GetHeight())
+    renameEditBox:SetPoint("LEFT", itemWidget.interactiveLabel, "LEFT", 5, 0)
     -- widgets:SetHyperlinksEnabled(renameEditBox, true)
     widgets:AddHyperlinkEditBox(renameEditBox) -- so that we can add hyperlinks in it
 
@@ -884,7 +952,7 @@ function widgets:ItemWidget(itemID, parentFrame)
 
     -- let's go!
     renameEditBox:SetScript("OnEnterPressed", function(self)
-      dataManager:Rename(itemID, self:GetText()) -- TODO verify if it closes the box when it doesn't work
+      dataManager:Rename(itemID, self:GetText()) -- TODO verify if it closes the box when it doesn't work AND rename on the desc frame too
     end)
 
     -- cancelling
@@ -899,23 +967,31 @@ function widgets:ItemWidget(itemID, parentFrame)
     end)
   end)
 
+  -- / editModeFrame
+  itemWidget.editModeFrame = CreateFrame("Frame", nil, itemWidget, nil)
+  itemWidget.editModeFrame:SetPoint("LEFT", itemWidget, "LEFT", 0, 0)
+  itemWidget.editModeFrame:SetSize(60, 20) -- CVAL
+  local emf = itemWidget.editModeFrame
+
   -- / removeBtn
-  itemWidget.removeBtn = widgets:RemoveButton(itemWidget)
-  itemWidget.removeBtn:SetPoint("LEFT", itemWidget.checkBtn, "LEFT", -20, 0)
+  itemWidget.removeBtn = widgets:RemoveButton(itemWidget, emf)
+  itemWidget.removeBtn:SetPoint("LEFT", emf, "LEFT", 0, 0)
   itemWidget.removeBtn:SetScript("OnClick", function() dataManager:DeleteItem(itemID) end)
 
   -- / favoriteBtn
-  itemWidget.favoriteBtn = widgets:FavoriteButton(itemWidget)
+  itemWidget.favoriteBtn = widgets:FavoriteButton(itemWidget, emf)
   itemWidget.favoriteBtn:SetScript("OnClick", function() dataManager:ToggleFavorite(itemID) end)
-  itemWidget.favoriteBtn:Hide()
 
   -- / descBtn
-  itemWidget.descBtn = widgets:DescButton(itemWidget)
+  itemWidget.descBtn = widgets:DescButton(itemWidget, emf)
   itemWidget.descBtn:SetScript("OnClick", function() widgets:DescriptionFrame(itemWidget) end)
-  itemWidget.descBtn:Hide()
 
   -- / drag&drop
   dragndrop:RegisterForDrag(itemWidget)
+
+  -- / edit mode
+  itemWidget.SetEditMode = item_setEditMode
+  itemWidget:SetEditMode(mainFrame.editMode)
 
   return itemWidget
 end
