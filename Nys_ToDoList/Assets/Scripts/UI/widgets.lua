@@ -493,23 +493,46 @@ end
 
 function widgets:RemoveButton(widget, parent)
   local btn = CreateFrame("Button", nil, parent, "NysTDL_RemoveButton")
+  local ID = widget.itemID or widget.catID
+  local desaturated = widget.enum == enums.category and 1 or nil
 
   -- these are for changing the color depending on the mouse actions (since they are custom xml)
   btn:HookScript("OnEnter", function(self)
-    self.Icon:SetVertexColor(0.8, 0.2, 0.2)
+    if not dataManager:IsID(ID) then return end
+    if not dataManager:IsProtected(ID) then
+      self.Icon:SetDesaturated(desaturated)
+      self.Icon:SetVertexColor(0.8, 0.2, 0.2)
+    end
   end)
   btn:HookScript("OnLeave", function(self)
-    if tonumber(string.format("%.1f", self.Icon:GetAlpha())) ~= 0.5 then
-      self.Icon:SetVertexColor(1, 1, 1)
+    if not dataManager:IsID(ID) then return end
+    if not dataManager:IsProtected(ID) then
+      if tonumber(string.format("%.1f", self.Icon:GetAlpha())) ~= 0.5 then
+        self.Icon:SetDesaturated(desaturated)
+        self.Icon:SetVertexColor(1, 1, 1)
+      end
     end
   end)
   btn:HookScript("OnMouseUp", function(self)
+    if not dataManager:IsID(ID) then return end
     if self.name == "RemoveButton" then -- TODO is this useful?
-      self.Icon:SetVertexColor(1, 1, 1)
+      if not dataManager:IsProtected(ID) then
+        self.Icon:SetDesaturated(desaturated)
+        self.Icon:SetVertexColor(1, 1, 1)
+      end
     end
   end)
   btn:HookScript("OnShow", function(self)
-    self.Icon:SetVertexColor(1, 1, 1)
+    if not dataManager:IsID(ID) then return end
+    if dataManager:IsProtected(ID) then
+      self.disabled = true
+      self.Icon:SetDesaturated(1)
+      self.Icon:SetVertexColor(0.4, 0.4, 0.4)
+    else
+      self.disabled = false
+      self.Icon:SetDesaturated(desaturated)
+      self.Icon:SetVertexColor(1, 1, 1)
+    end
   end)
   return btn
 end
@@ -552,7 +575,6 @@ function widgets:FavoriteButton(widget, parent)
      end
    end)
   btn:HookScript("OnShow", function(self)
-    -- if not utils:ItemExists(catName, itemName) then return end -- TODO verify if its necessary
     self:SetAlpha(1)
     if not widget.itemData.favorite then
       self.Icon:SetDesaturated(1)
@@ -657,6 +679,7 @@ function widgets:CategoryWidget(catID, parentFrame)
   categoryWidget.enum = enums.category
   categoryWidget.catID = catID
   categoryWidget.catData = select(3, dataManager:Find(catID))
+  categoryWidget.color = { 1, 1, 1, 1 }
   local catData = categoryWidget.catData
 
   -- // frames
@@ -675,7 +698,7 @@ function widgets:CategoryWidget(catID, parentFrame)
   categoryWidget.interactiveLabel.Button:SetScript("OnLeave", function(self)
     if mainFrame.editMode then return end
 
-    self:GetParent().Text:SetTextColor(1, 1, 1, 1) -- back to the default color
+    self:GetParent().Text:SetTextColor(unpack(categoryWidget.color)) -- back to the default color
     --print("leave")
   end)
   categoryWidget.interactiveLabel.Button:SetScript("OnClick", function(_, button)
@@ -709,7 +732,7 @@ function widgets:CategoryWidget(catID, parentFrame)
 
     -- then, we can create the new edit box to rename the category, where the label was
     local renameEditBox = widgets:NoPointsRenameEditBox(categoryWidget, catData.name, enums.maxNameWidth[enums.category], self:GetHeight())
-    renameEditBox:SetPoint("LEFT", categoryWidget.removeBtn, "LEFT", 25, 0)
+    renameEditBox:SetPoint("LEFT", categoryWidget.interactiveLabel, "LEFT", 5, 0)
 
     -- let's go!
     renameEditBox:SetScript("OnEnterPressed", function(self)
@@ -735,7 +758,7 @@ function widgets:CategoryWidget(catID, parentFrame)
 
   -- / removeBtn
   categoryWidget.removeBtn = widgets:RemoveButton(categoryWidget, emf)
-  categoryWidget.removeBtn:SetPoint("LEFT", emf, "LEFT", 0, 0)
+  categoryWidget.removeBtn:SetPoint("LEFT", emf, "LEFT", 0, -1)
   categoryWidget.removeBtn:SetScript("OnClick", function() dataManager:DeleteCat(catID) end)
 
   -- / favsRemainingLabel
@@ -750,6 +773,12 @@ function widgets:CategoryWidget(catID, parentFrame)
   categoryWidget.emptyLabel = widgets:NoPointsLabel(categoryWidget, nil, "this category is empty")
   categoryWidget.emptyLabel:SetPoint("LEFT", categoryWidget, "TOPLEFT", enums.ofsxContent, -enums.ofsyCatContent)
   categoryWidget.emptyLabel:SetTextColor(0.5, 0.5, 0.5, 0.5)
+
+  -- / hiddenLabel
+  categoryWidget.hiddenLabel = widgets:NoPointsLabel(categoryWidget, nil, "all items are done")
+  categoryWidget.hiddenLabel:SetPoint("LEFT", categoryWidget, "TOPLEFT", enums.ofsxContent, -enums.ofsyCatContent)
+  categoryWidget.hiddenLabel:SetTextColor(0.5, 0.5, 0.5, 0.5)
+  categoryWidget.hiddenLabel:Hide()
 
   -- / addEditBox
   categoryWidget.addEditBox = widgets:NoPointsCatEditBox(categoryWidget)
@@ -784,7 +813,7 @@ function widgets:CategoryWidget(catID, parentFrame)
   widgets:AddHyperlinkEditBox(categoryWidget.addEditBox)
 
   -- TDLATER sub-cat creation
-  -- -- / addCatEditBox
+  -- / addCatEditBox
   -- categoryWidget.addCatEditBox = widgets:NoPointsCatEditBox(categoryWidget)
   -- categoryWidget.addCatEditBox:SetPoint("RIGHT", categoryWidget.interactiveLabel, "LEFT", 270, -20)
   -- categoryWidget.addCatEditBox:SetPoint("LEFT", categoryWidget.interactiveLabel, "RIGHT", 10, -20)
@@ -840,7 +869,8 @@ contentWidgets = {
 
 local function item_setCheckBtnExtended(self, state)
   if state then
-    self.checkBtn:SetHitRectInsets(0, -enums.maxNameWidth[enums.item], 0, 0)
+    -- self.checkBtn:SetHitRectInsets(0, -enums.maxNameWidth[enums.item], 0, 0)
+    self.checkBtn:SetHitRectInsets(0, -widgets:GetWidth(self.itemData.name), 0, 0)
   else
     self.checkBtn:SetHitRectInsets(0, 0, 0, 0)
   end
@@ -849,33 +879,29 @@ end
 local function item_setEditMode(self, state)
   if state then
     self.editModeFrame:Show()
-    self.favoriteBtn:SetParent(self.editModeFrame)
-    self.favoriteBtn:SetPoint("LEFT", self.removeBtn, "LEFT", 20, -3)
-    self.descBtn:SetParent(self.editModeFrame)
-    self.descBtn:SetPoint("LEFT", self.favoriteBtn, "LEFT", 20, 3)
 
-    -- self.checkBtn:Hide()
-    self.checkBtn:Show()
+    self.favoriteBtn:SetParent(self.editModeFrame)
+    self.favoriteBtn:SetPoint("LEFT", self.removeBtn, "LEFT", 15, -2)
+    self.descBtn:SetParent(self.editModeFrame)
+    self.descBtn:SetPoint("LEFT", self.favoriteBtn, "LEFT", 15, 3)
+
     self.checkBtn:SetPoint("LEFT", self.editModeFrame, "RIGHT", 0, 0)
 
-    self.interactiveLabel:SetPoint("LEFT", self.checkBtn, "RIGHT", 1, 0)
-    -- self.interactiveLabel:SetPoint("LEFT", self.editModeFrame, "RIGHT", 0, 0)
     self.interactiveLabel.Button:Show()
   else
     self.editModeFrame:Hide()
-    self.favoriteBtn:SetParent(self)
-    self.favoriteBtn:SetPoint("LEFT", self, "LEFT", -14, -3)
-    self.descBtn:SetParent(self)
-    self.descBtn:SetPoint("LEFT", self, "LEFT", -14, 0)
 
-    self.checkBtn:Show()
+    self.favoriteBtn:SetParent(self)
+    self.favoriteBtn:SetPoint("LEFT", self, "LEFT", -15, -2)
+    self.descBtn:SetParent(self)
+    self.descBtn:SetPoint("LEFT", self, "LEFT", -15, 0)
+
     self.checkBtn:SetPoint("LEFT", self, "LEFT", 0, 0)
 
-    self.interactiveLabel:SetPoint("LEFT", self.checkBtn, "RIGHT", 1, 0)
     self.interactiveLabel.Button:Hide()
   end
   item_setCheckBtnExtended(self, not state)
-  mainFrame:UpdateItemButtons(self.itemID) -- TODO redo clean
+  mainFrame:UpdateItemButtons(self.itemID)
 end
 
 function widgets:ItemWidget(itemID, parentFrame)
@@ -896,13 +922,15 @@ function widgets:ItemWidget(itemID, parentFrame)
   -- itemWidget.checkBtn = CreateFrame("CheckButton", nil, itemWidget, "ChatConfigCheckButtonTemplate")
   -- itemWidget.checkBtn = CreateFrame("CheckButton", nil, itemWidget, "OptionsCheckButtonTemplate")
   itemWidget.checkBtn:SetScript("OnClick", function() dataManager:ToggleChecked(itemID) end)
-  itemWidget.checkBtn:SetPoint("LEFT", itemWidget, "LEFT", 0, 0)
-  itemWidget.checkBtn:SetSize(28, 28)
+  -- itemWidget.checkBtn:SetPoint("LEFT", itemWidget, "LEFT", 0, 0)
+  -- itemWidget.checkBtn:SetSize(28, 28)
   itemWidget.SetCheckBtnExtended = item_setCheckBtnExtended
   itemWidget:SetCheckBtnExtended(true)
 
   -- / interactiveLabel
   itemWidget.interactiveLabel = widgets:NoPointsInteractiveLabel(itemWidget, nil, itemData.name, "GameFontNormalLarge")
+  itemWidget.interactiveLabel:SetPoint("LEFT", itemWidget.checkBtn, "RIGHT", 0, 0)
+
   itemWidget.interactiveLabel.Button:Hide() -- we are not in edit mode by default
 
   if utils:HasHyperlink(itemData.name) then -- this is for making more space for items that have hyperlinks in them
@@ -970,7 +998,7 @@ function widgets:ItemWidget(itemID, parentFrame)
   -- / editModeFrame
   itemWidget.editModeFrame = CreateFrame("Frame", nil, itemWidget, nil)
   itemWidget.editModeFrame:SetPoint("LEFT", itemWidget, "LEFT", 0, 0)
-  itemWidget.editModeFrame:SetSize(60, 20) -- CVAL
+  itemWidget.editModeFrame:SetSize(48, 20) -- CVAL
   local emf = itemWidget.editModeFrame
 
   -- / removeBtn

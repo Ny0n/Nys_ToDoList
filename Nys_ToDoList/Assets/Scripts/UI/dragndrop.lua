@@ -21,10 +21,10 @@ local normalAlpha = 1
 local selectedDimAlpha = 0 -- TODO idk what is nicer here
 local forbiddenDimAlpha = 0.3
 
-local catTopPos = { 0, enums.ofsyCat/2 }
-local catBottomPos = { 0, -enums.ofsyCat/2 }
-local catItemPos = { 38, -enums.ofsyCatContent/2+4 }
-local itemPos = { 26, -enums.ofsyContent/2+4 }
+local catTopPos = { 4, enums.ofsyCat/2 }
+local catBottomPos = { 4, -enums.ofsyCat/2 }
+local catItemPos = { 16, -enums.ofsyCatContent/2+4 }
+local itemPos = { 0, -enums.ofsyContent/2+4 }
 local itemCatPos = { -enums.ofsxContent, -enums.ofsyContentCat/2 }
 
 -- drag&drop data
@@ -38,6 +38,8 @@ local dropLine
 local minDist = 10000
 
 local clickX, clickY -- for a clean drag&grop
+local listScale
+local effectiveScale
 
 local dropFrameNb = 0
 local dropFramesBank = { -- IMPORTANT drop frames are basically drop points
@@ -65,11 +67,16 @@ local CreateFrame, UIParent = CreateFrame, UIParent
 
 --/***************/ MISC /*****************/--
 
+local function GetCursorScaledPosition()
+	local scale, x, y = UIParent:GetScale(), GetCursorPosition()
+	return x/scale, y/scale
+end
+
 local function testDist(dropFrame, cursorY)
   -- we get the distance between the given drop frame and the cursor,
   -- to determine which one is the closest to it
 
-  local _, dropFrameY = dropFrame:GetCenter()
+  local _, dropFrameY = dropFrame:GetCenter() -- LIST CS
   local targetDropFrameDist = math.abs(cursorY-dropFrameY) -- dist
 
   if targetDropFrameDist < minDist then -- new minimum?
@@ -100,8 +107,8 @@ local function dragUpdateFunc()
   end
 
   -- cursor current pos (Y)
-  local widgetScale, cursorX, cursorY = draggingWidget:GetEffectiveScale(), GetCursorPosition() -- TODO redo scale later
-  cursorX, cursorY = cursorX/widgetScale, cursorY/widgetScale
+  local scale, cursorX, cursorY = UIParent:GetScale()*listScale, GetCursorPosition()
+  cursorX, cursorY = cursorX/scale, cursorY/scale -- LIST CS
 
   if lastCursorPosX == cursorX and lastCursorPosY == cursorY then return end -- no need for an update if we didn't move the cursor
   lastCursorPosX = cursorX
@@ -111,7 +118,7 @@ local function dragUpdateFunc()
 
   minDist = 10000 -- we reset the dist to find the closest drop point each frame
   for _,dropFrame in pairs(dropFrames) do
-    if dropFrame:IsVisible() and mainFrame:IsVisible(dropFrame, 8) then -- we only care about a drop point if we can see it
+    if dropFrame:IsVisible() then -- we only care about a drop point if we can see it
       testDist(dropFrame, cursorY)
     end
   end
@@ -146,6 +153,11 @@ local function isCatDropValid(targetCatID)
   end
 
   return true
+end
+
+function dragndrop:SetScale(scale)
+  -- to update the scale in this file
+  listScale = scale
 end
 
 --/***************/ DROP FRAMES /*****************/--
@@ -293,7 +305,7 @@ function dragndrop:CreateDropFrame(parent, ofsx, ofsy)
 
   dropFrame:ClearAllPoints()
   dropFrame:SetParent(parent)
-  dropFrame:SetPoint("CENTER", parent, "CENTER", ofsx, ofsy)
+  dropFrame:SetPoint("CENTER", parent, "CENTER", ofsx, ofsy) -- LIST CS
   return dropFrame
 end
 
@@ -310,13 +322,10 @@ end
 --/***************/ DRAGGING /*****************/--
 
 function initCategoryDrag()
+  if not dragndrop.dragging then return end
+
   -- creating the duplicate, and getting the dragging's widget current position
   createDuplicate(enums.category, draggingWidget.catID)
-
-  -- this is to recolor white the cat widget, since dragging it might have turned it blue bc of the mouseover
-  -- print("CALL leave") -- TODO NOW
-  local btn = draggingWidget.interactiveLabel.Button
-  btn:GetScript("OnLeave")(btn)
 
   -- when we are dragging a category, we dim every place we can't drag it to (for a visual feedback)
   local contentWidgets = mainFrame:GetContentWidgets()
@@ -332,8 +341,16 @@ function initCategoryDrag()
 end
 
 function initItemDrag()
+  if not dragndrop.dragging then return end
+
   -- creating the duplicate, and getting the dragging's widget current position
   createDuplicate(enums.item, draggingWidget.itemID)
+
+  -- hiding the buttons on the left of the dragging widget
+  draggingWidget.editModeFrame:Hide()
+  draggingWidget.removeBtn:Hide()
+  draggingWidget.favoriteBtn:Hide()
+  draggingWidget.descBtn:Hide()
 
   -- when we are dragging an item, we dim every place we can't drag it to (for a visual feedback)
   local contentWidgets = mainFrame:GetContentWidgets()
@@ -391,6 +408,12 @@ end
 --/***************/ START&STOP /*****************/--
 
 local function dragStart(dragFrame)
+  local widget = dragFrame:GetParent():GetParent()
+
+  if widget.enum == enums.category then
+    if not mainFrame.editMode then return end
+  end
+
   -- drag init
   dragndrop.dragging = true
 
@@ -399,14 +422,17 @@ local function dragStart(dragFrame)
   lastCursorPosX = nil
   lastCursorPosY = nil
   tdlFrame = mainFrame:GetFrame()
-  draggingWidget = dragFrame:GetParent():GetParent()
+  draggingWidget = widget
   targetDropFrame, newPos = nil, nil
   startingTab, currentTab = nil, nil
   dropLine = dropLine or CreateFrame("Frame", nil, tdlFrame.content, "NysTDL_DropLine") -- creating the drop line
+  dropLine:SetScale(utils:Clamp(listScale, 0, 1)) -- we need to re-set the scale of the drop line here (for reasons)
   dropLine:Show()
 end
 
 local function dragStop()
+  if not dragndrop.dragging then return end
+
   dragndrop.dragging = false
 
   -- // we reset everything
@@ -426,7 +452,7 @@ local function dragStop()
   end
 
   -- we hide the dragging widget, as well as the drop line
-  if draggingWidget then draggingWidget:ClearAllPoints() draggingWidget:Hide() end
+  if draggingWidget then draggingWidget:StopMovingOrSizing() draggingWidget:ClearAllPoints() draggingWidget:Hide() end
   if dropLine then dropLine:ClearAllPoints() dropLine:Hide() end
 
   -- we stop the dragUpdate
@@ -438,22 +464,30 @@ end
 
 local function dragMouseDown(dragFrame)
   -- this is for snapping the widget on the cursor, where we started to drag it
-  local scale, x, y = dragFrame:GetParent():GetParent():GetEffectiveScale(), GetCursorPosition()
-  clickX, clickY = x/scale, y/scale
+  clickX, clickY = GetCursorScaledPosition() -- UIPARENT CS
 end
 
 local function dragMouseStart()
+  if not dragndrop.dragging then return end
+
   -- we snap the one we are dragging to the current cursor position,
   -- where the widget was first clicked on before the drag, and we start moving it
   -- (it is a dummy widget, perfect duplicate just for a visual feedback, but it doesn't actually do anything)
-  local widgetX, widgetY = draggingWidget:GetCenter()
-  local ofsx, ofsy = clickX - widgetX, clickY - widgetY
 
-  draggingWidget:SetParent(UIParent)
+  -- !! i am using this custom snapping and NOT using the default drag's StartMoving and StopMovingOrSizing snap because
+  -- !! it simply doesn't work for different frames. when dragging we are clicking on the button of the interactiveLabel of the widget,
+  -- !! but the drag needs to be moving the entire widget --> it simply doesn't know where the original click was since it was on a sub-frame
+  -- (maaaaybe there was an other solution that i don't know of, but whatever :D)
+
+  draggingWidget:SetParent(UIParent) -- PARENT SWITCH !! IMPORTANT TO TAKE THIS INTO ACCOUNT FOR THE SCALE (LIST CS | UIPARENT CS) (CS = Coordinate Space)
+  draggingWidget:SetScale(listScale) -- since switching parents changed the scale, we set it again to copy the list's widgets
+
+  local widgetX, widgetY = draggingWidget:GetCenter() -- UIPARENT CS
+  local ofsx, ofsy = clickX - widgetX, clickY - widgetY -- here we take the offset between the original click's pos (dragMouseDown) and the widget's center
+
+  local cursorX, cursorY = GetCursorScaledPosition() -- UIPARENT CS
   draggingWidget:ClearAllPoints()
-
-  local widgetScale, cursorX, cursorY = draggingWidget:GetEffectiveScale() , GetCursorPosition()
-  draggingWidget:SetPoint("CENTER", nil, "BOTTOMLEFT", (cursorX/widgetScale)-ofsx, (cursorY/widgetScale)-ofsy)
+  draggingWidget:SetPoint("CENTER", UIParent, "BOTTOMLEFT", cursorX-ofsx, cursorY-ofsy) -- so we can snap the widget to the cursor at the same place that we clicked on (like a typical drag&drop)
 
   draggingWidget:StartMoving()
   draggingWidget:SetUserPlaced(false)
@@ -489,6 +523,7 @@ function dragndrop:RegisterForDrag(widget)
   end
 
   dragFrame:HookScript("OnDragStart", function()
+    if not dragndrop.dragging then return end
     -- and finally, when everything is set up, we start the drop update managment
     dragUpdate:SetScript("OnUpdate", dragUpdateFunc)
   end)

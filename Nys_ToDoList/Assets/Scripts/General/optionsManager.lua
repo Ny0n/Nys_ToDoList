@@ -99,6 +99,7 @@ local tabManagementTable = {
         end,
         set = function(info, state)
           NysTDL.db.profile.instantRefresh = state
+          mainFrame:Refresh()
         end,
       },
       deleteCheckedItemsToggle = {
@@ -115,6 +116,7 @@ local tabManagementTable = {
           if state then
             tabData.hideCheckedItems = false
           end
+          mainFrame:Refresh()
         end,
         disabled = function(info)
           local _, tabData = getTabInfo(info)
@@ -135,6 +137,7 @@ local tabManagementTable = {
           if state then
             tabData.deleteCheckedItems = false
           end
+          mainFrame:Refresh()
         end,
         disabled = function(info)
           local _, tabData = getTabInfo(info)

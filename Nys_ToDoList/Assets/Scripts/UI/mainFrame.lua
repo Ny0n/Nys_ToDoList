@@ -133,16 +133,25 @@ function mainFrame:ChangeTab(newTabID)
 end
 
 function mainFrame:IsVisible(frame, margin)
+  -- UNUSED FUNC (not really optimized)
+
   -- returns true if the frame is visible in the tdlFrame
   -- (not :IsVisible(), i'm talking about wether it's currently visible in the scroll frame, or hidden because of SetClipsChildren)
   margin = margin or 0
 
+  local listScale = tdlFrame:GetEffectiveScale()
+  local frameScale = frame:GetEffectiveScale()
+  local newScale = listScale/frameScale
+
+  local s = frame:GetScale()
+  frame:SetScale(newScale) -- by doing this we sync both of the effective scales so that both frames are in the same CS (Coordinate Space)
   local frameX, frameY = frame:GetCenter()
+  frame:SetScale(s)
 
   local tdlFrameMinY = tdlFrame:GetBottom()
-  local tdlFrameMaxY    = tdlFrame:GetTop()
-  local tdlFrameMinX   = tdlFrame:GetLeft()
-  local tdlFrameMaxX  = tdlFrame:GetRight()
+  local tdlFrameMaxY = tdlFrame:GetTop()
+  local tdlFrameMinX = tdlFrame:GetLeft()
+  local tdlFrameMaxX = tdlFrame:GetRight()
 
   if frameX - margin > tdlFrameMinX
   and frameX + margin < tdlFrameMaxX
@@ -210,8 +219,26 @@ function mainFrame:UpdateItemNamesColor()
           contentWidget.interactiveLabel.Text:SetTextColor(unpack(NysTDL.db.profile.favoritesColor)) -- colored
         else
           contentWidget.interactiveLabel.Text:SetTextColor(unpack(utils:ThemeDownTo01(database.themes.theme_yellow))) -- yellow
+          -- contentWidget.interactiveLabel.Text:SetTextColor(1, 1, 1) -- white
         end
       end
+    end
+  end
+end
+
+function mainFrame:UpdateCategoryNamesColor()
+  for _, contentWidget in pairs(contentWidgets) do
+    if contentWidget.enum == enums.category then -- for every category widget
+      -- we color in accordance to their content checked state
+      local total, checked = dataManager:GetCatCheckedNumbers(contentWidget.catID)
+
+      if total > 0 and total == checked then
+        contentWidget.color = { 0, 1, 0, 1 } -- green
+      else
+        contentWidget.color = { 1, 1, 1, 1 } -- white
+      end
+
+      contentWidget.interactiveLabel.Text:SetTextColor(unpack(contentWidget.color))
     end
   end
 end
@@ -269,44 +296,25 @@ function mainFrame:ApplyNewRainbowColor()
   mainFrame:UpdateItemNamesColor()
 end
 
--- TODO move this
--- this table is to only update once the things concerned by the special key inputs instead of every frame
-local T_Event_TDLFrame_OnUpdate = {
-  other = function(self, x) -- returns true if an other argument than the given one or 'nothing' is true
-    for k,v in pairs(self) do
-      if type(v) == "boolean" then
-        if k ~= "nothing" and k ~= x and v then
-          return true
-        end
-      end
-    end
-    return false
-  end,
-  something = function(self, x) -- sets to true only the given argument, while falsing every other
-    for k,v in pairs(self) do
-      if type(v) == "boolean" then
-        self[k] = false
-      end
-    end
-    self[x] = true
-  end,
-  nothing = false,
-  shift = false,
-  ctrl = false,
-  alt = false,
-}
 function mainFrame:UpdateItemButtons(itemID)
   -- // shows the right button at the left of the given item
   local itemWidget = contentWidgets[itemID] -- we take the item widget
   if not itemWidget then return end -- just in case
 
+  -- visual update for each button
+  itemWidget.removeBtn:GetScript("OnShow")(itemWidget.removeBtn)
+  itemWidget.favoriteBtn:GetScript("OnShow")(itemWidget.favoriteBtn)
+  itemWidget.descBtn:GetScript("OnShow")(itemWidget.descBtn)
+
   if mainFrame.editMode then
-    itemWidget.descBtn:Show()
+    itemWidget.removeBtn:Show()
     itemWidget.favoriteBtn:Show()
+    itemWidget.descBtn:Show()
     return
   end
 
   -- first we hide each button to show the good one afterwards
+  itemWidget.removeBtn:Hide()
   itemWidget.descBtn:Hide()
   itemWidget.favoriteBtn:Hide()
 
@@ -330,6 +338,8 @@ function mainFrame:ToggleEditMode(state)
   for _,contentWidget in pairs(contentWidgets) do
     contentWidget:SetEditMode(mainFrame.editMode)
   end
+
+  mainFrame:Refresh()
 end
 
 --/*******************/ EVENTS /*************************/--
@@ -389,9 +399,35 @@ function mainFrame:Event_TDLFrame_OnSizeChanged(width, height)
   self.ScrollFrame.ScrollBar:SetScale(scale)
   self.closeButton:SetScale(scale)
   self.resizeButton:SetScale(scale)
+  dragndrop:SetScale(scale)
   tutorialsManager:SetFramesScale(scale)
 end
 
+-- this table is to only update once the things concerned by the special key inputs instead of every frame
+local T_Event_TDLFrame_OnUpdate = {
+  other = function(self, x) -- returns true if an other argument than the given one or 'nothing' is true
+    for k,v in pairs(self) do
+      if type(v) == "boolean" then
+        if k ~= "nothing" and k ~= x and v then
+          return true
+        end
+      end
+    end
+    return false
+  end,
+  something = function(self, x) -- sets to true only the given argument, while falsing every other
+    for k,v in pairs(self) do
+      if type(v) == "boolean" then
+        self[k] = false
+      end
+    end
+    self[x] = true
+  end,
+  nothing = false,
+  shift = false,
+  ctrl = false,
+  alt = false,
+}
 function mainFrame:Event_TDLFrame_OnUpdate()
   -- if (tdlFrame:IsMouseOver()) then
   --   tdlFrame.ScrollFrame.ScrollBar:Show()
@@ -422,6 +458,9 @@ function mainFrame:Event_TDLFrame_OnUpdate()
       -- resize button
       tdlFrame.ScrollFrame.ScrollBar:SetPoint("BOTTOMRIGHT", tdlFrame.ScrollFrame, "BOTTOMRIGHT", - 7, 32)
       tdlFrame.resizeButton:Show()
+
+      -- EDIT MODE ALT
+      mainFrame:ToggleEditMode(true)
     end
   -- elseif IsShiftKeyDown() and not T_Event_TDLFrame_OnUpdate:other("shift") then
   --   if not T_Event_TDLFrame_OnUpdate.shift then
@@ -452,11 +491,6 @@ function mainFrame:Event_TDLFrame_OnUpdate()
   elseif not T_Event_TDLFrame_OnUpdate.nothing then
     T_Event_TDLFrame_OnUpdate:something("nothing")
 
-    -- item icons
-    for itemID in dataManager:ForEach(enums.item) do
-      mainFrame:UpdateItemButtons(itemID)
-    end
-
     -- buttons
     tdlFrame.content.categoryButton:Show()
     tdlFrame.content.frameOptionsButton:Show()
@@ -465,6 +499,9 @@ function mainFrame:Event_TDLFrame_OnUpdate()
     -- resize button
     tdlFrame.ScrollFrame.ScrollBar:SetPoint("BOTTOMRIGHT", tdlFrame.ScrollFrame, "BOTTOMRIGHT", - 7, 17)
     tdlFrame.resizeButton:Hide()
+
+    -- EDIT MODE ALT
+    mainFrame:ToggleEditMode(false)
   end
 end
 
@@ -535,33 +572,19 @@ local function loadContent()
     tdlFrame.content.lineBottom:SetEndPoint("TOPLEFT", centerXOffset+lineOffset, -78)
   end
 
-  -- // nothing label ("There are no items!" / "(%i hidden item(s))")
-  -- first, we get how many items there are in the tab
-  local numbers = dataManager:GetRemainingNumbers(nil, ctab())
-
-  -- we hide it by default
-  tdlFrame.content.nothingLabel:Hide()
-
-  -- then we show it depending on the result
-  if numbers.total == 0 then -- if there are no items in the current tab
-    tdlFrame.content.nothingLabel:SetText(L["There are no items!"])
+  -- // nothing label
+  tdlFrame.content.nothingLabel:Hide() -- we hide it by default
+  local tabData = select(3, dataManager:Find(ctab()))
+  if not next(tabData.orderedCatIDs) then -- we show it if the tab has no categories
     tdlFrame.content.nothingLabel:Show()
-  else -- if there are items in the tab
-    if numbers.totalChecked == numbers.total then -- and if they are all checked ones
-      -- we check if they are hidden or not, and if they are, we show the nothing label with a different text
-      local tabData = select(3, dataManager:Find(ctab()))
-      if tabData.hideCheckedItems then -- TODO hide cat with items? / close it automatically with special label ?
-        tdlFrame.content.nothingLabel:SetText(utils:SafeStringFormat(L["(%i hidden item(s))"], numbers.totalChecked))
-        tdlFrame.content.nothingLabel:Show()
-      end
-    end
   end
 end
 
-local function recursiveLoad(tabID, catWidget, p)
+local function recursiveLoad(tabID, tabData, catWidget, p)
   local catData = catWidget.catData
-  if catData.closedInTabIDs[tabID] then
-    catWidget.emptyLabel:Hide()
+  catWidget.emptyLabel:Hide()
+  catWidget.hiddenLabel:Hide()
+  if catData.closedInTabIDs[tabID] then -- if the cat is closed
     p.newY = p.newY - enums.ofsyCat
   else -- if the cat is opened, we display all of its content
     p.newY = p.newY - enums.ofsyCatContent
@@ -570,7 +593,18 @@ local function recursiveLoad(tabID, catWidget, p)
       catWidget.emptyLabel:Show()
       p.newY = p.newY - enums.ofsyContentCat
     else
-      catWidget.emptyLabel:Hide()
+      -- !! hide checked items option
+      if not mainFrame.editMode then
+        if tabData.hideCheckedItems then
+          if not dataManager:IsParent(catWidget.catID) then
+            local total, checked = dataManager:GetCatCheckedNumbers(catWidget.catID)
+            if total > 0 and total == checked then
+              catWidget.hiddenLabel:Show()
+              p.newY = p.newY - enums.ofsyContentCat
+            end
+          end
+        end
+      end
 
       -- item widgets loop
       p.newX = p.newX + enums.ofsxContent
@@ -581,7 +615,7 @@ local function recursiveLoad(tabID, catWidget, p)
           contentWidget:Show()
 
           if contentWidget.enum == enums.category then -- sub-category
-            recursiveLoad(tabID, contentWidget, p)
+            recursiveLoad(tabID, tabData, contentWidget, p)
           elseif contentWidget.enum == enums.item then -- item
             p.newY = p.newY - enums.ofsyContent
           end
@@ -630,7 +664,7 @@ local function loadList()
       catWidget.originalTabLabel:Show()
     end
 
-    recursiveLoad(tabID, catWidget, p)
+    recursiveLoad(tabID, tabData, catWidget, p)
   end
 
   -- drag&drop
@@ -648,6 +682,7 @@ function mainFrame:UpdateVisuals()
   mainFrame:UpdateRemainingNumberLabels()
   mainFrame:updateFavsRemainingNumbersColor()
   mainFrame:UpdateItemNamesColor()
+  mainFrame:UpdateCategoryNamesColor()
   widgets:UpdateTDLButtonColor()
 end
 
@@ -734,101 +769,101 @@ local function generateMenuAddACategory()
   --  // LibUIDropDownMenu version // --
 
   --@retail@
-  menuframe.categoriesDropdown = LDD:Create_UIDropDownMenu("NysTDL_Frame_CategoriesDropdown", nil)
-
-  menuframe.categoriesDropdown.HideMenu = function()
-  	if L_UIDROPDOWNMENU_OPEN_MENU == menuframe.categoriesDropdown then
-  		LDD:CloseDropDownMenus()
-  	end
-  end
-
-  menuframe.categoriesDropdown.SetValue = function(self, newValue)
-    -- we update the category edit box
-    if (menuframe.categoryEditBox:GetText() == newValue) then
-      menuframe.categoryEditBox:SetText("")
-      widgets:SetFocusEditBox(menuframe.categoryEditBox)
-    elseif (newValue ~= nil) then
-      menuframe.categoryEditBox:SetText(newValue)
-      -- widgets:SetFocusEditBox(menuframe.nameEditBox) XXX
-    end
-  end
-
-  -- Create and bind the initialization function to the dropdown menu
-  LDD:UIDropDownMenu_Initialize(menuframe.categoriesDropdown, function(self, level)
-    if not level then return end
-    local info = LDD:UIDropDownMenu_CreateInfo()
-    wipe(info)
-
-    if level == 1 then
-      -- the title
-      info.isTitle = true
-      info.notCheckable = true
-      info.text = L["Use an existing category"]
-      LDD:UIDropDownMenu_AddButton(info, level)
-
-      -- the categories
-      wipe(info)
-      info.func = self.SetValue
-      local categories = mainFrame:GetCategoriesOrdered()
-      for _, v in pairs(categories) do
-        info.arg1 = v
-        info.text = v
-        info.checked = menuframe.categoryEditBox:GetText() == v
-        LDD:UIDropDownMenu_AddButton(info, level)
-      end
-
-      -- the close button
-      wipe(info)
-  		info.notCheckable = true
-  		info.text = CLOSE
-  		info.func = self.HideMenu
-  		LDD:UIDropDownMenu_AddButton(info, level)
-    end
-  end, "MENU")
-
-  menuframe.categoriesDropdownButton = CreateFrame("Button", "NysTDL_Button_CategoriesDropdown", menuframe.categoryEditBox, "NysTDL_DropdownButton")
-  menuframe.categoriesDropdownButton:SetPoint("LEFT", menuframe.categoryEditBox, "RIGHT", 0, -1)
-  menuframe.categoriesDropdownButton:SetScript("OnClick", function(self)
-    LDD:ToggleDropDownMenu(1, nil, menuframe.categoriesDropdown, self:GetName(), 0, 0)
-  end)
-  menuframe.categoriesDropdownButton:SetScript("OnHide", menuframe.categoriesDropdown.HideMenu)
+  -- menuframe.categoriesDropdown = LDD:Create_UIDropDownMenu("NysTDL_Frame_CategoriesDropdown", nil)
+  --
+  -- menuframe.categoriesDropdown.HideMenu = function()
+  -- 	if L_UIDROPDOWNMENU_OPEN_MENU == menuframe.categoriesDropdown then
+  -- 		LDD:CloseDropDownMenus()
+  -- 	end
+  -- end
+  --
+  -- menuframe.categoriesDropdown.SetValue = function(self, newValue)
+  --   -- we update the category edit box
+  --   if (menuframe.categoryEditBox:GetText() == newValue) then
+  --     menuframe.categoryEditBox:SetText("")
+  --     widgets:SetFocusEditBox(menuframe.categoryEditBox)
+  --   elseif (newValue ~= nil) then
+  --     menuframe.categoryEditBox:SetText(newValue)
+  --     -- widgets:SetFocusEditBox(menuframe.nameEditBox) XXX
+  --   end
+  -- end
+  --
+  -- -- Create and bind the initialization function to the dropdown menu
+  -- LDD:UIDropDownMenu_Initialize(menuframe.categoriesDropdown, function(self, level)
+  --   if not level then return end
+  --   local info = LDD:UIDropDownMenu_CreateInfo()
+  --   wipe(info)
+  --
+  --   if level == 1 then
+  --     -- the title
+  --     info.isTitle = true
+  --     info.notCheckable = true
+  --     info.text = L["Use an existing category"]
+  --     LDD:UIDropDownMenu_AddButton(info, level)
+  --
+  --     -- the categories
+  --     wipe(info)
+  --     info.func = self.SetValue
+  --     local categories = mainFrame:GetCategoriesOrdered()
+  --     for _, v in pairs(categories) do
+  --       info.arg1 = v
+  --       info.text = v
+  --       info.checked = menuframe.categoryEditBox:GetText() == v
+  --       LDD:UIDropDownMenu_AddButton(info, level)
+  --     end
+  --
+  --     -- the close button
+  --     wipe(info)
+  -- 		info.notCheckable = true
+  -- 		info.text = CLOSE
+  -- 		info.func = self.HideMenu
+  -- 		LDD:UIDropDownMenu_AddButton(info, level)
+  --   end
+  -- end, "MENU")
+  --
+  -- menuframe.categoriesDropdownButton = CreateFrame("Button", "NysTDL_Button_CategoriesDropdown", menuframe.categoryEditBox, "NysTDL_DropdownButton")
+  -- menuframe.categoriesDropdownButton:SetPoint("LEFT", menuframe.categoryEditBox, "RIGHT", 0, -1)
+  -- menuframe.categoriesDropdownButton:SetScript("OnClick", function(self)
+  --   LDD:ToggleDropDownMenu(1, nil, menuframe.categoriesDropdown, self:GetName(), 0, 0)
+  -- end)
+  -- menuframe.categoriesDropdownButton:SetScript("OnHide", menuframe.categoriesDropdown.HideMenu)
   --@end-retail@
 
   --  // NOLIB version1 - Custom frame style (clean, with wipes): taints click on quests in combat // --
   --[===[@non-retail@
-  menuframe.categoriesDropdown = CreateFrame("Frame", "NysTDL_Frame_CategoriesDropdown")
-  menuframe.categoriesDropdown.displayMode = "MENU"
-  menuframe.categoriesDropdown.info = {}
-  menuframe.categoriesDropdown.initialize = function(self, level)
-    if not level then return end
-    local info = self.info
-    wipe(info)
-
-    if level == 1 then
-      -- the title
-      info.isTitle = true
-      info.notCheckable = true
-      info.text = L["Use an existing category"]
-      UIDropDownMenu_AddButton(info, level)
-
-      -- the categories
-      wipe(info)
-      info.func = self.SetValue
-      local categories = mainFrame:GetCategoriesOrdered()
-      for _, v in pairs(categories) do
-        info.text = v
-        info.arg1 = v
-        info.checked = menuframe.categoryEditBox:GetText() == v
-        UIDropDownMenu_AddButton(info, level)
-      end
-
-      wipe(info)
-  		info.notCheckable = true
-  		info.text = CLOSE
-  		info.func = self.HideMenu
-  		UIDropDownMenu_AddButton(info, level)
-    end
-  end
+  -- menuframe.categoriesDropdown = CreateFrame("Frame", "NysTDL_Frame_CategoriesDropdown")
+  -- menuframe.categoriesDropdown.displayMode = "MENU"
+  -- menuframe.categoriesDropdown.info = {}
+  -- menuframe.categoriesDropdown.initialize = function(self, level)
+  --   if not level then return end
+  --   local info = self.info
+  --   wipe(info)
+  --
+  --   if level == 1 then
+  --     -- the title
+  --     info.isTitle = true
+  --     info.notCheckable = true
+  --     info.text = L["Use an existing category"]
+  --     UIDropDownMenu_AddButton(info, level)
+  --
+  --     -- the categories
+  --     wipe(info)
+  --     info.func = self.SetValue
+  --     local categories = mainFrame:GetCategoriesOrdered()
+  --     for _, v in pairs(categories) do
+  --       info.text = v
+  --       info.arg1 = v
+  --       info.checked = menuframe.categoryEditBox:GetText() == v
+  --       UIDropDownMenu_AddButton(info, level)
+  --     end
+  --
+  --     wipe(info)
+  -- 		info.notCheckable = true
+  -- 		info.text = CLOSE
+  -- 		info.func = self.HideMenu
+  -- 		UIDropDownMenu_AddButton(info, level)
+  --   end
+  -- end
   --@end-non-retail@]===]
 
   --  // NOLIB version2 - WoW template style (no level check): taints SetFocus and click on quests in combat // --
@@ -913,15 +948,8 @@ local function generateMenuFrameOptions()
 
   --/************************************************/--
 
-  menuframe.resizeTitle = widgets:NoPointsLabel(menuframe, nil, string.format("|cffffffff%s|r", L["Hold ALT to see the resize button"]))
-  menuframe.resizeTitle:SetPoint("TOP", menuframe.menuTitle, "TOP", 0, -32)
-  menuframe.resizeTitle:SetFontObject("GameFontHighlight")
-  menuframe.resizeTitle:SetWidth(230)
-
-  --/************************************************/--
-
   menuframe.frameAlphaSlider = CreateFrame("Slider", "frameAlphaSlider", menuframe, "OptionsSliderTemplate")
-  menuframe.frameAlphaSlider:SetPoint("TOP", menuframe.resizeTitle, "TOP", 0, -28 - menuframe.resizeTitle:GetHeight()) -- TODO redo?
+  menuframe.frameAlphaSlider:SetPoint("TOP", menuframe.menuTitle, "TOP", 0, -45)
   menuframe.frameAlphaSlider:SetWidth(200)
   -- menuframe.frameAlphaSlider:SetHeight(17)
   -- menuframe.frameAlphaSlider:SetOrientation('HORIZONTAL')
@@ -1126,7 +1154,7 @@ local function generateFrameContent()
   menuEnum = enums.menus.frameopt
   content.menuFrames[menuEnum] = CreateFrame("Frame", nil, tdlFrame.content)
   content.menuFrames[menuEnum]:SetPoint("TOPLEFT", tdlFrame.content, "TOPLEFT", 0, -78)
-  content.menuFrames[menuEnum]:SetSize(contentWidth, 260) -- CVAL
+  content.menuFrames[menuEnum]:SetSize(contentWidth, 235) -- CVAL
   generateMenuFrameOptions()
 
   -- / tab actions sub-menu
@@ -1142,6 +1170,7 @@ local function generateFrameContent()
 
   content.nothingLabel = widgets:NothingLabel(content)
   content.nothingLabel:SetPoint("TOP", content.lineBottom, "TOP", 0, -20)
+  content.nothingLabel:SetText("This tab is empty")
 
   content.loadOrigin = widgets:Dummy(content, content.lineBottom, 0, 0)
   content.loadOrigin:SetPoint("TOPLEFT", content.lineBottom, "TOPLEFT", -34, -30) -- TODO redo?

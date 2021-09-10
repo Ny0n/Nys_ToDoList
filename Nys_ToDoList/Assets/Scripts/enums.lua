@@ -31,8 +31,8 @@ enums.tdlFrameDefaultHeight = 400
 enums.ofsxContent = 16
 enums.ofsyCatContent = 26
 enums.ofsyCat = 26
-enums.ofsyContentCat = 28
-enums.ofsyContent = 24
+enums.ofsyContentCat = 26
+enums.ofsyContent = 22
 
 enums.maxNameWidth = {
 	[enums.item] = 240,

@@ -1104,6 +1104,18 @@ function dataManager:GetParents(ID)
 	return T_GetParents
 end
 
+function dataManager:IsParent(catID)
+	-- returns true if the given cat has at least one sub-category inside of it
+
+	local catData = select(3, dataManager:Find(catID))
+	local contentWidgets = mainFrame:GetContentWidgets() -- to avoid using dataManager:Find() for each loop item (it's just for optimization)
+	for _,contentID in ipairs(catData.orderedContentIDs) do -- for everything that is in the cat
+		if contentWidgets[contentID].enum == enums.category then
+			return true
+		end
+	end
+end
+
 -- tabs
 
 function dataManager:UpdateShownTabID(tabID, shownTabID, state)
@@ -1239,7 +1251,8 @@ function dataManager:DoIfFoundTabMatch(maxTime, checkedType, callback, doAll)
 	end
 end
 
-function dataManager:IsHidden(itemID, tabID) -- OPTIMIZE this func
+function dataManager:IsHidden(itemID, tabID)
+	if mainFrame.editMode then return false end
 	local itemData = select(3, dataManager:Find(itemID))
 	local tabData = select(3, dataManager:Find(tabID))
 	return tabData.hideCheckedItems and itemData.checked
@@ -1338,6 +1351,7 @@ function dataManager:GetCatNumbers(catID)
 		elseif widget.enum == enums.item then
 			t.items = t.items + 1
 			local itemData = widget.itemData
+			if itemData.checked then t.checked = t.checked + 1 end
 			if itemData.description then t.desc = t.desc + 1 end
 			if itemData.favorite then t.favs = t.favs + 1 end
 			if not itemData.description and not itemData.favorite then t.normal = t.normal + 1 end
@@ -1347,4 +1361,31 @@ function dataManager:GetCatNumbers(catID)
 	t.total = t.subCats + t.items
 
 	return t
+end
+
+function dataManager:GetCatCheckedNumbers(catID)
+	-- // less less hardcore than GetRemainingNumbers, this func returns the general content of a given gategory -- ITEMS COMPLETION
+	-- returns two values: return total, checked
+	-- - total 			-- total nb of items (RECURSIVELY)
+	-- - checked 		-- nb of checked items (RECURSIVELY)
+
+	-- // numbers calculated:
+
+	local total = 0
+	local checked = 0
+
+	local catData = select(3, dataManager:Find(catID))
+	local contentWidgets = mainFrame:GetContentWidgets() -- to avoid using dataManager:Find() for each loop item (it's just for optimization)
+	for contentOrder,contentID in ipairs(catData.orderedContentIDs) do -- for everything that is in the cat
+		local widget = contentWidgets[contentID]
+		if widget.enum == enums.category then
+			local subTotal, subChecked = dataManager:GetCatCheckedNumbers(widget.catID)
+			total, checked = total + subTotal, checked + subChecked
+		elseif widget.enum == enums.item then
+			total = total + 1
+			if widget.itemData.checked then checked = checked + 1 end
+		end
+	end
+
+	return total, checked
 end
