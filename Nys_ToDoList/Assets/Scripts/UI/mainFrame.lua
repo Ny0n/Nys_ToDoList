@@ -233,7 +233,7 @@ function mainFrame:UpdateCategoryNamesColor()
       local total, checked = dataManager:GetCatCheckedNumbers(contentWidget.catID)
 
       if total > 0 and total == checked then
-        contentWidget.color = { 0, 1, 0, 1 } -- green
+        contentWidget.color = { 0, 1, 0, 1 } -- green -- TDLATER table ref
       else
         contentWidget.color = { 1, 1, 1, 1 } -- white
       end
@@ -682,7 +682,7 @@ function mainFrame:UpdateVisuals()
   mainFrame:UpdateRemainingNumberLabels()
   mainFrame:updateFavsRemainingNumbersColor()
   mainFrame:UpdateItemNamesColor()
-  mainFrame:UpdateCategoryNamesColor()
+  -- mainFrame:UpdateCategoryNamesColor()
   widgets:UpdateTDLButtonColor()
 end
 

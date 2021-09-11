@@ -9,7 +9,6 @@ For this update, the main new features include:
 
 - names are no longer unique
 - categories and items are now individual entities, this means that categories are not "created" by items like it was before
-- completed categories now offer a visual feedback
 
 - the addon is now way more optimized than it was before (still, do not add 2000 items in one tab :D)
 - Miscellaneous improvements

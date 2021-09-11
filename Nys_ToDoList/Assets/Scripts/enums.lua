@@ -22,13 +22,13 @@ enums.databrokerModes = {
   frame = "ENUMS_DATABROKERMODES_3", -- frame databroker mode
 }
 
--- pure data (see those as global variables accessible by any file, but not global)
+-- pure data (see those as global variables accessible by any file, but not global) -- TODO locale for string vars
 
 enums.idtype = "string"
 enums.tdlFrameDefaultWidth = 340
 enums.tdlFrameDefaultHeight = 400
 
-enums.ofsxContent = 16
+enums.ofsxContent = 24
 enums.ofsyCatContent = 26
 enums.ofsyCat = 26
 enums.ofsyContentCat = 26
@@ -38,4 +38,16 @@ enums.maxNameWidth = {
 	[enums.item] = 240,
 	[enums.category] = 220,
 	[enums.tab] = 150,
+}
+
+enums.defaultResetTimeName = "Reset 1"
+
+enums.days = {
+  [2] = "Monday",
+  [3] = "Tuesday",
+  [4] = "Wednesday",
+  [5] = "Thursday",
+  [6] = "Friday",
+  [7] = "Saturday",
+  [1] = "Sunday",
 }

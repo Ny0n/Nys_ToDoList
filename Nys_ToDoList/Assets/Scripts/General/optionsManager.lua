@@ -94,6 +94,7 @@ local tabManagementTable = {
         order = 1.4,
         type = "toggle",
         name = "Instant refresh",
+        -- desc = "", -- TODO dire dépendant du profile (PR PROFILE ET GLOBAL, dans les deux cas c dépendant du profile (rien a changer du coup))
         get = function(info)
           return NysTDL.db.profile.instantRefresh
         end,
@@ -217,16 +218,7 @@ local tabManagementTable = {
         name = "Reset days",
         width = "full",
         values = function(info)
-          local days = {
-            "Sunday",
-            "Monday",
-            "Tuesday",
-            "Wednesday",
-            "Thursday",
-            "Friday",
-            "Saturday",
-          }
-          return days
+          return enums.days
         end,
         get = function(info, key)
           local _, tabData = getTabInfo(info)
@@ -252,7 +244,7 @@ local tabManagementTable = {
               local _, tabData = getTabInfo(info)
               local days = {}
               for day in pairs(tabData.reset.days) do
-                days[day] = utils:GetDayByNumber(day)
+                days[day] = enums.days[day]
               end
               if not days[tabData.reset.configureDay] then
                 tabData.reset.configureDay = next(days)
@@ -497,8 +489,8 @@ function private:UpdateTabsInOptions(options)
     end
   end
 
-  for tabID,tabData in dataManager:ForEach(enums.tab, arg) do
-    args[tabID] = {
+  for tabID,tabData in dataManager:ForEach(enums.tab, arg) do -- for each tab in the correct profile state
+    args[tabID] = { -- we add them as selectable sub-groups under the good parent
       order = 1.1,
       type = "group",
       childGroups = "tab",
@@ -510,6 +502,7 @@ function private:UpdateTabsInOptions(options)
 end
 
 function private:RefreshTabManagement()
+  -- !! this func is important, as it refreshes the profile/global groups contents when adding/removing tabs
   local profile = optionsManager.optionsTable.args.main.args.tabs.args["groupProfileTabManagement"]
   local global = optionsManager.optionsTable.args.main.args.tabs.args["groupGlobalTabManagement"]
   private:UpdateTabsInOptions(profile)
@@ -742,11 +735,19 @@ local function createAddonOptionsTable()
             name = L["Tabs"],
             args = {
               optionsUpdater = {
+                -- this is completely hidden from the UI and is only here to silently update
+                -- the tab groups whenever there is a change.
                 order = 0.1,
                 type = "toggle",
                 name = "options updater",
-                -- hidden = true,
-                get = function() private:RefreshTabManagement() end
+                -- whenever a setter is called when this tab of the options is opened OR we opened this tab,
+                -- AceConfig will call each getter/disabled/hidden values of everything present on the page,
+                -- so putting the update func here actually works really well
+                hidden = function()
+                  private:RefreshTabManagement()
+                  widgets:UpdateTDLButtonColor() -- in case we changed reset times
+                  return true
+                end,
               }, -- optionsUpdater
               groupProfileTabManagement = {
                 order = 1.1,
@@ -761,6 +762,7 @@ local function createAddonOptionsTable()
                 name = "Global tabs",
                 arg = true,
                 args = utils:Deepcopy(tabAddTable),
+                hidden = true, -- TDLATER remove to implement global tabs
               }, -- groupGlobalTabManagement
 
               -- / layout widgets / --
@@ -775,15 +777,10 @@ local function createAddonOptionsTable()
 
               -- headers
               header1 = {
-                order = 0,
-                type = "header",
-                name = L["General"],
-              }, -- header1
-              header2 = {
                 order = 1,
                 type = "header",
                 name = "Tab Management",
-              }, -- header2
+              }, -- header1
             } -- args
           }, -- tabs
           chat = {

@@ -10,7 +10,8 @@ local optionsManager = addonTable.optionsManager
 
 -- Variables
 local L = core.L
-local warnTimerTime = 3600 -- in seconds (1 hour)
+local warnTimerTime = 10
+-- local warnTimerTime = 3600 -- in seconds (1 hour)
 
 --/*******************/ EVENT HANDLERS /*************************/--
 
@@ -44,7 +45,7 @@ function NysTDL:PLAYER_LOGIN()
         end
       end, warnTimerTime)
     end
-  end, 20)
+  end, 4)
 end
 
 --/*******************/ INITIALIZATION /*************************/--

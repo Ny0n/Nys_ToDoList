@@ -143,13 +143,3 @@ function utils:GetKeyFromValue(tabSource, value)
   end
   return nil
 end
-
-function utils:GetDayByNumber(n) -- TODO locale
-  if n == 1 then return "Sunday" end
-  if n == 2 then return "Monday" end
-  if n == 3 then return "Tuesday" end
-  if n == 4 then return "Wednesday" end
-  if n == 5 then return "Thursday" end
-  if n == 6 then return "Friday" end
-  if n == 7 then return "Saturday" end
-end

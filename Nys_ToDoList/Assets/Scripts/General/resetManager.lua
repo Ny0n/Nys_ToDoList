@@ -58,7 +58,7 @@ function private:NewResetData()
 		-- isInterval = false,
 		-- interval = private:NewRawTimeData(), -- used for the interval reset data
 		resetTimes = {
-			["Reset 1"] = private:NewRawTimeData(), -- min 1 reset, can be renamed / removed / added
+			[enums.defaultResetTimeName] = private:NewRawTimeData(), -- min 1 reset, can be renamed / removed / added
 			-- ...
 		},
 	}

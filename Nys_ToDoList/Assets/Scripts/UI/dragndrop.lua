@@ -23,7 +23,7 @@ local forbiddenDimAlpha = 0.3
 
 local catTopPos = { 4, enums.ofsyCat/2 }
 local catBottomPos = { 4, -enums.ofsyCat/2 }
-local catItemPos = { 16, -enums.ofsyCatContent/2+4 }
+local catItemPos = { enums.ofsxContent, -enums.ofsyCatContent/2+4 }
 local itemPos = { 0, -enums.ofsyContent/2+4 }
 local itemCatPos = { -enums.ofsxContent, -enums.ofsyContentCat/2 }
 

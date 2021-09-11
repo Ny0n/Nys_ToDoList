@@ -345,7 +345,8 @@ function database:CreateDefaultTabs()
 		-- Daily
 		local dailyTabID, dailyTabData = dataManager:CreateTab("Daily", isGlobal) -- isSameEachDay already true
 		for i=1,7 do resetManager:UpdateResetDay(dailyTabID, i, true) end -- every day
-		resetManager:UpdateTimeData(dailyTabID, dailyTabData.reset.sameEachDay.resetTimes["Reset 1"], 9, 0, 0)
+    resetManager:RenameResetTime(dailyTabID, dailyTabData.reset.sameEachDay, enums.defaultResetTimeName, "Daily")
+		resetManager:UpdateTimeData(dailyTabID, dailyTabData.reset.sameEachDay.resetTimes["Daily"], 9, 0, 0)
 
     if not isGlobal then
       selectedtabID = dailyTabID -- default tab
@@ -354,7 +355,8 @@ function database:CreateDefaultTabs()
 		-- Weekly
 		local weeklyTabID, weeklyTabData = dataManager:CreateTab("Weekly", isGlobal) -- isSameEachDay already true
 		resetManager:UpdateResetDay(weeklyTabID, 4, true) -- only wednesday
-		resetManager:UpdateTimeData(weeklyTabID, weeklyTabData.reset.sameEachDay.resetTimes["Reset 1"], 9, 0, 0)
+    resetManager:RenameResetTime(weeklyTabID, weeklyTabData.reset.sameEachDay, enums.defaultResetTimeName, "Weekly")
+		resetManager:UpdateTimeData(weeklyTabID, weeklyTabData.reset.sameEachDay.resetTimes["Weekly"], 9, 0, 0)
 
 		-- All
 		local allTabID = dataManager:CreateTab("All", isGlobal)

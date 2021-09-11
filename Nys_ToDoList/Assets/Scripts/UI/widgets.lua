@@ -145,7 +145,7 @@ function widgets:RefreshTDLButton()
   widgets:UpdateTDLButtonColor()
 end
 
-function widgets:UpdateTDLButtonColor() -- TODO fix calcul (red even when all checked)
+function widgets:UpdateTDLButtonColor()
   -- the TDL button red option, if any tab has a reset in less than 24 hours,
   -- and also has unchecked items, we color in red the text of the tdl button
 
