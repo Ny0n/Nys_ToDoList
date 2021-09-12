@@ -16,6 +16,7 @@ local private = {}
 local autoResetedThisSession = false
 
 function resetManager:PrintTimeDiff(timerResetID, ttime) -- TODO remove/comment, debug func
+  do return end
   local ctime = time()
   local days, hours, mins, secs = 0, 0, 0, 0
   local diff = math.abs(ttime - ctime)
@@ -336,19 +337,7 @@ function private:StartNextTimers(tabID)
 					foundOne = true
 				end
 			end
-			if foundOne then
-        for tabID, tabData in dataManager:ForEach(enums.tab, false) do
-          if next(tabData.reset.days) then
-            print(">================<")
-            print(tabData.name.." tab next reset times:")
-            for timerResetID,targetTime in pairs(tabData.reset.nextResetTimes) do
-              resetManager:PrintTimeDiff(timerResetID, targetTime)
-            end
-          end
-        end
-        print("<================>")
-        return
-      end
+      if foundOne then return end
 		end
 
 		-- if it's not today, then we find the next reset day, in order
@@ -364,17 +353,6 @@ function private:StartNextTimers(tabID)
 			private:StartTimer(tabID, currentTime, secondsUntil)
 		end
 	end
-
-  for tabID, tabData in dataManager:ForEach(enums.tab, false) do
-    if next(tabData.reset.days) then
-      print(">================<")
-      print(tabData.name.." tab next reset times:")
-      for timerResetID,targetTime in pairs(tabData.reset.nextResetTimes) do
-        resetManager:PrintTimeDiff(timerResetID, targetTime)
-      end
-    end
-  end
-  print("<================>")
 end
 
 function private:StartTimer(tabID, currentTime, secondsUntil)

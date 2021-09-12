@@ -645,7 +645,7 @@ local function loadList()
     newY = 0,
   }
 
-  -- category widgets loop
+  -- base category widgets loop
   for catOrder,catID in ipairs(tabData.orderedCatIDs) do
     local catWidget = contentWidgets[catID]
 
@@ -666,6 +666,8 @@ local function loadList()
 
     recursiveLoad(tabID, tabData, catWidget, p)
   end
+
+  tdlFrame.content.dummyBottomFrame:SetPoint("TOPLEFT", tdlFrame.content.loadOrigin, "TOPLEFT", p.newX, p.newY)
 
   -- drag&drop
   if dragndrop.dragging then
@@ -1060,8 +1062,7 @@ local function generateFrameContent()
 
   -- creating content, scroll child of ScrollFrame (everything will be inside of it)
   tdlFrame.content = CreateFrame("Frame", nil, tdlFrame.ScrollFrame)
-  tdlFrame.content:SetSize(310, 2000) -- y is determined by number of elements inside of it
-  -- tdlFrame.content:SetSize(310, 1) -- y is determined by number of elements inside of it
+  tdlFrame.content:SetSize(310, 1) -- y is determined by the elements inside of it
   tdlFrame.ScrollFrame:SetScrollChild(tdlFrame.content)
   local content = tdlFrame.content
 
@@ -1174,6 +1175,8 @@ local function generateFrameContent()
 
   content.loadOrigin = widgets:Dummy(content, content.lineBottom, 0, 0)
   content.loadOrigin:SetPoint("TOPLEFT", content.lineBottom, "TOPLEFT", -34, -30) -- TODO redo?
+
+  content.dummyBottomFrame = widgets:Dummy(content, content, 0, 0) -- this one if for putting a margin at the bottom of the content (mainly to leave space for the dropping of cat)
 end
 
 -- // Creating the main frame
@@ -1246,7 +1249,7 @@ function mainFrame:CreateTDLFrame()
     bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
     edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
     tile = false, tileSize = 1, edgeSize = 10,
-    insets = { left = 1, right = 1, top = 1, bottom = 1 }
+    insets = { left = 2, right = 2, top = 2, bottom = 2 }
   })
 
   tutorialsManager:SetPoint("ALTkey", "BOTTOM", tdlFrame, "TOP", 0, 18)
@@ -1403,3 +1406,32 @@ function mainFrame:Init()
     mainFrame:Event_TDLFrame_OnVisibilityUpdate()
   end
 end
+
+-- TODO tabs UI
+
+-- function ChatFrame_TruncateToMaxLength(text, maxLength)
+-- 	local length = strlenutf8(text);
+-- 	if ( length > maxLength ) then
+-- 		return text:sub(1, maxLength - 2).."...";
+-- 	end
+--
+-- 	return text;
+-- end
+
+-- function FCFDockScrollFrame_OnUpdate(self, elapsed)
+-- 	local MOVEMENT_SPEED = 10;
+--
+-- 	local totalDistanceNeeded = FCFDockScrollFrame_GetScrollDistanceNeeded(self, self.selectedDynIndex);
+-- 	if ( abs(totalDistanceNeeded) < 1.0 ) then	--Delta chosen through experimentation
+-- 		self:SetScript("OnUpdate", nil);
+-- 		FCFDockScrollFrame_JumpToTab(self, FCFDockScrollFrame_GetLeftmostTab(self));	--Make sure we're exactly aligned with the tab.
+-- 		return;
+-- 	end
+--
+-- 	local currentPosition = self:GetHorizontalScroll();
+--
+-- 	local distanceNoCap = totalDistanceNeeded * MOVEMENT_SPEED * elapsed;
+-- 	local distanceToMove = (totalDistanceNeeded > 0) and min(totalDistanceNeeded, distanceNoCap) or max(totalDistanceNeeded, distanceNoCap);
+--
+-- 	self:SetHorizontalScroll(max(currentPosition + distanceToMove, 0));
+-- end

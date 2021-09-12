@@ -3,6 +3,44 @@
 
   <!-- /*******************/ CUSTOM TEMPLATES /*************************/ -->
 
+  <!--@do-not-package@-->
+  <Frame name="NysTDL_TexCoordsTesting" parent="UIParent" inherits="BackdropTemplate" hidden="true">
+    <KeyValues>
+        <KeyValue key="backdropInfo" value="NysTDL_BACKDROP_INFO" type="global"/>
+        <!-- <KeyValue key="backdropInfo" value="NysTDL_BACKDROP_INFO" type="global"/> -->
+        <!-- <KeyValue key="backdropColor" value="NysTDL_COLOR_XXX" type="global"/> -->
+        <!-- <KeyValue key="backdropBorderColor" value="NysTDL_COLOR_XXX" type="global"/> -->
+        <!-- <KeyValue key="backdropColorAlpha" value="0" type="number"/> -->
+        <KeyValue key="backdropBorderColorAlpha" value="0" type="number"/>
+    </KeyValues>
+    <Size x="40" y="40"/>
+    <Anchors>
+      <Anchor point="CENTER" x="0" y="60"/>
+    </Anchors>
+    <Layers>
+      <Layer level="ARTWORK">
+        <!-- *************** -->
+        <!-- texture to test -->
+
+        <Texture parentKey="Arrow" file="Interface\Azerite\Azerite">
+          <TexCoords left="0.756" right="0.848" top="0.841" bottom="0.864"/>
+
+          <!-- *************** -->
+          <Anchors>
+            <Anchor point="TOPLEFT" x="0" y="0"/>
+            <Anchor point="BOTTOMRIGHT" x="0" y="0"/>
+          </Anchors>
+        </Texture>
+      </Layer>
+    </Layers>
+    <Scripts>
+        <OnLoad inherit="prepend">
+          print("NysTDL_BorderFrame loaded!");
+        </OnLoad>
+    </Scripts>
+  </Frame>
+  <!--@end-do-not-package@-->
+
   <!-- nice icon button template -->
   <Button name="NysTDL_IconButtonTemplate" virtual="true">
     <NormalTexture file="Interface\Buttons\UI-SquareButton-Up" desaturated="true">
@@ -23,7 +61,7 @@
     <!-- icon position adaptation scripts -->
     <Scripts>
       <OnMouseDown>
-        if self.disabled then return end
+        if self.disabled then return end -- TODO NOW REMOVE THIS AND USE :Disable()
         <!-- nudge and dim the icon down a little -->
         local xOffset = -1
         if (self.name == "UndoButton") then xOffset = -2 end
@@ -578,7 +616,7 @@
     <Layers>
       <Layer level="BACKGROUND">
         <Texture parentKey="Line" file="Interface\CovenantChoice\CovenantChoiceCelebration">
-          <TexCoords left="0.1" right="0.3" top="0.9" bottom="0.95"/>
+          <TexCoords left="0.1" right="0.3" top="0.90" bottom="0.95"/>
           <Size x="200" y="15"/>
           <Anchors>
             <Anchor point="LEFT" x="-5" y="0"/>
@@ -587,17 +625,17 @@
       </Layer>
       <Layer level="ARTWORK">
         <Texture parentKey="Arrow" file="Interface\Azerite\Azerite">
-          <TexCoords left="0.76" right="0.85" top="0.825" bottom="0.92"/>
-          <Size x="15" y="60"/>
+          <TexCoords left="0.756" right="0.848" top="0.841" bottom="0.864"/>
+          <Size x="15" y="15"/>
           <Anchors>
-            <Anchor point="CENTER" x="0" y="-11.7"/>
+            <Anchor point="LEFT" x="-16" y="-3"/>
           </Anchors>
         </Texture>
       </Layer>
     </Layers>
     <Scripts>
 			<OnLoad>
-				self.Arrow:SetRotation(0.78)
+				self.Arrow:SetRotation(0.77)
 			</OnLoad>
 		</Scripts>
 	</Frame>

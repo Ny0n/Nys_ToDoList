@@ -51,6 +51,16 @@ core.loaded = false
 BINDING_HEADER_NysTDL = core.toc.title
 BINDING_NAME_NysTDL = L["Show/Hide the To-Do List"]
 
+-- global variables
+--@do-not-package@
+NysTDL_BACKDROP_INFO = {
+  bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+  edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+  tile = false, tileSize = 1, edgeSize = 10,
+  insets = { left = 0, right = 0, top = 0, bottom = 0 }
+}
+--@end-do-not-package@
+
 --/*******************/ INITIALIZATION /*************************/--
 
 function NysTDL:OnInitialize()

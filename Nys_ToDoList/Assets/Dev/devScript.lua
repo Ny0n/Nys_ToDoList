@@ -117,3 +117,16 @@ function Nys_Tests(yes, ...)
   end
   print("--Nys_Tests--")
 end
+
+local backdrop_tests = {
+  bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+  -- edgeFile = "Interface\\BUTTONS\\UI-Debuff-Border",
+  -- edgeFile = "Interface\\ARENAENEMYFRAME\\UI-Arena-Border",
+  -- edgeFile = "Interface\\PaperDollInfoFrame\\UI-GearManager-Border",
+  -- edgeFile = "Interface\\DialogFrame\\UI-DialogBox-TestWatermark-Border",
+  -- edgeFile = "Interface\\GLUES\\COMMON\\Glue-Tooltip-Border",
+  -- edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border-Corrupted",
+  edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+  tile = false, tileSize = 1, edgeSize = 10,
+  insets = { left = 0, right = 0, top = 0, bottom = 0 }
+}

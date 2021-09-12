@@ -892,9 +892,9 @@ local function item_setEditMode(self, state)
     self.editModeFrame:Hide()
 
     self.favoriteBtn:SetParent(self)
-    self.favoriteBtn:SetPoint("LEFT", self, "LEFT", -15, -2)
+    self.favoriteBtn:SetPoint("LEFT", self, "LEFT", -16, -2)
     self.descBtn:SetParent(self)
-    self.descBtn:SetPoint("LEFT", self, "LEFT", -15, 0)
+    self.descBtn:SetPoint("LEFT", self, "LEFT", -16, 0)
 
     self.checkBtn:SetPoint("LEFT", self, "LEFT", 0, 0)
 

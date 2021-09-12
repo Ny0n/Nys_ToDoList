@@ -25,7 +25,7 @@ local catTopPos = { 4, enums.ofsyCat/2 }
 local catBottomPos = { 4, -enums.ofsyCat/2 }
 local catItemPos = { enums.ofsxContent, -enums.ofsyCatContent/2+4 }
 local itemPos = { 0, -enums.ofsyContent/2+4 }
-local itemCatPos = { -enums.ofsxContent, -enums.ofsyContentCat/2 }
+local itemCatPos = { -enums.ofsxContent+4, -enums.ofsyContentCat/2 }
 
 -- drag&drop data
 
