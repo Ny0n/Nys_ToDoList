@@ -28,6 +28,7 @@
   <Script file="Assets\Scripts\UI\databroker.lua"/>
   <Script file="Assets\Scripts\UI\dragndrop.lua"/>
   <Script file="Assets\Scripts\UI\mainFrame.lua"/>
+  <Script file="Assets\Scripts\UI\tabsFrame.lua"/>
   <Include file="Assets\Scripts\UI\templates.xml"/>
   <Script file="Assets\Scripts\UI\widgets.lua"/>
 

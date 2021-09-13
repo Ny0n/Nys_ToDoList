@@ -7,6 +7,7 @@ local enums = addonTable.enums
 local utils = addonTable.utils
 local widgets = addonTable.widgets
 local database = addonTable.database
+local tabsFrame = addonTable.tabsFrame
 local dataManager = addonTable.dataManager
 local resetManager = addonTable.resetManager
 local optionsManager = addonTable.optionsManager
@@ -401,6 +402,10 @@ local function addTab(tabID, tabData, isGlobal)
 	database.ctab(tabID)
 	mainFrame:Refresh()
 
+	-- AND refresh the tabsFrame
+	tabsFrame:UpdateTab(tabID)
+	tabsFrame:Refresh()
+
 	return tabID, tabData
 end
 
@@ -635,6 +640,7 @@ function dataManager:MoveTab(tabID, newPos)
 
 	-- TODO message?
 	mainFrame:Refresh()
+	tabsFrame:Refresh()
 end
 
 function dataManager:ChangeTabGlobalState(tabID, newGlobalState)
@@ -791,6 +797,10 @@ function dataManager:DeleteTab(tabID)
 	-- refresh the mainFrame
 	mainFrame:Refresh()
 
+	-- AND refresh the tabsFrame
+	tabsFrame:DeleteTab(tabID)
+	tabsFrame:Refresh()
+
 	return result, nbToUndo
 end
 
@@ -933,9 +943,15 @@ function dataManager:Rename(ID, newName)
 
 	dataTable.name = newName
 
-	-- refresh the mainFrame
-	mainFrame:UpdateWidget(ID, enum)
-	mainFrame:Refresh()
+	if enum == enums.tab then
+		-- refresh the tabsFrame
+		tabsFrame:UpdateTab(ID)
+		tabsFrame:Refresh()
+	else
+		-- refresh the mainFrame
+		mainFrame:UpdateWidget(ID, enum)
+		mainFrame:Refresh()
+	end
 
 	return true
 end

@@ -9,6 +9,7 @@ local widgets = addonTable.widgets
 local database = addonTable.database
 local dragndrop = addonTable.dragndrop
 local mainFrame = addonTable.mainFrame
+local tabsFrame = addonTable.tabsFrame
 local dataManager = addonTable.dataManager
 local optionsManager = addonTable.optionsManager
 local tutorialsManager = addonTable.tutorialsManager
@@ -67,6 +68,7 @@ local ctab -- set at initialization, it's just an alias
 local centerXOffset = 165
 local lineOffset = 120
 local cursorX, cursorY, cursorDist = 0, 0, 10 -- for my special drag
+local lineBottomY = -80
 
 --/*******************/ GENERAL /*************************/--
 
@@ -400,6 +402,7 @@ function mainFrame:Event_TDLFrame_OnSizeChanged(width, height)
   self.closeButton:SetScale(scale)
   self.resizeButton:SetScale(scale)
   dragndrop:SetScale(scale)
+  tabsFrame:SetScale(scale)
   tutorialsManager:SetFramesScale(scale)
 end
 
@@ -565,11 +568,11 @@ local function loadContent()
   if menuFrames.selected then
     local menu = menuFrames[menuFrames.selected]
     menu:Show()
-    tdlFrame.content.lineBottom:SetStartPoint("TOPLEFT", centerXOffset-lineOffset, -78 - menu:GetHeight())
-    tdlFrame.content.lineBottom:SetEndPoint("TOPLEFT", centerXOffset+lineOffset, -78 - menu:GetHeight())
+    tdlFrame.content.lineBottom:SetStartPoint("TOPLEFT", centerXOffset-lineOffset, lineBottomY - menu:GetHeight())
+    tdlFrame.content.lineBottom:SetEndPoint("TOPLEFT", centerXOffset+lineOffset, lineBottomY - menu:GetHeight())
   else
-    tdlFrame.content.lineBottom:SetStartPoint("TOPLEFT", centerXOffset-lineOffset, -78)
-    tdlFrame.content.lineBottom:SetEndPoint("TOPLEFT", centerXOffset+lineOffset, -78)
+    tdlFrame.content.lineBottom:SetStartPoint("TOPLEFT", centerXOffset-lineOffset, lineBottomY)
+    tdlFrame.content.lineBottom:SetEndPoint("TOPLEFT", centerXOffset+lineOffset, lineBottomY)
   end
 
   -- // nothing label
@@ -685,6 +688,7 @@ function mainFrame:UpdateVisuals()
   mainFrame:updateFavsRemainingNumbersColor()
   mainFrame:UpdateItemNamesColor()
   -- mainFrame:UpdateCategoryNamesColor()
+  widgets:UpdateDescFramesTitle()
   widgets:UpdateTDLButtonColor()
 end
 
@@ -749,12 +753,13 @@ local function generateMenuAddACategory()
 
   --/************************************************/--
 
-  menuframe.labelCategoryName = widgets:NoPointsLabel(menuframe, nil, L["Category:"])
-  menuframe.labelCategoryName:SetPoint("TOPLEFT", menuframe.menuTitle, "TOP", -140, - 35)
+  menuframe.labelCategoryName = widgets:NoPointsLabel(menuframe, nil, "Name:")
+  menuframe.labelCategoryName:SetPoint("TOPLEFT", menuframe.menuTitle, "TOP", -140, -32)
 
   menuframe.categoryEditBox = CreateFrame("EditBox", nil, menuframe, "InputBoxTemplate") -- edit box to put the new category name
-  menuframe.categoryEditBox:SetPoint("RIGHT", menuframe.labelCategoryName, "LEFT", 257, 0)
-  menuframe.categoryEditBox:SetSize(257 - widgets:GetWidth(menuframe.labelCategoryName:GetText()) - 20, 30)
+  menuframe.categoryEditBox:SetPoint("RIGHT", menuframe, "RIGHT", -3, 0)
+  menuframe.categoryEditBox:SetPoint("LEFT", menuframe.labelCategoryName, "RIGHT", 10, 0)
+  menuframe.categoryEditBox:SetHeight(30)
   menuframe.categoryEditBox:SetAutoFocus(false)
   -- menuframe.categoryEditBox:SetScript("OnKeyDown", function(_, key) if (key == "TAB") then widgets:SetFocusEditBox(menuframe.nameEditBox) end end) XXX -- to switch easily between the two edit boxes
   menuframe.categoryEditBox:SetScript("OnEnterPressed", addCat) -- if we press enter, it's like we clicked on the add button
@@ -1036,25 +1041,25 @@ local function generateMenuTabActions()
 
   --/************************************************/--
 
-  menuframe.btnCheck = widgets:Button("NysTDL_menuframe_btnCheck", menuframe, L["Check"], "Interface\\BUTTONS\\UI-CheckBox-Check")
+  menuframe.btnCheck = widgets:Button("NysTDL_menuframe_btnCheck", menuframe, "Check", "Interface\\BUTTONS\\UI-CheckBox-Check")
   menuframe.btnCheck:SetPoint("TOP", menuframe.menuTitle, "TOP", 0, -35)
   menuframe.btnCheck:SetScript("OnClick", function() dataManager:ToggleTabChecked(ctab(), true) end)
 
-  menuframe.btnUncheck = widgets:Button("NysTDL_menuframe_btnUncheck", menuframe, L["Uncheck"], "Interface\\BUTTONS\\UI-CheckBox-Check-Disabled")
+  menuframe.btnUncheck = widgets:Button("NysTDL_menuframe_btnUncheck", menuframe, "Uncheck", "Interface\\BUTTONS\\UI-CheckBox-Check-Disabled")
   menuframe.btnUncheck:SetPoint("TOP", menuframe.btnCheck, "TOP", 0, -40)
   menuframe.btnUncheck:SetScript("OnClick", function() dataManager:ToggleTabChecked(ctab(), false) end)
 
-  menuframe.btnClear = widgets:Button("NysTDL_menuframe_btnClear", menuframe, L["Clear"], "Interface\\GLUES\\LOGIN\\Glues-CheckBox-Check")
-  menuframe.btnClear:SetPoint("TOP", menuframe.btnUncheck, "TOP", 0, -40)
-  menuframe.btnClear:SetScript("OnClick", function() dataManager:ClearTab(ctab()) end)
-
   menuframe.btnCloseCat = widgets:Button("NysTDL_menuframe_btnCloseCat", menuframe, "Close All", "Interface\\BUTTONS\\Arrow-Up-Disabled")
-  menuframe.btnCloseCat:SetPoint("TOP", menuframe.btnClear, "TOP", 0, -40)
+  menuframe.btnCloseCat:SetPoint("TOP", menuframe.btnUncheck, "TOP", 0, -40)
   menuframe.btnCloseCat:SetScript("OnClick", function() dataManager:ToggleTabClosed(ctab(), false) end)
 
   menuframe.btnOpenCat = widgets:Button("NysTDL_menuframe_btnOpenCat", menuframe, "Open All", "Interface\\BUTTONS\\Arrow-Down-Up")
   menuframe.btnOpenCat:SetPoint("TOP", menuframe.btnCloseCat, "TOP", 0, -40)
   menuframe.btnOpenCat:SetScript("OnClick", function() dataManager:ToggleTabClosed(ctab(), true) end)
+
+  menuframe.btnClear = widgets:Button("NysTDL_menuframe_btnClear", menuframe, L["Clear"], "Interface\\GLUES\\LOGIN\\Glues-CheckBox-Check")
+  menuframe.btnClear:SetPoint("TOP", menuframe.btnOpenCat, "TOP", 0, -40)
+  menuframe.btnClear:SetScript("OnClick", function() dataManager:ClearTab(ctab()) end)
 end
 
 local function generateFrameContent()
@@ -1062,18 +1067,18 @@ local function generateFrameContent()
 
   -- creating content, scroll child of ScrollFrame (everything will be inside of it)
   tdlFrame.content = CreateFrame("Frame", nil, tdlFrame.ScrollFrame)
-  tdlFrame.content:SetSize(310, 1) -- y is determined by the elements inside of it
+  tdlFrame.content:SetSize(enums.tdlFrameDefaultWidth-30, 1) -- y is determined by the elements inside of it
   tdlFrame.ScrollFrame:SetScrollChild(tdlFrame.content)
   local content = tdlFrame.content
 
   -- title
   content.title = widgets:NoPointsLabel(content, nil, string.gsub(core.toc.title, "Ny's ", ""))
-  content.title:SetPoint("CENTER", content, "TOPLEFT", centerXOffset, -16)
+  content.title:SetPoint("CENTER", content, "TOPLEFT", centerXOffset, -18)
   content.title:SetFontObject("GameFontNormalLarge")
   -- left/right lines
   content.titleLL = widgets:ThemeLine(content, database.themes.theme_yellow, 0.8)
   content.titleLR = widgets:ThemeLine(content, database.themes.theme_yellow, 0.8)
-  setDoubleLinePoints(content.titleLL, content.titleLR, content.title:GetWidth(), -18)
+  setDoubleLinePoints(content.titleLL, content.titleLR, content.title:GetWidth(), -20)
 
   -- remaining numbers labels
   content.remaining = widgets:NoPointsLabel(content, nil, L["Remaining:"])
@@ -1135,18 +1140,17 @@ local function generateFrameContent()
   content.menuFrames = {
     -- these will be replaced in the code,
     -- but i'm putting them here just so i can remember how this table works
-    selected = nil,
-    -- selected = enums.menus.xxx,
-    -- [enums.menus.xxx] = frame,
-    -- [enums.menus.xxx] = frame,
-    -- [enums.menus.xxx] = frame,
+    -- --> selected = enums.menus.xxx,
+    -- --> [enums.menus.xxx] = frame,
+    -- --> [enums.menus.xxx] = frame,
+    -- --> [enums.menus.xxx] = frame,
   }
 
   -- / add a category sub-menu
 
   menuEnum = enums.menus.addcat
   content.menuFrames[menuEnum] = CreateFrame("Frame", nil, tdlFrame.content)
-  content.menuFrames[menuEnum]:SetPoint("TOPLEFT", tdlFrame.content, "TOPLEFT", 0, -78)
+  content.menuFrames[menuEnum]:SetPoint("TOPLEFT", tdlFrame.content, "TOPLEFT", 0, lineBottomY)
   content.menuFrames[menuEnum]:SetSize(contentWidth, 110) -- CVAL (coded value, non automatic)
   generateMenuAddACategory()
 
@@ -1154,7 +1158,7 @@ local function generateFrameContent()
 
   menuEnum = enums.menus.frameopt
   content.menuFrames[menuEnum] = CreateFrame("Frame", nil, tdlFrame.content)
-  content.menuFrames[menuEnum]:SetPoint("TOPLEFT", tdlFrame.content, "TOPLEFT", 0, -78)
+  content.menuFrames[menuEnum]:SetPoint("TOPLEFT", tdlFrame.content, "TOPLEFT", 0, lineBottomY)
   content.menuFrames[menuEnum]:SetSize(contentWidth, 235) -- CVAL
   generateMenuFrameOptions()
 
@@ -1162,7 +1166,7 @@ local function generateFrameContent()
 
   menuEnum = enums.menus.tabact
   content.menuFrames[menuEnum] = CreateFrame("Frame", nil, tdlFrame.content)
-  content.menuFrames[menuEnum]:SetPoint("TOPLEFT", tdlFrame.content, "TOPLEFT", 0, -78)
+  content.menuFrames[menuEnum]:SetPoint("TOPLEFT", tdlFrame.content, "TOPLEFT", 0, lineBottomY)
   content.menuFrames[menuEnum]:SetSize(contentWidth, 240) -- CVAL
   generateMenuTabActions()
 
@@ -1174,7 +1178,7 @@ local function generateFrameContent()
   content.nothingLabel:SetText("This tab is empty")
 
   content.loadOrigin = widgets:Dummy(content, content.lineBottom, 0, 0)
-  content.loadOrigin:SetPoint("TOPLEFT", content.lineBottom, "TOPLEFT", -34, -30) -- TODO redo?
+  content.loadOrigin:SetPoint("TOPLEFT", content.lineBottom, "TOPLEFT", -34, -28)
 
   content.dummyBottomFrame = widgets:Dummy(content, content, 0, 0) -- this one if for putting a margin at the bottom of the content (mainly to leave space for the dropping of cat)
 end
@@ -1182,67 +1186,10 @@ end
 -- // Creating the main frame
 
 function mainFrame:CreateTDLFrame()
-  -- TODO temp
-  -- profile
-  mainFrame.tabSelect = CreateFrame("FRAME", nil, UIParent, "UIDropDownMenuTemplate")
-  UIDropDownMenu_SetWidth(mainFrame.tabSelect, 90)
-  UIDropDownMenu_SetText(mainFrame.tabSelect, select(3, dataManager:Find(database.ctab())).name)
-
-  -- Implement the function to change the weekly reset day, then refresh
-  local function setTab(self, tabID)
-    mainFrame:ChangeTab(tabID)
-    UIDropDownMenu_SetText(mainFrame.tabSelect, select(3, dataManager:Find(database.ctab())).name) -- Update the text
-  end
-
-  -- Create and bind the initialization function to the dropdown menu
-  UIDropDownMenu_Initialize(mainFrame.tabSelect, function(self, level, menuList)
-    local info = UIDropDownMenu_CreateInfo()
-
-    local tabsList = select(3, dataManager:GetData())
-    for _, tabID in ipairs(tabsList.orderedTabIDs) do
-      info.func = setTab
-      info.arg1 = tabID
-      info.text = select(3, dataManager:Find(tabID)).name
-      info.checked = database.ctab() == info.arg1
-      UIDropDownMenu_AddButton(info)
-    end
-  end)
-  mainFrame.tabSelect:SetPoint("CENTER", UIParent, "CENTER", 0, 450)
-
-  -- global
-  mainFrame.tabSelectGlobal = CreateFrame("FRAME", nil, UIParent, "UIDropDownMenuTemplate")
-  UIDropDownMenu_SetWidth(mainFrame.tabSelectGlobal, 90)
-  UIDropDownMenu_SetText(mainFrame.tabSelectGlobal, select(3, dataManager:Find(database.ctab())).name)
-
-  -- Implement the function to change the weekly reset day, then refresh
-  local function setTab2(self, tabID)
-    mainFrame:ChangeTab(tabID)
-    UIDropDownMenu_SetText(mainFrame.tabSelectGlobal, select(3, dataManager:Find(database.ctab())).name) -- Update the text
-  end
-
-  -- Create and bind the initialization function to the dropdown menu
-  UIDropDownMenu_Initialize(mainFrame.tabSelectGlobal, function(self, level, menuList)
-    local info = UIDropDownMenu_CreateInfo()
-
-    local tabsList = select(3, dataManager:GetData(true))
-    for _, tabID in ipairs(tabsList.orderedTabIDs) do
-      info.func = setTab2
-      info.arg1 = tabID
-      info.text = select(3, dataManager:Find(tabID)).name
-      info.checked = database.ctab() == info.arg1
-      UIDropDownMenu_AddButton(info)
-    end
-  end)
-  mainFrame.tabSelectGlobal:SetPoint("CENTER", UIParent, "CENTER", 0, 400)
-  -- local btn = CreateFrame("Frame", nil, UIParent, "LargeUIDropDownMenuTemplate")
-  -- btn:SetPoint("CENTER")
-  -- UIDropDownMenu_SetWidth(btn, 200)
-  -- do return end
-
   ctab = database.ctab -- alias
 
   -- we create the list
-  tdlFrame = CreateFrame("Frame", "NysTDL_ToDoListFrame", UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil)
+  tdlFrame = CreateFrame("Frame", "NysTDL_tdlFrame", UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil)
 
   -- background
   tdlFrame:SetBackdrop({
@@ -1406,32 +1353,3 @@ function mainFrame:Init()
     mainFrame:Event_TDLFrame_OnVisibilityUpdate()
   end
 end
-
--- TODO tabs UI
-
--- function ChatFrame_TruncateToMaxLength(text, maxLength)
--- 	local length = strlenutf8(text);
--- 	if ( length > maxLength ) then
--- 		return text:sub(1, maxLength - 2).."...";
--- 	end
---
--- 	return text;
--- end
-
--- function FCFDockScrollFrame_OnUpdate(self, elapsed)
--- 	local MOVEMENT_SPEED = 10;
---
--- 	local totalDistanceNeeded = FCFDockScrollFrame_GetScrollDistanceNeeded(self, self.selectedDynIndex);
--- 	if ( abs(totalDistanceNeeded) < 1.0 ) then	--Delta chosen through experimentation
--- 		self:SetScript("OnUpdate", nil);
--- 		FCFDockScrollFrame_JumpToTab(self, FCFDockScrollFrame_GetLeftmostTab(self));	--Make sure we're exactly aligned with the tab.
--- 		return;
--- 	end
---
--- 	local currentPosition = self:GetHorizontalScroll();
---
--- 	local distanceNoCap = totalDistanceNeeded * MOVEMENT_SPEED * elapsed;
--- 	local distanceToMove = (totalDistanceNeeded > 0) and min(totalDistanceNeeded, distanceNoCap) or max(totalDistanceNeeded, distanceNoCap);
---
--- 	self:SetHorizontalScroll(max(currentPosition + distanceToMove, 0));
--- end

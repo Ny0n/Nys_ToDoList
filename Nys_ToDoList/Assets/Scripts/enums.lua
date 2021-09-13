@@ -27,6 +27,7 @@ enums.databrokerModes = {
 enums.idtype = "string"
 enums.tdlFrameDefaultWidth = 340
 enums.tdlFrameDefaultHeight = 400
+enums.rightPointDistance = 297
 
 enums.ofsxContent = 24
 enums.ofsyCatContent = 26

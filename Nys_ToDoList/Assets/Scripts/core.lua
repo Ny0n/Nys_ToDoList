@@ -15,6 +15,7 @@ addonTable.utils = {}
 addonTable.databroker = {}
 addonTable.dragndrop = {}
 addonTable.mainFrame = {}
+addonTable.tabsFrame = {}
 addonTable.widgets = {}
 addonTable.core = {}
 

@@ -9,6 +9,7 @@ local widgets = addonTable.widgets
 local database = addonTable.database
 local dragndrop = addonTable.dragndrop
 local mainFrame = addonTable.mainFrame
+local tabsFrame = addonTable.tabsFrame
 local databroker = addonTable.databroker
 local dataManager = addonTable.dataManager
 local tutorialsManager = addonTable.tutorialsManager
@@ -77,10 +78,10 @@ function widgets:SetDescFramesAlpha(alpha)
 
   -- and then we update the alpha
   alpha = NysTDL.db.profile.descFrameAlpha/100
-  for _, frame in pairs(descFrames) do -- we go through every desc frame
-    frame:SetBackdropColor(0, 0, 0, alpha)
-    frame:SetBackdropBorderColor(1, 1, 1, alpha)
-    for k, x in pairs(frame.descriptionEditBox) do
+  for _, descFrame in pairs(descFrames) do -- we go through every desc frame
+    descFrame:SetBackdropColor(0, 0, 0, alpha)
+    descFrame:SetBackdropBorderColor(1, 1, 1, alpha)
+    for k, x in pairs(descFrame.descriptionEditBox) do
       if type(k) == "string" then
         if string.sub(k, k:len()-2, k:len()) == "Tex" then -- TODO what is this for?
           x:SetAlpha(alpha)
@@ -98,13 +99,32 @@ function widgets:SetDescFramesContentAlpha(alpha)
 
   -- and then we update the alpha
   alpha = NysTDL.db.profile.descFrameContentAlpha/100
-  for _, frame in pairs(descFrames) do -- we go through every desc frame
-    -- the title is already being cared for in the update of the desc frame
-    frame.closeButton:SetAlpha(alpha)
-    frame.clearButton:SetAlpha(alpha)
-    frame.descriptionEditBox.EditBox:SetAlpha(alpha)
-    frame.descriptionEditBox.ScrollBar:SetAlpha(alpha)
-    frame.resizeButton:SetAlpha(alpha)
+  for _, descFrame in pairs(descFrames) do -- we go through every desc frame
+    descFrame.title:SetAlpha(alpha)
+    descFrame.closeButton:SetAlpha(alpha)
+    descFrame.clearButton:SetAlpha(alpha)
+    descFrame.descriptionEditBox.EditBox:SetAlpha(alpha)
+    descFrame.descriptionEditBox.ScrollBar:SetAlpha(alpha)
+    descFrame.resizeButton:SetAlpha(alpha)
+  end
+end
+
+function widgets:UpdateDescFramesTitle()
+  -- refreshes the name & name color of each description frame
+  -- (also useful to update the names when renaming items)
+  local contentWidgets = mainFrame:GetContentWidgets()
+  for _, descFrame in pairs(descFrames) do -- we go through each of them
+    if contentWidgets[descFrame.itemID] then -- if the corresponding item still exists (i'm not sure if it's necessary, but it's just there in case it is)
+      descFrame.title:SetText(descFrame.itemData.name)
+      descFrame.title:SetTextColor(contentWidgets[descFrame.itemID].interactiveLabel.Text:GetTextColor())
+      descFrame.title:SetAlpha(NysTDL.db.profile.descFrameContentAlpha/100)
+
+      local w = widgets:GetWidth(descFrame.itemData.name)
+      descFrame:SetMinResize(math.max(180+75, w+75), 110)
+      if descFrame:GetWidth() < w+75 then
+        descFrame:SetSize(w+75, 110)
+      end
+    end
   end
 end
 
@@ -113,6 +133,7 @@ function widgets:DescFrameHide(itemID)
   for pos, frame in ipairs(descFrames) do
     if frame.itemID == itemID then
       frame:Hide()
+      frame:ClearAllPoints()
       widgets:RemoveHyperlinkEditBox(frame.descriptionEditBox.EditBox)
       table.remove(descFrames, pos) -- we remove the desc frame from the descFrames table
       return true
@@ -237,7 +258,7 @@ function widgets:DescriptionFrame(itemWidget)
     bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
     edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
     tile = false, tileSize = 1, edgeSize = 10,
-    insets = { left = 1, right = 1, top = 1, bottom = 1 }
+    insets = { left = 2, right = 2, top = 2, bottom = 2 }
   })
   descFrame:SetBackdropColor(0, 0, 0, 1)
 
@@ -255,40 +276,19 @@ function widgets:DescriptionFrame(itemWidget)
   widgets:SetHyperlinksEnabled(descFrame, true)
 
   -- frame vars
-  descFrame.timeSinceLastUpdate = 0 -- for the updating of the title's color and alpha
   descFrame.opening = 0 -- for the scrolling up on opening
 
   -- to move the frame
   descFrame:SetScript("OnMouseDown", function(self, button)
-      if button == "LeftButton" then
-          self:StartMoving()
-      end
+    if button == "LeftButton" then
+      self:StartMoving()
+    end
   end)
   descFrame:SetScript("OnMouseUp", descFrame.StopMovingOrSizing)
 
   -- OnUpdate script
-  descFrame:SetScript("OnUpdate", function(self, elapsed)
-    self.timeSinceLastUpdate = self.timeSinceLastUpdate + elapsed
-
-    while self.timeSinceLastUpdate > updateRate do -- every 0.05 sec (instead of every frame which is every 1/144 (0.007) sec for a 144hz display... optimization :D)
-      -- we update non-stop the color of the title
-      local currentAlpha = NysTDL.db.profile.descFrameContentAlpha/100
-      if itemData.checked then
-        self.title:SetTextColor(0, 1, 0, currentAlpha)
-      else
-        if itemData.favorite then
-          local r, g, b = unpack(NysTDL.db.profile.favoritesColor)
-          self.title:SetTextColor(r, g, b, currentAlpha)
-        else
-          local r, g, b = unpack(utils:ThemeDownTo01(database.themes.theme_yellow))
-          self.title:SetTextColor(r, g, b, currentAlpha)
-        end
-      end
-
-      self.timeSinceLastUpdate = self.timeSinceLastUpdate - updateRate
-    end
-
-    -- and we also update non-stop the width of the description edit box to match that of the frame if we resize it, and when the scrollbar kicks in. (this is the secret to make it work)
+  descFrame:SetScript("OnUpdate", function(self)
+    -- we update non-stop the width of the description edit box to match that of the frame if we resize it, and when the scrollbar kicks in. (this is the secret to make it work)
     self.descriptionEditBox.EditBox:SetWidth(self.descriptionEditBox:GetWidth() - (self.descriptionEditBox.ScrollBar:IsShown() and 15 or 0))
 
     if self.opening < 5 then -- doing this only on the 5 first updates after creating the frame, i won't go into the details but updating the vertical scroll of this template is a real fucker :D
@@ -331,7 +331,7 @@ function widgets:DescriptionFrame(itemWidget)
   descFrame.clearButton:SetPoint("TOPRIGHT", descFrame, "TOPRIGHT", -24, -2)
   descFrame.clearButton:RegisterForClicks("RightButtonUp") -- only responds to right-clicks
   descFrame.clearButton:SetScript("OnClick", function(self)
-      self:GetParent().descriptionEditBox.EditBox:SetText("")
+    self:GetParent().descriptionEditBox.EditBox:SetText("")
   end)
 
   -- item label
@@ -339,6 +339,7 @@ function widgets:DescriptionFrame(itemWidget)
   descFrame.title:SetFontObject("GameFontNormalLarge")
   descFrame.title:SetPoint("TOPLEFT", descFrame, "TOPLEFT", 6, -5)
   descFrame.title:SetText(itemData.name)
+  descFrame.title:SetTextColor(itemWidget.interactiveLabel.Text:GetTextColor())
 
   -- description edit box
   descFrame.descriptionEditBox = CreateFrame("ScrollFrame", nil, descFrame, "InputScrollFrameTemplate")
@@ -693,13 +694,11 @@ function widgets:CategoryWidget(catID, parentFrame)
 
     local r, g, b = unpack(utils:ThemeDownTo01(database.themes.theme))
     self:GetParent().Text:SetTextColor(r, g, b, 1) -- when we hover it, we color the label
-    --print("enter")
   end)
   categoryWidget.interactiveLabel.Button:SetScript("OnLeave", function(self)
     if mainFrame.editMode then return end
 
     self:GetParent().Text:SetTextColor(unpack(categoryWidget.color)) -- back to the default color
-    --print("leave")
   end)
   categoryWidget.interactiveLabel.Button:SetScript("OnClick", function(_, button)
     -- we don't do any of the OnClick code if we are in edit mode
@@ -713,13 +712,23 @@ function widgets:CategoryWidget(catID, parentFrame)
     elseif button == "RightButton" then -- we try to toggle the addEditBox
       -- if the cat we right clicked on is NOT a closed category
       if catData.closedInTabIDs[database.ctab()] then return end
+
       -- we toggle its edit box
       categoryWidget.addEditBox:SetShown(not categoryWidget.addEditBox:IsShown())
       -- categoryWidget.addCatEditBox:SetShown(not categoryWidget.addCatEditBox:IsShown()) -- TDLATER
 
-      if categoryWidget.addEditBox:IsShown() then -- and if we are opening it
-        tutorialsManager:Validate("addItem") -- tutorial
+      -- we clear its points
+      categoryWidget.addEditBox:ClearAllPoints()
+      -- categoryWidget.addCatEditBox:ClearAllPoints() -- TDLATER
+
+      -- and if we are opening it
+      if categoryWidget.addEditBox:IsShown() then
+        -- we reset the points
+        categoryWidget.addEditBox:SetPoint("RIGHT", parentFrame, "RIGHT", -3, 0)
+        categoryWidget.addEditBox:SetPoint("LEFT", categoryWidget.interactiveLabel, "RIGHT", 10, 0)
+
         widgets:SetFocusEditBox(categoryWidget.addEditBox) -- we give it the focus
+        tutorialsManager:Validate("addItem") -- tutorial
       end
     end
   end)
@@ -736,13 +745,14 @@ function widgets:CategoryWidget(catID, parentFrame)
 
     -- let's go!
     renameEditBox:SetScript("OnEnterPressed", function(self)
-      dataManager:Rename(catID, self:GetText()) -- TODO verify if it closes the box when it doesn't work
+      dataManager:Rename(catID, self:GetText())
     end)
 
     -- cancelling
     renameEditBox:SetScript("OnEscapePressed", function(self)
       -- we hide the edit box and show the label
       self:Hide()
+      self:ClearAllPoints()
       categoryWidget.interactiveLabel:Show()
     end)
     renameEditBox:HookScript("OnEditFocusLost", function(self)
@@ -782,11 +792,9 @@ function widgets:CategoryWidget(catID, parentFrame)
 
   -- / addEditBox
   categoryWidget.addEditBox = widgets:NoPointsCatEditBox(categoryWidget)
-  categoryWidget.addEditBox:SetPoint("RIGHT", categoryWidget.interactiveLabel, "LEFT", 270, 0)
-  categoryWidget.addEditBox:SetPoint("LEFT", categoryWidget.interactiveLabel, "RIGHT", 10, 0)
-  categoryWidget.addEditBox:SetSize(100, 30)
+  categoryWidget.addEditBox:SetHeight(30)
   categoryWidget.addEditBox:Hide()
-  -- TODO check this
+  -- TDLATER check this for the width
   -- -- edit box width (we adapt it based on the category label's width)
   -- local labelWidth = tonumber(string.format("%i", categoryWidget.interactiveLabel.Text:GetWidth()))
   -- local rightPointDistance = 297 -- in alignment with the item renaming edit boxes
@@ -806,6 +814,7 @@ function widgets:CategoryWidget(catID, parentFrame)
   -- cancelling
   categoryWidget.addEditBox:SetScript("OnEscapePressed", function(self)
     self:Hide()
+    self:ClearAllPoints()
   end)
   categoryWidget.addEditBox:HookScript("OnEditFocusLost", function(self)
     self:GetScript("OnEscapePressed")(self)
@@ -829,6 +838,7 @@ function widgets:CategoryWidget(catID, parentFrame)
   -- -- cancelling
   -- categoryWidget.addCatEditBox:SetScript("OnEscapePressed", function(self)
   --   self:Hide()
+  --   self:ClearAllPoints()
   -- end)
   -- categoryWidget.addCatEditBox:HookScript("OnEditFocusLost", function(self)
   --   self:GetScript("OnEscapePressed")(self)
@@ -869,8 +879,10 @@ contentWidgets = {
 
 local function item_setCheckBtnExtended(self, state)
   if state then
-    -- self.checkBtn:SetHitRectInsets(0, -enums.maxNameWidth[enums.item], 0, 0)
-    self.checkBtn:SetHitRectInsets(0, -widgets:GetWidth(self.itemData.name), 0, 0)
+    if not utils:HasHyperlink(self.itemData.name) then -- so that we can actually click on the hyperlinks
+      -- self.checkBtn:SetHitRectInsets(0, -enums.maxNameWidth[enums.item], 0, 0)
+      self.checkBtn:SetHitRectInsets(0, -widgets:GetWidth(self.itemData.name), 0, 0)
+    end
   else
     self.checkBtn:SetHitRectInsets(0, 0, 0, 0)
   end
@@ -937,19 +949,6 @@ function widgets:ItemWidget(itemID, parentFrame)
     if itemWidget.interactiveLabel.Text:GetWidth() > enums.maxNameWidth[enums.item] then
       itemWidget.interactiveLabel.Text:SetFontObject("GameFontNormal")
     end
-
-    -- also we allow the click on the hyperlink if we are holding alt,
-    -- and to detect this, we use an OnUpdate script -- TODO for everyone?
-    local alt = false
-    itemWidget.interactiveLabel:SetScript("OnUpdate", function(self) -- TODO OULA
-      if IsAltKeyDown() and not alt then
-        itemWidget:SetCheckBtnExtended(false)
-        alt = true
-      elseif not IsAltKeyDown() and alt then
-        itemWidget:SetCheckBtnExtended(true)
-        alt = false
-      end
-    end)
   end
 
   widgets:SetHyperlinksEnabled(itemWidget.interactiveLabel, true)
@@ -958,10 +957,11 @@ function widgets:ItemWidget(itemID, parentFrame)
     self:GetParent():Hide()
 
     -- then, we can create the new edit box to rename the item, where the label was
-    local renameEditBox = widgets:NoPointsRenameEditBox(itemWidget, itemData.name, enums.maxNameWidth[enums.item], self:GetHeight())
+    local renameEditBox = widgets:NoPointsRenameEditBox(itemWidget, itemData.name, 0, self:GetHeight())
+    renameEditBox:SetPoint("RIGHT", parentFrame, "RIGHT", -3, 0)
     renameEditBox:SetPoint("LEFT", itemWidget.interactiveLabel, "LEFT", 5, 0)
-    -- widgets:SetHyperlinksEnabled(renameEditBox, true)
     widgets:AddHyperlinkEditBox(renameEditBox) -- so that we can add hyperlinks in it
+    -- widgets:SetHyperlinksEnabled(renameEditBox, true) -- to click on hyperlinks inside the edit box
 
     -- cancelling
     renameEditBox:SetScript("OnEscapePressed", function(self)
@@ -980,13 +980,14 @@ function widgets:ItemWidget(itemID, parentFrame)
 
     -- let's go!
     renameEditBox:SetScript("OnEnterPressed", function(self)
-      dataManager:Rename(itemID, self:GetText()) -- TODO verify if it closes the box when it doesn't work AND rename on the desc frame too
+      dataManager:Rename(itemID, self:GetText())
     end)
 
     -- cancelling
     renameEditBox:SetScript("OnEscapePressed", function(self)
       -- we hide the edit box and show the label
       self:Hide()
+      self:ClearAllPoints()
       itemWidget.interactiveLabel:Show()
       widgets:RemoveHyperlinkEditBox(self)
     end)
@@ -1027,7 +1028,7 @@ end
 --/*******************/ EDIT BOXES /*************************/--
 
 function widgets:NoPointsRenameEditBox(relativeFrame, text, width, height)
-  local renameEditBox = CreateFrame("EditBox", tostring(relativeFrame:GetName()).."_RenameEditBox", relativeFrame, "InputBoxTemplate")
+  local renameEditBox = CreateFrame("EditBox", nil, relativeFrame, "InputBoxTemplate")
   renameEditBox:SetSize(width-10, height)
   renameEditBox:SetText(text)
   renameEditBox:SetFontObject("GameFontHighlightLarge")
@@ -1122,6 +1123,7 @@ function widgets:Initialize()
   databroker:CreateTooltipFrame() -- TODO redo this later
   databroker:CreateMinimapButton()
   mainFrame:CreateTDLFrame()
+  tabsFrame:CreateFrame(mainFrame:GetFrame())
 
   -- then we manage the widgetsFrame
   widgetsFrame.timeSinceLastUpdate = 0
@@ -1138,4 +1140,5 @@ function widgets:ProfileChanged()
 
   widgets:WipeDescFrames()
   mainFrame:Init()
+  tabsFrame:Init()
 end

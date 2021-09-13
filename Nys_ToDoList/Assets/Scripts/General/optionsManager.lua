@@ -491,7 +491,9 @@ function private:UpdateTabsInOptions(options)
 
   for tabID,tabData in dataManager:ForEach(enums.tab, arg) do -- for each tab in the correct profile state
     args[tabID] = { -- we add them as selectable sub-groups under the good parent
-      order = 1.1,
+      order = function()
+        return dataManager:GetPosData(tabID, nil, true)
+      end,
       type = "group",
       childGroups = "tab",
       name = tabData.name,
