@@ -153,7 +153,7 @@ end
 
 function databroker:CreateDatabrokerObject()
   self.object = LDB:NewDataObject(addonName)
-  self:SetMode(NysTDL.db.profile.databrokerMode)
+  databroker:SetMode(NysTDL.db.profile.databrokerMode)
 end
 
 -- minimap button

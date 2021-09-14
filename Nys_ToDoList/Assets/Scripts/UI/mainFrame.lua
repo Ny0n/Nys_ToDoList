@@ -388,6 +388,7 @@ function mainFrame:Event_TDLFrame_OnVisibilityUpdate()
   menuClick() -- to close any opened menu and refresh the list
   NysTDL.db.profile.lastListVisibility = tdlFrame:IsShown()
   if dragndrop.dragging then dragndrop:CancelDragging() end
+  tabsFrame:Refresh()
 end
 
 function mainFrame:Event_TDLFrame_OnSizeChanged(width, height)
@@ -1195,7 +1196,7 @@ function mainFrame:CreateTDLFrame()
   tdlFrame:SetBackdrop({
     bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
     edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-    tile = false, tileSize = 1, edgeSize = 10,
+    tile = false, tileSize = 1, edgeSize = 12,
     insets = { left = 2, right = 2, top = 2, bottom = 2 }
   })
 
@@ -1206,8 +1207,8 @@ function mainFrame:CreateTDLFrame()
   tdlFrame:SetMovable(true)
   tdlFrame:SetClampedToScreen(true)
   tdlFrame:SetResizable(true)
-  tdlFrame:SetMinResize(240, 284)
-  tdlFrame:SetMaxResize(600, 1000)
+  -- tdlFrame:SetMinResize(240, 284)
+  -- tdlFrame:SetMaxResize(600, 1000)
   tdlFrame:SetToplevel(true)
   -- widgets:SetHyperlinksEnabled(tdlFrame, true)
 
@@ -1290,11 +1291,6 @@ function mainFrame:CreateTDLFrame()
   -- // inside the scroll frame
 
   generateFrameContent()
-
-  -- // LOADING THE FRAME // --
-
-  -- Initializing the frame with the current saved data
-  mainFrame:Init()
 end
 
 -- // Profile init & change

@@ -513,6 +513,7 @@
 		</Scripts>
 	</Button>
 
+  <!-- Reused WoW template / HelpPlateTooltip -->
   <Frame name="NysTDL_HelpPlateTooltip" inherits="GlowBoxTemplate" frameStrata="FULLSCREEN_DIALOG" frameLevel="2" virtual="true">
 		<Layers>
 			<Layer level="OVERLAY">
@@ -590,6 +591,7 @@
 		</Scripts>
 	</Frame>
 
+  <!-- Clickable label -->
   <Frame name="NysTDL_InteractiveLabel" virtual="true">
     <!-- the size is set everytime the text changes, see the widgets.lua file (func: widgets.noPointsInteractiveLabel) -->
 		<Layers>
@@ -611,6 +613,7 @@
 		</Frames>
 	</Frame>
 
+  <!-- Drop line -->
   <Frame name="NysTDL_DropLine" virtual="true">
     <Size x="1" y="1"/> <!-- Just so that we see the content of the frame -->
     <Layers>
@@ -639,5 +642,16 @@
 			</OnLoad>
 		</Scripts>
 	</Frame>
+
+  <!-- Reused WoW template / $parentOverflowButton -->
+  <Button name="NysTDL_OverflowButton" virtual="true">
+    <!-- size and points and a lot of other things set in the code -->
+		<NormalTexture file="Interface\BUTTONS\Arrow-Down-Down">
+      <TexCoords left="0" right="1" top="0" bottom="0.5"/>
+    </NormalTexture>
+		<HighlightTexture alpha="0.7" parentKey="Highlight" file="Interface\BUTTONS\UI-Common-MouseHilight" alphaMode="ADD" desaturated="true">
+      <Color r="1" g="0.84" b="0"/>
+    </HighlightTexture>
+	</Button>
 
 </Ui>

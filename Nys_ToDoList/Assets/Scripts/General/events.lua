@@ -6,6 +6,7 @@ local core = addonTable.core
 local chat = addonTable.chat
 local events = addonTable.events
 local widgets = addonTable.widgets
+local tabsFrame = addonTable.tabsFrame
 local optionsManager = addonTable.optionsManager
 
 -- Variables
@@ -48,11 +49,16 @@ function NysTDL:PLAYER_LOGIN()
   end, 4)
 end
 
+function NysTDL:PLAYER_ENTERING_WORLD()
+  tabsFrame:Refresh() -- i'm calling WoW APIs in there, and they're only really working after the event PLAYER_ENTERING_WORLD has fired
+end
+
 --/*******************/ INITIALIZATION /*************************/--
 
 function events:Initialize()
   -- events
   NysTDL:RegisterEvent("PLAYER_LOGIN")
+  NysTDL:RegisterEvent("PLAYER_ENTERING_WORLD")
 
   -- hooks
   hooksecurefunc("ReloadUI", function()

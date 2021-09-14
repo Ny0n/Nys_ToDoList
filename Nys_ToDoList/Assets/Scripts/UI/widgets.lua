@@ -486,8 +486,6 @@ function widgets:CreateTDLButton()
 
   -- click
   tdlButton:SetScript("OnClick", mainFrame.Toggle) -- the function the button calls when pressed
-
-  widgets:RefreshTDLButton() -- refresh
 end
 
 -- item buttons
@@ -1129,6 +1127,9 @@ function widgets:Initialize()
   widgetsFrame.timeSinceLastUpdate = 0
   widgetsFrame.timeSinceLastRefresh = 0
   widgetsFrame:SetScript("OnUpdate", OnUpdate)
+
+  -- and finally, we can refresh everything
+  widgets:ProfileChanged()
 end
 
 function widgets:ProfileChanged()

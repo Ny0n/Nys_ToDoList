@@ -7,6 +7,7 @@ local enums = addonTable.enums
 local utils = addonTable.utils
 local widgets = addonTable.widgets
 local mainFrame = addonTable.mainFrame
+local tabsFrame = addonTable.tabsFrame
 local databroker = addonTable.databroker
 local dataManager = addonTable.dataManager
 local resetManager = addonTable.resetManager
@@ -748,6 +749,7 @@ local function createAddonOptionsTable()
                 hidden = function()
                   private:RefreshTabManagement()
                   widgets:UpdateTDLButtonColor() -- in case we changed reset times
+                  tabsFrame:Refresh() -- in case we changed tab data
                   return true
                 end,
               }, -- optionsUpdater
