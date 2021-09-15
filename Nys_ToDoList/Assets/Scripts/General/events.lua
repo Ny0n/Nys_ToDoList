@@ -53,12 +53,17 @@ function NysTDL:PLAYER_ENTERING_WORLD()
   tabsFrame:Refresh() -- i'm calling WoW APIs in there, and they're only really working after the event PLAYER_ENTERING_WORLD has fired
 end
 
+function NysTDL:GLOBAL_MOUSE_DOWN()
+  tabsFrame:GLOBAL_MOUSE_DOWN() -- so that it's acting like the GameTooltip
+end
+
 --/*******************/ INITIALIZATION /*************************/--
 
 function events:Initialize()
   -- events
   NysTDL:RegisterEvent("PLAYER_LOGIN")
   NysTDL:RegisterEvent("PLAYER_ENTERING_WORLD")
+  NysTDL:RegisterEvent("GLOBAL_MOUSE_DOWN")
 
   -- hooks
   hooksecurefunc("ReloadUI", function()

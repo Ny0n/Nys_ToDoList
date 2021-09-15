@@ -12,6 +12,7 @@ local utils = addonTable.utils
 local databroker = addonTable.databroker
 local dataManager = addonTable.dataManager
 local mainFrame = addonTable.mainFrame
+local tabsFrame = addonTable.tabsFrame
 local tutorialsManager = addonTable.tutorialsManager
 local widgets = addonTable.widgets
 local core = addonTable.core
@@ -110,10 +111,20 @@ function Nys_Tests(yes, ...)
 
     mainFrame:Refresh()
   elseif yes == 6 then
-    print("<Undo Table>")
-    for k,v in pairs(NysTDL.db.profile.undoTable) do
-      print(k, v)
-    end
+    -- print("<Undo Table>")
+    -- for k,v in pairs(NysTDL.db.profile.undoTable) do
+    --   print(k, v)
+    -- end
+    -- local scrollFrame = tabsFrame:Get()
+    tabsFrame:Refresh()
+    -- if ... then
+    --   scrollFrame:SetHorizontalScroll(...)
+    -- end
+    -- print(scrollFrame:GetHorizontalScroll())
+    -- tabsFrame:Set()
+    -- tabsFrame:Refresh()
+  elseif yes == 7 then
+    tabsFrame:Get()
   end
   print("--Nys_Tests--")
 end

@@ -1141,5 +1141,7 @@ function widgets:ProfileChanged()
 
   widgets:WipeDescFrames()
   mainFrame:Init()
+  print("__1")
   tabsFrame:Init()
+  print("__2")
 end

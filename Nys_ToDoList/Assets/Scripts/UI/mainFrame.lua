@@ -388,7 +388,6 @@ function mainFrame:Event_TDLFrame_OnVisibilityUpdate()
   menuClick() -- to close any opened menu and refresh the list
   NysTDL.db.profile.lastListVisibility = tdlFrame:IsShown()
   if dragndrop.dragging then dragndrop:CancelDragging() end
-  tabsFrame:Refresh()
 end
 
 function mainFrame:Event_TDLFrame_OnSizeChanged(width, height)
@@ -1207,6 +1206,7 @@ function mainFrame:CreateTDLFrame()
   tdlFrame:SetMovable(true)
   tdlFrame:SetClampedToScreen(true)
   tdlFrame:SetResizable(true)
+  tdlFrame:SetMinResize(90, 284)
   -- tdlFrame:SetMinResize(240, 284)
   -- tdlFrame:SetMaxResize(600, 1000)
   tdlFrame:SetToplevel(true)
