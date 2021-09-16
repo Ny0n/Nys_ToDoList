@@ -41,6 +41,12 @@ enums.maxNameWidth = {
 	[enums.tab] = 150,
 }
 
+enums.maxQuantities = {
+	[enums.item] = 1000,
+	[enums.category] = 1000,
+	[enums.tab] = 20,
+}
+
 enums.defaultResetTimeName = "Reset 1"
 
 enums.days = {
@@ -51,4 +57,12 @@ enums.days = {
   [6] = "Friday",
   [7] = "Saturday",
   [1] = "Sunday",
+}
+
+-- dynamic values (accessible by all files)
+
+enums.quantities = {
+	[enums.item] = 0,
+	[enums.category] = 0,
+	[enums.tab] = 0,
 }

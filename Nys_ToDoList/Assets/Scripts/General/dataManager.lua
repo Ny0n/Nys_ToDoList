@@ -36,12 +36,9 @@ local L = core.L
 
 -- // WoW & Lua APIs
 
-local wipe = wipe
-local unpack = unpack
-local select = select
-local type = type
-local tinsert = table.insert
-local tremove = table.remove
+local wipe, unpack, select = wipe, unpack, select
+local type, pairs, ipairs = type, pairs, ipairs
+local tinsert, tremove = table.insert, table.remove
 local random = math.random
 
 --/*******************/ DATA MANAGMENT /*************************/--
@@ -140,6 +137,71 @@ function dataManager:GetName(ID)
 	return select(3, dataManager:Find(ID)).name
 end
 
+function dataManager:GetPosData(ID, tabID, onlyPos)
+	-- // returns the position data (location & number) of a given ID
+	-- usage: local loc, pos = dataManager:GetPosData(ID)
+	-- usage2: local pos = dataManager:GetPosData(ID, nil, true)
+	-- loc is the table the object is located in
+	-- // if the ID is a CATEGORY, then we can specify in which tab we want to know where it is,
+	-- or the current tab if none is given (since it can be either a sub-cat with a parent order, or a normal cat with a tab order)
+	tabID = tabID or database.ctab()
+
+	local enum, _, data, _, categoriesList, tabsList = dataManager:Find(ID)
+
+	local loc
+	if enum == enums.item then -- item
+		loc = select(3, dataManager:Find(data.catID)).orderedContentIDs
+	elseif enum == enums.category then -- category
+		if not tabsList[tabID] then error("Wrong tab ID") end
+		loc = data.parentCatID and categoriesList[data.parentCatID].orderedContentIDs or tabsList[tabID].orderedCatIDs
+	elseif enum == enums.tab then -- tab
+		loc = tabsList.orderedTabIDs
+	end
+
+	local pos = select(2, utils:HasValue(loc, ID))
+	if onlyPos then
+		return pos
+	else
+		return loc, pos
+	end
+end
+
+function dataManager:GetQuantity(enum, isGlobal)
+	-- returns the quantity of the given enum
+	if enum ~= enums.item and enum ~= enums.category and enum ~= enums.tab then return 0 end
+
+	-- OPTIMIZED VERSION
+	return enums.quantities[enum]
+
+	-- LOOP VERSION (always true, doesn't require outside variables)
+	-- returns the quantity of the given enum, in the given global state
+	-- isGlobal can be:
+	-- --> nil == global + profile
+	-- --> false == profile
+	-- --> true == global
+	-- if isGlobal ~= nil and type(isGlobal) ~= "boolean" then isGlobal = true end
+	--
+	-- local quantity = 0
+	-- for _ in dataManager:ForEach(enum, isGlobal) do
+	-- 	quantity = quantity + 1
+	-- end
+	-- return quantity
+end
+
+function dataManager:UpdateQuantities()
+	local enumTypes = { enums.item, enums.category, enums.tab }
+	for _,enum in pairs(enumTypes) do
+		enums.quantities[enum] = 0
+		for _ in dataManager:ForEach(enum) do
+			enums.quantities[enum] = enums.quantities[enum] + 1
+		end
+	end
+	print("----__QUANTITIES__----")
+	print(enums.quantities[enums.item])
+	print(enums.quantities[enums.category])
+	print(enums.quantities[enums.tab])
+end
+
 -- iterator function
 
 -- // here is a function to iterate over the addon's data
@@ -226,7 +288,7 @@ function dataManager:ForEach(enum, location)
 			end
 		end
 	else
-		error("Forgot ForEach argument #1", 2)
+		error("Wrong enum in ForEach call", 2)
 	end
 
 	-- // iteration part
@@ -260,6 +322,11 @@ end
 -- item
 
 local function addItem(itemID, itemData)
+	if dataManager:GetQuantity(enums.item) >= enums.maxQuantities[enums.item] then -- temp limit
+		print("Cannot add new items", "(max quantity reached)")
+		return
+	end
+
 	wipe(itemData.tabIDs)
 	itemData.tabIDs[itemData.originalTabID] = true -- by default, an item/cat can only be added to one tab, the shownTabIDs do the rest after
 
@@ -279,6 +346,8 @@ local function addItem(itemID, itemData)
 	-- refresh the mainFrame
 	mainFrame:UpdateWidget(itemID, enums.item)
 	mainFrame:Refresh()
+
+	enums.quantities[enums.item] = enums.quantities[enums.item] + 1
 
 	return itemID, itemData
 end
@@ -317,6 +386,11 @@ end
 -- category
 
 local function addCategory(catID, catData)
+	if dataManager:GetQuantity(enums.category) >= enums.maxQuantities[enums.category] then -- temp limit
+		print("Cannot add new categories", "max quantity reached")
+		return
+	end
+
 	wipe(catData.tabIDs)
 	catData.tabIDs[catData.originalTabID] = true -- by default, an item/cat can only be added to one tab, the shownTabIDs do the rest after
 
@@ -338,6 +412,8 @@ local function addCategory(catID, catData)
 	-- refresh the mainFrame
 	mainFrame:UpdateWidget(catID, enums.category)
 	mainFrame:Refresh()
+
+	enums.quantities[enums.category] = enums.quantities[enums.category] + 1
 
 	return catID, catData
 end
@@ -384,6 +460,11 @@ end
 -- tab
 
 local function addTab(tabID, tabData, isGlobal)
+	if dataManager:GetQuantity(enums.tab) >= enums.maxQuantities[enums.tab] then -- temp limit
+		print("Cannot add new tabs", "max quantity reached")
+		return
+	end
+
 	-- we get where we are
 	local tabsList = select(3, dataManager:GetData(isGlobal))
 
@@ -404,7 +485,8 @@ local function addTab(tabID, tabData, isGlobal)
 
 	-- AND refresh the tabsFrame
 	tabsFrame:UpdateTab(tabID)
-	tabsFrame:Refresh()
+
+	enums.quantities[enums.tab] = enums.quantities[enums.tab] + 1
 
 	return tabID, tabData
 end
@@ -679,6 +761,8 @@ function dataManager:DeleteItem(itemID)
 	mainFrame:DeleteWidget(itemID)
 	mainFrame:Refresh()
 
+	enums.quantities[enums.item] = enums.quantities[enums.item] - 1
+
 	return true
 end
 
@@ -722,6 +806,8 @@ function dataManager:DeleteCat(catID)
 		print("delete cat")
 
 		mainFrame:DeleteWidget(catID)
+
+		enums.quantities[enums.category] = enums.quantities[enums.category] - 1
 		result = true
 	end
 
@@ -786,6 +872,8 @@ function dataManager:DeleteTab(tabID)
 	  tabsList[tabID] = nil -- delete action
 		print("delete tab")
 
+		enums.quantities[enums.tab] = enums.quantities[enums.tab] - 1
+
 		database.ctab(select(2, next(tabsList.orderedTabIDs))) -- when deleting a tab, we refocus a new tab
 		result = true
 	end
@@ -799,7 +887,6 @@ function dataManager:DeleteTab(tabID)
 
 	-- AND refresh the tabsFrame
 	tabsFrame:DeleteTab(tabID)
-	tabsFrame:Refresh()
 
 	return result, nbToUndo
 end
@@ -837,29 +924,43 @@ function dataManager:Undo()
 
 	local refreshID = dataManager:SetRefresh(false)
 
-	local toUndo = tremove(NysTDL.db.profile.undoTable) -- remove last
+	-- TODO messages
+	local toUndo, success = tremove(NysTDL.db.profile.undoTable) -- remove last
 	if type(toUndo) == "number" then -- clear
 		if toUndo <= 0 then toUndo = 1 end -- when we find a "0", we pass it like it was never here, and directly go undo the next item
 		for i=1, toUndo do
-			dataManager:Undo()
+			success = not not dataManager:Undo()
+			if not success then
+				tinsert(NysTDL.db.profile.undoTable, toUndo-(i-1)) -- FIX maybe dangerous, verify this calculation
+				print("undo clear fail")
+				break
+			end
 		end
-		-- TODO messages "undo clear" and others
-		print("undid multiple")
-	elseif toUndo.enum == enums.item then -- item
-		addItem(toUndo.ID, toUndo.data)
-		print("undid item")
-	elseif toUndo.enum == enums.category then -- category
-		addCategory(toUndo.ID, toUndo.data)
-		print("undid cat")
-	elseif toUndo.enum == enums.tab then -- tab
-		addTab(toUndo.ID, toUndo.data, toUndo.isGlobal)
-		print("undid tab")
+		print("undid multiple") -- no
+	else
+		if toUndo.enum == enums.item then -- item
+			success = not not addItem(toUndo.ID, toUndo.data)
+			print("undid item") -- no
+		elseif toUndo.enum == enums.category then -- category
+			success = not not addCategory(toUndo.ID, toUndo.data)
+			print("undid cat") -- no
+		elseif toUndo.enum == enums.tab then -- tab
+			success = not not addTab(toUndo.ID, toUndo.data, toUndo.isGlobal)
+			print("undid tab") -- no
+		end
+		if not success then -- cancel
+			tinsert(NysTDL.db.profile.undoTable, toUndo)
+			print("undo fail")
+		end
 	end
+
 
 	dataManager:SetRefresh(true, refreshID)
 
 	-- refresh the mainFrame
 	mainFrame:Refresh()
+
+	return success
 end
 
 --/*******************/ DATA CONTROL /*************************/--
@@ -946,7 +1047,6 @@ function dataManager:Rename(ID, newName)
 	if enum == enums.tab then
 		-- refresh the tabsFrame
 		tabsFrame:UpdateTab(ID)
-		tabsFrame:Refresh()
 	else
 		-- refresh the mainFrame
 		mainFrame:UpdateWidget(ID, enum)
@@ -968,35 +1068,6 @@ function dataManager:IsProtected(ID)
 	end
 
 	-- TODO message "xxx is protected" ?
-end
-
-function dataManager:GetPosData(ID, tabID, onlyPos)
-	-- // returns the position data (location & number) of a given ID
-	-- usage: local loc, pos = dataManager:GetPosData(ID)
-	-- usage2: local pos = dataManager:GetPosData(ID, nil, true)
-	-- loc is the table the object is located in
-	-- // if the ID is a CATEGORY, then we can specify in which tab we want to know where it is,
-	-- or the current tab if none is given (since it can be either a sub-cat with a parent order, or a normal cat with a tab order)
-	tabID = tabID or database.ctab()
-
-	local enum, _, data, _, categoriesList, tabsList = dataManager:Find(ID)
-
-	local loc
-	if enum == enums.item then -- item
-		loc = select(3, dataManager:Find(data.catID)).orderedContentIDs
-	elseif enum == enums.category then -- category
-		if not tabsList[tabID] then error("Wrong tab ID") end
-		loc = data.parentCatID and categoriesList[data.parentCatID].orderedContentIDs or tabsList[tabID].orderedCatIDs
-	elseif enum == enums.tab then -- tab
-		loc = tabsList.orderedTabIDs
-	end
-
-	local pos = select(2, utils:HasValue(loc, ID))
-	if onlyPos then
-		return pos
-	else
-		return loc, pos
-	end
 end
 
 -- items

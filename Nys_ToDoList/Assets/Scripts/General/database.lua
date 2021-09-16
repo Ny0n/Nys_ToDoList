@@ -142,6 +142,9 @@ function database:DBInit()
     wipe(NysTDL.db.profile.undoTable)
   end
 
+  -- data quantities
+  dataManager:UpdateQuantities()
+
   dataManager.authorized = true
 end
 
@@ -339,29 +342,33 @@ function database:CreateDefaultTabs()
 	-- once per profile, we create the default addon tabs (All, Daily, Weekly)
 
   local selectedtabID
-	for g=1, 1 do -- TODO fix => 1, 2
+	for g=1, 1 do -- TDLATER fix ==> 1, 2
 		local isGlobal = g == 2
-
-		-- Daily
-		local dailyTabID, dailyTabData = dataManager:CreateTab("Daily", isGlobal) -- isSameEachDay already true
-		for i=1,7 do resetManager:UpdateResetDay(dailyTabID, i, true) end -- every day
-    resetManager:RenameResetTime(dailyTabID, dailyTabData.reset.sameEachDay, enums.defaultResetTimeName, "Daily")
-		resetManager:UpdateTimeData(dailyTabID, dailyTabData.reset.sameEachDay.resetTimes["Daily"], 9, 0, 0)
-
-    if not isGlobal then
-      selectedtabID = dailyTabID -- default tab
-    end
-
-		-- Weekly
-		local weeklyTabID, weeklyTabData = dataManager:CreateTab("Weekly", isGlobal) -- isSameEachDay already true
-		resetManager:UpdateResetDay(weeklyTabID, 4, true) -- only wednesday
-    resetManager:RenameResetTime(weeklyTabID, weeklyTabData.reset.sameEachDay, enums.defaultResetTimeName, "Weekly")
-		resetManager:UpdateTimeData(weeklyTabID, weeklyTabData.reset.sameEachDay.resetTimes["Weekly"], 9, 0, 0)
 
 		-- All
 		local allTabID = dataManager:CreateTab("All", isGlobal)
+
+		-- Daily
+		local dailyTabID, dailyTabData = dataManager:CreateTab("Daily", isGlobal)
+    if not isGlobal then selectedtabID = dailyTabID end -- default tab
+
+		-- Weekly
+		local weeklyTabID, weeklyTabData = dataManager:CreateTab("Weekly", isGlobal)
+
+    -- All data
 		dataManager:UpdateShownTabID(allTabID, dailyTabID, true)
 		dataManager:UpdateShownTabID(allTabID, weeklyTabID, true)
+
+    -- Daily data (isSameEachDay already true)
+    for i=1,7 do resetManager:UpdateResetDay(dailyTabID, i, true) end -- every day
+    resetManager:RenameResetTime(dailyTabID, dailyTabData.reset.sameEachDay, enums.defaultResetTimeName, "Daily")
+		resetManager:UpdateTimeData(dailyTabID, dailyTabData.reset.sameEachDay.resetTimes["Daily"], 9, 0, 0)
+
+    -- Weekly data (isSameEachDay already true)
+    resetManager:UpdateResetDay(weeklyTabID, 4, true) -- only wednesday
+    resetManager:RenameResetTime(weeklyTabID, weeklyTabData.reset.sameEachDay, enums.defaultResetTimeName, "Weekly")
+    resetManager:UpdateTimeData(weeklyTabID, weeklyTabData.reset.sameEachDay.resetTimes["Weekly"], 9, 0, 0)
+
 	end
 
 	-- then we set the default tab

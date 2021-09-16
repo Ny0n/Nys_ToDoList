@@ -16,6 +16,7 @@ local dataManager = addonTable.dataManager
 -- // Variables
 local L = core.L
 local private = {}
+tabsFrame.authorized = true -- can it call Refresh() ? (just there for optimization)
 
 -- UI pos control
 local inBetweenTabOffset = -12
@@ -28,7 +29,7 @@ local MIN_TAB_SIZE, MAX_TAB_SIZE = 70, 90
 
 local _currentID = 0
 local _currentState = false -- false == profile tabs, true == global tabs
-local _nbWholeTabsShown = 0
+local _nbWholeTabsShown, _shownWholeTabs = 0, {}
 
 local scrollFrame, content, overflowButtonFrame, overflowList
 local tabWidgets, listButtonWidgets = {}, {}
@@ -39,6 +40,7 @@ local lastLeftTab
 
 -- // WoW & Lua APIs
 
+local wipe, pairs, ipairs = wipe, pairs, ipairs
 local PanelTemplates_GetTabWidth = PanelTemplates_GetTabWidth
 local PanelTemplates_SetNumTabs = PanelTemplates_SetNumTabs
 local PanelTemplates_SetTab = PanelTemplates_SetTab
@@ -58,29 +60,40 @@ toggles the -dropdownFrame- that shows each of the tabs that are not currently s
 
 local animFrame = CreateFrame("Frame", nil, UIParent) -- OnUpdate frame
 local ANIM_SPEED = 10
+local animating = false
+local _targetTab
 
 function private:Event_AnimFrame_OnUpdate(elapsed)
 	local totalDistanceNeeded = FCFDockScrollFrame_GetScrollDistanceNeeded(self, self.selectedDynIndex)
-	if (abs(totalDistanceNeeded) < 1.0) then
+	if math.abs(totalDistanceNeeded) < 1.0 then
+		private:IncludeTab(_targetTab) -- good snap
     private:StopAnim(args)
     return
 	end
 
-	local currentPosition = self:GetHorizontalScroll()
-
 	local distanceNoCap = totalDistanceNeeded * ANIM_SPEED * elapsed
 	local distanceToMove = (totalDistanceNeeded > 0) and min(totalDistanceNeeded, distanceNoCap) or max(totalDistanceNeeded, distanceNoCap)
 
-	self:SetHorizontalScroll(max(currentPosition + distanceToMove, 0))
+	private:ScrollTo(math.max(scrollFrame:GetHorizontalScroll() + distanceToMove, 0))
 end
 
-function private:StartAnim(args)
+function private:StartAnim()
+	animating = true
   animFrame:SetScript("OnUpdate", private.Event_AnimFrame_OnUpdate)
 end
 
-function private:StopAnim(args)
-  animFrame:SetScript("OnUpdate", nil)
-  FCFDockScrollFrame_JumpToTab(self, FCFDockScrollFrame_GetLeftmostTab(self))
+function private:StopAnim()
+	if animating then
+		animating = false
+	  animFrame:SetScript("OnUpdate", nil)
+	end
+end
+
+-- TDLATER animation
+function private:ScrollToTab(tabID)
+	private:StopAnim()
+	_targetTab = tabID
+	private:StartAnim()
 end
 
 --/*******************/ MISC /*************************/--
@@ -89,14 +102,10 @@ function private:GetLeftMostTab()
 	-- to know where we are in the scrollFrame
 	-- returns the tabID of the found tab
 	local scrollFrameLeft = scrollFrame:GetLeft()
-	print("scrollFrameLeft", scrollFrameLeft)
-	print("scrollFrameScroll", scrollFrame:GetHorizontalScroll())
 	local tabsList = select(3, dataManager:GetData(_currentState))
   for _,tabID in ipairs(tabsList.orderedTabIDs) do -- in order, we check which is the first to be ENTIRELY (whole tab) on the right of the scrollFrame's left
     if tabWidgets[tabID] then
-			-- print("tabWidgets[tabID]:GetLeft()", string.format("%.f", tabWidgets[tabID]:GetLeft()), select(3, dataManager:Find(tabID)).name)
 			if tabWidgets[tabID]:GetLeft()+15 > scrollFrameLeft then
-				-- print("LEFT_MOST_TAB", select(3, dataManager:Find(tabID)).name)
 				return tabID
 			end
     end
@@ -104,51 +113,44 @@ function private:GetLeftMostTab()
 	return select(2, next(tabsList.orderedTabIDs)) -- by default, if there are no tabs (specific cases), we return litterally the first tab
 end
 
-function private:GetShownWholeTabs()
-	-- returns a table containing, in order, the tabID of the found whole tabs
-	-- i'm betting on the fact that tabs are sorted, so i only need to know so much
-	if _nbWholeTabsShown <= 0 then return {} end
+function private:RefreshShownWholeTabs()
+	-- refreshes a table, containing in order the tabIDs of the found whole tabs
 
-	local shownTabs = {}
+	wipe(_shownWholeTabs)
 
 	local leftTab = private:GetLeftMostTab()
 	local loc, pos = dataManager:GetPosData(leftTab)
 
-	table.insert(shownTabs, leftTab)
+	-- i'm betting on the fact that tabs are sorted, so i only need to know so much
+	table.insert(_shownWholeTabs, leftTab)
 	for i=1,_nbWholeTabsShown-1 do
-		table.insert(shownTabs, loc[pos+i])
+		table.insert(_shownWholeTabs, loc[pos+i])
 	end
-
-	print("===================")
-	for k,v in pairs(shownTabs) do
-		print(select(3, dataManager:Find(v)).name)
-	end
-	print("<===================>")
-
-	return shownTabs
 end
 
-function private:ScrollToTab(tabID)
-	-- TDLATER animation
+function private:ScrollTo(pos) -- replacement for scrollFrame:SetHorizontalScroll
+	scrollFrame:SetHorizontalScroll(pos)
+	private:OnTabsMoving()
+	if scrollFrame:IsMouseOver() then -- custom (if we hover during the anim)
+		private:SetTabWidgetsContentAlpha(NysTDL.db.profile.frameContentAlpha/100, true)
+	end
 end
 
 function private:SnapToTab(tabID)
-	print("----> SnapToTab", select(3, dataManager:Find(tabID)).name)
 	-- snaps the horizontal scroll to the left of the given tab
 	if not tabWidgets[tabID] then return false end
 
-	scrollFrame:SetHorizontalScroll(0)
+	private:ScrollTo(0)
 	local diff = (tabWidgets[tabID]:GetLeft()+leftScrollFrameOffset) - scrollFrame:GetLeft()
-	scrollFrame:SetHorizontalScroll(math.max(diff, 0))
+	private:ScrollTo(math.max(diff, 0))
 end
 
 function private:IncludeTab(tabID)
-	print("-----IncludeTab-----")
 	-- snaps the horizontal scroll to INCLUDE the given tab button,
 	-- the difference with SnapToTab is that this one will snap to the RIGHT of the given tab,
 	-- if it is after the current selection, will do nothing if the tab is already in the current selection, and snap to the left if it is before
 	if not tabWidgets[tabID] then return false end
-	if utils:HasValue(private:GetShownWholeTabs(), tabID) then -- if it's already shown, we have nothing to do
+	if utils:HasValue(_shownWholeTabs, tabID) then -- if it's already shown, we have nothing to do
 		return true
 	end
 
@@ -161,7 +163,7 @@ function private:IncludeTab(tabID)
 	else -- if the tab is after the last one (bc it's not before the first one, and it's not currently shown)
 		diff = (tabWidgets[tabID]:GetRight() + rightScrollFrameOffset) - scrollFrame:GetRight() -- positive (go right)
 	end
-	scrollFrame:SetHorizontalScroll(math.max(scrollFrame:GetHorizontalScroll() + diff, 0))
+	private:ScrollTo(math.max(scrollFrame:GetHorizontalScroll() + diff, 0))
 end
 
 function private:CalculateTabSize()
@@ -197,7 +199,6 @@ function private:CalculateTabSize()
 end
 
 function private:RefreshSize()
-	print("-----RefreshSize-----")
   -- updates the size of each tab widget depending on the list's width,
 	-- also shows the overflow button if needed
 
@@ -237,6 +238,8 @@ function private:RefreshSize()
 	  scrollFrame:SetPoint("TOPLEFT", tdlFrame, "BOTTOMLEFT", leftScrollFrameOffset, 2)
 	  scrollFrame:SetPoint("BOTTOMRIGHT", tdlFrame, "BOTTOMRIGHT", 0, -40)
 	end
+
+	private:OnTabsMoving()
 end
 
 function private:RefreshPoints()
@@ -254,6 +257,7 @@ function private:RefreshPoints()
       lastWidget = tabWidgets[tabID]
     end
   end
+	private:OnTabsMoving()
 end
 
 function private:RefreshOverflowList()
@@ -267,14 +271,13 @@ function private:RefreshOverflowList()
 
 	local tabsList = select(3, dataManager:GetData(_currentState))
   local lastWidget, rightSide
-	local shownTabs = private:GetShownWholeTabs()
   for _,tabID in ipairs(tabsList.orderedTabIDs) do
     if listButtonWidgets[tabID] then
-			if utils:HasValue(shownTabs, tabID) then
+			if utils:HasValue(_shownWholeTabs, tabID) then
 				rightSide = true
 			else -- !! if the tab is not already shown as a button under the list
 				if not lastWidget then
-					listButtonWidgets[tabID]:SetPoint("TOP", overflowList.title, "BOTTOM", 0, -5)
+					listButtonWidgets[tabID]:SetPoint("TOP", overflowList.content.title, "BOTTOM", 0, -5)
 	      else
 	        listButtonWidgets[tabID]:SetPoint("TOP", lastWidget, "BOTTOM", 0, -2)
 	      end
@@ -289,9 +292,21 @@ function private:RefreshOverflowList()
     end
 	end
 
-	if not lastWidget then lastWidget = overflowList.title end
+	if not lastWidget then lastWidget = overflowList.content.title end
 	local top, bottom = overflowList:GetTop(), lastWidget:GetBottom()-8
 	overflowList:SetHeight(top-bottom)
+end
+
+function private:OnTabsMoving()
+	-- !! this must be updated only in 3 cases:
+	-- --> the position (order) of the widgets changed
+	-- --> the size of the widgets changed
+	-- --> the horizontal scroll of the scrollFrame changed
+
+	private:RefreshShownWholeTabs()
+	if overflowList:IsShown() then -- if the overflow list is shown for some reason, we update it as well
+		private:RefreshOverflowList()
+	end
 end
 
 --/*******************/ WIDGETS /*************************/--
@@ -315,7 +330,7 @@ function private:TabWidget(tabID, parentFrame)
   tabWidget:SetText(tabData.name)
   tabWidget:SetScript("OnClick", function(self)
     mainFrame:ChangeTab(self.tabID)
-    tabsFrame:Refresh()
+    PanelTemplates_SetTab(self:GetParent(), self:GetID())
   end)
 
   return tabWidget
@@ -338,20 +353,12 @@ function private:ListButtonWidget(tabID, parentFrame)
 	listButtonWidget:SetScript("OnClick", function(self)
 		tabWidgets[self.tabID]:Click()
 		private:IncludeTab(self.tabID) -- TDLATER redo for anim
-		private:RefreshOverflowList()
 	end)
 
 	return listButtonWidget
 end
 
 --/*******************/ GENERAL /*************************/--
-
-function tabsFrame:Get()
-	private:GetLeftMostTab()
-end
-function tabsFrame:Set()
-	private:GetShownWholeTabs()
-end
 
 function tabsFrame:GLOBAL_MOUSE_DOWN()
 	-- to replicate the behavior of the GameTooltip
@@ -361,9 +368,73 @@ function tabsFrame:GLOBAL_MOUSE_DOWN()
 end
 
 function tabsFrame:SetScale(scale)
-	-- we don't actually need the scale, the width of the scrollFrame is enough
-	-- and it's automatically updated with the width from the tdlFrame
+	-- we don't actually need the scale, the width of the tdlFrame is enough
   tabsFrame:Refresh()
+end
+
+function tabsFrame:SetAlpha(alpha)
+	-- // update the alpha (background) of the tab frames
+
+	-- tabWidgets
+	for _,tabWidget in pairs(tabWidgets) do
+		local name = tabWidget:GetName()
+    _G[name.."Left"]:SetAlpha(alpha)
+    _G[name.."LeftDisabled"]:SetAlpha(alpha)
+    _G[name.."Middle"]:SetAlpha(alpha)
+    _G[name.."MiddleDisabled"]:SetAlpha(alpha)
+    _G[name.."Right"]:SetAlpha(alpha)
+    _G[name.."RightDisabled"]:SetAlpha(alpha)
+    _G[name.."HighlightTexture"]:SetAlpha(alpha)
+  end
+
+	-- overflowButtonFrame
+	if overflowButtonFrame then
+		overflowButtonFrame.backdrop:SetBackdropColor(0, 0, 0, alpha)
+	  overflowButtonFrame.backdrop:SetBackdropBorderColor(1, 1, 1, alpha)
+	end
+
+	-- overflowList
+	if overflowList then
+		overflowList:SetBackdropColor(0, 0, 0, alpha)
+	  overflowList:SetBackdropBorderColor(1, 1, 1, alpha)
+	end
+end
+
+function private:SetTabWidgetsContentAlpha(alpha, forAll)
+	if forAll then
+		for _,tabWidget in pairs(tabWidgets) do
+			_G[tabWidget:GetName().."Text"]:SetAlpha(alpha)
+		end
+	else -- doesn't go through ALL of the tab widgets, only through the shown ones
+		local ctab = database.ctab()
+		for _,tabID in pairs(_shownWholeTabs) do -- for each tab widget that is currently shown under the tdlFrame
+			if tabWidgets[tabID] then
+				if tabID ~= ctab then -- doing that one after
+					_G[tabWidgets[tabID]:GetName().."Text"]:SetAlpha(alpha)
+				end
+			end
+		end
+		if tabWidgets[ctab] then
+			_G[tabWidgets[ctab]:GetName().."Text"]:SetAlpha(alpha) -- the ctab is ALWAYS shown, even when not whole
+		end
+	end
+end
+
+function tabsFrame:SetContentAlpha(alpha)
+	-- // update the content alpha (text) of the tab frames
+
+	-- tabWidgets
+	private:SetTabWidgetsContentAlpha(alpha, true)
+
+	-- overflowButtonFrame
+	if overflowButtonFrame then
+		overflowButtonFrame.btn:SetAlpha(alpha)
+	end
+
+	-- overflowList
+	if overflowList then
+		overflowList.content:SetAlpha(alpha)
+	end
 end
 
 function tabsFrame:UpdateTab(tabID)
@@ -379,8 +450,13 @@ function tabsFrame:UpdateTab(tabID)
   end
 
   tabWidgets[tabID] = private:TabWidget(tabID, content)
-  listButtonWidgets[tabID] = private:ListButtonWidget(tabID, overflowList)
-  private:RefreshPoints() -- and refresh the pos
+  listButtonWidgets[tabID] = private:ListButtonWidget(tabID, overflowList.content)
+
+	-- we update the alpha for the new tab (and for everything else)
+	tabsFrame:SetAlpha(NysTDL.db.profile.frameAlpha/100)
+	tabsFrame:SetContentAlpha(NysTDL.db.profile.frameContentAlpha/100)
+
+	tabsFrame:Refresh() -- refresh
 end
 
 function tabsFrame:DeleteTab(tabID)
@@ -396,12 +472,12 @@ function tabsFrame:DeleteTab(tabID)
     listButtonWidgets[tabID] = nil
   end
 
-  --TDLATER maybe refresh here? (and same in other funcs)
+  tabsFrame:Refresh() -- refresh
 end
 
 function tabsFrame:Refresh()
-	print("=====REFRESH=====")
   -- // we update the visuals of the buttons
+	if not tabsFrame.authorized then return end
 
   -- we update the nb of tabs so that wow's API works
   PanelTemplates_SetNumTabs(content, _currentID) -- (yea we're lying a bit, but it doesn't matter :D)
@@ -423,6 +499,9 @@ function tabsFrame:Refresh()
 
 	-- and we always focus ourserves on the currently selected tab
 	private:IncludeTab(database.ctab())
+
+	-- update the alpha of everyone (maybe we're not hovering the scrollFrame, so any refresh does it as well, thanks WoW API ;)
+	private:SetTabWidgetsContentAlpha(NysTDL.db.profile.frameContentAlpha/100, true)
 end
 
 --/*******************/ INITIALIZATION /*************************/--
@@ -441,6 +520,20 @@ function tabsFrame:CreateFrame(tdlFrame)
 	end)
 	scrollFrame:SetScript("OnHide", function()
 		lastLeftTab = private:GetLeftMostTab()
+	end)
+	local wasMouseOver = false
+	scrollFrame:SetScript("OnUpdate", function(self)
+		-- tabWidgets text alpha refresh (bc when hovering over them/clicking on them,
+		-- the WoW template resets the alpha to 1, so we override that)
+		if self:IsMouseOver() then
+			wasMouseOver = true
+			-- only go through the shown tab widgets for optimization
+			private:SetTabWidgetsContentAlpha(NysTDL.db.profile.frameContentAlpha/100)
+		elseif wasMouseOver then
+			wasMouseOver = false
+			-- this backup update is to counter the bug that happends when we pass at high speed over the tabs
+			private:SetTabWidgetsContentAlpha(NysTDL.db.profile.frameContentAlpha/100)
+		end
 	end)
 
   -- // content
@@ -464,8 +557,6 @@ function tabsFrame:CreateFrame(tdlFrame)
     tile = false, tileSize = 1, edgeSize = 10,
     insets = { left = 2, right = 2, top = 2, bottom = 2 }
   })
-	overflowButtonFrame.backdrop:SetBackdropColor(0, 0, 0, 1)
-  overflowButtonFrame.backdrop:SetBackdropBorderColor(1, 1, 1, 0.5)
 	overflowButtonFrame.backdrop:SetPoint("TOPLEFT", overflowButtonFrame, "TOPLEFT", 0, 4)
   overflowButtonFrame.backdrop:SetSize(overflowButtonFrame:GetWidth(), overflowButtonFrame:GetHeight()+2)
 	overflowButtonFrame.backdrop:SetClipsChildren(true)
@@ -494,16 +585,21 @@ function tabsFrame:CreateFrame(tdlFrame)
     tile = false, tileSize = 1, edgeSize = 12,
     insets = { left = 2, right = 2, top = 2, bottom = 2 }
   })
-	overflowList:SetBackdropColor(0, 0, 0, 1)
-  overflowList:SetBackdropBorderColor(1, 1, 1, 0.5) -- TODO REDO ALPHA FOR ALL
 	overflowList:SetPoint("TOPRIGHT", overflowButtonFrame, "BOTTOMRIGHT", 0, -5)
 	overflowList:SetSize(150, 1) -- the height is updated dynamically
+  overflowList:EnableMouse(true)
+  overflowList:SetClampedToScreen(true)
+  overflowList:SetToplevel(true)
 	overflowList:Hide()
 
-	overflowList.title = overflowList:CreateFontString(nil)
-	overflowList.title:SetPoint("TOP", overflowList, "TOP", 0, -5)
-	overflowList.title:SetFontObject("GameFontHighlight")
-	overflowList.title:SetText("Other Tabs")
+	overflowList.content = CreateFrame("Frame", nil, overflowList)
+	overflowList.content:SetPoint("TOPLEFT", overflowList, "TOPLEFT")
+	overflowList.content:SetPoint("BOTTOMRIGHT", overflowList, "BOTTOMRIGHT")
+
+	overflowList.content.title = overflowList.content:CreateFontString(nil)
+	overflowList.content.title:SetPoint("TOP", overflowList.content, "TOP", 0, -5)
+	overflowList.content.title:SetFontObject("GameFontHighlight")
+	overflowList.content.title:SetText("Other Tabs")
 
 	overflowButtonFrame.btn:SetScript("OnClick", function()
 		if not overflowList:IsShown() then -- if we're about to show the list, we refresh it
@@ -515,6 +611,7 @@ function tabsFrame:CreateFrame(tdlFrame)
 end
 
 function tabsFrame:Init()
+	tabsFrame.authorized = false
   -- // widgets
 	-- we delete and hide each widget
   for tabID in pairs(tabWidgets) do
@@ -527,7 +624,8 @@ function tabsFrame:Init()
   for tabID,tabData in dataManager:ForEach(enums.tab, false) do -- TDLATER global too
     tabsFrame:UpdateTab(tabID)
   end
+	tabsFrame.authorized = true
 
-  -- refresh
-  tabsFrame:Refresh()
+	-- one big refresh
+	tabsFrame:Refresh()
 end

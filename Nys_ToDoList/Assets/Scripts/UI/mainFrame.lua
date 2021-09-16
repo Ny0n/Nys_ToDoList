@@ -21,7 +21,6 @@ local LDD = core.LDD
 
 -- THE frame
 local tdlFrame
-
 mainFrame.editMode = false
 
 -- profile-dependant variables (those are reset in mainFrame:Init())
@@ -368,6 +367,9 @@ function mainFrame:Event_FrameAlphaSlider_OnValueChanged(value)
 
   -- description frames part
   widgets:SetDescFramesAlpha(value)
+
+  -- tab frames part
+  tabsFrame:SetAlpha(value/100)
 end
 
 function mainFrame:Event_FrameContentAlphaSlider_OnValueChanged(value)
@@ -381,6 +383,9 @@ function mainFrame:Event_FrameContentAlphaSlider_OnValueChanged(value)
 
   -- description frames part
   widgets:SetDescFramesContentAlpha(value)
+
+  -- tab frames part
+  tabsFrame:SetContentAlpha(value/100)
 end
 
 function mainFrame:Event_TDLFrame_OnVisibilityUpdate()
