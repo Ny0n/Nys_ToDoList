@@ -22,8 +22,9 @@
         <!-- *************** -->
         <!-- texture to test -->
 
-        <Texture parentKey="Arrow" file="Interface\Azerite\Azerite">
-          <TexCoords left="0.756" right="0.848" top="0.841" bottom="0.864"/>
+        <!-- <Texture parentKey="Arrow" file="Interface\Azerite\Azerite"> -->
+        <Texture parentKey="Icon" file="Interface\Transmogrify\Transmogrify">
+          <TexCoords left="0.887" right="0.934" top="0.18" bottom="0.226"/>
 
           <!-- *************** -->
           <Anchors>
@@ -210,8 +211,10 @@
     </KeyValues>
     <Layers>
       <Layer level="OVERLAY">
-        <Texture parentKey="Icon" file="Interface\Buttons\UI-RefreshButton">
-          <Size x="14" y="14"/>
+        <Texture parentKey="Icon" file="Interface\Transmogrify\Transmogrify">
+          <TexCoords left="0.538" right="0.575" top="0.255" bottom="0.288"/>
+          <Color r="0.9" g="1" b="1"/>
+          <Size x="15" y="14"/>
           <Anchors>
             <Anchor point="CENTER"/>
           </Anchors>
@@ -250,6 +253,14 @@
       <Layer level="OVERLAY">
         <Texture parentKey="Icon" file="Interface\BUTTONS\UI-OptionsButton">
           <Size x="14" y="14"/>
+          <Anchors>
+            <Anchor point="CENTER"/>
+          </Anchors>
+        </Texture>
+      </Layer>
+      <Layer level="OVERLAY">
+        <Texture parentKey="Glow" file="Interface\BUTTONS\CheckButtonGlow" hidden="true">
+          <Size x="40" y="40"/>
           <Anchors>
             <Anchor point="CENTER"/>
           </Anchors>

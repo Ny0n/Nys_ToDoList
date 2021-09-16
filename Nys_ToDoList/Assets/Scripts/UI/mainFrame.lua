@@ -69,6 +69,13 @@ local lineOffset = 120
 local cursorX, cursorY, cursorDist = 0, 0, 10 -- for my special drag
 local lineBottomY = -80
 
+-- // WoW & Lua APIs
+
+local GetCursorPosition = GetCursorPosition
+local IsAltKeyDown = IsAltKeyDown
+local IsShiftKeyDown = IsShiftKeyDown
+local IsControlKeyDown = IsControlKeyDown
+
 --/*******************/ GENERAL /*************************/--
 
 -- // Local functions
@@ -327,20 +334,44 @@ function mainFrame:UpdateItemButtons(itemID)
   end
 end
 
-function mainFrame:ToggleEditMode(state)
+function mainFrame:ToggleEditMode(state, forceUpdate)
   local orig = mainFrame.editMode
   if type(state) == "boolean" then
     mainFrame.editMode = state
   else
     mainFrame.editMode = not mainFrame.editMode
   end
-  if orig == mainFrame.editMode then return end -- if we didn't change the edit mode
+  if not forceUpdate and orig == mainFrame.editMode then return end -- if we didn't change the edit mode
 
+  -- // start
+
+  -- edit mode button
+  tdlFrame.content.editModeButton.Icon:SetDesaturated(mainFrame.editMode and 1 or nil)
+  tdlFrame.content.editModeButton.Glow:SetShown(mainFrame.editMode)
+
+  -- content widgets buttons
   for _,contentWidget in pairs(contentWidgets) do
     contentWidget:SetEditMode(mainFrame.editMode)
   end
 
-  mainFrame:Refresh()
+  -- we switch the category and frame options buttons for the undo and frame action ones and vice versa
+  tdlFrame.content.categoryButton:SetShown(not mainFrame.editMode)
+  tdlFrame.content.frameOptionsButton:SetShown(not mainFrame.editMode)
+  tdlFrame.content.tabActionsButton:SetShown(mainFrame.editMode)
+  tdlFrame.content.undoButton:SetShown(mainFrame.editMode)
+
+  -- resize button
+  tdlFrame.resizeButton:SetShown(mainFrame.editMode)
+
+  -- scroll bar
+  if mainFrame.editMode then
+    tdlFrame.ScrollFrame.ScrollBar:SetPoint("BOTTOMRIGHT", tdlFrame.ScrollFrame, "BOTTOMRIGHT", - 7, 32)
+  else
+    tdlFrame.ScrollFrame.ScrollBar:SetPoint("BOTTOMRIGHT", tdlFrame.ScrollFrame, "BOTTOMRIGHT", - 7, 17)
+  end
+
+  -- // refresh
+  menuClick() -- to close any opened menu and refresh the list
 end
 
 --/*******************/ EVENTS /*************************/--
@@ -393,6 +424,7 @@ function mainFrame:Event_TDLFrame_OnVisibilityUpdate()
   menuClick() -- to close any opened menu and refresh the list
   NysTDL.db.profile.lastListVisibility = tdlFrame:IsShown()
   if dragndrop.dragging then dragndrop:CancelDragging() end
+  mainFrame:ToggleEditMode(false)
 end
 
 function mainFrame:Event_TDLFrame_OnSizeChanged(width, height)
@@ -437,13 +469,9 @@ local T_Event_TDLFrame_OnUpdate = {
   alt = false,
 }
 function mainFrame:Event_TDLFrame_OnUpdate()
-  -- if (tdlFrame:IsMouseOver()) then
-  --   tdlFrame.ScrollFrame.ScrollBar:Show()
-  -- else
-  --   tdlFrame.ScrollFrame.ScrollBar:Hide()
-  -- end
+  -- tdlFrame.ScrollFrame.ScrollBar:SetShown(tdlFrame:IsMouseOver())
 
-  -- dragging
+  -- // dragging
   if tdlFrame.isMouseDown and not tdlFrame.hasMoved then
     local x, y = GetCursorPosition()
     if (x > cursorX + cursorDist) or (x < cursorX - cursorDist) or (y > cursorY + cursorDist) or (y < cursorY - cursorDist) then  -- we start dragging the frame
@@ -452,65 +480,26 @@ function mainFrame:Event_TDLFrame_OnUpdate()
     end
   end
 
-  -- testing and showing the right buttons depending on our inputs
-  if IsAltKeyDown() and not T_Event_TDLFrame_OnUpdate:other("alt") then
-    if not T_Event_TDLFrame_OnUpdate.alt then
-      T_Event_TDLFrame_OnUpdate:something("alt")
-
-      tutorialsManager:Validate("ALTkey") -- tutorial
-      -- we switch the category and frame options buttons for the undo and frame action ones and vice versa
-      tdlFrame.content.categoryButton:Hide()
-      tdlFrame.content.frameOptionsButton:Hide()
-      tdlFrame.content.tabActionsButton:Show()
-      tdlFrame.content.undoButton:Show()
-      -- resize button
-      tdlFrame.ScrollFrame.ScrollBar:SetPoint("BOTTOMRIGHT", tdlFrame.ScrollFrame, "BOTTOMRIGHT", - 7, 32)
-      tdlFrame.resizeButton:Show()
-
-      -- EDIT MODE ALT
-      mainFrame:ToggleEditMode(true)
-    end
+  -- -- // input manager
+  -- if IsAltKeyDown() and not T_Event_TDLFrame_OnUpdate:other("alt") then
+  --   if not T_Event_TDLFrame_OnUpdate.alt then
+  --     T_Event_TDLFrame_OnUpdate:something("alt")
+  --     -- alt actions
+  --   end
   -- elseif IsShiftKeyDown() and not T_Event_TDLFrame_OnUpdate:other("shift") then
   --   if not T_Event_TDLFrame_OnUpdate.shift then
   --     T_Event_TDLFrame_OnUpdate:something("shift")
-  --
-  --     -- we show the star (favorite) icon for every item
-  --     for _, contentWidget in pairs(contentWidgets) do
-  --       if contentWidget.enum == enums.item then
-  --         contentWidget.descBtn:Hide()
-  --         contentWidget.favoriteBtn:Show()
-  --         contentWidget.removeBtn:Hide()
-  --       end
-  --     end
+  --     -- shift actions
   --   end
   -- elseif IsControlKeyDown() and not T_Event_TDLFrame_OnUpdate:other("ctrl") then
   --   if not T_Event_TDLFrame_OnUpdate.ctrl then
   --     T_Event_TDLFrame_OnUpdate:something("ctrl")
-  --
-  --     -- we show the paper (description) icon for every item
-  --     for _, contentWidget in pairs(contentWidgets) do
-  --       if contentWidget.enum == enums.item then
-  --         contentWidget.descBtn:Show()
-  --         contentWidget.favoriteBtn:Hide()
-  --         contentWidget.removeBtn:Hide()
-  --       end
-  --     end
+  --     -- ctrl actions
   --   end
-  elseif not T_Event_TDLFrame_OnUpdate.nothing then
-    T_Event_TDLFrame_OnUpdate:something("nothing")
-
-    -- buttons
-    tdlFrame.content.categoryButton:Show()
-    tdlFrame.content.frameOptionsButton:Show()
-    tdlFrame.content.tabActionsButton:Hide()
-    tdlFrame.content.undoButton:Hide()
-    -- resize button
-    tdlFrame.ScrollFrame.ScrollBar:SetPoint("BOTTOMRIGHT", tdlFrame.ScrollFrame, "BOTTOMRIGHT", - 7, 17)
-    tdlFrame.resizeButton:Hide()
-
-    -- EDIT MODE ALT
-    mainFrame:ToggleEditMode(false)
-  end
+  -- elseif not T_Event_TDLFrame_OnUpdate.nothing then
+  --   T_Event_TDLFrame_OnUpdate:something("nothing")
+  --   -- no special input actions
+  -- end
 end
 
 --/*******************/ LIST LOADING /*************************/--
@@ -1221,6 +1210,11 @@ function mainFrame:CreateTDLFrame()
   tdlFrame:HookScript("OnShow", mainFrame.Event_TDLFrame_OnVisibilityUpdate)
   tdlFrame:HookScript("OnHide", mainFrame.Event_TDLFrame_OnVisibilityUpdate)
   tdlFrame:HookScript("OnSizeChanged", mainFrame.Event_TDLFrame_OnSizeChanged)
+  tdlFrame:HookScript("OnMouseUp", function(self, button) -- toggle edit mode
+    if button == "RightButton" then
+      mainFrame:ToggleEditMode()
+    end
+  end)
 
   -- to move the frame AND NOT HAVE THE PRB WITH THE RESIZE so it's custom moving
   tdlFrame.isMouseDown = false
@@ -1335,6 +1329,9 @@ function mainFrame:Init()
 
   -- we generate the widgets once
   loadWidgets()
+
+  -- we reset the edit mode state
+  mainFrame:ToggleEditMode(false, true)
 
   --widgets:SetEditBoxesHyperlinksEnabled(true) -- see func details for why i'm not using it
 
