@@ -22,7 +22,7 @@ enums.databrokerModes = {
   frame = "ENUMS_DATABROKERMODES_3", -- frame databroker mode
 }
 
--- pure data (see those as global variables accessible by any file, but not global) -- TODO locale for string vars
+-- pure data (see those as global variables accessible by any file, but not global) -- LOCALE for string vars
 
 enums.idtype = "string"
 enums.tdlFrameDefaultWidth = 340
@@ -35,8 +35,9 @@ enums.ofsyCatContent = 26
 enums.ofsyCat = 26
 enums.ofsyContentCat = 26
 enums.ofsyContent = 22
-enums.ofsxItemIcons = -18 -- not in edit mode
+enums.ofsxItemIcons = -18
 
+enums.hyperlinkNameBonus = 100
 enums.maxNameWidth = {
 	[enums.item] = 240,
 	[enums.category] = 220,

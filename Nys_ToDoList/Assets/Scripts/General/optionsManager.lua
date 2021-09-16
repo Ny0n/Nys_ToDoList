@@ -94,8 +94,8 @@ local tabManagementTable = {
       instantRefreshToggle = {
         order = 1.4,
         type = "toggle",
-        name = "Instant refresh\n(profile dependant)",
-        -- desc = "", -- TODO dire dépendant du profile (PR PROFILE ET GLOBAL, dans les deux cas c dépendant du profile (rien a changer du coup))
+        name = "Instant refresh",
+        desc = "Delete/Hide items instantly chen checking them".."\n".."(profile dependant)",
         get = function(info)
           return NysTDL.db.profile.instantRefresh
         end,

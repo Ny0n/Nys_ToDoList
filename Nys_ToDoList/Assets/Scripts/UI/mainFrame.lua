@@ -239,7 +239,7 @@ function mainFrame:UpdateCategoryNamesColor()
       local total, checked = dataManager:GetCatCheckedNumbers(contentWidget.catID)
 
       if total > 0 and total == checked then
-        contentWidget.color = { 0, 1, 0, 1 } -- green -- TDLATER table ref
+        contentWidget.color = { 0, 1, 0, 1 } -- green -- TDLATER table ref for optimization
       else
         contentWidget.color = { 1, 1, 1, 1 } -- white
       end
@@ -617,7 +617,7 @@ local function recursiveLoad(tabID, tabData, catWidget, p)
         end
       end
       p.newX = p.newX - enums.ofsxContent
-      p.newY = p.newY + enums.ofsyContent -- TODO take last used offset
+      p.newY = p.newY + enums.ofsyContent -- TDLATER take last used offset for sub-cats? (not sure of this comment tho)
       p.newY = p.newY - enums.ofsyContentCat
     end
   end
@@ -656,7 +656,7 @@ local function loadList()
     if originalTabName == tabData.name then
       catWidget.originalTabLabel:Hide()
     else -- if the tab is showing a cat that was not created here, we show the label specifying the cat's original tab
-      catWidget.originalTabLabel:SetText("("..originalTabName.." tab)") -- TODO locale
+      catWidget.originalTabLabel:SetText("("..originalTabName.." tab)") -- LOCALE
       catWidget.originalTabLabel:Show()
     end
 
@@ -755,7 +755,10 @@ local function generateMenuAddACategory()
   menuframe.categoryEditBox:SetHeight(30)
   menuframe.categoryEditBox:SetAutoFocus(false)
   menuframe.categoryEditBox:SetScript("OnEnterPressed", addCat) -- if we press enter, it's like we clicked on the add button
-  menuframe.categoryEditBox:HookScript("OnEditFocusGained", function(self) -- TODO what is this
+  menuframe.categoryEditBox:HookScript("OnEditFocusGained", function(self)
+    -- since this edit box stays there, even when we lose the focus,
+    -- i have to reapply the highlight depending on the SV
+    -- when clicking on it
     if NysTDL.db.profile.highlightOnFocus then
       self:HighlightText()
     else
@@ -1004,7 +1007,8 @@ local function generateMenuFrameOptions()
   menuframe.affectDesc.Text:SetPoint("TOP", menuframe.affectDesc, "BOTTOM")
   menuframe.affectDesc:SetHitRectInsets(0, 0, 0, 0)
   menuframe.affectDesc:SetScript("OnClick", function(self)
-    NysTDL.db.profile.affectDesc = self:GetChecked() -- TODO oula
+    NysTDL.db.profile.affectDesc = not NysTDL.db.profile.affectDesc
+    self:SetChecked(NysTDL.db.profile.affectDesc)
     mainFrame:Event_FrameAlphaSlider_OnValueChanged(NysTDL.db.profile.frameAlpha)
     mainFrame:Event_FrameContentAlphaSlider_OnValueChanged(NysTDL.db.profile.frameContentAlpha)
   end)

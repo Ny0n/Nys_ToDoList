@@ -73,7 +73,7 @@ end
 -- // ADVANCED
 
 function databroker:DrawAdvancedTooltip(tooltip)
-  if not NysTDL.db.profile.minimap.tooltip then -- TODO remove duplicates
+  if not NysTDL.db.profile.minimap.tooltip then -- TDLATER remove duplicates
     tooltip:Hide()
     return
   end

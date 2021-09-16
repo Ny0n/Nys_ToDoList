@@ -10,31 +10,9 @@ local resetManager = addonTable.resetManager
 
 -- Variables
 local L = core.L
-
 local private = {}
 
 local autoResetedThisSession = false
-
-function resetManager:PrintTimeDiff(timerResetID, ttime) -- TODO remove/comment, debug func
-  do return end
-  local ctime = time()
-  local days, hours, mins, secs = 0, 0, 0, 0
-  local diff = math.abs(ttime - ctime)
-  while diff>=86400 do
-    diff = diff - 86400
-    days = days + 1
-  end
-  while diff>=3600 do
-    diff = diff - 3600
-    hours = hours + 1
-  end
-  while diff>=60 do
-    diff = diff - 60
-    mins = mins + 1
-  end
-  secs = diff
-  print(string.sub(timerResetID, 1, 3), string.format("Difference: (%s) %d days, %d hours, %d mins, %d secs", ttime > ctime and '+' or '-', days, hours, mins, secs))
-end
 
 --/*******************/ TABS RESET MANAGMENT /*************************/--
 
@@ -127,13 +105,12 @@ end
 
 function resetManager:RemoveResetTime(tabID, resetData, resetTimeName)
 	if not resetData.resetTimes[resetTimeName] then
-		-- TODO message
     -- should never happen?
 		return true
 	end
 
   if not resetManager:CanRemoveResetTime(resetData) then -- safety check
-    -- TODO message?
+    -- MESSAGE
     print("Cannot remove reset -- there must be at least one")
     return false
   end
@@ -147,7 +124,7 @@ end
 
 function resetManager:RenameResetTime(tabID, resetData, oldResetTimeName, newResetTimeName)
 	if resetData.resetTimes[newResetTimeName] then
-		-- TODO message name already exists
+		-- MESSAGE name already exists
 		return false
 	end
 
@@ -422,7 +399,7 @@ function resetManager:Initialize(profileChanged)
 			if currentTime >= targetTime then
 				dataManager:ToggleTabChecked(tabID, false)
         print("ResetManager: Uncheck "..tabData.name.." tab")
-				autoResetedThisSession = true -- TODO redo??
+				autoResetedThisSession = true
 				break
 			end
 		end
@@ -472,3 +449,29 @@ function private:RelinkIsSameEachDay(tabData)
     reset.days[day] = reset.sameEachDay
   end
 end
+
+--@do-not-package@
+
+-- debug func
+function resetManager:PrintTimeDiff(timerResetID, ttime)
+  do return end
+  local ctime = time()
+  local days, hours, mins, secs = 0, 0, 0, 0
+  local diff = math.abs(ttime - ctime)
+  while diff>=86400 do
+    diff = diff - 86400
+    days = days + 1
+  end
+  while diff>=3600 do
+    diff = diff - 3600
+    hours = hours + 1
+  end
+  while diff>=60 do
+    diff = diff - 60
+    mins = mins + 1
+  end
+  secs = diff
+  print(string.sub(timerResetID, 1, 3), string.format("Difference: (%s) %d days, %d hours, %d mins, %d secs", ttime > ctime and '+' or '-', days, hours, mins, secs))
+end
+
+--@end-do-not-package@

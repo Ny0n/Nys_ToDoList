@@ -712,11 +712,11 @@ function widgets:CategoryWidget(catID, parentFrame)
 
       -- we toggle its edit box
       categoryWidget.addEditBox:SetShown(not categoryWidget.addEditBox:IsShown())
-      -- categoryWidget.addCatEditBox:SetShown(not categoryWidget.addCatEditBox:IsShown()) -- TDLATER
+      -- categoryWidget.addCatEditBox:SetShown(not categoryWidget.addCatEditBox:IsShown()) -- TDLATER sub-cats
 
       -- we clear its points
       categoryWidget.addEditBox:ClearAllPoints()
-      -- categoryWidget.addCatEditBox:ClearAllPoints() -- TDLATER
+      -- categoryWidget.addCatEditBox:ClearAllPoints() -- TDLATER sub-cats
 
       -- and if we are opening it
       if categoryWidget.addEditBox:IsShown() then
@@ -791,16 +791,6 @@ function widgets:CategoryWidget(catID, parentFrame)
   categoryWidget.addEditBox = widgets:NoPointsCatEditBox(categoryWidget)
   categoryWidget.addEditBox:SetHeight(30)
   categoryWidget.addEditBox:Hide()
-  -- TDLATER check this for the width
-  -- -- edit box width (we adapt it based on the category label's width)
-  -- local labelWidth = tonumber(string.format("%i", categoryWidget.interactiveLabel.Text:GetWidth()))
-  -- local rightPointDistance = 297 -- in alignment with the item renaming edit boxes
-  -- local editBoxAddItemWidth = 150 -- max width
-  -- if labelWidth + editBoxAddItemWidth > rightPointDistance then
-  --   categoryWidget.addEditBox:SetSize(editBoxAddItemWidth - 10 - ((labelWidth + editBoxAddItemWidth) - rightPointDistance), categoryWidget.interactiveLabel.Button:GetHeight())
-  -- else
-  --   categoryWidget.addEditBox:SetSize(editBoxAddItemWidth - 10, categoryWidget.interactiveLabel.Button:GetHeight())
-  -- end
   categoryWidget.addEditBox:SetScript("OnEnterPressed", function(self)
     if dataManager:CreateItem(self:GetText(), catData.originalTabID, catID) then
       self:SetText("") -- we clear the box if the adding was a success

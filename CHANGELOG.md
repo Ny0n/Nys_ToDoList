@@ -1,6 +1,6 @@
 #### **6.0**
 
-Reworked the addon a lot, so that I could add new
+Reworked the addon a lot, so that I could add new -- TODO
 
 For this update, the main new features include:
 
@@ -9,6 +9,7 @@ For this update, the main new features include:
 
 - names are no longer unique
 - categories and items are now individual entities, this means that categories are not "created" by items like it was before
+- the list, description frames and tdl button now take the focus when we click on them (they jump in front of every other frame)
 
 - the addon is now way more optimized than it was before (still, do not add 2000 items in one tab :D)
 - Miscellaneous improvements

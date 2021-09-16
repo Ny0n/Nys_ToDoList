@@ -18,7 +18,7 @@ dragndrop.cancelling = false
 -- DRY
 
 local normalAlpha = 1
-local selectedDimAlpha = 0 -- TODO idk what is nicer here
+local selectedDimAlpha = 0 -- TDLATER glow
 local forbiddenDimAlpha = 0.3
 
 local catTopPos = { 4, enums.ofsyCat/2 }
@@ -133,7 +133,7 @@ local function dragUpdateFunc()
 end
 
 local function isCatDropValid(targetCatID)
-  do return false end -- TDLATER sub-cat drag&drop (fix (add) missing drop points & verify tab switch)
+  do return false end -- TDLATER sub-cat drag&drop (fix (add) missing drop points (under sub-cats) & verify tab switch)
 
   -- returns false if:
   -- - (1) the targetCatID's original tab is different from the one we're currently dragging
@@ -226,7 +226,7 @@ function dragndrop:UpdateDropFrames()
   dropFrameNb = 0
   local contentWidgets = mainFrame:GetContentWidgets()
   local w = {
-    lastWidget = nil, -- TODO replace ofsy
+    lastWidget = nil,
   }
 
   -- // this is basically the same loop as the one in mainFrame,

@@ -568,7 +568,7 @@ function dataManager:MoveItem(itemID, newPos, newCatID)
 	itemData.catID = newCatID
 	dataManager:UpdateItemTab(itemID)
 
-	-- TODO message?
+	-- MESSAGE
 	mainFrame:Refresh()
 end
 
@@ -637,7 +637,7 @@ function dataManager:MoveCategory(catID, newPos, newParentID, fromTabID, toTabID
 
 	-- this check is to place the object correctly in case we just move its position inside its table,
 	-- because when we'll remove it from the oldPos, everything will go down by one, the newPos too
-	if newLoc == oldLoc -- TODO check if same tab????? remove this comm if it works
+	if newLoc == oldLoc
 	and newPos > oldPos then
 		newPos = newPos - 1
 	end
@@ -728,9 +728,9 @@ end
 
 function dataManager:ChangeTabGlobalState(tabID, newGlobalState)
 	local oldGlobalState, tabData = select(2, dataManager:Find(tabID))
-	-- TDLATER
+	-- TDLATER ChangeTabGlobalState
 
-	-- TDLATER message?
+	-- TDLATER ChangeTabGlobalState message
 	mainFrame:Refresh()
 end
 
@@ -922,13 +922,13 @@ function dataManager:Undo()
 	-- undoing a clear, an item deletion, a category deletion, or a tab deletion
 	print("UNDO")
 	if #NysTDL.db.profile.undoTable == 0 then
-		-- TODO print "no undos"
+		-- MESSAGE
 		return
 	end
 
 	local refreshID = dataManager:SetRefresh(false)
 
-	-- TODO messages
+	-- MESSAGES
 	local success
 	local toUndo = tremove(NysTDL.db.profile.undoTable) -- remove last
 	if toUndo then -- if we got something to undo
@@ -1030,14 +1030,15 @@ end
 
 function dataManager:CheckName(name, enum)
 	if #name == 0 then -- empty
-		print("Name is empty") -- TODO replace prints
+		print("Name is empty") -- MESSAGE
 		return false
 	elseif widgets:GetWidth(name) > enums.maxNameWidth[enum] then -- width
 		if utils:HasHyperlink(name) then -- this is for making more space for items that have hyperlinks in them
-	    if widgets:GetWidth(name) > enums.maxNameWidth[enum] + 100 then return false -- TODO redo
-			else return true end
+	    if widgets:GetWidth(name) <= enums.maxNameWidth[enum] + enums.hyperlinkNameBonus then
+				return true
+			end
 		end
-		print("Name is too large")
+		print("Name is too large") -- TDLATER max: x
 		return false
 	end
 
@@ -1069,12 +1070,12 @@ function dataManager:IsProtected(ID)
 	if enum == enums.item then -- item
 		return dataTable.favorite or dataTable.description
 	elseif enum == enums.category then -- category
-		return false -- TODO
+		return false -- TDLATER IsProtected category
 	elseif enum == enums.tab then -- tab
 		return #tabsList.orderedTabIDs <= 1
 	end
 
-	-- TODO message "xxx is protected" ?
+	-- MESSAGE?
 end
 
 -- items
