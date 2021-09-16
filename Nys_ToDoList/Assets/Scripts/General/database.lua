@@ -71,16 +71,16 @@ database.defaults = {
 
     -- // Misc
     lastListVisibility = false,
-    lockList = false, -- TODO
-    lockButton = false, -- TODO
+    lockList = false, -- TDLATER
+    lockButton = false, -- TDLATER
 
     -- // Frame Options
     framePos = { point = "CENTER", relativePoint = "CENTER", xOffset = 0, yOffset = 0 },
     frameSize = { width = enums.tdlFrameDefaultWidth, height = enums.tdlFrameDefaultHeight },
-    frameAlpha = 75,
+    frameAlpha = 65,
     frameContentAlpha = 100,
     affectDesc = true,
-    descFrameAlpha = 75,
+    descFrameAlpha = 65,
     descFrameContentAlpha = 100,
 
     -- // Addon Options
@@ -97,7 +97,7 @@ database.defaults = {
     openByDefault = false,
 
     --'Tabs' tab
-    instantRefresh = false,
+    instantRefresh = false, -- profile dependant
 
     --'Chat Messages' tab
     showChatMessages = true,
@@ -168,23 +168,80 @@ end
 
 -- these two functions are called only once, each time there is an addon update
 function database:GlobalNewVersion() -- global
-  -- updates the global saved variables once after an update
+  -- // updates the global saved variables once after an update
 
   if NysTDL.db.global.tuto_progression > 0 then -- if we already completed the tutorial
     -- since i added in the update a new tutorial frame that i want ppl to see, i just go back step in the tuto progression
     tutorialsManager:Previous()
+    -- TODO redo
   end
 end
 
 function database:ProfileNewVersion() -- profile
-  -- updates each profile saved variables once after an update
+  -- // updates each profile saved variables once after an update
 
+  -- by default after each update, we empty the undo table
+  wipe(NysTDL.db.profile.undoTable)
+
+  -- var version migration
+  database:MigrateVars()
+end
+
+-- // specific functions
+
+function database.ctab(newTabID) -- easy access to that specific database variable
+  -- sets or gets the currently selected tab ID
+  if dataManager:IsID(newTabID) then
+    NysTDL.db.profile.currentTab = newTabID
+  end
+  return NysTDL.db.profile.currentTab
+end
+
+function database:CreateDefaultTabs()
+	-- once per profile, we create the default addon tabs (All, Daily, Weekly)
+
+  local selectedtabID
+	for g=1, 1 do -- TDLATER fix ==> 1, 2
+		local isGlobal = g == 2
+
+		-- All
+		local allTabID = dataManager:CreateTab("All", isGlobal)
+
+		-- Daily
+		local dailyTabID, dailyTabData = dataManager:CreateTab("Daily", isGlobal)
+    if not isGlobal then selectedtabID = dailyTabID end -- default tab
+
+		-- Weekly
+		local weeklyTabID, weeklyTabData = dataManager:CreateTab("Weekly", isGlobal)
+
+    -- All data
+		dataManager:UpdateShownTabID(allTabID, dailyTabID, true)
+		dataManager:UpdateShownTabID(allTabID, weeklyTabID, true)
+
+    -- Daily data (isSameEachDay already true)
+    for i=1,7 do resetManager:UpdateResetDay(dailyTabID, i, true) end -- every day
+    resetManager:RenameResetTime(dailyTabID, dailyTabData.reset.sameEachDay, enums.defaultResetTimeName, "Daily")
+		resetManager:UpdateTimeData(dailyTabID, dailyTabData.reset.sameEachDay.resetTimes["Daily"], 9, 0, 0)
+
+    -- Weekly data (isSameEachDay already true)
+    resetManager:UpdateResetDay(weeklyTabID, 4, true) -- only wednesday
+    resetManager:RenameResetTime(weeklyTabID, weeklyTabData.reset.sameEachDay, enums.defaultResetTimeName, "Weekly")
+    resetManager:UpdateTimeData(weeklyTabID, weeklyTabData.reset.sameEachDay.resetTimes["Weekly"], 9, 0, 0)
+
+	end
+
+	-- then we set the default tab
+  database.ctab(selectedtabID)
+  print("SET DEFAULT TAB")
+end
+
+function database:MigrateVars()
   -- // VAR VERSIONS MIGRATION
   local db = NysTDL.db
   local global = db.global
   local profile = db.profile
 
-  -- / no migration from versions older than 5.0
+  -- / no migration from versions < 5.0
 
   -- / migration from 5.0+ to 5.5+
   if (profile.itemsDaily or profile.itemsWeekly or profile.itemsFavorite or profile.itemsDesc or profile.checkedButtons) then
@@ -242,22 +299,19 @@ function database:ProfileNewVersion() -- profile
     profile.itemsList = {}
 
     -- we get the necessary tab IDs
-    local allTabID, dailyTabID, weeklyTabID
+    local allTabID, allTabData, dailyTabID, dailyTabData, weeklyTabID, weeklyTabData
     for tabID,tabData in dataManager:ForEach(enums.tab, false) do
-      if tabData.name == "All" then
-        allTabID = tabID
+      if tabData.name == "All" then -- LOCALE
+        allTabID, allTabData = tabID, tabData
       elseif tabData.name == "Daily" then
-        dailyTabID = tabID
+        dailyTabID, dailyTabData = tabID, tabData
       elseif tabData.name == "Weekly" then
-        weeklyTabID = tabID
+        weeklyTabID, weeklyTabData = tabID, tabData
       end
     end
 
-    -- TODO NOW delete / hide checked items & check every var diff
-
+    -- // we recreate every cat, and every item
     local contentTabs = {}
-
-    -- we recreate every cat, and every item
     for catName,items in pairs(itemsList) do
       -- first things first, we do a loop to get every tab the cat is in (by checking the items data)
       wipe(contentTabs)
@@ -322,58 +376,38 @@ function database:ProfileNewVersion() -- profile
       end
     end
 
-    -- bye bye
+    -- // we also update the tabs in accordance with the tabs SV
+
+    if profile.deleteAllTabItems then
+      allTabData.deleteCheckedItems = true
+      allTabData.hideCheckedItems = false
+    end
+
+    if profile.showOnlyAllTabItems then
+      dataManager:UpdateShownTabID(allTabID, dailyTabID, false)
+  		dataManager:UpdateShownTabID(allTabID, weeklyTabID, false)
+    end
+
+    if profile.hideDailyTabItems then
+      dailyTabData.hideCheckedItems = true
+      dailyTabData.deleteCheckedItems = false
+    end
+
+    if profile.hideWeeklyTabItems then
+      weeklyTabData.hideCheckedItems = true
+      weeklyTabData.deleteCheckedItems = false
+    end
+
+    -- // bye bye
     profile.closedCategories = nil
     profile.lastLoadedTab = nil
+    profile.weeklyDay = nil
+    profile.dailyHour = nil
+    profile.deleteAllTabItems = nil
+    profile.showOnlyAllTabItems = nil
+    profile.hideDailyTabItems = nil
+    profile.hideWeeklyTabItems = nil
   end
-end
-
--- // specific functions
-
-function database.ctab(newTabID) -- easy access to that specific database variable
-  -- sets or gets the currently selected tab ID
-  if dataManager:IsID(newTabID) then
-    NysTDL.db.profile.currentTab = newTabID
-  end
-  return NysTDL.db.profile.currentTab
-end
-
-function database:CreateDefaultTabs()
-	-- once per profile, we create the default addon tabs (All, Daily, Weekly)
-
-  local selectedtabID
-	for g=1, 1 do -- TDLATER fix ==> 1, 2
-		local isGlobal = g == 2
-
-		-- All
-		local allTabID = dataManager:CreateTab("All", isGlobal)
-
-		-- Daily
-		local dailyTabID, dailyTabData = dataManager:CreateTab("Daily", isGlobal)
-    if not isGlobal then selectedtabID = dailyTabID end -- default tab
-
-		-- Weekly
-		local weeklyTabID, weeklyTabData = dataManager:CreateTab("Weekly", isGlobal)
-
-    -- All data
-		dataManager:UpdateShownTabID(allTabID, dailyTabID, true)
-		dataManager:UpdateShownTabID(allTabID, weeklyTabID, true)
-
-    -- Daily data (isSameEachDay already true)
-    for i=1,7 do resetManager:UpdateResetDay(dailyTabID, i, true) end -- every day
-    resetManager:RenameResetTime(dailyTabID, dailyTabData.reset.sameEachDay, enums.defaultResetTimeName, "Daily")
-		resetManager:UpdateTimeData(dailyTabID, dailyTabData.reset.sameEachDay.resetTimes["Daily"], 9, 0, 0)
-
-    -- Weekly data (isSameEachDay already true)
-    resetManager:UpdateResetDay(weeklyTabID, 4, true) -- only wednesday
-    resetManager:RenameResetTime(weeklyTabID, weeklyTabData.reset.sameEachDay, enums.defaultResetTimeName, "Weekly")
-    resetManager:UpdateTimeData(weeklyTabID, weeklyTabData.reset.sameEachDay.resetTimes["Weekly"], 9, 0, 0)
-
-	end
-
-	-- then we set the default tab
-  database.ctab(selectedtabID)
-  print("SET DEFAULT TAB")
 end
 
 --/*******************/ INITIALIZATION /*************************/--

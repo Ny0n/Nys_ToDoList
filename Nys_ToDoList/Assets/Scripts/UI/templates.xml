@@ -8,8 +8,8 @@
     <KeyValues>
         <KeyValue key="backdropInfo" value="NysTDL_BACKDROP_INFO" type="global"/>
         <!-- <KeyValue key="backdropInfo" value="NysTDL_BACKDROP_INFO" type="global"/> -->
-        <!-- <KeyValue key="backdropColor" value="NysTDL_COLOR_XXX" type="global"/> -->
-        <!-- <KeyValue key="backdropBorderColor" value="NysTDL_COLOR_XXX" type="global"/> -->
+        <!-- <KeyValue key="backdropColor" value="NysTDL_COLOR_X" type="global"/> -->
+        <!-- <KeyValue key="backdropBorderColor" value="NysTDL_COLOR_X" type="global"/> -->
         <!-- <KeyValue key="backdropColorAlpha" value="0" type="number"/> -->
         <KeyValue key="backdropBorderColorAlpha" value="0" type="number"/>
     </KeyValues>

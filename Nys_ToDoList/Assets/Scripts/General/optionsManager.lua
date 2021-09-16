@@ -94,7 +94,7 @@ local tabManagementTable = {
       instantRefreshToggle = {
         order = 1.4,
         type = "toggle",
-        name = "Instant refresh",
+        name = "Instant refresh\n(profile dependant)",
         -- desc = "", -- TODO dire dépendant du profile (PR PROFILE ET GLOBAL, dans les deux cas c dépendant du profile (rien a changer du coup))
         get = function(info)
           return NysTDL.db.profile.instantRefresh
@@ -114,6 +114,7 @@ local tabManagementTable = {
         end,
         set = function(info, state)
           local _, tabData = getTabInfo(info)
+          -- SAME CODE in var migrations
           tabData.deleteCheckedItems = state
           if state then
             tabData.hideCheckedItems = false
@@ -135,6 +136,7 @@ local tabManagementTable = {
         end,
         set = function(info, state)
           local _, tabData = getTabInfo(info)
+          -- SAME CODE in var migrations
           tabData.hideCheckedItems = state
           if state then
             tabData.deleteCheckedItems = false

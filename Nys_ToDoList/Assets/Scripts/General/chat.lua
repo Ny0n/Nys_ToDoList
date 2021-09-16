@@ -93,7 +93,7 @@ function chat:Warn()
         end
       end
 
-      -- TODO maybe redo this?
+      -- TDLATER maybe also do this if i ever want to redo this system
       -- if haveWarned then
       --   local timeUntil = autoReset:GetTimeUntilReset()
       --   local msg = utils:SafeStringFormat(L["Time remaining: %i hours %i min"], timeUntil.hour, timeUntil.min + 1)

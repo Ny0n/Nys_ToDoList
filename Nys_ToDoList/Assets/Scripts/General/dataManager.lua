@@ -477,7 +477,7 @@ local function addTab(tabID, tabData, isGlobal)
 	for shownID in pairs(tabData.shownIDs) do
 		dataManager:UpdateShownTabID(tabID, shownID, true)
 	end
-	tinsert(tabsList.orderedTabIDs, #tabsList.orderedTabIDs + 1, tabID) -- position (last) -- TODO NOW redo
+	tinsert(tabsList.orderedTabIDs, tabID) -- position (last)
 
 	-- refresh the mainFrame
 	database.ctab(tabID)
@@ -615,7 +615,7 @@ function dataManager:MoveCategory(catID, newPos, newParentID, fromTabID, toTabID
 	--> new data
 
 	-- toTab
-	toTabID = toTabID or database.ctab() -- XXX or fromTabID?
+	toTabID = toTabID or database.ctab()
 
 	-- parentCat
 	if newParentID == nil then
@@ -698,7 +698,7 @@ function dataManager:MoveCategory(catID, newPos, newParentID, fromTabID, toTabID
 		end
 	end
 
-	-- TODO message?
+	-- MESSAGE
 	mainFrame:Refresh()
 end
 
@@ -721,7 +721,7 @@ function dataManager:MoveTab(tabID, newPos)
 	tremove(loc, oldPos)
 	tinsert(loc, newPos, tabID)
 
-	-- TODO message?
+	-- MESSAGE
 	mainFrame:Refresh()
 	tabsFrame:Refresh()
 end
@@ -743,14 +743,13 @@ function dataManager:DeleteItem(itemID)
 
 	local itemData, itemsList = select(3, dataManager:Find(itemID))
 
-  -- we delete the item and all its related data
-
-	local undoData = dataManager:CreateUndo(itemID) -- XXX i wipe in add func the tabIDs so i can put the undo before it doesn't matter
+  -- // we delete the item and all its related data
 
 	-- we update its data (pretty much the reverse actions of the Add func)
 	dataManager:UpdateTabsDisplay(itemData.originalTabID, false, itemID)
 	tremove(dataManager:GetPosData(itemID))
 
+	local undoData = dataManager:CreateUndo(itemID)
 	dataManager:AddUndo(undoData)
   itemsList[itemID] = nil -- delete action
 	print("delete item")
@@ -776,7 +775,7 @@ function dataManager:DeleteCat(catID)
 
 	local catData, _, categoriesList = select(3, dataManager:Find(catID))
 
-  -- we delete the category and all its related data
+  -- // we delete the category and all its related data
 
 	-- we delete everything inside the category, even sub-categories recursively
 	-- IMPORTANT: the use of a copy to iterate on is necessary, because in the loop,
@@ -831,7 +830,7 @@ function dataManager:DeleteTab(tabID)
 
 	local isGlobal, tabData, _, categoriesList, tabsList = select(2, dataManager:Find(tabID))
 
-  -- we delete the tab and all its related data
+  -- // we delete the tab and all its related data
 
 	-- first we remove all of its shown IDs
 	for shownTabID in pairs(tabData.shownIDs) do

@@ -63,7 +63,6 @@ contentWidgets = {
 
 -- these are for code comfort
 
-local ctab -- set at initialization, it's just an alias
 local centerXOffset = 165
 local lineOffset = 120
 local cursorX, cursorY, cursorDist = 0, 0, 10 -- for my special drag
@@ -135,9 +134,8 @@ function mainFrame:Toggle()
 end
 
 function mainFrame:ChangeTab(newTabID)
-  ctab(newTabID)
+  database.ctab(newTabID)
   mainFrame:Refresh()
-  tdlFrame.content.menuFrames[enums.menus.addcat].categoryEditBox:SetText(newTabID) -- TODO remove
 end
 
 function mainFrame:IsVisible(frame, margin)
@@ -180,7 +178,7 @@ function mainFrame:UpdateCheckedStates()
 end
 
 function mainFrame:UpdateRemainingNumberLabels()
-  local tabID = ctab()
+  local tabID = database.ctab()
 
   -- we update the numbers of remaining things to do in total for the current tab
   local numbers = dataManager:GetRemainingNumbers(nil, tabID)
@@ -571,7 +569,7 @@ local function loadContent()
 
   -- // nothing label
   tdlFrame.content.nothingLabel:Hide() -- we hide it by default
-  local tabData = select(3, dataManager:Find(ctab()))
+  local tabData = select(3, dataManager:Find(database.ctab()))
   if not next(tabData.orderedCatIDs) then -- we show it if the tab has no categories
     tdlFrame.content.nothingLabel:Show()
   end
@@ -636,7 +634,8 @@ local function loadList()
   end
 
   -- let's go!
-  local tabID, tabData = ctab(), select(3, dataManager:Find(ctab()))
+  local tabID = database.ctab()
+  local tabData = select(3, dataManager:Find(tabID))
   local p = { -- pos table
     newX = 0,
     newY = 0,
@@ -707,7 +706,7 @@ function mainFrame:Refresh()
 
   -- // ************************************************************* // --
 
-  local tabID = ctab()
+  local tabID = database.ctab()
   local tabData = select(3, dataManager:Find(tabID))
 
   -- TAB OPTION: delete checked items
@@ -728,7 +727,7 @@ local function generateMenuAddACategory()
   local menuframe = tdlFrame.content.menuFrames[enums.menus.addcat]
 
   local function addCat() -- DRY
-    if dataManager:CreateCategory(menuframe.categoryEditBox:GetText(), ctab()) then
+    if dataManager:CreateCategory(menuframe.categoryEditBox:GetText(), database.ctab()) then
       menuframe.categoryEditBox:SetText("") -- we clear the box if the adding was a success
       tutorialsManager:Validate("addCat") -- tutorial
     end
@@ -755,7 +754,6 @@ local function generateMenuAddACategory()
   menuframe.categoryEditBox:SetPoint("LEFT", menuframe.labelCategoryName, "RIGHT", 10, 0)
   menuframe.categoryEditBox:SetHeight(30)
   menuframe.categoryEditBox:SetAutoFocus(false)
-  -- menuframe.categoryEditBox:SetScript("OnKeyDown", function(_, key) if (key == "TAB") then widgets:SetFocusEditBox(menuframe.nameEditBox) end end) XXX -- to switch easily between the two edit boxes
   menuframe.categoryEditBox:SetScript("OnEnterPressed", addCat) -- if we press enter, it's like we clicked on the add button
   menuframe.categoryEditBox:HookScript("OnEditFocusGained", function(self) -- TODO what is this
     if NysTDL.db.profile.highlightOnFocus then
@@ -785,7 +783,7 @@ local function generateMenuAddACategory()
   --     widgets:SetFocusEditBox(menuframe.categoryEditBox)
   --   elseif (newValue ~= nil) then
   --     menuframe.categoryEditBox:SetText(newValue)
-  --     -- widgets:SetFocusEditBox(menuframe.nameEditBox) XXX
+  --     widgets:SetFocusEditBox(menuframe.nameEditBox)
   --   end
   -- end
   --
@@ -914,7 +912,7 @@ local function generateMenuAddACategory()
       widgets:SetFocusEditBox(menuframe.categoryEditBox)
     elseif (newValue ~= nil) then
       menuframe.categoryEditBox:SetText(newValue)
-      -- widgets:SetFocusEditBox(menuframe.nameEditBox) XXX
+      widgets:SetFocusEditBox(menuframe.nameEditBox)
     end
   end
   menuframe.categoriesDropdownButton = CreateFrame("Button", "NysTDL_Button_CategoriesDropdown", menuframe.categoryEditBox, "NysTDL_DropdownButton")
@@ -1031,29 +1029,28 @@ local function generateMenuTabActions()
   menuframe.menuTitleLL = widgets:ThemeLine(menuframe, database.themes.theme, 0.7)
   menuframe.menuTitleLR = widgets:ThemeLine(menuframe, database.themes.theme, 0.7)
   setDoubleLinePoints(menuframe.menuTitleLL, menuframe.menuTitleLR, menuframe.menuTitle:GetWidth(), 0)
-  --menuframe.menuTitle:SetText(string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), "/ "..L["Tab actions"].." ("..L[dataManager:GetName(ctab())]..") \\")) -- TODO redo this
 
   --/************************************************/--
 
   menuframe.btnCheck = widgets:Button("NysTDL_menuframe_btnCheck", menuframe, "Check", "Interface\\BUTTONS\\UI-CheckBox-Check")
   menuframe.btnCheck:SetPoint("TOP", menuframe.menuTitle, "TOP", 0, -35)
-  menuframe.btnCheck:SetScript("OnClick", function() dataManager:ToggleTabChecked(ctab(), true) end)
+  menuframe.btnCheck:SetScript("OnClick", function() dataManager:ToggleTabChecked(database.ctab(), true) end)
 
   menuframe.btnUncheck = widgets:Button("NysTDL_menuframe_btnUncheck", menuframe, "Uncheck", "Interface\\BUTTONS\\UI-CheckBox-Check-Disabled")
   menuframe.btnUncheck:SetPoint("TOP", menuframe.btnCheck, "TOP", 0, -40)
-  menuframe.btnUncheck:SetScript("OnClick", function() dataManager:ToggleTabChecked(ctab(), false) end)
+  menuframe.btnUncheck:SetScript("OnClick", function() dataManager:ToggleTabChecked(database.ctab(), false) end)
 
   menuframe.btnCloseCat = widgets:Button("NysTDL_menuframe_btnCloseCat", menuframe, "Close All", "Interface\\BUTTONS\\Arrow-Up-Disabled")
   menuframe.btnCloseCat:SetPoint("TOP", menuframe.btnUncheck, "TOP", 0, -40)
-  menuframe.btnCloseCat:SetScript("OnClick", function() dataManager:ToggleTabClosed(ctab(), false) end)
+  menuframe.btnCloseCat:SetScript("OnClick", function() dataManager:ToggleTabClosed(database.ctab(), false) end)
 
   menuframe.btnOpenCat = widgets:Button("NysTDL_menuframe_btnOpenCat", menuframe, "Open All", "Interface\\BUTTONS\\Arrow-Down-Up")
   menuframe.btnOpenCat:SetPoint("TOP", menuframe.btnCloseCat, "TOP", 0, -40)
-  menuframe.btnOpenCat:SetScript("OnClick", function() dataManager:ToggleTabClosed(ctab(), true) end)
+  menuframe.btnOpenCat:SetScript("OnClick", function() dataManager:ToggleTabClosed(database.ctab(), true) end)
 
   menuframe.btnClear = widgets:Button("NysTDL_menuframe_btnClear", menuframe, L["Clear"], "Interface\\GLUES\\LOGIN\\Glues-CheckBox-Check")
   menuframe.btnClear:SetPoint("TOP", menuframe.btnOpenCat, "TOP", 0, -40)
-  menuframe.btnClear:SetScript("OnClick", function() dataManager:ClearTab(ctab()) end)
+  menuframe.btnClear:SetScript("OnClick", function() dataManager:ClearTab(database.ctab()) end)
 end
 
 local function generateFrameContent()
@@ -1180,8 +1177,6 @@ end
 -- // Creating the main frame
 
 function mainFrame:CreateTDLFrame()
-  ctab = database.ctab -- alias
-
   -- we create the list
   tdlFrame = CreateFrame("Frame", "NysTDL_tdlFrame", UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil)
 
