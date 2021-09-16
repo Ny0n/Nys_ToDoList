@@ -483,8 +483,9 @@ local function addTab(tabID, tabData, isGlobal)
 	database.ctab(tabID)
 	mainFrame:Refresh()
 
-	-- AND refresh the tabsFrame
+	-- AND refresh the tabsFrame & tab options
 	tabsFrame:UpdateTab(tabID)
+	LibStub("AceConfigRegistry-3.0"):NotifyChange(addonName)
 
 	enums.quantities[enums.tab] = enums.quantities[enums.tab] + 1
 
@@ -786,7 +787,7 @@ function dataManager:DeleteCat(catID)
 	for _,contentID in pairs(copy) do
 		local result, nb = nil, 0
 		if dataManager:Find(contentID) == enums.category then -- current ID is a sub-category
-			result, nb = dataManager:DeleteCat(contentID)
+			result, nb = dataManager:DeleteCat(contentID) -- TDLATER crash quand delete tab qui a des sub-cats ?
 		else -- current ID is an item
 			result = dataManager:DeleteItem(contentID)
 		end
@@ -866,7 +867,8 @@ function dataManager:DeleteTab(tabID)
 				end
 			end
 		end
-		tremove(dataManager:GetPosData(tabID))
+		local loc, pos = dataManager:GetPosData(tabID)
+		tremove(loc, pos)
 
 		dataManager:AddUndo(undoData)
 	  tabsList[tabID] = nil -- delete action
@@ -874,7 +876,13 @@ function dataManager:DeleteTab(tabID)
 
 		enums.quantities[enums.tab] = enums.quantities[enums.tab] - 1
 
-		database.ctab(select(2, next(tabsList.orderedTabIDs))) -- when deleting a tab, we refocus a new tab
+		if database.ctab() == tabID then
+			database.ctab(loc[pos-1]) -- when deleting the tab we were on, we refocus a new one
+		end
+
+		-- AND refresh the tabsFrame
+		tabsFrame:DeleteTab(tabID)
+
 		result = true
 	end
 
@@ -884,9 +892,6 @@ function dataManager:DeleteTab(tabID)
 
 	-- refresh the mainFrame
 	mainFrame:Refresh()
-
-	-- AND refresh the tabsFrame
-	tabsFrame:DeleteTab(tabID)
 
 	return result, nbToUndo
 end
@@ -925,32 +930,35 @@ function dataManager:Undo()
 	local refreshID = dataManager:SetRefresh(false)
 
 	-- TODO messages
-	local toUndo, success = tremove(NysTDL.db.profile.undoTable) -- remove last
-	if type(toUndo) == "number" then -- clear
-		if toUndo <= 0 then toUndo = 1 end -- when we find a "0", we pass it like it was never here, and directly go undo the next item
-		for i=1, toUndo do
-			success = not not dataManager:Undo()
-			if not success then
-				tinsert(NysTDL.db.profile.undoTable, toUndo-(i-1)) -- FIX maybe dangerous, verify this calculation
-				print("undo clear fail")
-				break
+	local success
+	local toUndo = tremove(NysTDL.db.profile.undoTable) -- remove last
+	if toUndo then -- if we got something to undo
+		if type(toUndo) == "number" then -- clear
+			if toUndo <= 0 then toUndo = 1 end -- when we find a "0", we pass it like it was never here, and directly go undo the next item
+			for i=1, toUndo do
+				success = not not dataManager:Undo()
+				if not success then
+					tinsert(NysTDL.db.profile.undoTable, toUndo-(i-1)) -- FIX maybe dangerous, verify this calculation
+					print("undo clear fail")
+					break
+				end
 			end
-		end
-		print("undid multiple") -- no
-	else
-		if toUndo.enum == enums.item then -- item
-			success = not not addItem(toUndo.ID, toUndo.data)
-			print("undid item") -- no
-		elseif toUndo.enum == enums.category then -- category
-			success = not not addCategory(toUndo.ID, toUndo.data)
-			print("undid cat") -- no
-		elseif toUndo.enum == enums.tab then -- tab
-			success = not not addTab(toUndo.ID, toUndo.data, toUndo.isGlobal)
-			print("undid tab") -- no
-		end
-		if not success then -- cancel
-			tinsert(NysTDL.db.profile.undoTable, toUndo)
-			print("undo fail")
+			print("undid multiple") -- no
+		else
+			if toUndo.enum == enums.item then -- item
+				success = not not addItem(toUndo.ID, toUndo.data)
+				print("undid item") -- no
+			elseif toUndo.enum == enums.category then -- category
+				success = not not addCategory(toUndo.ID, toUndo.data)
+				print("undid cat") -- no
+			elseif toUndo.enum == enums.tab then -- tab
+				success = not not addTab(toUndo.ID, toUndo.data, toUndo.isGlobal)
+				print("undid tab") -- no
+			end
+			if not success then -- cancel
+				tinsert(NysTDL.db.profile.undoTable, toUndo)
+				print("undo fail")
+			end
 		end
 	end
 

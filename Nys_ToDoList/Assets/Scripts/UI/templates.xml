@@ -61,7 +61,7 @@
     <!-- icon position adaptation scripts -->
     <Scripts>
       <OnMouseDown>
-        if self.disabled then return end -- TODO NOW REMOVE THIS AND USE :Disable()
+        if not self:IsEnabled() then return end
         <!-- nudge and dim the icon down a little -->
         local xOffset = -1
         if (self.name == "UndoButton") then xOffset = -2 end
@@ -73,7 +73,7 @@
         self.Icon:SetPoint("CENTER", xOffset, yOffset) self.Icon:SetAlpha(0.5)
       </OnMouseDown>
       <OnMouseUp>
-        if self.disabled then return end
+        if not self:IsEnabled() then return end
         <!-- reset the icon's position and opacity -->
         local xOffset = 0
         if (self.name == "UndoButton") then xOffset = -0.5 end

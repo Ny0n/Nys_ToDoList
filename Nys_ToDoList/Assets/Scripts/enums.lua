@@ -29,11 +29,13 @@ enums.tdlFrameDefaultWidth = 340
 enums.tdlFrameDefaultHeight = 400
 enums.rightPointDistance = 297
 
-enums.ofsxContent = 24
+enums.loadOriginOffset = { -34, -28 }
+enums.ofsxContent = 30
 enums.ofsyCatContent = 26
 enums.ofsyCat = 26
 enums.ofsyContentCat = 26
 enums.ofsyContent = 22
+enums.ofsxItemIcons = -18 -- not in edit mode
 
 enums.maxNameWidth = {
 	[enums.item] = 240,

@@ -524,11 +524,11 @@ function widgets:RemoveButton(widget, parent)
   btn:HookScript("OnShow", function(self)
     if not dataManager:IsID(ID) then return end
     if dataManager:IsProtected(ID) then
-      self.disabled = true
+      self:Disable()
       self.Icon:SetDesaturated(1)
       self.Icon:SetVertexColor(0.4, 0.4, 0.4)
     else
-      self.disabled = false
+      self:Enable()
       self.Icon:SetDesaturated(desaturated)
       self.Icon:SetVertexColor(1, 1, 1)
     end
@@ -663,6 +663,7 @@ local function category_setEditMode(self, state)
   if state then
     self.editModeFrame:Show()
     self.interactiveLabel:SetPoint("LEFT", self.editModeFrame, "RIGHT", 0, 0)
+    self.interactiveLabel.Button:GetScript("OnLeave")(self.interactiveLabel.Button)
   else
     self.editModeFrame:Hide()
     self.interactiveLabel:SetPoint("LEFT", self, "LEFT", 0, 0)
@@ -694,8 +695,6 @@ function widgets:CategoryWidget(catID, parentFrame)
     self:GetParent().Text:SetTextColor(r, g, b, 1) -- when we hover it, we color the label
   end)
   categoryWidget.interactiveLabel.Button:SetScript("OnLeave", function(self)
-    if mainFrame.editMode then return end
-
     self:GetParent().Text:SetTextColor(unpack(categoryWidget.color)) -- back to the default color
   end)
   categoryWidget.interactiveLabel.Button:SetScript("OnClick", function(_, button)
@@ -891,9 +890,9 @@ local function item_setEditMode(self, state)
     self.editModeFrame:Show()
 
     self.favoriteBtn:SetParent(self.editModeFrame)
-    self.favoriteBtn:SetPoint("LEFT", self.removeBtn, "LEFT", 15, -2)
+    self.favoriteBtn:SetPoint("LEFT", self.removeBtn, "LEFT", 20, -2)
     self.descBtn:SetParent(self.editModeFrame)
-    self.descBtn:SetPoint("LEFT", self.favoriteBtn, "LEFT", 15, 3)
+    self.descBtn:SetPoint("LEFT", self.favoriteBtn, "LEFT", 20, 3)
 
     self.checkBtn:SetPoint("LEFT", self.editModeFrame, "RIGHT", 0, 0)
 
@@ -902,9 +901,9 @@ local function item_setEditMode(self, state)
     self.editModeFrame:Hide()
 
     self.favoriteBtn:SetParent(self)
-    self.favoriteBtn:SetPoint("LEFT", self, "LEFT", -16, -2)
+    self.favoriteBtn:SetPoint("LEFT", self, "LEFT", enums.ofsxItemIcons, -2)
     self.descBtn:SetParent(self)
-    self.descBtn:SetPoint("LEFT", self, "LEFT", -16, 0)
+    self.descBtn:SetPoint("LEFT", self, "LEFT", enums.ofsxItemIcons, 0)
 
     self.checkBtn:SetPoint("LEFT", self, "LEFT", 0, 0)
 
@@ -997,13 +996,13 @@ function widgets:ItemWidget(itemID, parentFrame)
   -- / editModeFrame
   itemWidget.editModeFrame = CreateFrame("Frame", nil, itemWidget, nil)
   itemWidget.editModeFrame:SetPoint("LEFT", itemWidget, "LEFT", 0, 0)
-  itemWidget.editModeFrame:SetSize(48, 20) -- CVAL
+  itemWidget.editModeFrame:SetSize(40, 20) -- CVAL
   local emf = itemWidget.editModeFrame
 
   -- / removeBtn
   itemWidget.removeBtn = widgets:RemoveButton(itemWidget, emf)
-  itemWidget.removeBtn:SetPoint("LEFT", emf, "LEFT", 0, 0)
-  itemWidget.removeBtn:SetScript("OnClick", function() dataManager:DeleteItem(itemID) end)
+  itemWidget.removeBtn:SetPoint("LEFT", emf, "LEFT", enums.ofsxItemIcons, 0)
+  itemWidget.removeBtn:SetScript("OnClick", function() print("remove click") dataManager:DeleteItem(itemID) end)
 
   -- / favoriteBtn
   itemWidget.favoriteBtn = widgets:FavoriteButton(itemWidget, emf)

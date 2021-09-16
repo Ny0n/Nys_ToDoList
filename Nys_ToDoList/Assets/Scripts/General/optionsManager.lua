@@ -510,7 +510,6 @@ function private:RefreshTabManagement()
   local global = optionsManager.optionsTable.args.main.args.tabs.args["groupGlobalTabManagement"]
   private:UpdateTabsInOptions(profile)
   private:UpdateTabsInOptions(global)
-  -- LibStub("AceConfigRegistry-3.0"):NotifyChange(addonName) -- TODO NOW? FIX (visual glitch)
 end
 
 local function createAddonOptionsTable()

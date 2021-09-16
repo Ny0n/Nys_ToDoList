@@ -1183,7 +1183,7 @@ local function generateFrameContent()
   content.nothingLabel:SetText("This tab is empty")
 
   content.loadOrigin = widgets:Dummy(content, content.lineBottom, 0, 0)
-  content.loadOrigin:SetPoint("TOPLEFT", content.lineBottom, "TOPLEFT", -34, -28)
+  content.loadOrigin:SetPoint("TOPLEFT", content.lineBottom, "TOPLEFT", unpack(enums.loadOriginOffset))
 
   content.dummyBottomFrame = widgets:Dummy(content, content, 0, 0) -- this one if for putting a margin at the bottom of the content (mainly to leave space for the dropping of cat)
 end

@@ -124,7 +124,21 @@ function private:RefreshShownWholeTabs()
 	-- i'm betting on the fact that tabs are sorted, so i only need to know so much
 	table.insert(_shownWholeTabs, leftTab)
 	for i=1,_nbWholeTabsShown-1 do
-		table.insert(_shownWholeTabs, loc[pos+i])
+		table.insert(_shownWholeTabs, loc[pos+i]) -- *specific
+	end
+
+	print("-----------------")
+	print("#_shownWholeTabs", #_shownWholeTabs)
+	print("_nbWholeTabsShown", _nbWholeTabsShown)
+
+	-- *specific:
+	-- in a specific instance (when deleting and not on the leftMostMost tab)
+	-- we will insert nil into _shownWholeTabs, and there will be less
+	-- shown tabs than _nbWholeTabsShown, so we just snap left to fill the space
+	if #_shownWholeTabs < _nbWholeTabsShown then
+		print("yup")
+		local diff = _nbWholeTabsShown - #_shownWholeTabs
+		private:SnapToTab(loc[math.max(pos-diff, 1)])
 	end
 end
 
@@ -141,6 +155,7 @@ function private:SnapToTab(tabID)
 	if not tabWidgets[tabID] then return false end
 
 	private:ScrollTo(0)
+	-- scrollFrame:SetHorizontalScroll(0)
 	local diff = (tabWidgets[tabID]:GetLeft()+leftScrollFrameOffset) - scrollFrame:GetLeft()
 	private:ScrollTo(math.max(diff, 0))
 end
@@ -224,9 +239,6 @@ function private:RefreshSize()
     end
   end
 
-	private:SnapToTab(tabToSnapTo)
-	_nbWholeTabsShown = numWholeTabs
-
 	scrollFrame:ClearAllPoints()
 	local tdlFrame = mainFrame:GetFrame()
 	if hasOverflow then
@@ -238,6 +250,8 @@ function private:RefreshSize()
 	  scrollFrame:SetPoint("TOPLEFT", tdlFrame, "BOTTOMLEFT", leftScrollFrameOffset, 2)
 	  scrollFrame:SetPoint("BOTTOMRIGHT", tdlFrame, "BOTTOMRIGHT", 0, -40)
 	end
+
+	private:SnapToTab(tabToSnapTo)
 
 	private:OnTabsMoving()
 end
@@ -257,6 +271,7 @@ function private:RefreshPoints()
       lastWidget = tabWidgets[tabID]
     end
   end
+
 	private:OnTabsMoving()
 end
 
@@ -303,6 +318,7 @@ function private:OnTabsMoving()
 	-- --> the size of the widgets changed
 	-- --> the horizontal scroll of the scrollFrame changed
 
+	_nbWholeTabsShown = select(3, private:CalculateTabSize())
 	private:RefreshShownWholeTabs()
 	if overflowList:IsShown() then -- if the overflow list is shown for some reason, we update it as well
 		private:RefreshOverflowList()
@@ -352,6 +368,7 @@ function private:ListButtonWidget(tabID, parentFrame)
 	listButtonWidget:SetSize(parentFrame:GetWidth()-12, listButtonWidgetHeight)
 	listButtonWidget:SetScript("OnClick", function(self)
 		tabWidgets[self.tabID]:Click()
+		private:SetTabWidgetsContentAlpha(NysTDL.db.profile.frameContentAlpha/100, true) -- i hate this alpha problem, but whatever, this fixes it
 		private:IncludeTab(self.tabID) -- TDLATER redo for anim
 	end)
 
@@ -500,7 +517,9 @@ function tabsFrame:Refresh()
 	-- and we always focus ourserves on the currently selected tab
 	private:IncludeTab(database.ctab())
 
-	-- update the alpha of everyone (maybe we're not hovering the scrollFrame, so any refresh does it as well, thanks WoW API ;)
+	-- finally,
+
+	-- there we update the alpha of everyone (bc maybe we're not hovering the scrollFrame, so any refresh does it as well, thanks WoW API ;)
 	private:SetTabWidgetsContentAlpha(NysTDL.db.profile.frameContentAlpha/100, true)
 end
 
