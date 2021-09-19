@@ -48,7 +48,7 @@ local tabManagementTable = {
   settingsTab = {
     order = 1.1,
     type = "group",
-    name = "Settings",
+    name = L["Settings"],
     args = {
       removeTabExecute = {
         order = 1.1,
@@ -91,7 +91,7 @@ local tabManagementTable = {
       instantRefreshToggle = {
         order = 1.4,
         type = "toggle",
-        name = "Instant refresh",
+        name = L["Instant refresh"],
         desc = "Delete/Hide items instantly when checking them".."\n".."(profile dependant)",
         get = function(info)
           return NysTDL.db.profile.instantRefresh
@@ -104,7 +104,7 @@ local tabManagementTable = {
       deleteCheckedItemsToggle = {
         order = 1.5,
         type = "toggle",
-        name = "Delete checked items",
+        name = L["Delete checked items"],
         get = function(info)
           local _, tabData = getTabInfo(info)
           return tabData.deleteCheckedItems
@@ -126,7 +126,7 @@ local tabManagementTable = {
       hideCheckedItemsToggle = {
         order = 1.6,
         type = "toggle",
-        name = "Hide checked items",
+        name = L["Hide checked items"],
         get = function(info)
           local _, tabData = getTabInfo(info)
           return tabData.hideCheckedItems
@@ -433,18 +433,6 @@ local tabManagementTable = {
       },
     },
   },
-
-  -- -- headers
-  -- header1 = {
-  --   order = 1,
-  --   type = "header",
-  --   name = "Settings",
-  -- },
-  -- header2 = {
-  --   order = 2,
-  --   type = "header",
-  --   name = "Auto-Reset",
-  -- },
 }
 
 local tabAddTable = {

@@ -3,6 +3,7 @@ local addonName, addonTable = ...
 
 -- addonTable aliases
 local core = addonTable.core
+local chat = addonTable.chat
 local enums = addonTable.enums
 local utils = addonTable.utils
 local widgets = addonTable.widgets
@@ -24,7 +25,7 @@ local _mainFrame = addonTable.mainFrame
 local dummyFunc = function()end
 
 local mainFrame = setmetatable({}, {
-	__index = function (t,k)
+	__index = function(t,k)
 		if not dataManager.authorized then return dummyFunc end
 		if not refreshAuthorized and k == "Refresh" then return dummyFunc end
     return _mainFrame[k]   -- access the original table
@@ -33,6 +34,9 @@ local mainFrame = setmetatable({}, {
 
 -- Variables
 local L = core.L
+
+-- local undoing = false -- TDLATER redo
+local clearing = false
 
 -- // WoW & Lua APIs
 
@@ -318,7 +322,7 @@ end
 
 local function addItem(itemID, itemData)
 	if dataManager:GetQuantity(enums.item) >= enums.maxQuantities[enums.item] then -- temp limit
-		-- MESSAGE "Cannot add new items", "(max quantity reached)"
+		chat:Print(utils:SafeStringFormat(L["Cannot add %s (max quantity reached)"], L["item"]))
 		return
 	end
 
@@ -382,7 +386,7 @@ end
 
 local function addCategory(catID, catData)
 	if dataManager:GetQuantity(enums.category) >= enums.maxQuantities[enums.category] then -- temp limit
-		-- MESSAGE "Cannot add new categories", "max quantity reached"
+		chat:Print(utils:SafeStringFormat(L["Cannot add %s (max quantity reached)"], L["category"]))
 		return
 	end
 
@@ -424,7 +428,7 @@ function dataManager:CreateCategory(catName, tabID, parentCatID)
 	-- first, we check what needs to be checked
 	if not dataManager:CheckName(catName, enums.category) then return end
 	if parentCatID and not dataManager:IsID(parentCatID) then
-		-- MESSAGE tostring(parentCatID).." is not a category ID"
+		-- chat:Print(L["The given parent category is not valid"]) -- TDLATER
 		return
 	end
 
@@ -456,7 +460,7 @@ end
 
 local function addTab(tabID, tabData, isGlobal)
 	if dataManager:GetQuantity(enums.tab) >= enums.maxQuantities[enums.tab] then -- temp limit
-		-- MESSAGE "Cannot add new tabs", "max quantity reached"
+		chat:Print(utils:SafeStringFormat(L["Cannot add %s (max quantity reached)"], L["tab"]))
 		return
 	end
 
@@ -563,7 +567,6 @@ function dataManager:MoveItem(itemID, newPos, newCatID)
 	itemData.catID = newCatID
 	dataManager:UpdateItemTab(itemID)
 
-	-- MESSAGE
 	mainFrame:Refresh()
 end
 
@@ -693,7 +696,6 @@ function dataManager:MoveCategory(catID, newPos, newParentID, fromTabID, toTabID
 		end
 	end
 
-	-- MESSAGE
 	mainFrame:Refresh()
 end
 
@@ -716,7 +718,6 @@ function dataManager:MoveTab(tabID, newPos)
 	tremove(loc, oldPos)
 	tinsert(loc, newPos, tabID)
 
-	-- MESSAGE
 	mainFrame:Refresh()
 	tabsFrame:Refresh()
 end
@@ -747,7 +748,6 @@ function dataManager:DeleteItem(itemID)
 	local undoData = dataManager:CreateUndo(itemID)
 	dataManager:AddUndo(undoData)
   itemsList[itemID] = nil -- delete action
-	-- MESSAGE "delete item"
 
 	-- we hide a potentially opened desc frame
 	widgets:DescFrameHide(itemID)
@@ -798,12 +798,15 @@ function dataManager:DeleteCat(catID)
 
 		dataManager:AddUndo(undoData)
 	  categoriesList[catID] = nil -- delete action
-		-- MESSAGE "delete cat"
 
 		mainFrame:DeleteWidget(catID)
 
 		enums.quantities[enums.category] = enums.quantities[enums.category] - 1
 		result = true
+	else
+		if not clearing then
+			chat:Print(L["Could not empty category, some of its items are protected"])
+		end
 	end
 
 	dataManager:AddUndo(nbToUndo + (result and 1 or 0)) -- to undo in one go everything that was removed
@@ -838,6 +841,7 @@ function dataManager:DeleteTab(tabID)
 	local copy = utils:Deepcopy(tabData.orderedCatIDs)
 	local nbToUndo = 0
 
+	clearing = true
 	for _,catID in pairs(copy) do
 		if categoriesList[catID].originalTabID == tabID then -- (SPECIFIC: a tab deletion only deletes what's original to the tab, not everything that's shown inside of it)
 			local result, nb = dataManager:DeleteCat(catID)
@@ -846,6 +850,7 @@ function dataManager:DeleteTab(tabID)
 			end
 		end
 	end
+	clearing = false
 
 	local undoData = dataManager:CreateUndo(tabID)
 	local result
@@ -866,7 +871,6 @@ function dataManager:DeleteTab(tabID)
 
 		dataManager:AddUndo(undoData)
 	  tabsList[tabID] = nil -- delete action
-		-- MESSAGE "delete tab"
 
 		enums.quantities[enums.tab] = enums.quantities[enums.tab] - 1
 
@@ -878,6 +882,8 @@ function dataManager:DeleteTab(tabID)
 		tabsFrame:DeleteTab(tabID)
 
 		result = true
+	else
+		chat:Print(L["Could not empty tab, some of its contents are protected"])
 	end
 
 	dataManager:AddUndo(nbToUndo + (result and 1 or 0)) -- to undo in one go everything that was removed
@@ -916,26 +922,32 @@ function dataManager:Undo()
 	-- when undoing, there are 4 possible cases:
 	-- undoing a clear, an item deletion, a category deletion, or a tab deletion
 	if #NysTDL.db.profile.undoTable == 0 then
-		-- MESSAGE
+		chat:Print(L["Nothing to undo"])
 		return
 	end
 
 	local refreshID = dataManager:SetRefresh(false)
 
-	-- MESSAGES
 	local success
 	local toUndo = tremove(NysTDL.db.profile.undoTable) -- remove last
 	if toUndo then -- if we got something to undo
 		if type(toUndo) == "number" then -- clear
 			if toUndo <= 0 then toUndo = 1 end -- when we find a "0", we pass it like it was never here, and directly go undo the next item
+
+			-- undoing = true
 			for i=1, toUndo do
 				success = not not dataManager:Undo()
 				if not success then
 					tinsert(NysTDL.db.profile.undoTable, toUndo-(i-1))
-					-- MESSAGE "undo clear fail"
+					-- chat:Print(L["Clear undo interrupted"]..string.format(" (%i/%i)", (i-1), toUndo))
 					break
 				end
 			end
+			-- undoing = false
+
+			-- if success then
+			-- 	chat:Print(L["Clear undo successful!"]..string.format(" (%i/%i)", toUndo, toUndo))
+			-- end
 		else
 			if toUndo.enum == enums.item then -- item
 				success = not not addItem(toUndo.ID, toUndo.data)
@@ -946,7 +958,13 @@ function dataManager:Undo()
 			end
 			if not success then -- cancel
 				tinsert(NysTDL.db.profile.undoTable, toUndo)
-				-- MESSAGE "undo fail"
+			else
+				-- if not undoing then
+					local type = ((toUndo.enum == enums.item) and L["item"])
+					or ((toUndo.enum == enums.category) and L["category"])
+					or ((toUndo.enum == enums.tab) and L["tab"])
+					chat:Print(utils:SafeStringFormat(L["Added \"%s\" back (%s)"], dataManager:GetName(toUndo.ID), type))
+				-- end
 			end
 		end
 	end
@@ -1019,16 +1037,20 @@ end
 
 function dataManager:CheckName(name, enum)
 	if #name == 0 then -- empty
-		-- MESSAGE "Name is empty"
+		chat:Print(L["Name cannot be empty"])
 		return false
-	elseif widgets:GetWidth(name) > enums.maxNameWidth[enum] then -- width
-		if utils:HasHyperlink(name) then -- this is for making more space for items that have hyperlinks in them
-	    if widgets:GetWidth(name) <= enums.maxNameWidth[enum] + enums.hyperlinkNameBonus then
-				return true
+	else
+		local w, mw = math.floor(widgets:GetWidth(name)), enums.maxNameWidth[enum]
+		if w > mw then -- width
+			if utils:HasHyperlink(name) then -- this is for making more space for items that have hyperlinks in them
+				mw = mw + enums.hyperlinkNameBonus
+		    if w <= mw then
+					return true
+				end
 			end
+			chat:Print(L["Name is too large"]..string.format(" (%i/%i)", w, mw))
+			return false
 		end
-		-- MESSAGE "Name is too large" -- TDLATER max: x
-		return false
 	end
 
 	return true
@@ -1063,8 +1085,6 @@ function dataManager:IsProtected(ID)
 	elseif enum == enums.tab then -- tab
 		return #tabsList.orderedTabIDs <= 1
 	end
-
-	-- MESSAGE?
 end
 
 -- items
@@ -1269,6 +1289,7 @@ function dataManager:ClearTab(tabID)
 
 	local refreshID = dataManager:SetRefresh(false)
 
+	clearing = true
 	local nbToUndo = 0
 	for catID in pairs(copy) do
 		local result, nb = dataManager:DeleteCat(catID)
@@ -1276,10 +1297,16 @@ function dataManager:ClearTab(tabID)
 			nbToUndo = nbToUndo + 1
 		end
 	end
+	clearing = false
 
 	dataManager:AddUndo(nbToUndo)
 
 	dataManager:SetRefresh(true, refreshID)
+
+	for catID,catData in dataManager:ForEach(enums.category, tabID) do -- if there are cats left
+		chat:Print(L["Could not empty tab, some of its contents are protected"])
+		break
+	end
 
 	-- refresh the mainFrame
 	mainFrame:Refresh()

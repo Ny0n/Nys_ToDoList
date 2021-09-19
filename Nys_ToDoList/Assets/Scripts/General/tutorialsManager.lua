@@ -30,19 +30,19 @@ function tutorialsManager:CreateTutoFrames() -- TODO redo tuto texts
   tutorialFrames.addNewCat = widgets:TutorialFrame("addNewCat", false, "UP", L["Start by adding a new category!"], 190, 50)
 
   -- TUTO : Adding the categories ("addCat")
-  tutorialFrames.addCat = widgets:TutorialFrame("addCat", true, "UP", L["This will add your category and item to the current tab"], 240, 50)
+  tutorialFrames.addCat = widgets:TutorialFrame("addCat", true, "UP", L["This will add your category to the current tab"], 240, 50)
 
   -- TUTO : adding an item to a category ("addItem")
   tutorialFrames.addItem = widgets:TutorialFrame("addItem", false, "RIGHT", L["To add new items to existing categories, just right-click the category names!"], 220, 50)
 
   -- TUTO : getting more information ("getMoreInfo")
-  tutorialFrames.getMoreInfo = widgets:TutorialFrame("getMoreInfo", false, "LEFT", L["If you're having any problems, or you want more information on systems like favorites or descriptions, you can always click here to print help in the chat!"], 275, 50)
+  tutorialFrames.getMoreInfo = widgets:TutorialFrame("getMoreInfo", false, "LEFT", L["If you're having any problems, or you just want more information, you can always click here to print help in the chat!"], 275, 50)
 
   -- TUTO : accessing the options ("accessOptions")
   tutorialFrames.accessOptions = widgets:TutorialFrame("accessOptions", false, "DOWN", L["You can access the options from here"], 220, 50)
 
   -- TUTO : what does holding ALT do? ("ALTkey")
-  tutorialFrames.ALTkey = widgets:TutorialFrame("ALTkey", true, "DOWN", L["One more thing: if you hold ALT while the list is opened, some interesting buttons will appear!"], 220, 50)
+  tutorialFrames.ALTkey = widgets:TutorialFrame("ALTkey", true, "DOWN", "x", 220, 50)
 end
 
 function tutorialsManager:SetPoint(tutoName, point, relativeTo, relativePoint, ofsx, ofsy)

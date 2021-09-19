@@ -92,7 +92,7 @@ function utils:SafeStringFormat(str, ...)
   local dup = str
   for i=1, select("#", ...) do
     local var = select(i, ...)
-    if (var) then
+    if var then
       local toMatch = (type(var) == "number") and "%%i" or "%%s"
       if (string.find(dup, toMatch)) then
         dup = string.gsub(dup, toMatch, "", 1)

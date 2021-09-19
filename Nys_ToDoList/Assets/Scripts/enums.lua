@@ -3,6 +3,7 @@ local addonName, addonTable = ...
 
 -- addonTable aliases
 local enums = addonTable.enums
+local L = addonTable.core.L
 
 -- unique enums (the value NEVER changes, but i can change the left name if i want to)
 
@@ -22,7 +23,7 @@ enums.databrokerModes = {
   frame = "ENUMS_DATABROKERMODES_3", -- frame databroker mode
 }
 
--- pure data (see those as global variables accessible by any file, but not global) -- LOCALE for string vars
+-- pure data (see those as global variables accessible by any file, but not global)
 
 enums.idtype = "string"
 enums.tdlFrameDefaultWidth = 340
@@ -38,7 +39,7 @@ enums.ofsyContentCat = 26
 enums.ofsyContent = 22
 enums.ofsxItemIcons = -18
 
-enums.hyperlinkNameBonus = 100
+enums.hyperlinkNameBonus = 65
 enums.maxNameWidth = {
 	[enums.item] = 240,
 	[enums.category] = 220,
@@ -51,16 +52,16 @@ enums.maxQuantities = {
 	[enums.tab] = 20,
 }
 
-enums.defaultResetTimeName = "Reset 1"
+enums.defaultResetTimeName = L["Reset"]..' '.."1"
 
 enums.days = {
-  [2] = "Monday",
-  [3] = "Tuesday",
-  [4] = "Wednesday",
-  [5] = "Thursday",
-  [6] = "Friday",
-  [7] = "Saturday",
-  [1] = "Sunday",
+  [2] = L["Monday"],
+  [3] = L["Tuesday"],
+  [4] = L["Wednesday"],
+  [5] = L["Thursday"],
+  [6] = L["Friday"],
+  [7] = L["Saturday"],
+  [1] = L["Sunday"],
 }
 
 -- dynamic values (accessible by all files)

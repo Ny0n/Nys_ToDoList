@@ -3,6 +3,7 @@ local addonName, addonTable = ...
 
 -- addonTable aliases
 local core = addonTable.core
+local chat = addonTable.chat
 local utils = addonTable.utils
 local enums = addonTable.enums
 local dataManager = addonTable.dataManager
@@ -84,7 +85,7 @@ function resetManager:AddResetTime(tabID, resetData)
   local nb = resetManager:GetNbResetTimes(resetData)
   local resetTimeName
   repeat
-    resetTimeName = "Reset"..' '..tostring(nb+1)
+    resetTimeName = L["Reset"]..' '..tostring(nb+1)
     nb = nb + 1
   until not resetData.resetTimes[resetTimeName]
 
@@ -105,12 +106,12 @@ end
 
 function resetManager:RemoveResetTime(tabID, resetData, resetTimeName)
 	if not resetData.resetTimes[resetTimeName] then
-    -- should never happen?
+    -- should never happen
 		return true
 	end
 
-  if not resetManager:CanRemoveResetTime(resetData) then -- safety check
-    -- MESSAGE "Cannot remove reset -- there must be at least one"
+  if not resetManager:CanRemoveResetTime(resetData) then -- safety check, should never happen bc there is a pre-check
+    chat:Print("Cannot remove this reset, there must be at least one")
     return false
   end
 
@@ -123,7 +124,7 @@ end
 
 function resetManager:RenameResetTime(tabID, resetData, oldResetTimeName, newResetTimeName)
 	if resetData.resetTimes[newResetTimeName] then
-		-- MESSAGE name already exists
+		chat:Print(L["This name already exists"])
 		return false
 	end
 

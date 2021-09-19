@@ -656,7 +656,7 @@ local function loadList()
     if originalTabName == tabData.name then
       catWidget.originalTabLabel:Hide()
     else -- if the tab is showing a cat that was not created here, we show the label specifying the cat's original tab
-      catWidget.originalTabLabel:SetText("("..originalTabName.." tab)") -- LOCALE
+      catWidget.originalTabLabel:SetText(utils:SafeStringFormat(L["(%s tab)"], originalTabName))
       catWidget.originalTabLabel:Show()
     end
 
@@ -961,10 +961,10 @@ local function generateMenuFrameOptions()
   menuframe.frameAlphaSlider:SetValueStep(1)
   menuframe.frameAlphaSlider:SetObeyStepOnDrag(true)
 
-  menuframe.frameAlphaSlider.tooltipText = L["Change the background opacity"] --Creates a tooltip on mouseover.
-  _G[menuframe.frameAlphaSlider:GetName() .. 'Low']:SetText((select(1,menuframe.frameAlphaSlider:GetMinMaxValues()))..'%') --Sets the left-side slider text (default is "Low").
-  _G[menuframe.frameAlphaSlider:GetName() .. 'High']:SetText((select(2,menuframe.frameAlphaSlider:GetMinMaxValues()))..'%') --Sets the right-side slider text (default is "High").
-  _G[menuframe.frameAlphaSlider:GetName() .. 'Text']:SetText(L["Frame opacity"]) --Sets the "title" text (top-centre of slider).
+  menuframe.frameAlphaSlider.tooltipText = L["Change the background opacity"] -- creates a tooltip on mouseover
+  _G[menuframe.frameAlphaSlider:GetName() .. 'Low']:SetText((select(1,menuframe.frameAlphaSlider:GetMinMaxValues()))..'%') -- sets the left-side slider text (default is "Low")
+  _G[menuframe.frameAlphaSlider:GetName() .. 'High']:SetText((select(2,menuframe.frameAlphaSlider:GetMinMaxValues()))..'%') -- sets the right-side slider text (default is "High")
+  _G[menuframe.frameAlphaSlider:GetName() .. 'Text']:SetText(L["Frame opacity"]) -- sets the "title" text (top-center of slider)
   menuframe.frameAlphaSlider:SetScript("OnValueChanged", mainFrame.Event_FrameAlphaSlider_OnValueChanged)
 
   menuframe.frameAlphaSliderValue = menuframe.frameAlphaSlider:CreateFontString("frameAlphaSliderValue") -- the font string to see the current value
@@ -1036,11 +1036,11 @@ local function generateMenuTabActions()
 
   --/************************************************/--
 
-  menuframe.btnCheck = widgets:Button("NysTDL_menuframe_btnCheck", menuframe, "Check", "Interface\\BUTTONS\\UI-CheckBox-Check")
+  menuframe.btnCheck = widgets:Button("NysTDL_menuframe_btnCheck", menuframe, L["Check"], "Interface\\BUTTONS\\UI-CheckBox-Check")
   menuframe.btnCheck:SetPoint("TOP", menuframe.menuTitle, "TOP", 0, -35)
   menuframe.btnCheck:SetScript("OnClick", function() dataManager:ToggleTabChecked(database.ctab(), true) end)
 
-  menuframe.btnUncheck = widgets:Button("NysTDL_menuframe_btnUncheck", menuframe, "Uncheck", "Interface\\BUTTONS\\UI-CheckBox-Check-Disabled")
+  menuframe.btnUncheck = widgets:Button("NysTDL_menuframe_btnUncheck", menuframe, L["Uncheck"], "Interface\\BUTTONS\\UI-CheckBox-Check-Disabled")
   menuframe.btnUncheck:SetPoint("TOP", menuframe.btnCheck, "TOP", 0, -40)
   menuframe.btnUncheck:SetScript("OnClick", function() dataManager:ToggleTabChecked(database.ctab(), false) end)
 
@@ -1080,7 +1080,7 @@ local function generateFrameContent()
   content.remaining:SetPoint("TOPLEFT", content.title, "TOP", -140, -32)
   content.remaining:SetFontObject("GameFontNormalLarge")
   content.remainingNumber = widgets:NoPointsLabel(content, nil, "...")
-  content.remainingNumber:SetPoint("LEFT", content.remaining, "RIGHT", 6, 0)
+  content.remainingNumber:SetPoint("LEFT", content.remaining, "RIGHT", 3, 0)
   content.remainingNumber:SetFontObject("GameFontNormalLarge")
   content.remainingFavsNumber = widgets:NoPointsLabel(content, nil, "...")
   content.remainingFavsNumber:SetPoint("LEFT", content.remainingNumber, "RIGHT", 3, 0)
@@ -1198,11 +1198,9 @@ function mainFrame:CreateTDLFrame()
   tdlFrame:SetMovable(true)
   tdlFrame:SetClampedToScreen(true)
   tdlFrame:SetResizable(true)
-  tdlFrame:SetMinResize(90, 284)
-  -- tdlFrame:SetMinResize(240, 284)
-  -- tdlFrame:SetMaxResize(600, 1000)
+  tdlFrame:SetMinResize(90, 180)
+  tdlFrame:SetMaxResize(600, 1000)
   tdlFrame:SetToplevel(true)
-  -- widgets:SetHyperlinksEnabled(tdlFrame, true)
 
   tdlFrame:HookScript("OnUpdate", mainFrame.Event_TDLFrame_OnUpdate)
   tdlFrame:HookScript("OnShow", mainFrame.Event_TDLFrame_OnVisibilityUpdate)
