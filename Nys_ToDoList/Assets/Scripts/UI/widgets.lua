@@ -331,7 +331,7 @@ function widgets:DescriptionFrame(itemWidget)
   descFrame.closeButton:SetScript("OnClick", function() widgets:DescFrameHide(itemID) end)
 
   -- clear button
-  descFrame.clearButton = widgets:IconTooltipButton(descFrame, "NysTDL_ClearButton", L["Clear"].."\n("..L["Right-click"]..")")
+  descFrame.clearButton = widgets:IconTooltipButton(descFrame, "NysTDL_ClearButton", L["Clear"].."\n("..L["Right-Click"]..")")
   descFrame.clearButton:SetPoint("TOPRIGHT", descFrame, "TOPRIGHT", -24, -2)
   descFrame.clearButton:RegisterForClicks("RightButtonUp") -- only responds to right-clicks
   descFrame.clearButton:SetScript("OnClick", function(self)

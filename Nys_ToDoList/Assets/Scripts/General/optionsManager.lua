@@ -92,7 +92,7 @@ local tabManagementTable = {
         order = 1.4,
         type = "toggle",
         name = "Instant refresh",
-        desc = "Delete/Hide items instantly chen checking them".."\n".."(profile dependant)",
+        desc = "Delete/Hide items instantly when checking them".."\n".."(profile dependant)",
         get = function(info)
           return NysTDL.db.profile.instantRefresh
         end,
@@ -905,15 +905,15 @@ end
 
 function optionsManager:InitializeOptionsWidthRecursive(table, wDef)
   for _,v in pairs(table) do
-    if (v.type == "group") then
+    if v.type == "group" then
       self:InitializeOptionsWidthRecursive(v.args, wDef)
-    elseif (v.type ~= "description" and v.type ~= "header") then -- for every widget (except the descriptions and the headers), we keep their min normal width, we change it only if their name is bigger than the default width
-      local w = widgets:NoPointsLabel(UIParent, nil, v.name):GetWidth()
+    elseif v.type ~= "description" and v.type ~= "header" then -- for every widget (except the descriptions and the headers), we keep their min normal width, we change it only if their name is bigger than the default width
+      local w = widgets:GetWidth(v.name)
       if wDef[v.type] then
         -- print (v.name.."_"..w)
         w = tonumber(string.format("%.3f", w/wDef[v.type]))
-        if (w > 1) then
-          v.width = w
+        if w > 1 then
+          v.width = w -- w is a factor
         end
       end
     end

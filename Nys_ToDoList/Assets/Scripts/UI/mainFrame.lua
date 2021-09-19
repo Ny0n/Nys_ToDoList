@@ -1095,9 +1095,14 @@ local function generateFrameContent()
   end)
   tutorialsManager:SetPoint("getMoreInfo", "LEFT", content.helpButton, "RIGHT", 18, 0)
 
+  -- edit mode button
+  content.editModeButton = widgets:IconTooltipButton(content, "NysTDL_EditModeButton", "Toggle edit mode")
+  content.editModeButton:SetPoint("RIGHT", content.helpButton, "LEFT", 2, 0)
+  content.editModeButton:SetScript("OnClick", function() mainFrame:ToggleEditMode() end)
+
   -- frame options menu button
   content.frameOptionsButton = widgets:IconTooltipButton(content, "NysTDL_FrameOptionsButton", L["Frame options"])
-  content.frameOptionsButton:SetPoint("RIGHT", content.helpButton, "LEFT", 2, 0)
+  content.frameOptionsButton:SetPoint("RIGHT", content.editModeButton, "LEFT", 2, 0)
   content.frameOptionsButton:SetScript("OnClick", function()
     menuClick(enums.menus.frameopt)
   end)
@@ -1111,14 +1116,9 @@ local function generateFrameContent()
   end)
   tutorialsManager:SetPoint("addNewCat", "TOP", content.categoryButton, "BOTTOM", 0, -18)
 
-  -- edit mode button
-  content.editModeButton = widgets:IconTooltipButton(content, "NysTDL_EditModeButton", "Toggle edit mode")
-  content.editModeButton:SetPoint("RIGHT", content.categoryButton, "LEFT", 2, 0)
-  content.editModeButton:SetScript("OnClick", function() mainFrame:ToggleEditMode() end)
-
   -- undo button
   content.undoButton = widgets:IconTooltipButton(content, "NysTDL_UndoButton", L["Undo last remove/clear"])
-  content.undoButton:SetPoint("RIGHT", content.helpButton, "LEFT", 2, 0)
+  content.undoButton:SetPoint("RIGHT", content.editModeButton, "LEFT", 2, 0)
   content.undoButton:SetScript("OnClick", function() dataManager:Undo() end)
   content.undoButton:Hide()
 
@@ -1266,14 +1266,14 @@ function mainFrame:CreateTDLFrame()
     if (button == "LeftButton") then
       tdlFrame:StartSizing("BOTTOMRIGHT")
       self:GetHighlightTexture():Hide() -- more noticeable
-      self.MiniTooltip:Hide()
+      self.Tooltip:Hide()
     end
   end)
   tdlFrame.resizeButton:SetScript("OnMouseUp", function(self, button)
     if (button == "LeftButton") then
       tdlFrame:StopMovingOrSizing()
       self:GetHighlightTexture():Show()
-      self.MiniTooltip:Show()
+      self.Tooltip:Show()
     end
   end)
   tdlFrame.resizeButton:SetScript("OnHide", function(self)  -- same as on mouse up, just security
