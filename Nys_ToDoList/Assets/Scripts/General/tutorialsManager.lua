@@ -25,6 +25,7 @@ local tutorialOrder = {
 --/*******************/ FRAMES /*************************/--
 
 function tutorialsManager:CreateTutoFrames() -- TODO redo tuto texts
+  -- POLISH if text is bigger than width, ... by default but not right AND frame strata too high
   -- TUTO : How to add categories ("addNewCat")
   tutorialFrames.addNewCat = widgets:TutorialFrame("addNewCat", false, "UP", L["Start by adding a new category!"], 190, 50)
 
@@ -41,7 +42,7 @@ function tutorialsManager:CreateTutoFrames() -- TODO redo tuto texts
   tutorialFrames.accessOptions = widgets:TutorialFrame("accessOptions", false, "DOWN", L["You can access the options from here"], 220, 50)
 
   -- TUTO : what does holding ALT do? ("ALTkey")
-  tutorialFrames.ALTkey = widgets:TutorialFrame("ALTkey", false, "DOWN", L["One more thing: if you hold ALT while the list is opened, some interesting buttons will appear!"], 220, 50)
+  tutorialFrames.ALTkey = widgets:TutorialFrame("ALTkey", true, "DOWN", L["One more thing: if you hold ALT while the list is opened, some interesting buttons will appear!"], 220, 50)
 end
 
 function tutorialsManager:SetPoint(tutoName, point, relativeTo, relativePoint, ofsx, ofsy)

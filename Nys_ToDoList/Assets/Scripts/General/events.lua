@@ -11,23 +11,22 @@ local optionsManager = addonTable.optionsManager
 
 -- Variables
 local L = core.L
-local warnTimerTime = 10
--- local warnTimerTime = 3600 -- in seconds (1 hour)
+local warnTimerTime = 3600 -- in seconds (1 hour)
 
 --/*******************/ EVENT HANDLERS /*************************/--
 
 function NysTDL:PLAYER_LOGIN()
   local disabled = optionsManager.optionsTable.args.main.args.chat.args.groupWarnings.args.hourlyReminder.disabled
-  if (NysTDL.db.global.UI_reloading) then -- just to be sure that it wasn't a reload, but a genuine player log in
+  if NysTDL.db.global.UI_reloading then -- just to be sure that it wasn't a reload, but a genuine player log in
     NysTDL.db.global.UI_reloading = false
 
-    if (NysTDL.db.global.warnTimerRemaining > 0) then -- this is for the special case where we logged in, but reloaded before the 20 sec timer activated, so we just try it again
+    if NysTDL.db.global.warnTimerRemaining > 0 then -- this is for the special case where we logged in, but reloaded before the 20 sec timer activated, so we just try it again
       events.warnTimer = self:ScheduleTimer(function() -- after reloading, we restart the warn timer from where we left off before the reload
-        if (NysTDL.db.profile.hourlyReminder and not disabled()) then -- without forgetting that it's the hourly reminder timer this time
+        if NysTDL.db.profile.hourlyReminder and not disabled() then -- without forgetting that it's the hourly reminder timer this time
           chat:Warn()
         end
         events.warnTimer = self:ScheduleRepeatingTimer(function()
-          if (NysTDL.db.profile.hourlyReminder and not disabled()) then
+          if NysTDL.db.profile.hourlyReminder and not disabled() then
             chat:Warn()
           end
         end, warnTimerTime)
@@ -38,15 +37,15 @@ function NysTDL:PLAYER_LOGIN()
 
   NysTDL.db.global.warnTimerRemaining = 0
   self:ScheduleTimer(function() -- 20 secs after the player logs in, we check if we need to warn him about the remaining items
-    if (core.loaded) then -- just to be sure
+    if core.loaded then -- just to be sure
       chat:Warn()
       events.warnTimer = self:ScheduleRepeatingTimer(function()
-        if (NysTDL.db.profile.hourlyReminder and not disabled()) then
+        if NysTDL.db.profile.hourlyReminder and not disabled() then
           chat:Warn()
         end
       end, warnTimerTime)
     end
-  end, 4)
+  end, 20)
 end
 
 function NysTDL:PLAYER_ENTERING_WORLD()

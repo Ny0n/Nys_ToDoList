@@ -109,7 +109,7 @@ function dataManager:Find(ID)
 		end
 	end
 
-	error("ID not found")
+	error("ID not found") -- KEEP
 end
 
 function dataManager:IsGlobal(ID)
@@ -152,7 +152,7 @@ function dataManager:GetPosData(ID, tabID, onlyPos)
 	if enum == enums.item then -- item
 		loc = select(3, dataManager:Find(data.catID)).orderedContentIDs
 	elseif enum == enums.category then -- category
-		if not tabsList[tabID] then error("Wrong tab ID") end
+		dataManager:Find(tabID) -- tab check
 		loc = data.parentCatID and categoriesList[data.parentCatID].orderedContentIDs or tabsList[tabID].orderedCatIDs
 	elseif enum == enums.tab then -- tab
 		loc = tabsList.orderedTabIDs
@@ -196,10 +196,6 @@ function dataManager:UpdateQuantities()
 			enums.quantities[enum] = enums.quantities[enum] + 1
 		end
 	end
-	print("----__QUANTITIES__----")
-	print(enums.quantities[enums.item])
-	print(enums.quantities[enums.category])
-	print(enums.quantities[enums.tab])
 end
 
 -- iterator function
@@ -252,7 +248,7 @@ function dataManager:ForEach(enum, location)
 					return true
 				end
 			else
-				error("Coding error, bad ID", 2)
+				error("Wrong location in ForEach call", 2) -- KEEP
 			end
 		end
 	elseif enum == enums.category then
@@ -265,7 +261,7 @@ function dataManager:ForEach(enum, location)
 					return true
 				end
 			else
-				error("Coding error, bad ID", 2)
+				error("Wrong location in ForEach call", 2) -- KEEP
 			end
 		end
 	elseif enum == enums.tab then
@@ -279,7 +275,7 @@ function dataManager:ForEach(enum, location)
 					return true
 				end
 			else
-				error("Coding error, bad ID", 2)
+				error("Wrong location in ForEach call", 2) -- KEEP
 			end
 		else -- in any case, there is something to check for any tab iteration
 			checkFunc = function(ID, data)
@@ -288,7 +284,7 @@ function dataManager:ForEach(enum, location)
 			end
 		end
 	else
-		error("Wrong enum in ForEach call", 2)
+		error("Wrong enum in ForEach call", 2) -- KEEP
 	end
 
 	-- // iteration part
@@ -312,7 +308,6 @@ function dataManager:ForEach(enum, location)
 			end
 		until not redo
 
-		-- print(key, data)
 		return key, data, isGlobal
 	end
 end
@@ -323,7 +318,7 @@ end
 
 local function addItem(itemID, itemData)
 	if dataManager:GetQuantity(enums.item) >= enums.maxQuantities[enums.item] then -- temp limit
-		print("Cannot add new items", "(max quantity reached)")
+		-- MESSAGE "Cannot add new items", "(max quantity reached)"
 		return
 	end
 
@@ -387,7 +382,7 @@ end
 
 local function addCategory(catID, catData)
 	if dataManager:GetQuantity(enums.category) >= enums.maxQuantities[enums.category] then -- temp limit
-		print("Cannot add new categories", "max quantity reached")
+		-- MESSAGE "Cannot add new categories", "max quantity reached"
 		return
 	end
 
@@ -429,7 +424,7 @@ function dataManager:CreateCategory(catName, tabID, parentCatID)
 	-- first, we check what needs to be checked
 	if not dataManager:CheckName(catName, enums.category) then return end
 	if parentCatID and not dataManager:IsID(parentCatID) then
-		print(tostring(parentCatID).." is not a category ID")
+		-- MESSAGE tostring(parentCatID).." is not a category ID"
 		return
 	end
 
@@ -461,7 +456,7 @@ end
 
 local function addTab(tabID, tabData, isGlobal)
 	if dataManager:GetQuantity(enums.tab) >= enums.maxQuantities[enums.tab] then -- temp limit
-		print("Cannot add new tabs", "max quantity reached")
+		-- MESSAGE "Cannot add new tabs", "max quantity reached"
 		return
 	end
 
@@ -625,7 +620,7 @@ function dataManager:MoveCategory(catID, newPos, newParentID, fromTabID, toTabID
 	end
 
 	-- loc
-	if not tabsList[toTabID] then error("Wrong tab ID") end
+	dataManager:Find(toTabID) -- tab check
 	local newLoc = newParentID and categoriesList[newParentID].orderedContentIDs or tabsList[toTabID].orderedCatIDs
 
 	-- pos
@@ -752,7 +747,7 @@ function dataManager:DeleteItem(itemID)
 	local undoData = dataManager:CreateUndo(itemID)
 	dataManager:AddUndo(undoData)
   itemsList[itemID] = nil -- delete action
-	print("delete item")
+	-- MESSAGE "delete item"
 
 	-- we hide a potentially opened desc frame
 	widgets:DescFrameHide(itemID)
@@ -803,7 +798,7 @@ function dataManager:DeleteCat(catID)
 
 		dataManager:AddUndo(undoData)
 	  categoriesList[catID] = nil -- delete action
-		print("delete cat")
+		-- MESSAGE "delete cat"
 
 		mainFrame:DeleteWidget(catID)
 
@@ -871,7 +866,7 @@ function dataManager:DeleteTab(tabID)
 
 		dataManager:AddUndo(undoData)
 	  tabsList[tabID] = nil -- delete action
-		print("delete tab")
+		-- MESSAGE "delete tab"
 
 		enums.quantities[enums.tab] = enums.quantities[enums.tab] - 1
 
@@ -920,7 +915,6 @@ end
 function dataManager:Undo()
 	-- when undoing, there are 4 possible cases:
 	-- undoing a clear, an item deletion, a category deletion, or a tab deletion
-	print("UNDO")
 	if #NysTDL.db.profile.undoTable == 0 then
 		-- MESSAGE
 		return
@@ -937,30 +931,25 @@ function dataManager:Undo()
 			for i=1, toUndo do
 				success = not not dataManager:Undo()
 				if not success then
-					tinsert(NysTDL.db.profile.undoTable, toUndo-(i-1)) -- FIX maybe dangerous, verify this calculation
-					print("undo clear fail")
+					tinsert(NysTDL.db.profile.undoTable, toUndo-(i-1))
+					-- MESSAGE "undo clear fail"
 					break
 				end
 			end
-			print("undid multiple") -- no
 		else
 			if toUndo.enum == enums.item then -- item
 				success = not not addItem(toUndo.ID, toUndo.data)
-				print("undid item") -- no
 			elseif toUndo.enum == enums.category then -- category
 				success = not not addCategory(toUndo.ID, toUndo.data)
-				print("undid cat") -- no
 			elseif toUndo.enum == enums.tab then -- tab
 				success = not not addTab(toUndo.ID, toUndo.data, toUndo.isGlobal)
-				print("undid tab") -- no
 			end
 			if not success then -- cancel
 				tinsert(NysTDL.db.profile.undoTable, toUndo)
-				print("undo fail")
+				-- MESSAGE "undo fail"
 			end
 		end
 	end
-
 
 	dataManager:SetRefresh(true, refreshID)
 
@@ -1030,7 +1019,7 @@ end
 
 function dataManager:CheckName(name, enum)
 	if #name == 0 then -- empty
-		print("Name is empty") -- MESSAGE
+		-- MESSAGE "Name is empty"
 		return false
 	elseif widgets:GetWidth(name) > enums.maxNameWidth[enum] then -- width
 		if utils:HasHyperlink(name) then -- this is for making more space for items that have hyperlinks in them
@@ -1038,7 +1027,7 @@ function dataManager:CheckName(name, enum)
 				return true
 			end
 		end
-		print("Name is too large") -- TDLATER max: x
+		-- MESSAGE "Name is too large" -- TDLATER max: x
 		return false
 	end
 
@@ -1219,7 +1208,7 @@ function dataManager:UpdateShownTabID(tabID, shownTabID, state)
 	local isGlobal2, shownTabData = select(2, dataManager:Find(shownTabID))
 
 	if isGlobal1 ~= isGlobal2 then -- should never happen (im just being a bit too paranoid :s)
-		error("Coding error, cannot add/remove shown IDs with different global state")
+		error("Cannot add/remove shown IDs with different global state") -- KEEP
 	end
 
 	if state then

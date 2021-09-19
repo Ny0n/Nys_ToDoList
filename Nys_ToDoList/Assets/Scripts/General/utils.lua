@@ -14,22 +14,24 @@ function utils:Clamp(number, min, max)
 end
 
 function utils:RGBToHex(rgb)
+  -- thanks to marceloCodget/gist:3862929 on GitHub
+
 	local hexadecimal = ""
 
 	for _, value in pairs(rgb) do
 		local hex = ''
 
-		while(value > 0)do
+		while value > 0 do
 			local index = math.fmod(value, 16) + 1
 			value = math.floor(value / 16)
-			hex = string.sub('0123456789ABCDEF', index, index) .. hex
+			hex = string.sub('0123456789ABCDEF', index, index)..hex
 		end
 
-		if(string.len(hex) == 0)then
+		if string.len(hex) == 0 then
 			hex = '00'
 
-		elseif(string.len(hex) == 1)then
-			hex = '0' .. hex
+		elseif string.len(hex) == 1 then
+			hex = '0'..hex
 		end
 
 		hexadecimal = hexadecimal..hex

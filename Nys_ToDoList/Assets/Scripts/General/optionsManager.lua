@@ -58,9 +58,6 @@ local tabManagementTable = {
         confirmText = "Deleting this tab will delete everything that was created in it.\nAre you sure?",
         func = function(info)
           local tabID = getTabInfo(info)
-          print(getLeaf(info, 4).arg)
-          print(info.arg)
-          print(info[#info-1].arg)
           dataManager:DeleteTab(tabID)
           private:RefreshTabManagement()
         end,
@@ -251,7 +248,6 @@ local tabManagementTable = {
               end
               if not days[tabData.reset.configureDay] then
                 tabData.reset.configureDay = next(days)
-                print("SET CONFIGURE DAY", tabData.reset.configureDay)
               end
               return days
             end,

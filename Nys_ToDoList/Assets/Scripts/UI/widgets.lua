@@ -82,8 +82,12 @@ function widgets:SetDescFramesAlpha(alpha)
     descFrame:SetBackdropColor(0, 0, 0, alpha)
     descFrame:SetBackdropBorderColor(1, 1, 1, alpha)
     for k, x in pairs(descFrame.descriptionEditBox) do
+      -- setting the backdrop alpha is not enough, we also have to change the alpha of the big edit box,
+      -- the thing is that this template (from WoW) uses A LOT of sub-frames to make up that edit box,
+      -- as well as other frames for the char count, etc, so we have to find all of the edit box frames,
+      -- and set the alpha for each one
       if type(k) == "string" then
-        if string.sub(k, k:len()-2, k:len()) == "Tex" then -- TODO what is this for?
+        if string.sub(k, k:len()-2, k:len()) == "Tex" then -- fortunately, they all end up with the letters "Tex" ("LeftTex", "RightTex", ...)
           x:SetAlpha(alpha)
         end
       end
@@ -222,12 +226,13 @@ function widgets:TutorialFrame(tutoName, showCloseButton, arrowSide, text, width
   elseif arrowSide == "LEFT" then tutoFrame.ArrowRIGHT:Show()
   elseif arrowSide == "RIGHT" then tutoFrame.ArrowLEFT:Show() end
 
-  local tutoFrameRightDist = 10 -- TODO redo this dist
+  local tutoFrameRightDist = enums.tutoFramesRightSpace
+
   if showCloseButton then
-    tutoFrameRightDist = 40
     tutoFrame.closeButton = CreateFrame("Button", "closeButton", tutoFrame, "UIPanelCloseButton")
     tutoFrame.closeButton:SetPoint("TOPRIGHT", tutoFrame, "TOPRIGHT", 6, 6)
     tutoFrame.closeButton:SetScript("OnClick", function() tutorialsManager:Next() end)
+    tutoFrameRightDist = tutoFrame.closeButton:GetWidth() + 10
   end
 
   tutoFrame.Text:SetWidth(tutoFrame:GetWidth() - tutoFrameRightDist)
@@ -321,13 +326,12 @@ function widgets:DescriptionFrame(itemWidget)
   end)
 
   -- close button
-  descFrame.closeButton = CreateFrame("Button", "closeButton", descFrame, "NysTDL_CloseButton")  -- TODO icon button? voir aussi sur tdlFrame
+  descFrame.closeButton = CreateFrame("Button", "closeButton", descFrame, "NysTDL_CloseButton")
   descFrame.closeButton:SetPoint("TOPRIGHT", descFrame, "TOPRIGHT", -2, -2)
   descFrame.closeButton:SetScript("OnClick", function() widgets:DescFrameHide(itemID) end)
 
   -- clear button
-  descFrame.clearButton = CreateFrame("Button", "clearButton", descFrame, "NysTDL_ClearButton") -- TODO icon button?
-  descFrame.clearButton.tooltip = L["Clear"].."\n("..L["Right-click"]..')'
+  descFrame.clearButton = widgets:IconTooltipButton(descFrame, "NysTDL_ClearButton", L["Clear"].."\n("..L["Right-click"]..")")
   descFrame.clearButton:SetPoint("TOPRIGHT", descFrame, "TOPRIGHT", -24, -2)
   descFrame.clearButton:RegisterForClicks("RightButtonUp") -- only responds to right-clicks
   descFrame.clearButton:SetScript("OnClick", function(self)
@@ -373,7 +377,8 @@ function widgets:DescriptionFrame(itemWidget)
 end
 
 function widgets:Dummy(parentFrame, relativeFrame, xOffset, yOffset)
-  local dummy = CreateFrame("Frame", nil, parentFrame, nil) -- TODO test different things
+  -- a frame with a nil template, this means that it'll be invisible no matter what (perfect for a dummy frame)
+  local dummy = CreateFrame("Frame", nil, parentFrame, nil)
   dummy:SetPoint("TOPLEFT", relativeFrame, "TOPLEFT", xOffset, yOffset)
   dummy:SetSize(1, 1)
   dummy:Show()
@@ -403,10 +408,11 @@ function widgets:NoPointsInteractiveLabel(relativeFrame, name, text, fontObjectS
   return interactiveLabel
 end
 
-function widgets:NothingLabel(relativeFrame) -- TODO this func necessary?
-  local label = relativeFrame:CreateFontString(nil)
+function widgets:HintLabel(relativeFrame, name, text)
+  local label = relativeFrame:CreateFontString(name)
   label:SetFontObject("GameFontHighlightLarge")
   label:SetTextColor(0.5, 0.5, 0.5, 0.5)
+  label:SetText(text)
   return label
 end
 
@@ -438,7 +444,7 @@ function widgets:Button(name, relativeFrame, text, iconPath, fc)
   return btn
 end
 
-function widgets:IconButton(relativeFrame, template, tooltip)
+function widgets:IconTooltipButton(relativeFrame, template, tooltip)
   local btn = CreateFrame("Button", nil, relativeFrame, template)
   btn.tooltip = tooltip
   return btn
@@ -514,11 +520,9 @@ function widgets:RemoveButton(widget, parent)
   end)
   btn:HookScript("OnMouseUp", function(self)
     if not dataManager:IsID(ID) then return end
-    if self.name == "RemoveButton" then -- TODO is this useful?
-      if not dataManager:IsProtected(ID) then
-        self.Icon:SetDesaturated(desaturated)
-        self.Icon:SetVertexColor(1, 1, 1)
-      end
+    if not dataManager:IsProtected(ID) then
+      self.Icon:SetDesaturated(desaturated)
+      self.Icon:SetVertexColor(1, 1, 1)
     end
   end)
   btn:HookScript("OnShow", function(self)
@@ -560,18 +564,14 @@ function widgets:FavoriteButton(widget, parent)
     end
    end)
    btn:HookScript("OnMouseUp", function(self)
-     if self.name == "FavoriteButton" then
-       self:SetAlpha(1)
-       if not widget.itemData.favorite then
-         self.Icon:SetDesaturated(1)
-         self.Icon:SetVertexColor(0.4, 0.4, 0.4)
-       end
+     self:SetAlpha(1)
+     if not widget.itemData.favorite then
+       self.Icon:SetDesaturated(1)
+       self.Icon:SetVertexColor(0.4, 0.4, 0.4)
      end
    end)
    btn:HookScript("PostClick", function(self)
-     if self.name == "FavoriteButton" then -- TODO same, useful?
-       self:GetScript("OnShow")(self)
-     end
+     self:GetScript("OnShow")(self)
    end)
   btn:HookScript("OnShow", function(self)
     self:SetAlpha(1)
@@ -610,18 +610,14 @@ function widgets:DescButton(widget, parent)
     end
    end)
    btn:HookScript("OnMouseUp", function(self)
-     if self.name == "DescButton" then
-       self:SetAlpha(1)
-       if not widget.itemData.description then
-         self.Icon:SetDesaturated(1)
-         self.Icon:SetVertexColor(0.4, 0.4, 0.4)
-       end
+     self:SetAlpha(1)
+     if not widget.itemData.description then
+       self.Icon:SetDesaturated(1)
+       self.Icon:SetVertexColor(0.4, 0.4, 0.4)
      end
    end)
    btn:HookScript("PostClick", function(self)
-     if self.name == "DescButton" then -- TODO same, useful?
-       self:GetScript("OnShow")(self)
-     end
+     self:GetScript("OnShow")(self)
    end)
   btn:HookScript("OnShow", function(self)
     self:SetAlpha(1)
@@ -704,7 +700,6 @@ function widgets:CategoryWidget(catID, parentFrame)
     if mainFrame.editMode then return end
 
     if button == "LeftButton" then -- we open/close the category
-      categoryWidget.addEditBox:SetText(catID) -- TODO remove
       dataManager:ToggleClosed(catID, database.ctab())
     elseif button == "RightButton" then -- we try to toggle the addEditBox
       -- if the cat we right clicked on is NOT a closed category
@@ -773,18 +768,15 @@ function widgets:CategoryWidget(catID, parentFrame)
   categoryWidget.favsRemainingLabel:SetPoint("LEFT", categoryWidget.interactiveLabel, "RIGHT", 6, 0)
 
   -- / originalTabLabel
-  categoryWidget.originalTabLabel = widgets:NoPointsLabel(categoryWidget.interactiveLabel, nil, "")
-  categoryWidget.originalTabLabel:SetTextColor(0.5, 0.5, 0.5, 0.5)
+  categoryWidget.originalTabLabel = widgets:HintLabel(categoryWidget.interactiveLabel, nil, "")
 
   -- / emptyLabel
-  categoryWidget.emptyLabel = widgets:NoPointsLabel(categoryWidget, nil, "this category is empty")
+  categoryWidget.emptyLabel = widgets:HintLabel(categoryWidget, nil, "this category is empty")
   categoryWidget.emptyLabel:SetPoint("LEFT", categoryWidget, "TOPLEFT", enums.ofsxContent, -enums.ofsyCatContent)
-  categoryWidget.emptyLabel:SetTextColor(0.5, 0.5, 0.5, 0.5)
 
   -- / hiddenLabel
-  categoryWidget.hiddenLabel = widgets:NoPointsLabel(categoryWidget, nil, "all items are done")
+  categoryWidget.hiddenLabel = widgets:HintLabel(categoryWidget, nil, "all items are done")
   categoryWidget.hiddenLabel:SetPoint("LEFT", categoryWidget, "TOPLEFT", enums.ofsxContent, -enums.ofsyCatContent)
-  categoryWidget.hiddenLabel:SetTextColor(0.5, 0.5, 0.5, 0.5)
   categoryWidget.hiddenLabel:Hide()
 
   -- / addEditBox
@@ -992,7 +984,7 @@ function widgets:ItemWidget(itemID, parentFrame)
   -- / removeBtn
   itemWidget.removeBtn = widgets:RemoveButton(itemWidget, emf)
   itemWidget.removeBtn:SetPoint("LEFT", emf, "LEFT", enums.ofsxItemIcons, 0)
-  itemWidget.removeBtn:SetScript("OnClick", function() print("remove click") dataManager:DeleteItem(itemID) end)
+  itemWidget.removeBtn:SetScript("OnClick", function() dataManager:DeleteItem(itemID) end)
 
   -- / favoriteBtn
   itemWidget.favoriteBtn = widgets:FavoriteButton(itemWidget, emf)
@@ -1020,10 +1012,7 @@ function widgets:NoPointsRenameEditBox(relativeFrame, text, width, height)
   renameEditBox:SetText(text)
   renameEditBox:SetFontObject("GameFontHighlightLarge")
   renameEditBox:SetAutoFocus(false)
-  widgets:SetFocusEditBox(renameEditBox) -- TODO verify this or redo old version
-  -- renameEditBox:HookScript("OnEditFocusGained", function(self)
-  --   self:HighlightText(0, 0) -- we don't select everything by default when we select the edit box
-  -- end)
+  widgets:SetFocusEditBox(renameEditBox)
   return renameEditBox
 end
 
@@ -1107,7 +1096,7 @@ function widgets:Initialize()
   tutorialsManager:CreateTutoFrames()
   widgets:CreateTDLButton()
   databroker:CreateDatabrokerObject()
-  databroker:CreateTooltipFrame() -- TODO redo this later
+  -- databroker:CreateTooltipFrame() -- TDLATER
   databroker:CreateMinimapButton()
   mainFrame:CreateTDLFrame()
   tabsFrame:CreateFrame(mainFrame:GetFrame())
@@ -1125,12 +1114,10 @@ function widgets:ProfileChanged()
   -- visual updates to match the new profile
   widgets:RefreshTDLButton()
   databroker:SetMode(NysTDL.db.profile.databrokerMode)
-  -- TODO a terme ici ligne pr refresh tooltip frame de databroker
+  -- TDLATER a terme ici ligne pr refresh tooltip frame de databroker
   databroker:RefreshMinimapButton()
 
   widgets:WipeDescFrames()
   mainFrame:Init()
-  print("__1")
   tabsFrame:Init()
-  print("__2")
 end

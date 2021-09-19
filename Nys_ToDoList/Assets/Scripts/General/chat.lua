@@ -157,28 +157,28 @@ chat.commands = {
 
 -- Command catcher:
 function chat.HandleSlashCommands(str)
-  local path = chat.commands -- easier to read
+  local path = chat.commands -- alias
 
-  if (#str == 0) then
-    -- we just entered "/tdl" with no additional args.
+  if #str == 0 then
+    -- we just entered "/tdl" with no additional args
     path[""]()
     return
   end
 
-  local args = {string.split(' ', str)}
+  local args = { string.split(' ', str) }
 
   local deep = 1
   for id, arg in pairs(args) do
-    if (path[arg]) then
-      if (type(path[arg]) == "function") then
+    if path[arg] then
+      if type(path[arg]) == "function" then
         -- all remaining args passed to our function!
         path[arg](select(id + 1, unpack(args)))
         return
-      elseif (type(path[arg]) == "table") then
+      elseif type(path[arg]) == "table" then
         deep = deep + 1
         path = path[arg] -- another sub-table found!
 
-        if ((select(deep, unpack(args))) == nil) then
+        if (select(deep, unpack(args))) == nil then
           -- here we just entered into a sub table, with no additional args
           path[""]()
           return

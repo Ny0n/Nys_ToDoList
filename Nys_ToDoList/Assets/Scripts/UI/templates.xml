@@ -34,11 +34,6 @@
         </Texture>
       </Layer>
     </Layers>
-    <Scripts>
-        <OnLoad inherit="prepend">
-          print("NysTDL_BorderFrame loaded!");
-        </OnLoad>
-    </Scripts>
   </Frame>
   <!--@end-do-not-package@-->
 

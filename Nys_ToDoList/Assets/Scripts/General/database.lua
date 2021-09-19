@@ -151,7 +151,6 @@ end
 function database:ProfileChanged(_, profile)
   -- // here we update (basically in the same order as the core init) everything
   -- that needs an update after a database change
-  print("PROFILE: ", profile)
 
   -- #1 - database (always init a database)
   database:DBInit()
@@ -232,7 +231,6 @@ function database:CreateDefaultTabs()
 
 	-- then we set the default tab
   database.ctab(selectedtabID)
-  print("SET DEFAULT TAB")
 end
 
 function database:MigrateVars()

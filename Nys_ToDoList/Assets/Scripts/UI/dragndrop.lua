@@ -264,22 +264,6 @@ function dragndrop:UpdateDropFrames()
     dragndrop:SetDropFrameData(newDropFrame, currentTab, nil, dataManager:GetPosData(catID, nil, true)+1) -- no parent cat (base cat)
     tinsert(categoryDropFrames, newDropFrame)
   end
-
-  -- // debug stuff
-  -- print("-----------------")
-  -- print(#categoryDropFrames)
-  -- print(#favsDropFrames)
-  -- print(#itemsDropFrames)
-  -- print(#dropFramesBank)
-  -- for k,v in pairs(dropFramesBank) do
-  --   local a, x, b, c, d = v:GetPoint()
-  --   if x.enum == enums.category then
-  --     x = x.catData.name
-  --   elseif x.enum == enums.item then
-  --     x = x.itemData.name
-  --   end
-  --   print(a, x, b, c, d)
-  -- end
 end
 
 function dragndrop:CreateDropFrame(parent, ofsx, ofsy)
@@ -437,13 +421,14 @@ local function dragStop()
 
   -- // we reset everything
 
-  if targetDropFrame then
-    print("--------- Drop data: ----------")
-    print("tab", targetDropFrame.dropData.tabID and select(3, dataManager:Find(targetDropFrame.dropData.tabID)).name or nil)
-    print("cat", targetDropFrame.dropData.catID and select(3, dataManager:Find(targetDropFrame.dropData.catID)).name or nil)
-    print("pos", targetDropFrame.dropData.pos)
-    print("-------------------------------")
-  end
+	-- debug stuff -- REMOVE
+  -- if targetDropFrame then
+  --   print ("--------- Drop data: ----------")
+  --   print ("tab", targetDropFrame.dropData.tabID and dataManager:GetName(targetDropFrame.dropData.tabID) or nil)
+  --   print ("cat", targetDropFrame.dropData.catID and dataManager:GetName(targetDropFrame.dropData.catID) or nil)
+  --   print ("pos", targetDropFrame.dropData.pos)
+  --   print ("-------------------------------")
+  -- end
 
   -- we reset the alpha states
   local contentWidgets = mainFrame:GetContentWidgets()

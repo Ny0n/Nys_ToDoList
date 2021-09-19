@@ -110,8 +110,7 @@ function resetManager:RemoveResetTime(tabID, resetData, resetTimeName)
 	end
 
   if not resetManager:CanRemoveResetTime(resetData) then -- safety check
-    -- MESSAGE
-    print("Cannot remove reset -- there must be at least one")
+    -- MESSAGE "Cannot remove reset -- there must be at least one"
     return false
   end
 
@@ -135,7 +134,9 @@ function resetManager:RenameResetTime(tabID, resetData, oldResetTimeName, newRes
 end
 
 function resetManager:UpdateTimeData(tabID, timeData, hour, min, sec)
-  if not timeData.hour or not timeData.min or not timeData.sec then error("UpdateTimeData error: timeData is not valid") end
+  if not timeData.hour or not timeData.min or not timeData.sec then
+    error("UpdateTimeData error: timeData is not valid") -- KEEP
+  end
 
   if hour then timeData.hour = utils:Clamp(hour, 0, 23) end
 	if min then timeData.min = utils:Clamp(min, 0, 59) end
@@ -365,12 +366,7 @@ function NysTDL:Timer_ResetTab(tabID, timerResetID)
 	dataManager:ToggleTabChecked(tabID, false)
 
 	-- and finally, we check if we need to restart timers for the tab
-  print("Timer_ResetTab", timerResetID)
-  for k,v in pairs(tabData.reset.nextResetTimes) do
-    print(k,v)
-  end
 	if not next(tabData.reset.nextResetTimes) then -- if the last reset for the day was done
-    print("Timer_ResetTab RESTART")
 		private:StartNextTimers(tabID) -- we find the next valid day and restart new timers
 	end
 end
@@ -398,7 +394,6 @@ function resetManager:Initialize(profileChanged)
 		for _,targetTime in pairs(tabData.reset.nextResetTimes) do
 			if currentTime >= targetTime then
 				dataManager:ToggleTabChecked(tabID, false)
-        print("ResetManager: Uncheck "..tabData.name.." tab")
 				autoResetedThisSession = true
 				break
 			end
@@ -471,7 +466,7 @@ function resetManager:PrintTimeDiff(timerResetID, ttime)
     mins = mins + 1
   end
   secs = diff
-  print(string.sub(timerResetID, 1, 3), string.format("Difference: (%s) %d days, %d hours, %d mins, %d secs", ttime > ctime and '+' or '-', days, hours, mins, secs))
+  -- print (string.sub(timerResetID, 1, 3), string.format("Difference: (%s) %d days, %d hours, %d mins, %d secs", ttime > ctime and '+' or '-', days, hours, mins, secs))
 end
 
 --@end-do-not-package@

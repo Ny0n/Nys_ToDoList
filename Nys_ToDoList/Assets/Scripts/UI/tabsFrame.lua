@@ -127,16 +127,11 @@ function private:RefreshShownWholeTabs()
 		table.insert(_shownWholeTabs, loc[pos+i]) -- *specific
 	end
 
-	print("-----------------")
-	print("#_shownWholeTabs", #_shownWholeTabs)
-	print("_nbWholeTabsShown", _nbWholeTabsShown)
-
 	-- *specific:
 	-- in a specific instance (when deleting and not on the leftMostMost tab)
 	-- we will insert nil into _shownWholeTabs, and there will be less
 	-- shown tabs than _nbWholeTabsShown, so we just snap left to fill the space
 	if #_shownWholeTabs < _nbWholeTabsShown then
-		print("yup")
 		local diff = _nbWholeTabsShown - #_shownWholeTabs
 		private:SnapToTab(loc[math.max(pos-diff, 1)])
 	end

@@ -134,7 +134,7 @@ function databroker:SetFrameMode()
   table.wipe(o)
 
   o.type = "launcher"
-  o.label = core.toc.title.." OLALA"
+  o.label = core.toc.title.." TDLATER"
   o.icon = "Interface\\AddOns\\"..addonName.."\\Assets\\Art\\minimap_icon"
 end
 

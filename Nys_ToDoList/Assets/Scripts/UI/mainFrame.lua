@@ -1096,7 +1096,7 @@ local function generateFrameContent()
   tutorialsManager:SetPoint("getMoreInfo", "LEFT", content.helpButton, "RIGHT", 18, 0)
 
   -- frame options menu button
-  content.frameOptionsButton = widgets:IconButton(content, "NysTDL_FrameOptionsButton", L["Frame options"])
+  content.frameOptionsButton = widgets:IconTooltipButton(content, "NysTDL_FrameOptionsButton", L["Frame options"])
   content.frameOptionsButton:SetPoint("RIGHT", content.helpButton, "LEFT", 2, 0)
   content.frameOptionsButton:SetScript("OnClick", function()
     menuClick(enums.menus.frameopt)
@@ -1104,7 +1104,7 @@ local function generateFrameContent()
   tutorialsManager:SetPoint("accessOptions", "BOTTOM", content.frameOptionsButton, "TOP", 0, 18)
 
   -- category menu button
-  content.categoryButton = widgets:IconButton(content, "NysTDL_CategoryButton", L["Add a category"])
+  content.categoryButton = widgets:IconTooltipButton(content, "NysTDL_CategoryButton", L["Add a category"])
   content.categoryButton:SetPoint("RIGHT", content.frameOptionsButton, "LEFT", 2, 0)
   content.categoryButton:SetScript("OnClick", function()
     menuClick(enums.menus.addcat)
@@ -1112,18 +1112,18 @@ local function generateFrameContent()
   tutorialsManager:SetPoint("addNewCat", "TOP", content.categoryButton, "BOTTOM", 0, -18)
 
   -- edit mode button
-  content.editModeButton = widgets:IconButton(content, "NysTDL_EditModeButton", "Toggle edit mode")
+  content.editModeButton = widgets:IconTooltipButton(content, "NysTDL_EditModeButton", "Toggle edit mode")
   content.editModeButton:SetPoint("RIGHT", content.categoryButton, "LEFT", 2, 0)
   content.editModeButton:SetScript("OnClick", function() mainFrame:ToggleEditMode() end)
 
   -- undo button
-  content.undoButton = widgets:IconButton(content, "NysTDL_UndoButton", L["Undo last remove/clear"])
+  content.undoButton = widgets:IconTooltipButton(content, "NysTDL_UndoButton", L["Undo last remove/clear"])
   content.undoButton:SetPoint("RIGHT", content.helpButton, "LEFT", 2, 0)
   content.undoButton:SetScript("OnClick", function() dataManager:Undo() end)
   content.undoButton:Hide()
 
   -- tab actions menu button
-  content.tabActionsButton = widgets:IconButton(content, "NysTDL_TabActionsButton", L["Tab actions"])
+  content.tabActionsButton = widgets:IconTooltipButton(content, "NysTDL_TabActionsButton", L["Tab actions"])
   content.tabActionsButton:SetPoint("RIGHT", content.undoButton, "LEFT", 2, 0)
   content.tabActionsButton:SetScript("OnClick", function()
     menuClick(enums.menus.tabact)
@@ -1168,9 +1168,8 @@ local function generateFrameContent()
   -- below the menus
   content.lineBottom = widgets:ThemeLine(content, database.themes.theme, 0.7)
 
-  content.nothingLabel = widgets:NothingLabel(content)
+  content.nothingLabel = widgets:HintLabel(content, nil, "This tab is empty")
   content.nothingLabel:SetPoint("TOP", content.lineBottom, "TOP", 0, -20)
-  content.nothingLabel:SetText("This tab is empty")
 
   content.loadOrigin = widgets:Dummy(content, content.lineBottom, 0, 0)
   content.loadOrigin:SetPoint("TOPLEFT", content.lineBottom, "TOPLEFT", unpack(enums.loadOriginOffset))

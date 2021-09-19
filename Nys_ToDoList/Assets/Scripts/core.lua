@@ -101,5 +101,4 @@ end
 
 function NysTDL:AddonUpdated()
   -- called once, when the addon gets an update
-  print("wait what no way")
 end
