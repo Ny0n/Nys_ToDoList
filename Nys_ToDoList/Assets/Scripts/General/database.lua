@@ -170,7 +170,7 @@ end
 function database:GlobalNewVersion() -- global
   -- // updates the global saved variables once after an update
 
-  if NysTDL.db.global.tuto_progression > 0 then -- if we already completed the tutorial
+  if NysTDL.db.global.tuto_progression > 5 then -- if we already completed the tutorial
     -- we go to the new part of the edit mode button
     NysTDL.db.global.tuto_progression = 5
   end

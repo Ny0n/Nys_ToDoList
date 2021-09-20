@@ -845,7 +845,7 @@ local function createAddonOptionsTable()
         name = L["Profiles"],
         childGroups = "tab",
         args = {
-          -- importexport = {
+          -- importexport = { -- TDLATER careful with exporting copied profiles... (when tab goes global and vice-versa, change ID)
           --   order = 101, -- because the profiles tab will have 100, the default value, when created from AceDBOptions
           --   type = "group",
           --   name = "Import/Export",
