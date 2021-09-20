@@ -170,6 +170,7 @@ chat.commands = { -- TDLATER FIX if all chat commands locales are the same, we c
       .."\n- "..L["Resize the list"]
       .."\n- "..L["Undo what you deleted and access special actions for the tab"]
   )
+  tutorialsManager:Validate("TM_introduction_editmodeChat")
   end,
 
   [L["tutorial"]] = function()

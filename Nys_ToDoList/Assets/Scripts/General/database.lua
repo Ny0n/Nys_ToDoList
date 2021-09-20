@@ -47,6 +47,7 @@ database.defaults = {
 
     -- // Misc
     tuto_progression = 0,
+    -- tutorials_progression = {}, TDLATER
     UI_reloading = false,
     warnTimerRemaining = 0,
   },
@@ -170,9 +171,8 @@ function database:GlobalNewVersion() -- global
   -- // updates the global saved variables once after an update
 
   if NysTDL.db.global.tuto_progression > 0 then -- if we already completed the tutorial
-    -- since i added in the update a new tutorial frame that i want ppl to see, i just go back step in the tuto progression
-    tutorialsManager:Previous()
-    -- TODO redo
+    -- we go to the new part of the edit mode button
+    NysTDL.db.global.tuto_progression = 5
   end
 end
 

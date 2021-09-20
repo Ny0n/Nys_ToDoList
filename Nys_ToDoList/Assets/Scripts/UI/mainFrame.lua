@@ -102,10 +102,10 @@ local function menuClick(menuEnum)
   if selected == enums.menus.addcat then -- add a category menu
     tdlFrame.content.categoryButton.Icon:SetDesaturated(1) tdlFrame.content.categoryButton.Icon:SetVertexColor(1, 1, 1)
     widgets:SetFocusEditBox(menuFrames[enums.menus.addcat].categoryEditBox)
-    tutorialsManager:Validate("addNewCat") -- tutorial
+    tutorialsManager:Validate("TM_introduction_addNewCat") -- tutorial
   elseif selected == enums.menus.frameopt then -- frame options menu
     tdlFrame.content.frameOptionsButton.Icon:SetDesaturated(1)
-    tutorialsManager:Validate("accessOptions") -- tutorial
+    tutorialsManager:Validate("TM_introduction_accessOptions") -- tutorial
   elseif selected == enums.menus.tabact then -- tab actions menu
     tdlFrame.content.tabActionsButton.Icon:SetDesaturated(1)
   end
@@ -164,6 +164,22 @@ function mainFrame:IsVisible(frame, margin)
   and frameY - margin > tdlFrameMinY
   and frameY + margin < tdlFrameMaxY then
     return true
+  end
+end
+
+function mainFrame:GetFirstShownItemWidget()
+  -- returns the title or nil if not found
+  local tabData = select(3, dataManager:Find(database.ctab()))
+  local firstCat = select(2, next(tabData.orderedCatIDs))
+  if firstCat then
+    local firstItemWidget
+    local catData = select(3, dataManager:Find(firstCat))
+    for _,contentID in pairs(catData.orderedContentIDs) do
+      local widget = contentWidgets[contentID]
+      if widget.enum == enums.item then
+        return widget
+      end
+    end
   end
 end
 
@@ -340,6 +356,12 @@ function mainFrame:ToggleEditMode(state, forceUpdate)
     mainFrame.editMode = not mainFrame.editMode
   end
   if not forceUpdate and orig == mainFrame.editMode then return end -- if we didn't change the edit mode
+
+  if mainFrame.editMode then
+    tutorialsManager:SetPoint("TM_introduction_editmodeChat", "RIGHT", tdlFrame, "LEFT", -18, 0)
+  else
+    tutorialsManager:SetPoint("TM_introduction_editmodeChat", "CENTER", nil, "CENTER", 0, 0)
+  end
 
   -- // start
 
@@ -649,7 +671,12 @@ local function loadList()
     catWidget:Show()
 
     if catOrder == 1 then -- if it's the first loaded cat widget
-      tutorialsManager:SetPoint("addItem", "RIGHT", catWidget, "LEFT", -23, 0) -- we put the corresponding tuto on it
+      tutorialsManager:SetPoint("TM_introduction_addItem", "RIGHT", catWidget, "LEFT", -23, 0) -- we put the corresponding tuto on it
+      -- local firstItemWidget = mainFrame:GetFirstShownItemWidget()
+      -- tutorialsManager:SetPoint("TM_editmode_delete", "RIGHT", firstItemWidget, "LEFT", 0, 0)
+      -- tutorialsManager:SetPoint("TM_editmode_favdesc", "RIGHT", firstItemWidget, "LEFT", math.abs(enums.ofsxItemIcons), 0)
+      -- tutorialsManager:SetPoint("TM_editmode_rename", "TOP", firstItemWidget.interactiveLabel, "BOTTOM", 0, 0)
+      -- tutorialsManager:SetPoint("TM_editmode_sort", "BOTTOM", firstItemWidget.interactiveLabel, "TOP", 0, 0)
     end
 
     local originalTabName = select(3, dataManager:Find(catWidget.catData.originalTabID)).name
@@ -729,7 +756,7 @@ local function generateMenuAddACategory()
   local function addCat() -- DRY
     if dataManager:CreateCategory(menuframe.categoryEditBox:GetText(), database.ctab()) then
       menuframe.categoryEditBox:SetText("") -- we clear the box if the adding was a success
-      tutorialsManager:Validate("addCat") -- tutorial
+      tutorialsManager:Validate("TM_introduction_addCat") -- tutorial
     end
     widgets:SetFocusEditBox(menuframe.categoryEditBox)
   end
@@ -932,7 +959,7 @@ local function generateMenuAddACategory()
   menuframe.addBtn:SetPoint("TOP", menuframe.menuTitle, "TOP", 0, -65)
   menuframe.addBtn:SetScript("OnClick", addCat)
 
-  tutorialsManager:SetPoint("addCat", "TOP", menuframe.addBtn, "BOTTOM", 0, -22)
+  tutorialsManager:SetPoint("TM_introduction_addCat", "TOP", menuframe.addBtn, "BOTTOM", 0, -22)
 end
 
 local function generateMenuFrameOptions()
@@ -1091,14 +1118,19 @@ local function generateFrameContent()
   content.helpButton:SetPoint("TOPRIGHT", content.title, "TOP", 140, -25)
   content.helpButton:SetScript("OnClick", function()
     SlashCmdList.NysTDL(L["info"])
-    tutorialsManager:Validate("getMoreInfo") -- tutorial
+    tutorialsManager:Validate("TM_introduction_getMoreInfo")
   end)
-  tutorialsManager:SetPoint("getMoreInfo", "LEFT", content.helpButton, "RIGHT", 18, 0)
+  tutorialsManager:SetPoint("TM_introduction_getMoreInfo", "LEFT", content.helpButton, "RIGHT", 18, 0)
 
   -- edit mode button
   content.editModeButton = widgets:IconTooltipButton(content, "NysTDL_EditModeButton", L["Toggle edit mode"])
   content.editModeButton:SetPoint("RIGHT", content.helpButton, "LEFT", 2, 0)
-  content.editModeButton:SetScript("OnClick", function() mainFrame:ToggleEditMode() end)
+  content.editModeButton:SetScript("OnClick", function()
+    tutorialsManager:Validate("TM_introduction_editmode") -- i need to place this here to be sure it was a user action
+    mainFrame:ToggleEditMode()
+  end)
+  tutorialsManager:SetPoint("TM_introduction_editmode", "BOTTOM", content.editModeButton, "TOP", 0, 18)
+  -- tutorialsManager:SetPoint("TM_editmode_editmodeBtn", "BOTTOM", content.editModeButton, "TOP", 0, 18) -- TDLATER
 
   -- frame options menu button
   content.frameOptionsButton = widgets:IconTooltipButton(content, "NysTDL_FrameOptionsButton", L["Frame options"])
@@ -1106,7 +1138,7 @@ local function generateFrameContent()
   content.frameOptionsButton:SetScript("OnClick", function()
     menuClick(enums.menus.frameopt)
   end)
-  tutorialsManager:SetPoint("accessOptions", "BOTTOM", content.frameOptionsButton, "TOP", 0, 18)
+  tutorialsManager:SetPoint("TM_introduction_accessOptions", "BOTTOM", content.frameOptionsButton, "TOP", 0, 18)
 
   -- category menu button
   content.categoryButton = widgets:IconTooltipButton(content, "NysTDL_CategoryButton", L["Add a category"])
@@ -1114,13 +1146,15 @@ local function generateFrameContent()
   content.categoryButton:SetScript("OnClick", function()
     menuClick(enums.menus.addcat)
   end)
-  tutorialsManager:SetPoint("addNewCat", "TOP", content.categoryButton, "BOTTOM", 0, -18)
+  tutorialsManager:SetPoint("TM_introduction_addNewCat", "TOP", content.categoryButton, "BOTTOM", 0, -18)
 
   -- undo button
   content.undoButton = widgets:IconTooltipButton(content, "NysTDL_UndoButton", L["Undo last remove/clear"])
   content.undoButton:SetPoint("RIGHT", content.editModeButton, "LEFT", 2, 0)
   content.undoButton:SetScript("OnClick", function() dataManager:Undo() end)
   content.undoButton:Hide()
+  tutorialsManager:SetPoint("TM_editmode_buttons", "BOTTOM", content.undoButton, "TOP", -15, 18)
+  tutorialsManager:SetPoint("TM_editmode_undo", "BOTTOM", content.undoButton, "TOP", 0, 18)
 
   -- tab actions menu button
   content.tabActionsButton = widgets:IconTooltipButton(content, "NysTDL_TabActionsButton", L["Tab actions"])
@@ -1191,8 +1225,6 @@ function mainFrame:CreateTDLFrame()
     insets = { left = 2, right = 2, top = 2, bottom = 2 }
   })
 
-  tutorialsManager:SetPoint("ALTkey", "BOTTOM", tdlFrame, "TOP", 0, 18)
-
   -- properties
   tdlFrame:EnableMouse(true)
   tdlFrame:SetMovable(true)
@@ -1208,6 +1240,7 @@ function mainFrame:CreateTDLFrame()
   tdlFrame:HookScript("OnSizeChanged", mainFrame.Event_TDLFrame_OnSizeChanged)
   tdlFrame:HookScript("OnMouseUp", function(self, button) -- toggle edit mode
     if button == "RightButton" then
+      tutorialsManager:Validate("TM_introduction_editmode") -- i need to place this here to be sure it was a user action
       mainFrame:ToggleEditMode()
     end
   end)
@@ -1282,6 +1315,7 @@ function mainFrame:CreateTDLFrame()
   tdlFrame.resizeButton:HookScript("OnClick", function() -- reset size
     tdlFrame:SetSize(enums.tdlFrameDefaultWidth, enums.tdlFrameDefaultHeight)
   end)
+  tutorialsManager:SetPoint("TM_editmode_resize", "LEFT", tdlFrame.resizeButton, "RIGHT", 0, 0)
 
   -- // inside the scroll frame
 

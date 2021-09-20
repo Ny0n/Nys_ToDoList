@@ -720,7 +720,7 @@ function widgets:CategoryWidget(catID, parentFrame)
         categoryWidget.addEditBox:SetPoint("LEFT", categoryWidget.interactiveLabel, "RIGHT", 10, 0)
 
         widgets:SetFocusEditBox(categoryWidget.addEditBox) -- we give it the focus
-        tutorialsManager:Validate("addItem") -- tutorial
+        tutorialsManager:Validate("TM_introduction_addItem") -- tutorial
       end
     end
   end)

@@ -6,7 +6,8 @@ addonTable.devLocale = L
 
 -- "방탄소년단" test locale (:D)
 
-L["More specifically you can undo items, categories, and even tab deletions"] = true
+L["Please type %s and read the chat message for more information about this mode"] = true
+L["To delete items and do a lot more, you can right-click anywhere on the list or click on this button to toggle the edit mode"] = true
 L["(there must be at least one left)"] = true
 L["Cannot remove this tab"] = true
 L["This tab is empty"] = true
@@ -51,7 +52,7 @@ L["Clear undo successful!"] = true
 L["Clear undo interrupted"] = true
 L["Could not empty category, some of its items are protected"] = true
 L["Could not empty tab, some of its contents are protected"] = true
-L["Added \"%s\" back (%s)"] = true
+L["Added %s back (%s)"] = true
 L["Nothing to undo"] = true
 L["item"] = true
 L["category"] = true

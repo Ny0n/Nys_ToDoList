@@ -970,7 +970,7 @@ function dataManager:Undo()
 					local type = ((toUndo.enum == enums.item) and L["item"])
 					or ((toUndo.enum == enums.category) and L["category"])
 					or ((toUndo.enum == enums.tab) and L["tab"])
-					chat:Print(utils:SafeStringFormat(L["Added \"%s\" back (%s)"], dataManager:GetName(toUndo.ID), type))
+					chat:Print(utils:SafeStringFormat(L["Added %s back (%s)"], "\""..dataManager:GetName(toUndo.ID).."\"", type))
 				-- end
 			end
 		end
