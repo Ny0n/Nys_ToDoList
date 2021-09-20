@@ -3,6 +3,40 @@
 
   <!-- /*******************/ CUSTOM TEMPLATES /*************************/ -->
 
+  <!--@do-not-package@-->
+  <Frame name="NysTDL_TexCoordsTesting" parent="UIParent" inherits="BackdropTemplate" hidden="true">
+    <KeyValues>
+        <KeyValue key="backdropInfo" value="NysTDL_BACKDROP_INFO" type="global"/>
+        <!-- <KeyValue key="backdropInfo" value="NysTDL_BACKDROP_INFO" type="global"/> -->
+        <!-- <KeyValue key="backdropColor" value="NysTDL_COLOR_X" type="global"/> -->
+        <!-- <KeyValue key="backdropBorderColor" value="NysTDL_COLOR_X" type="global"/> -->
+        <!-- <KeyValue key="backdropColorAlpha" value="0" type="number"/> -->
+        <KeyValue key="backdropBorderColorAlpha" value="0" type="number"/>
+    </KeyValues>
+    <Size x="40" y="40"/>
+    <Anchors>
+      <Anchor point="CENTER" x="0" y="60"/>
+    </Anchors>
+    <Layers>
+      <Layer level="ARTWORK">
+        <!-- *************** -->
+        <!-- texture to test -->
+
+        <!-- <Texture parentKey="Arrow" file="Interface\Azerite\Azerite"> -->
+        <Texture parentKey="Icon" file="Interface\Transmogrify\Transmogrify">
+          <TexCoords left="0.887" right="0.934" top="0.18" bottom="0.226"/>
+
+          <!-- *************** -->
+          <Anchors>
+            <Anchor point="TOPLEFT" x="0" y="0"/>
+            <Anchor point="BOTTOMRIGHT" x="0" y="0"/>
+          </Anchors>
+        </Texture>
+      </Layer>
+    </Layers>
+  </Frame>
+  <!--@end-do-not-package@-->
+
   <!-- nice icon button template -->
   <Button name="NysTDL_IconButtonTemplate" virtual="true">
     <NormalTexture file="Interface\Buttons\UI-SquareButton-Up" desaturated="true">
@@ -23,37 +57,39 @@
     <!-- icon position adaptation scripts -->
     <Scripts>
       <OnMouseDown>
+        if not self:IsEnabled() then return end
         <!-- nudge and dim the icon down a little -->
-        local xOffset = -1;
-        if (self.name == "UndoButton") then xOffset = -2; end
+        local xOffset = -1
+        if self.name == "UndoButton" then xOffset = -2 end
 
-        local yOffset = -2;
-        if (self.name == "UndoButton") then yOffset = -3; end
-        if (self.name == "CategoryButton") then yOffset = -3; end
+        local yOffset = -2
+        if self.name == "UndoButton" then yOffset = -3 end
+        if self.name == "CategoryButton" then yOffset = -3 end
 
         self.Icon:SetPoint("CENTER", xOffset, yOffset) self.Icon:SetAlpha(0.5)
       </OnMouseDown>
       <OnMouseUp>
+        if not self:IsEnabled() then return end
         <!-- reset the icon's position and opacity -->
-        local xOffset = 0;
-        if (self.name == "UndoButton") then xOffset = -0.5; end
-        if (self.name == "CategoryButton") then xOffset = 0.5; end
+        local xOffset = 0
+        if self.name == "UndoButton" then xOffset = -0.5 end
+        if self.name == "CategoryButton" then xOffset = 0.5 end
 
-        local yOffset = 0;
-        if (self.name == "UndoButton") then yOffset = -0.5; end
-        if (self.name == "CategoryButton") then yOffset = -1; end
+        local yOffset = 0
+        if self.name == "UndoButton" then yOffset = -0.5 end
+        if self.name == "CategoryButton" then yOffset = -1 end
 
         self.Icon:SetPoint("CENTER", xOffset, yOffset) self.Icon:SetAlpha(1)
       </OnMouseUp>
       <OnShow>
         <!-- reset the icon's position and opacity -->
-        local xOffset = 0;
-        if (self.name == "UndoButton") then xOffset = -0.5; end
-        if (self.name == "CategoryButton") then xOffset = 0.5; end
+        local xOffset = 0
+        if self.name == "UndoButton" then xOffset = -0.5 end
+        if self.name == "CategoryButton" then xOffset = 0.5 end
 
-        local yOffset = 0;
-        if (self.name == "UndoButton") then yOffset = -0.5; end
-        if (self.name == "CategoryButton") then yOffset = -1; end
+        local yOffset = 0
+        if self.name == "UndoButton" then yOffset = -0.5 end
+        if self.name == "CategoryButton" then yOffset = -1 end
 
         self.Icon:SetPoint("CENTER", xOffset, yOffset) self.Icon:SetAlpha(1)
       </OnShow>
@@ -63,74 +99,63 @@
   <Frame name="NysTDL_IconButtonTooltipScripts" virtual="true">
     <Frames>
       <!-- small tooltip frame to describe use of the buttons -->
-      <Frame parentKey="MiniTooltip" frameStrata="TOOLTIP" hidden="true">
-        <Size x="0" y="26"/>
-        <Layers>
-          <Layer>
-            <FontString parentKey="Text" inherits="GameFontNormalSmall"/>
-          </Layer>
-        </Layers>
+      <Frame parentKey="Tooltip" hidden="true"> <!-- parentKey ref in mainFrame -->
+        <Size x="0" y="26"/> <!-- size is set dynamically -->
+        <!-- content created OnLoad -->
       </Frame>
     </Frames>
 
     <!-- Tooltip associated scripts -->
     <Scripts>
       <OnLoad>
-        if BackdropTemplateMixin then -- SL / 9.0
-            self.MiniTooltip.Backdrop = CreateFrame("Frame", nil, self.MiniTooltip, "BackdropTemplate")
-            self.MiniTooltip.Backdrop:SetAllPoints()
-            self.MiniTooltip.Backdrop.backdropInfo = {
-            	bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
-            	edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-            	tile = true,
-            	tileSize = 16,
-            	edgeSize = 16,
-            	insets = { left = 2, right = 2, top = 2, bottom = 2, },
-            }
-            self.MiniTooltip.Backdrop:ApplyBackdrop()
-            self.MiniTooltip.Backdrop:SetBackdropColor(0.05, 0.05, 0.05, 1)
-            self.MiniTooltip.Backdrop:SetBackdropBorderColor(0.5, 0.5, 0.5, 1)
-            self.MiniTooltip.Backdrop:SetFrameStrata("DIALOG") -- lower strata than the text, so that is acts as a background (but over the other elements of the frame)
-        else -- BFA
-            self.MiniTooltip.Backdrop = CreateFrame("Frame", nil, self.MiniTooltip)
-            self.MiniTooltip.Backdrop:SetAllPoints()
-            self.MiniTooltip.Backdrop:SetBackdrop({
-              bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
-              edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-              tile = true,
-              tileSize = 16,
-              edgeSize = 16,
-              insets = { left = 2, right = 2, top = 2, bottom = 2, },
-            })
-            self.MiniTooltip.Backdrop:SetBackdropColor(0.05, 0.05, 0.05, 1)
-            self.MiniTooltip.Backdrop:SetBackdropBorderColor(0.5, 0.5, 0.5, 1)
-            self.MiniTooltip.Backdrop:SetFrameStrata("DIALOG") -- lower strata than the text, so that is acts as a background (but over the other elements of the frame)
-        end
+        -- backdrop
+        self.Tooltip.backdrop = CreateFrame("Frame", nil, self.Tooltip, BackdropTemplateMixin and "BackdropTemplate" or nil)
+        self.Tooltip.backdrop:SetAllPoints()
+        self.Tooltip.backdrop:SetBackdrop({
+          bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
+          edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+          tile = true, tileSize = 16, edgeSize = 16,
+          insets = { left = 2, right = 2, top = 2, bottom = 2, },
+        })
+        self.Tooltip.backdrop:SetBackdropColor(0, 0, 0, 1)
+        self.Tooltip.backdrop:SetBackdropBorderColor(0.65, 0.65, 0.65, 1)
+
+        -- text
+        self.Tooltip.backdrop.text = self.Tooltip.backdrop:CreateFontString(nil)
+        self.Tooltip.backdrop.text:SetAllPoints()
+        self.Tooltip.backdrop.text:SetFontObject("GameFontNormalSmall")
       </OnLoad>
       <OnEnter>
         <!-- Show and reposition the tooltip -->
-        self.MiniTooltip.Text:SetText(self.tooltip)
-        self.MiniTooltip:SetWidth(self.MiniTooltip.Text:GetStringWidth()+16)
+        if type(self.tooltip) ~= "string" or self.tooltip == "" then return end -- no tooltip
+
+        self.Tooltip.backdrop.text:SetText(self.tooltip) -- may be set by locale AFTER creation, so we update it here
+        self.Tooltip:SetWidth(self.Tooltip.backdrop.text:GetStringWidth()+16)
+
         local _, n = string.gsub(self.tooltip, "\n", "")
-        if (n > 0) then
-          self.MiniTooltip:SetHeight(26 + n*10)
+        if n > 0 then
+          self.Tooltip:SetHeight(26 + n*10)
         else
-          self.MiniTooltip:SetHeight(26)
+          self.Tooltip:SetHeight(26)
         end
-        if (self.name == "AddButton") then
-          self.MiniTooltip:SetPoint("BOTTOMRIGHT", self, "TOPRIGHT", 4, 7)
-        elseif (self.name == "TooltipResizeButton") then
-          self.MiniTooltip:SetPoint("BOTTOMRIGHT", self, "BOTTOMLEFT", -5, 0)
-        elseif (self.name == "ClearButton") then
-          self.MiniTooltip:SetPoint("BOTTOM", self, "TOP", 0, 0)
+
+        if self.name == "AddButton" then -- cat add btn
+          self.Tooltip:SetPoint("BOTTOMRIGHT", self, "TOPRIGHT", 4, 7)
+        elseif self.name == "TooltipResizeButton" then -- frame resize btn
+          self.Tooltip:SetPoint("BOTTOMRIGHT", self, "BOTTOMLEFT", -5, 0)
+        elseif self.name == "ClearButton" then -- desc frame clear btn
+          self.Tooltip:SetPoint("BOTTOM", self, "TOP", 0, 0)
+        elseif self.name == "HelpButton" then -- information button
+          self.Tooltip:SetPoint("BOTTOMRIGHT", self, "TOPRIGHT", -4, -1)
         else
-          self.MiniTooltip:SetPoint("RIGHT", self, "LEFT", 0, 0)
+          self.Tooltip:SetPoint("BOTTOMRIGHT", self, "TOPRIGHT", -4, -2)
         end
-        self.MiniTooltip:Show()
+
+        self.Tooltip:Show()
       </OnEnter>
       <OnLeave>
         <!-- Hide the tooltip -->
-        self.MiniTooltip:Hide()
+        self.Tooltip:Hide()
       </OnLeave>
     </Scripts>
   </Frame>
@@ -139,7 +164,7 @@
   <Button name="NysTDL_CategoryButton" inherits="NysTDL_IconButtonTemplate, NysTDL_IconButtonTooltipScripts, NysTDL_IconButtonPositionScripts" virtual="true">
     <Size x="32" y="32"/>
     <KeyValues>
-      <KeyValue key="tooltip" value="locale"/>
+      <KeyValue key="tooltip" value=""/>
       <KeyValue key="name" value="CategoryButton"/>
     </KeyValues>
     <Layers>
@@ -160,13 +185,15 @@
   <Button name="NysTDL_UndoButton" inherits="NysTDL_IconButtonTemplate, NysTDL_IconButtonTooltipScripts, NysTDL_IconButtonPositionScripts" virtual="true">
     <Size x="32" y="32"/>
     <KeyValues>
-      <KeyValue key="tooltip" value="locale"/>
+      <KeyValue key="tooltip" value=""/>
       <KeyValue key="name" value="UndoButton"/>
     </KeyValues>
     <Layers>
       <Layer level="OVERLAY">
-        <Texture parentKey="Icon" file="Interface\Buttons\UI-RefreshButton">
-          <Size x="14" y="14"/>
+        <Texture parentKey="Icon" file="Interface\Transmogrify\Transmogrify">
+          <TexCoords left="0.538" right="0.575" top="0.255" bottom="0.288"/>
+          <Color r="0.9" g="1" b="1"/>
+          <Size x="15" y="14"/>
           <Anchors>
             <Anchor point="CENTER"/>
           </Anchors>
@@ -179,7 +206,7 @@
   <Button name="NysTDL_TabActionsButton" inherits="NysTDL_IconButtonTemplate, NysTDL_IconButtonTooltipScripts, NysTDL_IconButtonPositionScripts" virtual="true">
     <Size x="32" y="32"/>
     <KeyValues>
-      <KeyValue key="tooltip" value="locale"/>
+      <KeyValue key="tooltip" value=""/>
       <KeyValue key="name" value="TabActionsButton"/>
     </KeyValues>
     <Layers>
@@ -194,11 +221,38 @@
     </Layers>
   </Button>
 
+  <!-- Edit Mode button -->
+  <Button name="NysTDL_EditModeButton" inherits="NysTDL_IconButtonTemplate, NysTDL_IconButtonTooltipScripts, NysTDL_IconButtonPositionScripts" virtual="true">
+    <Size x="32" y="32"/>
+    <KeyValues>
+      <KeyValue key="tooltip" value=""/>
+      <KeyValue key="name" value="EditModeButton"/>
+    </KeyValues>
+    <Layers>
+      <Layer level="OVERLAY">
+        <Texture parentKey="Icon" file="Interface\BUTTONS\UI-OptionsButton">
+          <Size x="14" y="14"/>
+          <Anchors>
+            <Anchor point="CENTER"/>
+          </Anchors>
+        </Texture>
+      </Layer>
+      <Layer level="OVERLAY">
+        <Texture parentKey="Glow" file="Interface\BUTTONS\CheckButtonGlow" hidden="true">
+          <Size x="40" y="40"/>
+          <Anchors>
+            <Anchor point="CENTER"/>
+          </Anchors>
+        </Texture>
+      </Layer>
+    </Layers>
+  </Button>
+
   <!-- Frame Options button -->
   <Button name="NysTDL_FrameOptionsButton" inherits="NysTDL_IconButtonTemplate, NysTDL_IconButtonTooltipScripts, NysTDL_IconButtonPositionScripts" virtual="true">
     <Size x="32" y="32"/>
     <KeyValues>
-      <KeyValue key="tooltip" value="locale"/>
+      <KeyValue key="tooltip" value=""/>
       <KeyValue key="name" value="FrameOptionsButton"/>
     </KeyValues>
     <Layers>
@@ -217,7 +271,7 @@
   <Button name="NysTDL_HelpButton" inherits="InlineHyperlinkFrameTemplate, NysTDL_IconButtonTooltipScripts, NysTDL_IconButtonPositionScripts" virtual="true">
     <Size x="30" y="30"/>
     <KeyValues>
-      <KeyValue key="tooltip" value="locale"/>
+      <KeyValue key="tooltip" value=""/>
       <KeyValue key="name" value="HelpButton"/>
     </KeyValues>
     <Layers>
@@ -254,7 +308,7 @@
   <Button name="NysTDL_ClearButton" inherits="NysTDL_IconButtonTemplate, NysTDL_IconButtonPositionScripts, NysTDL_IconButtonTooltipScripts" virtual="true">
     <Size x="25" y="25"/>
     <KeyValues>
-      <KeyValue key="tooltip" value="locale"/>
+      <KeyValue key="tooltip" value=""/>
       <KeyValue key="name" value="ClearButton"/>
     </KeyValues>
     <Layers>
@@ -305,23 +359,6 @@
     </Layers>
   </Button>
 
-  <!-- Dropdown button -->
-  <Button name="NysTDL_DropdownButton" virtual="true">
-    <Size x="25" y="25"/> <!-- Size of interactable zone -->
-    <KeyValues>
-      <KeyValue key="name" value="DropdownButton"/>
-    </KeyValues>
-		<NormalTexture file="Interface\ChatFrame\UI-ChatIcon-ScrollDown-Up"/>
-		<PushedTexture file="Interface\ChatFrame\UI-ChatIcon-ScrollDown-Down"/>
-		<DisabledTexture file="Interface\ChatFrame\UI-ChatIcon-ScrollDown-Disabled"/>
-    <HighlightTexture file="Interface\Buttons\UI-Common-MouseHilight" alphaMode="ADD" alpha="0.75">
-      <Anchors>
-        <Anchor point="TOPLEFT" x="2" y="-2"/>
-        <Anchor point="BOTTOMRIGHT" x="-2" y="2"/>
-      </Anchors>
-    </HighlightTexture>
-  </Button>
-
   <!-- Description button -->
   <Button name="NysTDL_DescButton" inherits="InlineHyperlinkFrameTemplate, NysTDL_IconButtonPositionScripts" virtual="true">
     <Size x="13" y="13"/> <!-- Size of interactable zone -->
@@ -340,6 +377,23 @@
     </Layers>
   </Button>
 
+  <!-- Dropdown button -->
+  <Button name="NysTDL_DropdownButton" virtual="true">
+    <Size x="25" y="25"/> <!-- Size of interactable zone -->
+    <KeyValues>
+      <KeyValue key="name" value="DropdownButton"/>
+    </KeyValues>
+		<NormalTexture file="Interface\ChatFrame\UI-ChatIcon-ScrollDown-Up"/>
+		<PushedTexture file="Interface\ChatFrame\UI-ChatIcon-ScrollDown-Down"/>
+		<DisabledTexture file="Interface\ChatFrame\UI-ChatIcon-ScrollDown-Disabled"/>
+    <HighlightTexture file="Interface\Buttons\UI-Common-MouseHilight" alphaMode="ADD" alpha="0.75">
+      <Anchors>
+        <Anchor point="TOPLEFT" x="2" y="-2"/>
+        <Anchor point="BOTTOMRIGHT" x="-2" y="2"/>
+      </Anchors>
+    </HighlightTexture>
+  </Button>
+
   <!-- resize button -->
   <Button name="NysTDL_ResizeButton" virtual="true">
     <Size x="16" y="16"/> <!-- Size of interactable zone -->
@@ -352,7 +406,7 @@
   <Button name="NysTDL_TooltipResizeButton" inherits="NysTDL_IconButtonTooltipScripts" virtual="true">
     <Size x="16" y="16"/> <!-- Size of interactable zone -->
     <KeyValues>
-      <KeyValue key="tooltip" value="locale"/>
+      <KeyValue key="tooltip" value=""/>
       <KeyValue key="name" value="TooltipResizeButton"/>
     </KeyValues>
     <NormalTexture file="Interface\ChatFrame\UI-ChatIM-SizeGrabber-Up"/>
@@ -424,31 +478,32 @@
 		<Scripts>
 			<OnMouseDown>
 				if ( self:IsEnabled() ) then
-					local name = self:GetName();
-					_G[name.."Left"]:SetTexture("Interface\\Buttons\\UI-SilverButtonLG-Left-Down");
-					_G[name.."Middle"]:SetTexture("Interface\\Buttons\\UI-SilverButtonLG-Mid-Down");
-					_G[name.."Right"]:SetTexture("Interface\\Buttons\\UI-SilverButtonLG-Right-Down");
-					local contentsFrame = _G[name.."ContentsFrame"];
+					local name = self:GetName()
+					_G[name.."Left"]:SetTexture("Interface\\Buttons\\UI-SilverButtonLG-Left-Down")
+					_G[name.."Middle"]:SetTexture("Interface\\Buttons\\UI-SilverButtonLG-Mid-Down")
+					_G[name.."Right"]:SetTexture("Interface\\Buttons\\UI-SilverButtonLG-Right-Down")
+					local contentsFrame = _G[name.."ContentsFrame"]
 					if ( contentsFrame ) then
-						contentsFrame:SetPoint("TOPLEFT", -2, -1);
+						contentsFrame:SetPoint("TOPLEFT", -2, -1)
 					end
 				end
 			</OnMouseDown>
 			<OnMouseUp>
 				if ( self:IsEnabled() ) then
-					local name = self:GetName();
-					_G[name.."Left"]:SetTexture("Interface\\Buttons\\UI-SilverButtonLG-Left-Up");
-					_G[name.."Middle"]:SetTexture("Interface\\Buttons\\UI-SilverButtonLG-Mid-Up");
-					_G[name.."Right"]:SetTexture("Interface\\Buttons\\UI-SilverButtonLG-Right-Up");
-					local contentsFrame = _G[name.."ContentsFrame"];
+					local name = self:GetName()
+					_G[name.."Left"]:SetTexture("Interface\\Buttons\\UI-SilverButtonLG-Left-Up")
+					_G[name.."Middle"]:SetTexture("Interface\\Buttons\\UI-SilverButtonLG-Mid-Up")
+					_G[name.."Right"]:SetTexture("Interface\\Buttons\\UI-SilverButtonLG-Right-Up")
+					local contentsFrame = _G[name.."ContentsFrame"]
 					if ( contentsFrame ) then
-						contentsFrame:SetPoint("TOPLEFT", 0, 0);
+						contentsFrame:SetPoint("TOPLEFT", 0, 0)
 					end
 				end
 			</OnMouseUp>
 		</Scripts>
 	</Button>
 
+  <!-- Reused WoW template / HelpPlateTooltip -->
   <Frame name="NysTDL_HelpPlateTooltip" inherits="GlowBoxTemplate" frameStrata="FULLSCREEN_DIALOG" frameLevel="2" virtual="true">
 		<Layers>
 			<Layer level="OVERLAY">
@@ -514,20 +569,21 @@
 		</Layers>
 		<Scripts>
 			<OnLoad>
-				self.Text:SetSpacing(4);
-				SetClampedTextureRotation(self.ArrowLEFT, 270);
-				SetClampedTextureRotation(self.ArrowRIGHT, 90);
-				SetClampedTextureRotation(self.ArrowGlowLEFT, 270);
-				SetClampedTextureRotation(self.ArrowGlowRIGHT, 90);
+				self.Text:SetSpacing(4)
+				SetClampedTextureRotation(self.ArrowLEFT, 270)
+				SetClampedTextureRotation(self.ArrowRIGHT, 90)
+				SetClampedTextureRotation(self.ArrowGlowLEFT, 270)
+				SetClampedTextureRotation(self.ArrowGlowRIGHT, 90)
 			</OnLoad>
 			<OnShow>
-				self:SetHeight(self.Text:GetHeight()+30);
+				self:SetHeight(self.Text:GetHeight()+30)
 			</OnShow>
 		</Scripts>
 	</Frame>
 
+  <!-- Clickable label -->
   <Frame name="NysTDL_InteractiveLabel" virtual="true">
-    <!-- the size is set everytime the text changes, see the config file (func: CreateNoPointsInteractiveLabel) -->
+    <!-- the size is set everytime the text changes, see the widgets.lua file (func: widgets.noPointsInteractiveLabel) -->
 		<Layers>
 			<Layer level="OVERLAY">
 				<FontString name="$parentText" parentKey="Text">
@@ -546,5 +602,94 @@
 			</Button>
 		</Frames>
 	</Frame>
+
+  <!-- Drop line -->
+  <Frame name="NysTDL_DropLine" virtual="true">
+    <Size x="1" y="1"/> <!-- Just so that we see the content of the frame -->
+    <Layers>
+      <Layer level="BACKGROUND">
+        <Texture parentKey="Line" file="Interface\CovenantChoice\CovenantChoiceCelebration">
+          <TexCoords left="0.1" right="0.3" top="0.90" bottom="0.95"/>
+          <Size x="200" y="15"/>
+          <Anchors>
+            <Anchor point="LEFT" x="-5" y="0"/>
+          </Anchors>
+        </Texture>
+      </Layer>
+      <Layer level="ARTWORK">
+        <Texture parentKey="Arrow" file="Interface\Azerite\Azerite">
+          <TexCoords left="0.756" right="0.848" top="0.841" bottom="0.864"/>
+          <Size x="15" y="15"/>
+          <Anchors>
+            <Anchor point="LEFT" x="-16" y="-3"/>
+          </Anchors>
+        </Texture>
+      </Layer>
+    </Layers>
+    <Scripts>
+			<OnLoad>
+				self.Arrow:SetRotation(0.77)
+			</OnLoad>
+		</Scripts>
+	</Frame>
+
+  <!-- Reused WoW template / $parentOverflowButton -->
+  <Button name="NysTDL_OverflowButton" virtual="true">
+    <!-- size and points and a lot of other things set in the code -->
+		<NormalTexture file="Interface\BUTTONS\Arrow-Down-Down">
+      <TexCoords left="0" right="1" top="0" bottom="0.5"/>
+    </NormalTexture>
+		<HighlightTexture alpha="0.7" parentKey="Highlight" file="Interface\BUTTONS\UI-Common-MouseHilight" alphaMode="ADD" desaturated="true">
+      <Color r="1" g="0.84" b="0"/>
+    </HighlightTexture>
+	</Button>
+
+  <!-- Reused WoW template / DockManagerOverflowListButtonTemplate -->
+  <Button name="NysTDL_OverflowListButton" virtual="true">
+		<Layers>
+			<Layer level="BACKGROUND">
+				<Texture name="$parentHighlight" file="Interface\QuestFrame\UI-QuestTitleHighlight" parentKey="Highlight" alphaMode="ADD" setAllPoints="true" hidden="true"/>
+			</Layer>
+			<Layer level="BORDER">
+				<Texture name="$parentGlow" file="Interface\ChatFrame\ChatFrameTab-NewMessage" parentKey="Glow" alphaMode="ADD" hidden="true">
+					<Anchors>
+						<Anchor point="BOTTOMLEFT" x="8" y="-2"/>
+						<Anchor point="BOTTOMRIGHT" x="-8" y="-2"/>
+					</Anchors>
+				</Texture>
+			</Layer>
+			<Layer level="ARTWORK">
+				<Texture name="$parentArrowLeft" file="Interface\ChatFrame\ChatFrameExpandArrow" parentKey="ArrowLEFT">
+					<Anchors>
+						<Anchor point="LEFT" x="2" y="0"/>
+					</Anchors>
+				</Texture>
+				<Texture name="$parentArrowRight" file="Interface\ChatFrame\ChatFrameExpandArrow" parentKey="ArrowRIGHT">
+					<Anchors>
+						<Anchor point="RIGHT" x="-2" y="0"/>
+					</Anchors>
+				</Texture>
+			</Layer>
+		</Layers>
+		<Scripts>
+			<OnLoad>
+				SetClampedTextureRotation(self.ArrowLEFT, 180)
+				SetClampedTextureRotation(self.ArrowRIGHT, 0)
+			</OnLoad>
+			<OnEnter>
+				self.Highlight:Show()
+			</OnEnter>
+			<OnLeave>
+				self.Highlight:Hide()
+			</OnLeave>
+		</Scripts>
+		<ButtonText>
+			<Anchors>
+				<Anchor point="LEFT" x="20" y="0"/>
+				<Anchor point="RIGHT" x="-20" y="0"/>
+			</Anchors>
+		</ButtonText>
+		<NormalFont style="GameFontNormalSmall"/>
+	</Button>
 
 </Ui>

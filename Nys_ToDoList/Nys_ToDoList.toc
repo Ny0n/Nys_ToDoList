@@ -1,11 +1,11 @@
 # /run print((select(4, GetBuildInfo())))
 #@retail@
-## Interface: 90002
+## Interface: 90100
 #@end-retail@
 #@non-retail@
 # ## Interface: 11306
 #@end-non-retail@
-## Version: 5.7.1
+## Version: 6.0
 
 ## Author: Nyony (on Twitch)
 ## Title: Ny's To-Do List

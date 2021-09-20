@@ -6,7 +6,7 @@
   <!-- General -->
   <Script file="LibStub\LibStub.lua"/>
   <Include file="CallbackHandler-1.0\CallbackHandler-1.0.xml"/>
-  <Include file="!LibUIDropDownMenu\LibUIDropDownMenu\LibUIDropDownMenu.xml"/>
+  <!-- <Include file="!LibUIDropDownMenu\LibUIDropDownMenu\LibUIDropDownMenu.xml"/> -->
 
   <!-- Ace3 -->
   <Include file="AceAddon-3.0\AceAddon-3.0.xml"/>
