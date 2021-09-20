@@ -469,7 +469,7 @@ end
 
 function widgets:CreateTDLButton()
   -- creating the big button to easily toggle the frame
-  tdlButton = widgets:Button("tdlButton", UIParent, string.gsub(core.toc.title, "Ny's ", ""))
+  tdlButton = widgets:Button("NysTDL_tdlButton", UIParent, string.gsub(core.toc.title, "Ny's ", ""))
 
   -- properties
   tdlButton:EnableMouse(true)
@@ -771,11 +771,11 @@ function widgets:CategoryWidget(catID, parentFrame)
   categoryWidget.originalTabLabel = widgets:HintLabel(categoryWidget.interactiveLabel, nil, "")
 
   -- / emptyLabel
-  categoryWidget.emptyLabel = widgets:HintLabel(categoryWidget, nil, "this category is empty")
+  categoryWidget.emptyLabel = widgets:HintLabel(categoryWidget, nil, L["this category is empty"])
   categoryWidget.emptyLabel:SetPoint("LEFT", categoryWidget, "TOPLEFT", enums.ofsxContent, -enums.ofsyCatContent)
 
   -- / hiddenLabel
-  categoryWidget.hiddenLabel = widgets:HintLabel(categoryWidget, nil, "all items are done")
+  categoryWidget.hiddenLabel = widgets:HintLabel(categoryWidget, nil, L["all items are done"])
   categoryWidget.hiddenLabel:SetPoint("LEFT", categoryWidget, "TOPLEFT", enums.ofsxContent, -enums.ofsyCatContent)
   categoryWidget.hiddenLabel:Hide()
 

@@ -184,6 +184,20 @@ function database:ProfileNewVersion() -- profile
 
   -- var version migration
   database:MigrateVars()
+
+  -- !! after the var migration, we rename the tabs to match the locale,
+  -- this is a security in case the locale was not correctly done
+
+  -- we find the main tab IDs to rename them
+  for tabID,tabData in dataManager:ForEach(enums.tab, false) do -- TDLATER global
+    if tabData.name == enums.mainTabs.all then
+      dataManager:Rename(tabID, L["All"])
+    elseif tabData.name == enums.mainTabs.daily then
+      dataManager:Rename(tabID, L["Daily"])
+    elseif tabData.name == enums.mainTabs.weekly then
+      dataManager:Rename(tabID, L["Weekly"])
+    end
+  end
 end
 
 -- // specific functions
@@ -204,14 +218,14 @@ function database:CreateDefaultTabs()
 		local isGlobal = g == 2
 
 		-- All
-		local allTabID = dataManager:CreateTab("All", isGlobal)
+		local allTabID = dataManager:CreateTab(enums.mainTabs.all, isGlobal)
 
 		-- Daily
-		local dailyTabID, dailyTabData = dataManager:CreateTab("Daily", isGlobal)
+		local dailyTabID, dailyTabData = dataManager:CreateTab(enums.mainTabs.daily, isGlobal)
     if not isGlobal then selectedtabID = dailyTabID end -- default tab
 
 		-- Weekly
-		local weeklyTabID, weeklyTabData = dataManager:CreateTab("Weekly", isGlobal)
+		local weeklyTabID, weeklyTabData = dataManager:CreateTab(enums.mainTabs.weekly, isGlobal)
 
     -- All data
 		dataManager:UpdateShownTabID(allTabID, dailyTabID, true)
@@ -219,14 +233,13 @@ function database:CreateDefaultTabs()
 
     -- Daily data (isSameEachDay already true)
     for i=1,7 do resetManager:UpdateResetDay(dailyTabID, i, true) end -- every day
-    resetManager:RenameResetTime(dailyTabID, dailyTabData.reset.sameEachDay, enums.defaultResetTimeName, "Daily")
-		resetManager:UpdateTimeData(dailyTabID, dailyTabData.reset.sameEachDay.resetTimes["Daily"], 9, 0, 0)
+    resetManager:RenameResetTime(dailyTabID, dailyTabData.reset.sameEachDay, enums.defaultResetTimeName, L["Daily"])
+		resetManager:UpdateTimeData(dailyTabID, dailyTabData.reset.sameEachDay.resetTimes[L["Daily"]], 9, 0, 0)
 
     -- Weekly data (isSameEachDay already true)
     resetManager:UpdateResetDay(weeklyTabID, 4, true) -- only wednesday
-    resetManager:RenameResetTime(weeklyTabID, weeklyTabData.reset.sameEachDay, enums.defaultResetTimeName, "Weekly")
-    resetManager:UpdateTimeData(weeklyTabID, weeklyTabData.reset.sameEachDay.resetTimes["Weekly"], 9, 0, 0)
-
+    resetManager:RenameResetTime(weeklyTabID, weeklyTabData.reset.sameEachDay, enums.defaultResetTimeName, L["Weekly"])
+    resetManager:UpdateTimeData(weeklyTabID, weeklyTabData.reset.sameEachDay.resetTimes[L["Weekly"]], 9, 0, 0)
 	end
 
 	-- then we set the default tab
@@ -252,11 +265,13 @@ function database:MigrateVars()
       for _, itemName in pairs(itemNames) do -- and for every item we had
         -- first we get the previous data elements from the item
         -- / tabName
-        local tabName = "All"
+        -- no need for the locale here, i actually DID force-use the english names in my previous code,
+        -- the shown names being the only ones different
+        local tabName = enums.mainTabs.all
         if (utils:HasValue(profile.itemsDaily, itemName)) then
-          tabName = "Daily"
+          tabName = enums.mainTabs.daily
         elseif (utils:HasValue(profile.itemsWeekly, itemName)) then
-          tabName = "Weekly"
+          tabName = enums.mainTabs.weekly
         end
         -- / checked
         local checked = utils:HasValue(profile.checkedButtons, itemName)
@@ -299,11 +314,11 @@ function database:MigrateVars()
     -- we get the necessary tab IDs
     local allTabID, allTabData, dailyTabID, dailyTabData, weeklyTabID, weeklyTabData
     for tabID,tabData in dataManager:ForEach(enums.tab, false) do
-      if tabData.name == "All" then -- LOCALE
+      if tabData.name == enums.mainTabs.all then
         allTabID, allTabData = tabID, tabData
-      elseif tabData.name == "Daily" then
+      elseif tabData.name == enums.mainTabs.daily then
         dailyTabID, dailyTabData = tabID, tabData
-      elseif tabData.name == "Weekly" then
+      elseif tabData.name == enums.mainTabs.weekly then
         weeklyTabID, weeklyTabData = tabID, tabData
       end
     end
@@ -322,19 +337,19 @@ function database:MigrateVars()
       -- then we add the cat to each of those found tabs
       local allCatID, dailyCatID, weeklyCatID
       for _,tabName in pairs(contentTabs) do
-        if tabName == "All" then
+        if tabName == enums.mainTabs.all then
           allCatID = dataManager:CreateCategory(catName, allTabID)
-          if utils:HasValue(profile.closedCategories[catName], "All") then
+          if utils:HasValue(profile.closedCategories[catName], enums.mainTabs.all) then
             dataManager:ToggleClosed(allCatID, allTabID, false)
           end
-        elseif tabName == "Daily" then
+        elseif tabName == enums.mainTabs.daily then
           dailyCatID = dataManager:CreateCategory(catName, dailyTabID)
-          if utils:HasValue(profile.closedCategories[catName], "Daily") then
+          if utils:HasValue(profile.closedCategories[catName], enums.mainTabs.daily) then
             dataManager:ToggleClosed(dailyCatID, dailyTabID, false)
           end
-        elseif tabName == "Weekly" then
+        elseif tabName == enums.mainTabs.weekly then
           weeklyCatID = dataManager:CreateCategory(catName, weeklyTabID)
-          if utils:HasValue(profile.closedCategories[catName], "Weekly") then
+          if utils:HasValue(profile.closedCategories[catName], enums.mainTabs.weekly) then
             dataManager:ToggleClosed(weeklyCatID, weeklyTabID, false)
           end
         end
@@ -343,13 +358,13 @@ function database:MigrateVars()
       for itemName,itemData in pairs(items) do -- for every item
         -- tab & cat
         local itemTabID, itemCatID
-        if itemData.tabName == "All" then
+        if itemData.tabName == enums.mainTabs.all then
           itemTabID = allTabID
           itemCatID = allCatID
-        elseif itemData.tabName == "Daily" then
+        elseif itemData.tabName == enums.mainTabs.daily then
           itemTabID = dailyTabID
           itemCatID = dailyCatID
-        elseif itemData.tabName == "Weekly" then
+        elseif itemData.tabName == enums.mainTabs.weekly then
           itemTabID = weeklyTabID
           itemCatID = weeklyCatID
         end

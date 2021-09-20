@@ -39,6 +39,12 @@ core.LDB = LibStub("LibDataBroker-1.1")
 core.LDBIcon = LibStub("LibDBIcon-1.0")
 core.LDD = LibStub:GetLibrary("LibUIDropDownMenu-4.0")
 
+-- LOCALE CHECK
+-- if a locale is empty or only whitespace, we replace it by the original text
+for orig,locale in pairs(core.L) do
+  if #locale == 0 or locale:match("^%s*$") then core.L[orig] = orig end
+end
+
 -- data (from toc file)
 core.toc = {}
 core.toc.title = GetAddOnMetadata(addonName, "Title") -- better than "Nys_ToDoList"

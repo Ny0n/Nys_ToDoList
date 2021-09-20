@@ -746,7 +746,7 @@ local function generateMenuAddACategory()
 
   --/************************************************/--
 
-  menuframe.labelCategoryName = widgets:NoPointsLabel(menuframe, nil, "Name:")
+  menuframe.labelCategoryName = widgets:NoPointsLabel(menuframe, nil, L["Name:"])
   menuframe.labelCategoryName:SetPoint("TOPLEFT", menuframe.menuTitle, "TOP", -140, -32)
 
   menuframe.categoryEditBox = CreateFrame("EditBox", nil, menuframe, "InputBoxTemplate") -- edit box to put the new category name
@@ -1044,11 +1044,11 @@ local function generateMenuTabActions()
   menuframe.btnUncheck:SetPoint("TOP", menuframe.btnCheck, "TOP", 0, -40)
   menuframe.btnUncheck:SetScript("OnClick", function() dataManager:ToggleTabChecked(database.ctab(), false) end)
 
-  menuframe.btnCloseCat = widgets:Button("NysTDL_menuframe_btnCloseCat", menuframe, "Close All", "Interface\\BUTTONS\\Arrow-Up-Disabled")
+  menuframe.btnCloseCat = widgets:Button("NysTDL_menuframe_btnCloseCat", menuframe, L["Close All"], "Interface\\BUTTONS\\Arrow-Up-Disabled")
   menuframe.btnCloseCat:SetPoint("TOP", menuframe.btnUncheck, "TOP", 0, -40)
   menuframe.btnCloseCat:SetScript("OnClick", function() dataManager:ToggleTabClosed(database.ctab(), false) end)
 
-  menuframe.btnOpenCat = widgets:Button("NysTDL_menuframe_btnOpenCat", menuframe, "Open All", "Interface\\BUTTONS\\Arrow-Down-Up")
+  menuframe.btnOpenCat = widgets:Button("NysTDL_menuframe_btnOpenCat", menuframe, L["Open All"], "Interface\\BUTTONS\\Arrow-Down-Up")
   menuframe.btnOpenCat:SetPoint("TOP", menuframe.btnCloseCat, "TOP", 0, -40)
   menuframe.btnOpenCat:SetScript("OnClick", function() dataManager:ToggleTabClosed(database.ctab(), true) end)
 
@@ -1096,7 +1096,7 @@ local function generateFrameContent()
   tutorialsManager:SetPoint("getMoreInfo", "LEFT", content.helpButton, "RIGHT", 18, 0)
 
   -- edit mode button
-  content.editModeButton = widgets:IconTooltipButton(content, "NysTDL_EditModeButton", "Toggle edit mode")
+  content.editModeButton = widgets:IconTooltipButton(content, "NysTDL_EditModeButton", L["Toggle edit mode"])
   content.editModeButton:SetPoint("RIGHT", content.helpButton, "LEFT", 2, 0)
   content.editModeButton:SetScript("OnClick", function() mainFrame:ToggleEditMode() end)
 
@@ -1168,7 +1168,7 @@ local function generateFrameContent()
   -- below the menus
   content.lineBottom = widgets:ThemeLine(content, database.themes.theme, 0.7)
 
-  content.nothingLabel = widgets:HintLabel(content, nil, "This tab is empty")
+  content.nothingLabel = widgets:HintLabel(content, nil, L["This tab is empty"])
   content.nothingLabel:SetPoint("TOP", content.lineBottom, "TOP", 0, -20)
 
   content.loadOrigin = widgets:Dummy(content, content.lineBottom, 0, 0)

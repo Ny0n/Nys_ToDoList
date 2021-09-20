@@ -8,7 +8,6 @@ local enums = addonTable.enums
 local utils = addonTable.utils
 local widgets = addonTable.widgets
 local database = addonTable.database
-local tabsFrame = addonTable.tabsFrame
 local dataManager = addonTable.dataManager
 local resetManager = addonTable.resetManager
 local optionsManager = addonTable.optionsManager
@@ -21,14 +20,22 @@ local optionsManager = addonTable.optionsManager
 
 dataManager.authorized = true
 local refreshAuthorized = true
-local _mainFrame = addonTable.mainFrame
 local dummyFunc = function()end
 
+local _mainFrame = addonTable.mainFrame
 local mainFrame = setmetatable({}, {
 	__index = function(t,k)
 		if not dataManager.authorized then return dummyFunc end
 		if not refreshAuthorized and k == "Refresh" then return dummyFunc end
-    return _mainFrame[k]   -- access the original table
+    return _mainFrame[k] -- access the original table
+  end,
+})
+
+local _tabsFrame = addonTable.tabsFrame
+local tabsFrame = setmetatable({}, {
+	__index = function(t,k)
+		if not dataManager.authorized then return dummyFunc end
+    return _tabsFrame[k] -- access the original table
   end,
 })
 

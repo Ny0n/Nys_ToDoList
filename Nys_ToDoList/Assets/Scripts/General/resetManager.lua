@@ -111,7 +111,6 @@ function resetManager:RemoveResetTime(tabID, resetData, resetTimeName)
 	end
 
   if not resetManager:CanRemoveResetTime(resetData) then -- safety check, should never happen bc there is a pre-check
-    chat:Print("Cannot remove this reset, there must be at least one")
     return false
   end
 

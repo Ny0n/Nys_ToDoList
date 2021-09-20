@@ -613,7 +613,7 @@ function tabsFrame:CreateFrame(tdlFrame)
 	overflowList.content.title = overflowList.content:CreateFontString(nil)
 	overflowList.content.title:SetPoint("TOP", overflowList.content, "TOP", 0, -5)
 	overflowList.content.title:SetFontObject("GameFontHighlight")
-	overflowList.content.title:SetText("Other Tabs")
+	overflowList.content.title:SetText(L["Other Tabs"])
 
 	overflowButtonFrame.btn:SetScript("OnClick", function()
 		if not overflowList:IsShown() then -- if we're about to show the list, we refresh it

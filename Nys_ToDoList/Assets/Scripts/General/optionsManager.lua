@@ -53,9 +53,9 @@ local tabManagementTable = {
       removeTabExecute = {
         order = 1.1,
         type = "execute",
-        name = "Delete tab",
+        name = L["Delete tab"],
         confirm = true,
-        confirmText = "Deleting this tab will delete everything that was created in it.\nAre you sure?",
+        confirmText = L["Deleting this tab will delete everything that was created in it."].."\n"..L["Are you sure?"],
         func = function(info)
           local tabID = getTabInfo(info)
           dataManager:DeleteTab(tabID)
@@ -69,7 +69,7 @@ local tabManagementTable = {
       removeTabDescription = {
         order = 1.2,
         type = "description",
-        name = "Cannot remove this tab, there must be at least one left",
+        name = L["Cannot remove this tab"]..' '..L["(there must be at least one left)"],
         hidden = function(info)
           local tabID = getTabInfo(info)
           return not dataManager:IsProtected(tabID)
@@ -78,7 +78,7 @@ local tabManagementTable = {
       renameTabInput = {
         order = 1.3,
         type = "input",
-        name = "Rename",
+        name = L["Rename"],
         get = function(info)
           local _, tabData = getTabInfo(info)
           return tabData.name
@@ -92,7 +92,7 @@ local tabManagementTable = {
         order = 1.4,
         type = "toggle",
         name = L["Instant refresh"],
-        desc = "Delete/Hide items instantly when checking them".."\n".."(profile dependant)",
+        desc = L["Delete/Hide items instantly when checking them"].."\n"..L["(profile dependant)"],
         get = function(info)
           return NysTDL.db.profile.instantRefresh
         end,
@@ -148,7 +148,7 @@ local tabManagementTable = {
       shownTabsMultiSelect = {
         order = 1.7,
         type = "multiselect",
-        name = "Shown tabs",
+        name = L["Shown tabs"],
         values = function(info)
           local originalTabID, tabData = getTabInfo(info)
           local shownIDs = {}
@@ -210,12 +210,12 @@ local tabManagementTable = {
   autoResetTab = {
     order = 1.2,
     type = "group",
-    name = "Auto-Reset",
+    name = L["Auto-Reset"],
     args = {
       resetDaysSelect = {
         order = 2.1,
         type = "multiselect",
-        name = "Reset days",
+        name = L["Reset days"],
         width = "full",
         values = function(info)
           return enums.days
@@ -232,13 +232,13 @@ local tabManagementTable = {
       configureResetGroup = {
         order = 2.2,
         type = "group",
-        name = "Configure reset times",
+        name = L["Configure reset times"],
         inline = true,
         args = {
           configureDaySelect = {
             order = 1.1,
             type = "select",
-            name = "Configure day",
+            name = L["Configure day"],
             width = 0.9,
             values = function(info)
               local _, tabData = getTabInfo(info)
@@ -267,7 +267,7 @@ local tabManagementTable = {
           isSameEachDayToggle = {
             order = 1.2,
             type = "toggle",
-            name = "Same each day",
+            name = L["Same each day"],
             width = 0.9,
             get = function(info)
               local _, tabData = getTabInfo(info)
@@ -281,7 +281,7 @@ local tabManagementTable = {
           addNewResetTimeExecute = {
             order = 1.3,
             type = "execute",
-            name = "Add new reset",
+            name = L["Add new reset"],
             width = 0.9,
             func = function(info)
               local tabID, _, resetData = getTabInfo(info)
@@ -291,7 +291,7 @@ local tabManagementTable = {
           removeResetTimeExecute = {
             order = 1.4,
             type = "execute",
-            name = "Remove reset",
+            name = L["Remove reset"],
             width = 0.9,
             func = function(info)
               local tabID, tabData, resetData = getTabInfo(info)
@@ -305,7 +305,7 @@ local tabManagementTable = {
           configureResetTimeSelect = {
             order = 1.5,
             type = "select",
-            name = "Configure reset",
+            name = L["Configure reset"],
             width = 0.9,
             values = function(info)
               local _, tabData, resetData = getTabInfo(info)
@@ -330,7 +330,7 @@ local tabManagementTable = {
           renameResetTimeInput = {
             order = 1.6,
             type = "input",
-            name = "Rename",
+            name = L["Rename"],
             width = 0.9,
             get = function(info)
               local _, tabData = getTabInfo(info)
@@ -344,7 +344,7 @@ local tabManagementTable = {
           hourResetTimeRange = {
             order = 1.7,
             type = "range",
-            name = "Hour",
+            name = L["Hour"],
             min = 0,
             max = 23,
             step = 1,
@@ -361,7 +361,7 @@ local tabManagementTable = {
           minResetTimeRange = {
             order = 1.8,
             type = "range",
-            name = "Min",
+            name = L["Minute"],
             min = 0,
             max = 59,
             step = 1,
@@ -378,7 +378,7 @@ local tabManagementTable = {
           secResetTimeRange = {
             order = 1.9,
             type = "range",
-            name = "Sec",
+            name = L["Second"],
             min = 0,
             max = 59,
             step = 1,
@@ -439,7 +439,7 @@ local tabAddTable = {
   addInput = {
     order = 1.1,
     type = "input",
-    name = "Tab name",
+    name = L["Create a new tab"],
     get = function(info)
       return ""
     end,
@@ -457,13 +457,6 @@ local tabAddTable = {
   --   width = "full",
   --   name = "\n",
   -- }, -- spacer099
-
-  -- headers
-  header1 = {
-    order = 0,
-    type = "header",
-    name = "Add a new tab",
-  }, -- header1
 }
 
 function private:UpdateTabsInOptions(options)
@@ -703,7 +696,7 @@ local function createAddonOptionsTable()
               header1 = {
                 order = 1,
                 type = "header",
-                name = "List",
+                name = L["List"],
               }, -- header1
               header2 = {
                 order = 2,
@@ -741,7 +734,7 @@ local function createAddonOptionsTable()
               groupProfileTabManagement = {
                 order = 1.1,
                 type = "group",
-                name = "Profile tabs",
+                name = L["Profile tabs"],
                 arg = false,
                 args = utils:Deepcopy(tabAddTable),
               }, -- groupProfileTabManagement
@@ -768,7 +761,7 @@ local function createAddonOptionsTable()
               header1 = {
                 order = 1,
                 type = "header",
-                name = "Tab Management",
+                name = L["Tab Management"],
               }, -- header1
             } -- args
           }, -- tabs

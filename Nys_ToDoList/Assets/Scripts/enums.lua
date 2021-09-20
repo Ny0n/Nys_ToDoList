@@ -23,6 +23,12 @@ enums.databrokerModes = {
   frame = "ENUMS_DATABROKERMODES_3", -- frame databroker mode
 }
 
+enums.mainTabs = {
+  all = "All",
+  daily = "Daily",
+  weekly = "Weekly",
+}
+
 -- pure data (see those as global variables accessible by any file, but not global)
 
 enums.idtype = "string"
@@ -64,7 +70,7 @@ enums.days = {
   [1] = L["Sunday"],
 }
 
--- dynamic values (accessible by all files)
+-- dynamic values (still, accessible by all files)
 
 enums.quantities = {
 	[enums.item] = 0,

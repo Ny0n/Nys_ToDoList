@@ -106,7 +106,7 @@ end
 --/*******************/ CHAT COMMANDS /*************************/--
 
 -- Commands:
-chat.commands = {
+chat.commands = { -- TDLATER FIX if all chat commands locales are the same, we cant access them
   [""] = function()
     mainFrame:Toggle()
   end,
@@ -116,37 +116,60 @@ chat.commands = {
     local str = L["Here are a few commands to help you:"].."\n"
     str = str.." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["toggle"])
     str = str.." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["categories"])
+    str = str.." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["hyperlinks"])
+    str = str.." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["editmode"])
     str = str.." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["favorites"])
     str = str.." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["descriptions"])
-    str = str.." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["hyperlinks"])
-    str = str.." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["rename"])
     str = str.." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["tutorial"])
     chat:PrintForced(str)
   end,
 
   [L["toggle"]] = function()
-    chat:PrintForced(L["To toggle the list, you have several ways:"]..'\n- '..L["minimap button (the default)"]..'\n- '..L["a normal TDL button"]..'\n- '..L["databroker plugin (eg. titan panel)"]..'\n- '..L["the '/tdl' command"]..'\n- '..L["key binding"]..'\n'..L["You can go to the addon options in the game's interface settings to customize this."])
+    chat:PrintForced(L["To toggle the list, you have several ways:"]
+      ..'\n- '..L["minimap button (the default)"]
+      ..'\n- '..L["a normal 'To-Do List' button"]
+      ..'\n- '..L["databroker plugin (eg. titan panel)"]
+      ..'\n- '..L["the '/tdl' command"]
+      ..'\n- '..L["key binding"]
+      ..'\n'..L["You can go to the addon options in the game's interface settings to customize this."])
   end,
 
   [L["categories"]] = function()
-    chat:PrintForced(L["Information on categories:"].."\n- "..L["The same category can be present in multiple tabs, as long as there are items for each of those tabs."].."\n- "..L["A category cannot be empty, if it is, it will just get deleted from the tab."].."\n- "..L["Left-click on the category names to expand or shrink their content."].."\n- "..L["Right-click on the category names to add new items."])
+    chat:PrintForced(L["Information on categories:"]
+      .."\n- "..L["Left-click on the category names to expand or shrink their content."]
+      .."\n- "..L["Right-click on the category names to add new items."])
   end,
 
   [L["favorites"]] = function()
-    chat:PrintForced(L["You can favorite items!"].."\n"..L["To do so, hold the SHIFT key when the list is opened, then click on the star icons to favorite the items that you want!"])
-    chat:PrintForced(L["Perks of favorite items:"].."\n- "..L["cannot be deleted"].."\n- "..L["customizable color"].."\n- "..L["sorted first in categories"].."\n- "..L["have their own more visible remaining numbers"].."\n- "..L["have an auto chat warning/reminder system!"])
+    chat:PrintForced(L["You can favorite items!"]..' '..L["(toggle the edit mode to do so)"]
+      .."\n- "..L["customizable color"]
+      .."\n- "..L["sorted first in categories"]
+      .."\n- "..L["have their own more visible remaining numbers"]
+      .."\n- "..L["have an auto chat warning/reminder system!"]
+      .."\n- "..L["the item cannot be deleted"])
   end,
 
   [L["descriptions"]] = function()
-    chat:PrintForced(L["You can add descriptions on items!"].."\n"..L["To do so, hold the CTRL key when the list is opened, then click on the page icons to open a description frame!"].."\n- "..L["they are auto-saved and have no length limitations"].."\n- "..L["if an item has a description, he cannot be deleted (empty the description if you want to do so)"])
+    chat:PrintForced(L["You can add descriptions on items!"]..' '..L["(toggle the edit mode to do so)"]
+      .."\n- "..L["they are auto-saved and have no length limitations"]
+      .."\n- "..L["the item cannot be deleted"]..' '..L["(empty the description if you want to do so)"])
   end,
 
   [L["hyperlinks"]] = function()
-    chat:PrintForced(L["You can add hyperlinks in the list!"]..' '..L["It works the same way as when you link items or other things in the chat, just shift-click!"])
+    chat:PrintForced(L["You can add hyperlinks in the list!"]
+      ..' '..L["It works the same way as when you link items or other things in the chat, just shift-click!"])
   end,
 
-  [L["rename"]] = function()
-    chat:PrintForced(L["For items: just double click on them."].."\n"..L["For categories, and items with hyperlinks in them: hold ALT then double click on them."])
+  [L["editmode"]] = function()
+    chat:PrintForced(L["Either right-click anywhere on the list, or click on the dedicated button to toggle the edit mode."]
+      .."\n"..L["In edit mode, you can:"]
+      .."\n- "..L["Delete items and categories"]
+      .."\n- "..L["Favorite and add descriptions on items"]
+      .."\n- "..L["Rename items and categories (double-click)"]
+      .."\n- "..L["Reorder/Sort the list (drag & drop)"]
+      .."\n- "..L["Resize the list"]
+      .."\n- "..L["Undo what you deleted and access special actions for the tab"]
+  )
   end,
 
   [L["tutorial"]] = function()
