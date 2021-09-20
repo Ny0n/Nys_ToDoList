@@ -977,7 +977,7 @@ local function generateMenuFrameOptions()
 
   --/************************************************/--
 
-  menuframe.frameAlphaSlider = CreateFrame("Slider", "frameAlphaSlider", menuframe, "OptionsSliderTemplate")
+  menuframe.frameAlphaSlider = CreateFrame("Slider", "NysTDL_mainFrame_frameAlphaSlider", menuframe, "OptionsSliderTemplate") -- NAME IS MANDATORY
   menuframe.frameAlphaSlider:SetPoint("TOP", menuframe.menuTitle, "TOP", 0, -45)
   menuframe.frameAlphaSlider:SetWidth(200)
   -- menuframe.frameAlphaSlider:SetHeight(17)
@@ -994,14 +994,14 @@ local function generateMenuFrameOptions()
   _G[menuframe.frameAlphaSlider:GetName() .. 'Text']:SetText(L["Frame opacity"]) -- sets the "title" text (top-center of slider)
   menuframe.frameAlphaSlider:SetScript("OnValueChanged", mainFrame.Event_FrameAlphaSlider_OnValueChanged)
 
-  menuframe.frameAlphaSliderValue = menuframe.frameAlphaSlider:CreateFontString("frameAlphaSliderValue") -- the font string to see the current value
+  menuframe.frameAlphaSliderValue = menuframe.frameAlphaSlider:CreateFontString("NysTDL_mainFrame_frameAlphaSliderValue") -- the font string to see the current value -- NAME IS MANDATORY
   menuframe.frameAlphaSliderValue:SetPoint("TOP", menuframe.frameAlphaSlider, "BOTTOM", 0, 0)
   menuframe.frameAlphaSliderValue:SetFontObject("GameFontNormalSmall")
   menuframe.frameAlphaSliderValue:SetText(menuframe.frameAlphaSlider:GetValue())
 
   --/************************************************/--
 
-  menuframe.frameContentAlphaSlider = CreateFrame("Slider", "frameContentAlphaSlider", menuframe, "OptionsSliderTemplate")
+  menuframe.frameContentAlphaSlider = CreateFrame("Slider", "NysTDL_mainFrame_frameContentAlphaSlider", menuframe, "OptionsSliderTemplate") -- NAME IS MANDATORY
   menuframe.frameContentAlphaSlider:SetPoint("TOP", menuframe.frameAlphaSlider, "TOP", 0, -50)
   menuframe.frameContentAlphaSlider:SetWidth(200)
   -- menuframe.frameContentAlphaSlider:SetHeight(17)
@@ -1018,14 +1018,14 @@ local function generateMenuFrameOptions()
   _G[menuframe.frameContentAlphaSlider:GetName() .. 'Text']:SetText(L["Frame content opacity"]) --Sets the "title" text (top-centre of slider).
   menuframe.frameContentAlphaSlider:SetScript("OnValueChanged", mainFrame.Event_FrameContentAlphaSlider_OnValueChanged)
 
-  menuframe.frameContentAlphaSliderValue = menuframe.frameContentAlphaSlider:CreateFontString("frameContentAlphaSliderValue") -- the font string to see the current value
+  menuframe.frameContentAlphaSliderValue = menuframe.frameContentAlphaSlider:CreateFontString("NysTDL_mainFrame_frameContentAlphaSliderValue") -- the font string to see the current value -- NAME IS MANDATORY
   menuframe.frameContentAlphaSliderValue:SetPoint("TOP", menuframe.frameContentAlphaSlider, "BOTTOM", 0, 0)
   menuframe.frameContentAlphaSliderValue:SetFontObject("GameFontNormalSmall")
   menuframe.frameContentAlphaSliderValue:SetText(menuframe.frameContentAlphaSlider:GetValue())
 
   --/************************************************/--
 
-  menuframe.affectDesc = CreateFrame("CheckButton", "NysTDL_affectDesc", menuframe, "ChatConfigCheckButtonTemplate")
+  menuframe.affectDesc = CreateFrame("CheckButton", nil, menuframe, "ChatConfigCheckButtonTemplate")
   menuframe.affectDesc.tooltip = L["Share the opacity options of this frame onto the description frames (only when checked)"]
   menuframe.affectDesc:SetPoint("TOP", menuframe.frameContentAlphaSlider, "TOP", 0, -40)
   menuframe.affectDesc.Text:SetText(L["Affect description frames"])
@@ -1215,7 +1215,7 @@ end
 
 function mainFrame:CreateTDLFrame()
   -- we create the list
-  tdlFrame = CreateFrame("Frame", "NysTDL_tdlFrame", UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil)
+  tdlFrame = CreateFrame("Frame", nil, UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil)
 
   -- background
   tdlFrame:SetBackdrop({
@@ -1285,7 +1285,7 @@ function mainFrame:CreateTDLFrame()
   tdlFrame.ScrollFrame.ScrollBar:SetPoint("TOPLEFT", tdlFrame.ScrollFrame, "TOPRIGHT", - 12, - 38) -- the bottomright is updated in the OnUpdate (to manage the resize button)
 
   -- close button
-  tdlFrame.closeButton = CreateFrame("Button", "closeButton", tdlFrame, "NysTDL_CloseButton")
+  tdlFrame.closeButton = CreateFrame("Button", nil, tdlFrame, "NysTDL_CloseButton")
   tdlFrame.closeButton:SetPoint("TOPRIGHT", tdlFrame, "TOPRIGHT", -1, -1)
   tdlFrame.closeButton:SetScript("onClick", function(self) self:GetParent():Hide() end)
 

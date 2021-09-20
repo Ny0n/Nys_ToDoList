@@ -79,7 +79,7 @@ local tutorials = {
 
 --/*******************/ FRAMES /*************************/--
 
-function tutorialsManager:CreateTutoFrames() -- TODO redo tuto texts
+function tutorialsManager:CreateTutoFrames()
   -- POLISH if text is bigger than width, ... by default but not right AND frame strata too high
   tutorialFrames.TM_introduction_addNewCat = widgets:TutorialFrame("TM_introduction_addNewCat", false, "UP", L["Start by adding a new category!"], 190, 50)
   tutorialFrames.TM_introduction_addCat = widgets:TutorialFrame("TM_introduction_addCat", true, "UP", L["This will add your category to the current tab"], 240, 50)

@@ -22,7 +22,7 @@ local private = {}
 
 --/*******************/ OPTIONS TABLES /*************************/--
 
-function getLeaf(info, x)
+local function getLeaf(info, x)
   local tbl = optionsManager.optionsTable
   for i=1,x do
     tbl = tbl.args[info[i]]

@@ -63,7 +63,8 @@ local tdlFrame
 local GetCursorPosition = GetCursorPosition
 local pairs, next = pairs, next
 local tinsert, tremove, unpack, wipe = table.insert, table.remove, unpack, wipe
-local CreateFrame, UIParent = CreateFrame, UIParent
+local UIParent = UIParent
+-- local CreateFrame = CreateFrame
 
 --/***************/ MISC /*****************/--
 
@@ -305,7 +306,7 @@ end
 
 --/***************/ DRAGGING /*****************/--
 
-function initCategoryDrag()
+local function initCategoryDrag()
   if not dragndrop.dragging then return end
 
   -- creating the duplicate, and getting the dragging's widget current position
@@ -324,7 +325,7 @@ function initCategoryDrag()
   dropFrames = categoryDropFrames
 end
 
-function initItemDrag()
+local function initItemDrag()
   if not dragndrop.dragging then return end
 
   -- creating the duplicate, and getting the dragging's widget current position
@@ -365,7 +366,7 @@ end
 
 --/***************/ DROPPING /*****************/--
 
-function dropCategory()
+local function dropCategory()
   -- the drop data is constantly updated while dragging,
   -- now we do the actual dropping
   if not dragndrop.dragging or dragndrop.cancelling then return end
@@ -377,7 +378,7 @@ function dropCategory()
   dataManager:MoveCategory(draggingWidget.catID, newPos, newParentID, startingTab, currentTab)
 end
 
-function dropItem()
+local function dropItem()
   -- the drop data is constantly updated while dragging,
   -- now we do the actual dropping
   if not dragndrop.dragging or dragndrop.cancelling then return end

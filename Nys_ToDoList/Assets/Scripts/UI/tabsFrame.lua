@@ -44,7 +44,7 @@ local wipe, pairs, ipairs = wipe, pairs, ipairs
 local PanelTemplates_GetTabWidth = PanelTemplates_GetTabWidth
 local PanelTemplates_SetNumTabs = PanelTemplates_SetNumTabs
 local PanelTemplates_SetTab = PanelTemplates_SetTab
-local CreateFrame = CreateFrame
+-- local CreateFrame = CreateFrame
 
 --[[
 Basically, the way this works is at follows:
@@ -64,15 +64,16 @@ local animating = false
 local _targetTab
 
 function private:Event_AnimFrame_OnUpdate(elapsed)
-	local totalDistanceNeeded = FCFDockScrollFrame_GetScrollDistanceNeeded(self, self.selectedDynIndex)
+	local totalDistanceNeeded = 0
+	-- FCFDockScrollFrame_GetScrollDistanceNeeded(self, self.selectedDynIndex)
 	if math.abs(totalDistanceNeeded) < 1.0 then
 		private:IncludeTab(_targetTab) -- good snap
-    private:StopAnim(args)
+    private:StopAnim()
     return
 	end
 
 	local distanceNoCap = totalDistanceNeeded * ANIM_SPEED * elapsed
-	local distanceToMove = (totalDistanceNeeded > 0) and min(totalDistanceNeeded, distanceNoCap) or max(totalDistanceNeeded, distanceNoCap)
+	local distanceToMove = (totalDistanceNeeded > 0) and math.min(totalDistanceNeeded, distanceNoCap) or math.max(totalDistanceNeeded, distanceNoCap)
 
 	private:ScrollTo(math.max(scrollFrame:GetHorizontalScroll() + distanceToMove, 0))
 end
@@ -198,7 +199,7 @@ function private:CalculateTabSize()
 	end
 
 	-- figure out how many tabs we're going to be able to fit at the minimum size
-	local numWholeTabs = min(floor(scrollSize/MIN_TAB_SIZE), numTabs)
+	local numWholeTabs = math.min(math.floor(scrollSize/MIN_TAB_SIZE), numTabs)
 	if numWholeTabs == 0 then
 		return scrollSize, true, numWholeTabs
 	end
@@ -551,7 +552,7 @@ function tabsFrame:CreateFrame(tdlFrame)
 	end)
 
   -- // content
-  content = CreateFrame("Frame", "NysTDL_tabsFrame_content", scrollFrame)
+  content = CreateFrame("Frame", "NysTDL_tabsFrame_content", scrollFrame) -- NAME IS MANDATORY HERE (bc there are tabs)
   content:SetSize(1, 1) -- just to show everything inside of it
   scrollFrame:SetScrollChild(content)
 
@@ -564,7 +565,7 @@ function tabsFrame:CreateFrame(tdlFrame)
   overflowButtonFrame:SetFrameStrata("LOW")
 	overflowButtonFrame:SetClipsChildren(true)
 
-	overflowButtonFrame.backdrop = CreateFrame("Frame", nil, overflowButtonFrame, "BackdropTemplate")
+	overflowButtonFrame.backdrop = CreateFrame("Frame", nil, overflowButtonFrame, BackdropTemplateMixin and "BackdropTemplate" or nil)
 	overflowButtonFrame.backdrop:SetBackdrop({
     bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
     edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
@@ -592,7 +593,7 @@ function tabsFrame:CreateFrame(tdlFrame)
 		self:SetPoint("CENTER", self:GetParent(), "CENTER", 0, 0)
 	end)
 
-	overflowList = CreateFrame("Frame", nil, tdlFrame, "BackdropTemplate")
+	overflowList = CreateFrame("Frame", nil, tdlFrame, BackdropTemplateMixin and "BackdropTemplate" or nil)
 	overflowList:SetBackdrop({
     bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
     edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",

@@ -30,9 +30,10 @@ local refreshRate = 1
 
 -- // WoW & Lua APIs
 
-local PlaySound = PlaySound -- TDLATER
+-- local PlaySound = PlaySound -- TDLATER
+-- local CreateFrame = CreateFrame -- breaks external hooks?
 local IsAltKeyDown = IsAltKeyDown
-local CreateFrame, UIParent = CreateFrame, UIParent
+local UIParent = UIParent
 local select = select
 
 --/*******************/ MISC /*************************/--
@@ -218,7 +219,7 @@ end
 --/*******************/ FRAMES /*************************/--
 
 function widgets:TutorialFrame(tutoName, showCloseButton, arrowSide, text, width, height)
-  local tutoFrame = CreateFrame("Frame", "NysTDL_TutorialFrame_"..tutoName, UIParent, "NysTDL_HelpPlateTooltip")
+  local tutoFrame = CreateFrame("Frame", "NysTDL_TutorialFrame_"..tutoName, UIParent, "NysTDL_HelpPlateTooltip") -- TDLATER POLISH check if name is mandatory, also checl ALL addon names for the same thing
   tutoFrame:SetSize(width, height)
 
   if arrowSide == "UP" then tutoFrame.ArrowDOWN:Show()
@@ -229,7 +230,7 @@ function widgets:TutorialFrame(tutoName, showCloseButton, arrowSide, text, width
   local tutoFrameRightDist = enums.tutoFramesRightSpace
 
   if showCloseButton then
-    tutoFrame.closeButton = CreateFrame("Button", "closeButton", tutoFrame, "UIPanelCloseButton")
+    tutoFrame.closeButton = CreateFrame("Button", nil, tutoFrame, "UIPanelCloseButton")
     tutoFrame.closeButton:SetPoint("TOPRIGHT", tutoFrame, "TOPRIGHT", 6, 6)
     tutoFrame.closeButton:SetScript("OnClick", function() tutorialsManager:Next() end)
     tutoFrameRightDist = tutoFrame.closeButton:GetWidth() + 10
@@ -254,7 +255,7 @@ function widgets:DescriptionFrame(itemWidget)
   -- // creating the frame and all of its content
 
   -- we create the mini frame holding the name of the item and his description in an edit box
-  local descFrame = CreateFrame("Frame", nil, UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil) -- importing the backdrop in the desc frames, as of wow 9.0
+  local descFrame = CreateFrame("Frame", nil, UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil)
   local w = widgets:GetWidth(itemData.name)
   descFrame:SetSize(w < 180 and 180+75 or w+75, 110) -- 75 is large enough to place the closebutton, clearbutton, and a little bit of space at the right of the name
 
@@ -326,7 +327,7 @@ function widgets:DescriptionFrame(itemWidget)
   end)
 
   -- close button
-  descFrame.closeButton = CreateFrame("Button", "closeButton", descFrame, "NysTDL_CloseButton")
+  descFrame.closeButton = CreateFrame("Button", nil, descFrame, "NysTDL_CloseButton")
   descFrame.closeButton:SetPoint("TOPRIGHT", descFrame, "TOPRIGHT", -2, -2)
   descFrame.closeButton:SetScript("OnClick", function() widgets:DescFrameHide(itemID) end)
 
@@ -941,21 +942,6 @@ function widgets:ItemWidget(itemID, parentFrame)
     renameEditBox:SetPoint("LEFT", itemWidget.interactiveLabel, "LEFT", 5, 0)
     widgets:AddHyperlinkEditBox(renameEditBox) -- so that we can add hyperlinks in it
     -- widgets:SetHyperlinksEnabled(renameEditBox, true) -- to click on hyperlinks inside the edit box
-
-    -- cancelling
-    renameEditBox:SetScript("OnEscapePressed", function(self)
-      -- we hide the edit box and show the label
-      self:Hide()
-      categoryWidget.interactiveLabel:Show()
-
-      -- when hiding the edit box, we reset the pos of the favsRemainingLabel
-      categoryWidget.favsRemainingLabel:ClearAllPoints()
-      categoryWidget.favsRemainingLabel:SetPoint("LEFT", categoryWidget.interactiveLabel, "RIGHT", 6, 0)
-    end)
-    renameEditBox:HookScript("OnEditFocusLost", function(self)
-      self:GetScript("OnEscapePressed")(self)
-    end)
-
 
     -- let's go!
     renameEditBox:SetScript("OnEnterPressed", function(self)
