@@ -37,7 +37,7 @@ core.AceGUI = LibStub("AceGUI-3.0")
 core.L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 core.LDB = LibStub("LibDataBroker-1.1")
 core.LDBIcon = LibStub("LibDBIcon-1.0")
-core.LDD = LibStub:GetLibrary("LibUIDropDownMenu-4.0")
+-- core.LDD = LibStub:GetLibrary("LibUIDropDownMenu-4.0")
 
 -- LOCALE CHECK
 -- if a locale is empty or only whitespace, we replace it by the original text

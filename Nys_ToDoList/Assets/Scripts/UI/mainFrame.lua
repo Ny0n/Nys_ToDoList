@@ -17,7 +17,7 @@ local tutorialsManager = addonTable.tutorialsManager
 -- // Variables
 
 local L = core.L
-local LDD = core.LDD
+-- local LDD = core.LDD
 
 -- THE frame
 local tdlFrame
