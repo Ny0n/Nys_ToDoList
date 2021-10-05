@@ -20,7 +20,7 @@
 ## X-Curse-Project-ID: 320655
 # ## X-WoWI-ID: xxx
 
-## OptionalDeps: Ace3, LibDBIcon-1.0, !LibUIDropDownMenu
-## X-Embeds: Ace3, LibDBIcon-1.0, !LibUIDropDownMenu
+## OptionalDeps: Ace3, LibDBIcon-1.0
+## X-Embeds: Ace3, LibDBIcon-1.0
 
 Main.xml

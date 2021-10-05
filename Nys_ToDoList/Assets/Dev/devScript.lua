@@ -111,12 +111,16 @@ function Nys_Tests(yes, ...)
 
     mainFrame:Refresh()
   elseif yes == 6 then
+    -- print(unpack(utils:GetAllVersionsOlderThan(...)))
+    -- print(utils:IsVersionOlderThan(..., "4.0"))
+    print(NysTDL.db.global.latestVersion)
+    print(NysTDL.db.profile.latestVersion)
     -- print("<Undo Table>")
     -- for k,v in pairs(NysTDL.db.profile.undoTable) do
     --   print(k, v)
     -- end
     -- local scrollFrame = tabsFrame:Get()
-    tabsFrame:Refresh()
+    -- tabsFrame:Refresh()
     -- if ... then
     --   scrollFrame:SetHorizontalScroll(...)
     -- end

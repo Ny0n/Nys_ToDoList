@@ -2,12 +2,40 @@
 local addonName, addonTable = ...
 
 -- addonTable aliases
+local core = addonTable.core
 local utils = addonTable.utils
 
 -- Variables
-local L = addonTable.core.L
+local L = core.L
 
 --/*******************/ COMMON (utils) FUNCTIONS /*************************/--
+
+function utils:IsVersionOlderThan(latestVersion, vMax) -- equivalent thing as testing v < vMax
+  if (not latestVersion) or (latestVersion == "") then return true end -- old version
+  if not utils:HasValue(core.toc.versions, latestVersion) then return false end -- "future" version
+  if not utils:HasValue(core.toc.versions, vMax) then return true end -- "future" version
+  for i,version in ipairs(core.toc.versions) do -- from recent to old
+    if version == latestVersion then
+      return false
+    elseif version == vMax then
+      return true
+    end
+  end
+end
+
+function utils:GetAllVersionsOlderThan(v) -- returns a table containing every version number older than the given one
+  if not utils:HasValue(core.toc.versions, v) then return utils:Deepcopy(core.toc.versions) end -- "future" version
+  local versions = {}
+  local startAdding = false
+  for i,version in ipairs(core.toc.versions) do -- from recent to old
+    if startAdding then
+      table.insert(versions, version)
+    elseif version == v then
+      startAdding = true
+    end
+  end
+  return versions
+end
 
 function utils:Clamp(number, min, max)
   return math.min(math.max(number, min), max)

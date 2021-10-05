@@ -50,6 +50,33 @@ core.toc = {}
 core.toc.title = GetAddOnMetadata(addonName, "Title") -- better than "Nys_ToDoList"
 core.toc.version = GetAddOnMetadata(addonName, "Version")
 
+-- every addon versions up to the current one, just to keep track of them
+core.toc.versions = {
+  "6.0", -- redid the source code and separated it in different files, started using unique IDs, reworked the migration codes
+  "5.7.1",
+  "5.7",
+  "5.6.2",
+  "5.6.1",
+  "5.6", -- final source code workflow, started keeping track of the "latestVersion"
+  "5.5.2",
+  "5.5.1", -- removed due to major bug
+  "5.5", -- removed due to major bug
+  "5.4",
+  "5.3",
+  "5.2.1",
+  "5.2",
+  "5.1",
+  "5.0.1",
+  "5.0",
+  "4.0", -- started using libraries
+  "3.0",
+  "2.0",
+  "1.3",
+  "1.2",
+  "1.1",
+  "1.0",
+}
+
 -- Variables
 local L = core.L
 core.loaded = false
