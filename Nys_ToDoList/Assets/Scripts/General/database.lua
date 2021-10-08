@@ -306,7 +306,18 @@ function database:CheckVarsMigration()
 
   -- / migration from 4.0+ to 5.0+
   if utils:IsVersionOlderThan(profile.latestVersion, "5.0") then
-    if profile.checkedButtons and not (profile.itemsFavorite or profile.itemsDesc) then
+    -- this test may not be bulletproof, but it's the closest safeguard i could think of
+    -- 5.5+ format
+    local nextFormat = false
+    local catName, itemNames = next(profile.itemsList)
+    if catName then
+      local _, itemData = next(profile.itemsList[catName])
+      if type(itemData) == "table" then
+        nextFormat = true
+      end
+    end
+
+    if profile.itemsList and (profile.itemsList["Daily"] and profile.itemsList["Weekly"]) and not nextFormat then
       -- we only extract the daily and weekly tables to be on their own
       profile.itemsDaily = utils:Deepcopy(profile.itemsList["Daily"]) or {}
       profile.itemsWeekly = utils:Deepcopy(profile.itemsList["Weekly"]) or {}
