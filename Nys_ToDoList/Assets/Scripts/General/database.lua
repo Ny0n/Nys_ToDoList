@@ -267,7 +267,7 @@ function database:CheckVarsMigration()
   local global = db.global
   local profile = db.profile
 
-  local ToDoListSV_transfert, migrationVersions
+  local ToDoListSV_transfert
 
   -- / migration from 1.0+ to 2.0+
   if utils:IsVersionOlderThan(profile.latestVersion, "2.0") then

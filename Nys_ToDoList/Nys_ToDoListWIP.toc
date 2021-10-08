@@ -17,6 +17,7 @@
 
 ## DefaultState: enabled
 ## SavedVariables: NysToDoListDB
+## SavedVariablesPerCharacter: FileAccessor # to have access to the old saved variables, i need to act like i still need to use those save files
 ## X-Curse-Project-ID: 320655
 # ## X-WoWI-ID: xxx
 
