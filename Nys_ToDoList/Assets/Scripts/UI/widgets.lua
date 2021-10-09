@@ -720,6 +720,9 @@ function widgets:CategoryWidget(catID, parentFrame)
         categoryWidget.addEditBox:SetPoint("RIGHT", parentFrame, "RIGHT", -3, 0)
         categoryWidget.addEditBox:SetPoint("LEFT", categoryWidget.interactiveLabel, "RIGHT", 10, 0)
 
+        -- and hide the originalTabLabel so it doesn't overlap (we show it back when the edit box dissapears)
+        categoryWidget.originalTabLabel:Hide()
+
         widgets:SetFocusEditBox(categoryWidget.addEditBox) -- we give it the focus
         tutorialsManager:Validate("TM_introduction_addItem") -- tutorial
       end
@@ -795,6 +798,11 @@ function widgets:CategoryWidget(catID, parentFrame)
   categoryWidget.addEditBox:SetScript("OnEscapePressed", function(self)
     self:Hide()
     self:ClearAllPoints()
+
+    -- if the originalTabLabel was hidden because the add edit box was shown, we show it back if it's necessary
+    if catData.originalTabID ~= database.ctab() then
+      categoryWidget.originalTabLabel:Show()
+    end
   end)
   categoryWidget.addEditBox:HookScript("OnEditFocusLost", function(self)
     self:GetScript("OnEscapePressed")(self)

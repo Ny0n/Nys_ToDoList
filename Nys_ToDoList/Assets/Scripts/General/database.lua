@@ -192,7 +192,6 @@ end
 -- these two functions are called only once, each time there is an addon update
 function database:GlobalNewVersion() -- global
   -- // updates the global saved variables once after an update
-  print("GLOBAL NEW VERSION")
 
   if utils:IsVersionOlderThan(NysTDL.db.global.latestVersion, "6.0") then -- if we come from before 6.0
     if NysTDL.db.global.tuto_progression > 5 then -- if we already completed the tutorial
@@ -204,7 +203,6 @@ end
 
 function database:ProfileNewVersion() -- profile
   -- // updates each profile saved variables once after an update
-  print("PROFILE NEW VERSION")
 
   -- by default after each update, we empty the undo table
   wipe(NysTDL.db.profile.undoTable)

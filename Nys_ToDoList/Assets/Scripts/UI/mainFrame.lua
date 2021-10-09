@@ -679,11 +679,10 @@ local function loadList()
       -- tutorialsManager:SetPoint("TM_editmode_sort", "BOTTOM", firstItemWidget.interactiveLabel, "TOP", 0, 0)
     end
 
-    local originalTabName = select(3, dataManager:Find(catWidget.catData.originalTabID)).name
-    if originalTabName == tabData.name then
+    if catWidget.catData.originalTabID == tabID then
       catWidget.originalTabLabel:Hide()
     else -- if the tab is showing a cat that was not created here, we show the label specifying the cat's original tab
-      catWidget.originalTabLabel:SetText(utils:SafeStringFormat(L["(%s tab)"], originalTabName))
+      catWidget.originalTabLabel:SetText(utils:SafeStringFormat(L["(%s tab)"], dataManager:GetName(catWidget.catData.originalTabID)))
       catWidget.originalTabLabel:Show()
     end
 
