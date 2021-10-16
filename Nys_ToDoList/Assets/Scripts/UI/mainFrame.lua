@@ -316,6 +316,7 @@ function mainFrame:ApplyNewRainbowColor()
   NysTDL.db.profile.favoritesColor = { r, g, b }
   mainFrame:updateFavsRemainingNumbersColor()
   mainFrame:UpdateItemNamesColor()
+  widgets:UpdateDescFramesTitle()
 end
 
 function mainFrame:UpdateItemButtons(itemID)
