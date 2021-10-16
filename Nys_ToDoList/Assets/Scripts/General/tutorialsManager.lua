@@ -2,6 +2,7 @@
 local addonName, addonTable = ...
 
 -- addonTable aliases
+local core = addonTable.core
 local enums = addonTable.enums
 local utils = addonTable.utils
 local widgets = addonTable.widgets
@@ -9,7 +10,7 @@ local mainFrame = addonTable.mainFrame
 local tutorialsManager = addonTable.tutorialsManager
 
 -- Variables
-local L = addonTable.core.L
+local L = core.L
 
 -- tutorial
 local tutorialFrames = {}
@@ -87,7 +88,7 @@ function tutorialsManager:CreateTutoFrames()
   tutorialFrames.TM_introduction_accessOptions = widgets:TutorialFrame("TM_introduction_accessOptions", false, "DOWN", L["You can access the options from here"], 220, 50)
   tutorialFrames.TM_introduction_getMoreInfo = widgets:TutorialFrame("TM_introduction_getMoreInfo", false, "LEFT", L["If you're having any problems, or you just want more information, you can always click here to print help in the chat!"], 275, 50)
   tutorialFrames.TM_introduction_editmode = widgets:TutorialFrame("TM_introduction_editmode", false, "DOWN", L["To delete items and do a lot more, you can right-click anywhere on the list or click on this button to toggle the edit mode"], 275, 50)
-  tutorialFrames.TM_introduction_editmodeChat = widgets:TutorialFrame("TM_introduction_editmodeChat", true, "RIGHT", utils:SafeStringFormat(L["Please type %s and read the chat message for more information about this mode"], "\"/tdl "..L["editmode"].."\""), 275, 50)
+  tutorialFrames.TM_introduction_editmodeChat = widgets:TutorialFrame("TM_introduction_editmodeChat", true, "RIGHT", utils:SafeStringFormat(L["Please type %s and read the chat message for more information about this mode"], "\""..core.slashCommand..' '..L["editmode"].."\""), 275, 50)
 
   -- tutorialFrames.TM_editmode_editmodeBtn = widgets:TutorialFrame("TM_editmode_editmodeBtn", false, "DOWN", L["To delete items and do a lot more, you can right-click anywhere on the list or click on this button to toggle the edit mode"], 275, 50)
   -- tutorialFrames.TM_editmode_delete = widgets:TutorialFrame("TM_editmode_delete", true, "RIGHT", L["Delete items and categories"], 275, 50)

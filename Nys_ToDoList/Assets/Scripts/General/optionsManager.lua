@@ -573,8 +573,8 @@ local function createAddonOptionsTable()
               tdlButtonShow = {
                 order = 2.3,
                 type = "toggle",
-                name = L["Show TDL button"],
-                desc = L["Toggles the display of the 'To-Do List' button"],
+                name = L["Show movable button"],
+                desc = utils:SafeStringFormat(L["Toggles the display of the %s button"], "\""..core.simpleAddonName.."\""),
                 get = function() return NysTDL.db.profile.tdlButton.show end,
                 set = function(info, value)
                   NysTDL.db.profile.tdlButton.show = value
@@ -585,7 +585,7 @@ local function createAddonOptionsTable()
                 order = 2.4,
                 type = "toggle",
                 name = L["Red"],
-                desc = L["Changes the color of the TDL button if there are items left to do before tomorrow"],
+                desc = L["Changes the color of the movable button if there are items left to do before tomorrow"],
                 get = function() return NysTDL.db.profile.tdlButton.red end,
                 set = function(info, value)
                   NysTDL.db.profile.tdlButton.red = value

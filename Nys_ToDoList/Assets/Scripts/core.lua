@@ -80,6 +80,8 @@ core.toc.versions = {
 -- Variables
 local L = core.L
 core.loaded = false
+core.slashCommand = "/tdl"
+core.simpleAddonName = string.gsub(core.toc.title, "Ny's ", "")
 
 -- Bindings.xml globals
 BINDING_HEADER_NysTDL = core.toc.title
@@ -101,7 +103,7 @@ function NysTDL:OnInitialize()
     -- Called when the addon has finished loading
 
     -- Register new Slash Command
-    SLASH_NysTDL1 = "/tdl"
+    SLASH_NysTDL1 = core.slashCommand
     SlashCmdList.NysTDL = chat.HandleSlashCommands
 
     -- #1 - database
@@ -128,7 +130,7 @@ function NysTDL:OnInitialize()
     end
 
     local hex = utils:RGBToHex(database.themes.theme2)
-    chat:Print(L["addon loaded!"]..' ('..string.format("|cff%s%s|r", hex, "/tdl "..L["info"])..')')
+    chat:Print(L["addon loaded!"]..' ('..string.format("|cff%s%s|r", hex, core.slashCommand..' '..L["info"])..')')
     core.loaded = true
 end
 
