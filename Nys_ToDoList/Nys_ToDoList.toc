@@ -20,7 +20,10 @@
 ## X-Curse-Project-ID: 320655
 # ## X-WoWI-ID: xxx
 
-## OptionalDeps: Ace3, LibDBIcon-1.0, !LibUIDropDownMenu
-## X-Embeds: Ace3, LibDBIcon-1.0, !LibUIDropDownMenu
+# this is just to have an access to the old saved variables for a potential migration, they are not actually used anymore
+## SavedVariablesPerCharacter: ToDoListSV, ToDoListSV_itemsList, ToDoListSV_checkedButtons, ToDoListSV_autoReset, ToDoListSV_lastLoadedTab
+
+## OptionalDeps: Ace3, LibDBIcon-1.0
+## X-Embeds: Ace3, LibDBIcon-1.0
 
 Main.xml

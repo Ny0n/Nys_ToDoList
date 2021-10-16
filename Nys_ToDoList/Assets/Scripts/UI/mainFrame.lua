@@ -316,6 +316,7 @@ function mainFrame:ApplyNewRainbowColor()
   NysTDL.db.profile.favoritesColor = { r, g, b }
   mainFrame:updateFavsRemainingNumbersColor()
   mainFrame:UpdateItemNamesColor()
+  widgets:UpdateDescFramesTitle()
 end
 
 function mainFrame:UpdateItemButtons(itemID)
@@ -679,11 +680,10 @@ local function loadList()
       -- tutorialsManager:SetPoint("TM_editmode_sort", "BOTTOM", firstItemWidget.interactiveLabel, "TOP", 0, 0)
     end
 
-    local originalTabName = select(3, dataManager:Find(catWidget.catData.originalTabID)).name
-    if originalTabName == tabData.name then
+    if catWidget.catData.originalTabID == tabID then
       catWidget.originalTabLabel:Hide()
     else -- if the tab is showing a cat that was not created here, we show the label specifying the cat's original tab
-      catWidget.originalTabLabel:SetText(utils:SafeStringFormat(L["(%s tab)"], originalTabName))
+      catWidget.originalTabLabel:SetText(utils:SafeStringFormat(L["(%s tab)"], dataManager:GetName(catWidget.catData.originalTabID)))
       catWidget.originalTabLabel:Show()
     end
 
@@ -1149,7 +1149,7 @@ local function generateFrameContent()
   tutorialsManager:SetPoint("TM_introduction_addNewCat", "TOP", content.categoryButton, "BOTTOM", 0, -18)
 
   -- undo button
-  content.undoButton = widgets:IconTooltipButton(content, "NysTDL_UndoButton", L["Undo last remove/clear"])
+  content.undoButton = widgets:IconTooltipButton(content, "NysTDL_UndoButton", L["Undo last remove"].."\n"..L["(tabs included)"])
   content.undoButton:SetPoint("RIGHT", content.editModeButton, "LEFT", 2, 0)
   content.undoButton:SetScript("OnClick", function() dataManager:Undo() end)
   content.undoButton:Hide()

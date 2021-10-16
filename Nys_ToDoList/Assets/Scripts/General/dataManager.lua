@@ -42,7 +42,7 @@ local tabsFrame = setmetatable({}, {
 -- Variables
 local L = core.L
 
--- local undoing = false -- TDLATER redo
+local undoing = false
 local clearing = false
 
 -- // WoW & Lua APIs
@@ -54,7 +54,7 @@ local random = math.random
 
 --/*******************/ DATA MANAGMENT /*************************/--
 
-local keyID
+local keyID_SetRefresh
 function dataManager:SetRefresh(state, refreshID)
 	-- this is pure optimization, this func allows me to englobe any code i want with these two lines:
 	-- local refreshID = dataManager:SetRefresh(false)
@@ -66,11 +66,30 @@ function dataManager:SetRefresh(state, refreshID)
 	if refreshAuthorized == state then return end
 	if not state then -- disable calls
 		refreshAuthorized = false
-		keyID = dataManager:NewID()
-		return keyID
+		keyID_SetRefresh = dataManager:NewID()
+		return keyID_SetRefresh
 	else -- enable calls
-		if refreshID == keyID then
+		if refreshID == keyID_SetRefresh then
 			refreshAuthorized = true
+		end
+	end
+end
+
+local keyID_SetUndoing
+function dataManager:SetUndoing(state, undoingID)
+	-- this func, very similar to SetRefresh,
+	-- allows me to merge multiple clear undos as one print in the end
+	-- (this may be overkill, but i know that this works,
+	-- and i don't want to find an other way since the Undo func is a recursive nightmare)
+
+	if undoing == state then return end
+	if state then -- undoing start
+		undoing = true
+		keyID_SetUndoing = dataManager:NewID()
+		return keyID_SetUndoing
+	else -- stop undoing
+		if undoingID == keyID_SetUndoing then
+			undoing = false
 		end
 	end
 end
@@ -816,7 +835,9 @@ function dataManager:DeleteCat(catID)
 		end
 	end
 
-	dataManager:AddUndo(nbToUndo + (result and 1 or 0)) -- to undo in one go everything that was removed
+	if nbToUndo > 0 then
+		dataManager:AddUndo(nbToUndo + (result and 1 or 0)) -- to undo in one go everything that was removed
+	end
 
 	dataManager:SetRefresh(true, refreshID)
 
@@ -893,7 +914,9 @@ function dataManager:DeleteTab(tabID)
 		chat:Print(L["Could not empty tab, some of its contents are protected"])
 	end
 
-	dataManager:AddUndo(nbToUndo + (result and 1 or 0)) -- to undo in one go everything that was removed
+	if nbToUndo > 0 then
+		dataManager:AddUndo(nbToUndo + (result and 1 or 0)) -- to undo in one go everything that was removed
+	end
 
 	dataManager:SetRefresh(true, refreshID)
 
@@ -929,7 +952,7 @@ function dataManager:Undo()
 	-- when undoing, there are 4 possible cases:
 	-- undoing a clear, an item deletion, a category deletion, or a tab deletion
 	if #NysTDL.db.profile.undoTable == 0 then
-		chat:Print(L["Nothing to undo"])
+		chat:PrintForced(L["Nothing to undo"])
 		return
 	end
 
@@ -939,22 +962,26 @@ function dataManager:Undo()
 	local toUndo = tremove(NysTDL.db.profile.undoTable) -- remove last
 	if toUndo then -- if we got something to undo
 		if type(toUndo) == "number" then -- clear
-			if toUndo <= 0 then toUndo = 1 end -- when we find a "0", we pass it like it was never here, and directly go undo the next item
+			if toUndo > 0 then -- undoing a clear
+				local undoingID = dataManager:SetUndoing(true)
 
-			-- undoing = true
-			for i=1, toUndo do
-				success = not not dataManager:Undo()
-				if not success then
-					tinsert(NysTDL.db.profile.undoTable, toUndo-(i-1))
-					-- chat:Print(L["Clear undo interrupted"]..string.format(" (%i/%i)", (i-1), toUndo))
-					break
+				for i=1, toUndo do
+					success = not not dataManager:Undo()
+					if not success then
+						tinsert(NysTDL.db.profile.undoTable, toUndo-(i-1))
+						chat:PrintForced(L["Clear undo interrupted"])
+						break
+					end
 				end
-			end
-			-- undoing = false
 
-			-- if success then
-			-- 	chat:Print(L["Clear undo successful!"]..string.format(" (%i/%i)", toUndo, toUndo))
-			-- end
+				dataManager:SetUndoing(false, undoingID)
+
+				if not undoing and success then
+					chat:Print(L["Clear undo successful!"])
+				end
+			else -- when we find a "0", we pass it like it was never here, and directly go undo the next item
+				success = not not dataManager:Undo()
+			end
 		else
 			if toUndo.enum == enums.item then -- item
 				success = not not addItem(toUndo.ID, toUndo.data)
@@ -966,12 +993,12 @@ function dataManager:Undo()
 			if not success then -- cancel
 				tinsert(NysTDL.db.profile.undoTable, toUndo)
 			else
-				-- if not undoing then
+				if not undoing then
 					local type = ((toUndo.enum == enums.item) and L["item"])
 					or ((toUndo.enum == enums.category) and L["category"])
 					or ((toUndo.enum == enums.tab) and L["tab"])
 					chat:Print(utils:SafeStringFormat(L["Added %s back (%s)"], "\""..dataManager:GetName(toUndo.ID).."\"", type))
-				-- end
+				end
 			end
 		end
 	end

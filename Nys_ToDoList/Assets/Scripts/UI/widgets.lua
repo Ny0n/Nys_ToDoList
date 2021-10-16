@@ -156,6 +156,146 @@ function widgets:WipeDescFrames()
   wipe(descFrames)
 end
 
+function widgets:DescriptionFrame(itemWidget)
+  -- // the big function to create the description frame for each item
+
+  local itemID = itemWidget.itemID
+  local itemData = select(3, dataManager:Find(itemID))
+
+  -- first we check if it's already opened, in which case we act as a toggle, and hide it
+  if widgets:DescFrameHide(itemID) then return end
+
+  -- // creating the frame and all of its content
+
+  -- we create the mini frame holding the name of the item and his description in an edit box
+  local descFrame = CreateFrame("Frame", nil, UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil)
+  local w = widgets:GetWidth(itemData.name)
+  descFrame:SetSize(w < 180 and 180+75 or w+75, 110) -- 75 is large enough to place the closebutton, clearbutton, and a little bit of space at the right of the name
+
+  -- background
+  descFrame:SetBackdrop({
+    bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+    edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+    tile = false, tileSize = 1, edgeSize = 10,
+    insets = { left = 2, right = 2, top = 2, bottom = 2 }
+  })
+  descFrame:SetBackdropColor(0, 0, 0, 1)
+
+  -- quick access
+  descFrame.itemID = itemID
+  descFrame.itemData = itemData
+
+  -- properties
+  descFrame:EnableMouse(true)
+  descFrame:SetMovable(true)
+  descFrame:SetClampedToScreen(true)
+  descFrame:SetResizable(true)
+  descFrame:SetMinResize(descFrame:GetWidth(), descFrame:GetHeight())
+  descFrame:SetToplevel(true)
+  widgets:SetHyperlinksEnabled(descFrame, true)
+
+  -- frame vars
+  descFrame.opening = 0 -- for the scrolling up on opening
+
+  -- to move the frame
+  descFrame:SetScript("OnMouseDown", function(self, button)
+    if button == "LeftButton" then
+      self:StartMoving()
+    end
+  end)
+  descFrame:SetScript("OnMouseUp", descFrame.StopMovingOrSizing)
+
+  -- OnUpdate script
+  descFrame:SetScript("OnUpdate", function(self)
+    -- we update non-stop the width of the description edit box to match that of the frame if we resize it, and when the scrollbar kicks in. (this is the secret to make it work)
+    self.descriptionEditBox.EditBox:SetWidth(self.descriptionEditBox:GetWidth() - (self.descriptionEditBox.ScrollBar:IsShown() and 15 or 0))
+
+    if self.opening < 5 then -- doing this only on the 5 first updates after creating the frame, i won't go into the details but updating the vertical scroll of this template is a real fucker :D
+      self.descriptionEditBox:SetVerticalScroll(0)
+      self.opening = self.opening + 1
+    end
+  end)
+
+  -- position
+  descFrame:SetPoint("BOTTOMRIGHT", itemWidget.descBtn, "TOPLEFT", 0, 0) -- we spawn it basically where we clicked
+
+  -- to unlink it from the itemWidget
+  descFrame:StartMoving()
+  descFrame:StopMovingOrSizing()
+
+  -- / content of the frame / --
+
+  -- / resize button
+  descFrame.resizeButton = CreateFrame("Button", nil, descFrame, "NysTDL_ResizeButton")
+  descFrame.resizeButton:SetPoint("BOTTOMRIGHT")
+  descFrame.resizeButton:SetScript("OnMouseDown", function(self, button)
+    if button == "LeftButton" then
+      descFrame:StartSizing("BOTTOMRIGHT")
+      self:GetHighlightTexture():Hide() -- more noticeable
+    end
+  end)
+  descFrame.resizeButton:SetScript("OnMouseUp", function(self)
+    descFrame:StopMovingOrSizing()
+    self:GetHighlightTexture():Show()
+  end)
+
+  -- / close button
+  descFrame.closeButton = CreateFrame("Button", nil, descFrame, "NysTDL_CloseButton")
+  descFrame.closeButton:SetPoint("TOPRIGHT", descFrame, "TOPRIGHT", -2, -2)
+  descFrame.closeButton:SetScript("OnClick", function() widgets:DescFrameHide(itemID) end)
+
+  -- / clear button
+  descFrame.clearButton = widgets:IconTooltipButton(descFrame, "NysTDL_ClearButton", L["Clear"].."\n("..L["Right-Click"]..")")
+  descFrame.clearButton:SetPoint("TOPRIGHT", descFrame, "TOPRIGHT", -24, -2)
+  descFrame.clearButton:RegisterForClicks("RightButtonUp") -- only responds to right-clicks
+  descFrame.clearButton:SetScript("OnClick", function(self)
+    self:GetParent().descriptionEditBox.EditBox:SetText("")
+  end)
+
+  -- / item label
+  descFrame.title = descFrame:CreateFontString(nil)
+  descFrame.title:SetFontObject("GameFontNormalLarge")
+  descFrame.title:SetPoint("TOPLEFT", descFrame, "TOPLEFT", 6, -5)
+  descFrame.title:SetText(itemData.name)
+  descFrame.title:SetTextColor(itemWidget.interactiveLabel.Text:GetTextColor())
+
+  -- / description edit box
+  descFrame.descriptionEditBox = CreateFrame("ScrollFrame", nil, descFrame, "InputScrollFrameTemplate")
+  descFrame.descriptionEditBox:SetPoint("TOPLEFT", descFrame, "TOPLEFT", 10, -30)
+  descFrame.descriptionEditBox:SetPoint("BOTTOMRIGHT", descFrame, "BOTTOMRIGHT", -10, 10)
+  descFrame.descriptionEditBox.EditBox:SetFontObject("ChatFontNormal")
+  descFrame.descriptionEditBox.EditBox:SetAutoFocus(false)
+
+  -- /-> char count
+  descFrame.descriptionEditBox.EditBox:SetMaxLetters(enums.maxDescriptionCharCount)
+  descFrame.descriptionEditBox.CharCount:Hide() -- TDLATER polish
+
+  -- /-> hint
+  descFrame.descriptionEditBox.EditBox.Instructions:SetFontObject("GameFontNormal")
+  descFrame.descriptionEditBox.EditBox.Instructions:SetText(L["Add a description..."].."\n"..L["(automatically saved)"])
+
+  -- /-> scripts
+  descFrame.descriptionEditBox.EditBox:HookScript("OnTextChanged", function(self)
+    -- and here we save the description everytime the text is updated (best auto-save possible I think)
+    dataManager:UpdateDescription(itemID, self:GetText())
+  end)
+  widgets:SetHyperlinksEnabled(descFrame.descriptionEditBox.EditBox, true)
+  widgets:AddHyperlinkEditBox(descFrame.descriptionEditBox.EditBox)
+
+  -- /-> default value
+  if itemData.description then -- if there is already a description for this item, we write it on frame creation
+    descFrame.descriptionEditBox.EditBox:SetText(itemData.description)
+  end
+
+  table.insert(descFrames, descFrame) -- we save it for access, level, hide, and alpha purposes
+
+  -- // finished creating the frame
+
+  -- we update the alpha if it needs to be
+  mainFrame:Event_FrameAlphaSlider_OnValueChanged(NysTDL.db.profile.frameAlpha)
+  mainFrame:Event_FrameContentAlphaSlider_OnValueChanged(NysTDL.db.profile.frameContentAlpha)
+end
+
 -- // tdl button
 
 function widgets:RefreshTDLButton()
@@ -241,140 +381,6 @@ function widgets:TutorialFrame(tutoName, showCloseButton, arrowSide, text, width
   tutoFrame:Hide() -- we hide them by default, we show them only when we need to
 
   return tutoFrame
-end
-
-function widgets:DescriptionFrame(itemWidget)
-  -- // the big function to create the description frame for each item
-
-  local itemID = itemWidget.itemID
-  local itemData = select(3, dataManager:Find(itemID))
-
-  -- first we check if it's already opened, in which case we act as a toggle, and hide it
-  if widgets:DescFrameHide(itemID) then return end
-
-  -- // creating the frame and all of its content
-
-  -- we create the mini frame holding the name of the item and his description in an edit box
-  local descFrame = CreateFrame("Frame", nil, UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil)
-  local w = widgets:GetWidth(itemData.name)
-  descFrame:SetSize(w < 180 and 180+75 or w+75, 110) -- 75 is large enough to place the closebutton, clearbutton, and a little bit of space at the right of the name
-
-  -- background
-  descFrame:SetBackdrop({
-    bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
-    edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-    tile = false, tileSize = 1, edgeSize = 10,
-    insets = { left = 2, right = 2, top = 2, bottom = 2 }
-  })
-  descFrame:SetBackdropColor(0, 0, 0, 1)
-
-  -- quick access
-  descFrame.itemID = itemID
-  descFrame.itemData = itemData
-
-  -- properties
-  descFrame:EnableMouse(true)
-  descFrame:SetMovable(true)
-  descFrame:SetClampedToScreen(true)
-  descFrame:SetResizable(true)
-  descFrame:SetMinResize(descFrame:GetWidth(), descFrame:GetHeight())
-  descFrame:SetToplevel(true)
-  widgets:SetHyperlinksEnabled(descFrame, true)
-
-  -- frame vars
-  descFrame.opening = 0 -- for the scrolling up on opening
-
-  -- to move the frame
-  descFrame:SetScript("OnMouseDown", function(self, button)
-    if button == "LeftButton" then
-      self:StartMoving()
-    end
-  end)
-  descFrame:SetScript("OnMouseUp", descFrame.StopMovingOrSizing)
-
-  -- OnUpdate script
-  descFrame:SetScript("OnUpdate", function(self)
-    -- we update non-stop the width of the description edit box to match that of the frame if we resize it, and when the scrollbar kicks in. (this is the secret to make it work)
-    self.descriptionEditBox.EditBox:SetWidth(self.descriptionEditBox:GetWidth() - (self.descriptionEditBox.ScrollBar:IsShown() and 15 or 0))
-
-    if self.opening < 5 then -- doing this only on the 5 first updates after creating the frame, i won't go into the details but updating the vertical scroll of this template is a real fucker :D
-      self.descriptionEditBox:SetVerticalScroll(0)
-      self.opening = self.opening + 1
-    end
-  end)
-
-  -- position
-  descFrame:SetPoint("BOTTOMRIGHT", itemWidget.descBtn, "TOPLEFT", 0, 0) -- we spawn it basically where we clicked
-
-  -- to unlink it from the itemWidget
-  descFrame:StartMoving()
-  descFrame:StopMovingOrSizing()
-
-  -- / content of the frame / --
-
-  -- resize button
-  descFrame.resizeButton = CreateFrame("Button", nil, descFrame, "NysTDL_ResizeButton")
-  descFrame.resizeButton:SetPoint("BOTTOMRIGHT")
-  descFrame.resizeButton:SetScript("OnMouseDown", function(self, button)
-    if button == "LeftButton" then
-      descFrame:StartSizing("BOTTOMRIGHT")
-      self:GetHighlightTexture():Hide() -- more noticeable
-    end
-  end)
-  descFrame.resizeButton:SetScript("OnMouseUp", function(self)
-    descFrame:StopMovingOrSizing()
-    self:GetHighlightTexture():Show()
-  end)
-
-  -- close button
-  descFrame.closeButton = CreateFrame("Button", nil, descFrame, "NysTDL_CloseButton")
-  descFrame.closeButton:SetPoint("TOPRIGHT", descFrame, "TOPRIGHT", -2, -2)
-  descFrame.closeButton:SetScript("OnClick", function() widgets:DescFrameHide(itemID) end)
-
-  -- clear button
-  descFrame.clearButton = widgets:IconTooltipButton(descFrame, "NysTDL_ClearButton", L["Clear"].."\n("..L["Right-Click"]..")")
-  descFrame.clearButton:SetPoint("TOPRIGHT", descFrame, "TOPRIGHT", -24, -2)
-  descFrame.clearButton:RegisterForClicks("RightButtonUp") -- only responds to right-clicks
-  descFrame.clearButton:SetScript("OnClick", function(self)
-    self:GetParent().descriptionEditBox.EditBox:SetText("")
-  end)
-
-  -- item label
-  descFrame.title = descFrame:CreateFontString(nil)
-  descFrame.title:SetFontObject("GameFontNormalLarge")
-  descFrame.title:SetPoint("TOPLEFT", descFrame, "TOPLEFT", 6, -5)
-  descFrame.title:SetText(itemData.name)
-  descFrame.title:SetTextColor(itemWidget.interactiveLabel.Text:GetTextColor())
-
-  -- description edit box
-  descFrame.descriptionEditBox = CreateFrame("ScrollFrame", nil, descFrame, "InputScrollFrameTemplate")
-  descFrame.descriptionEditBox.EditBox:SetFontObject("ChatFontNormal")
-  descFrame.descriptionEditBox.EditBox:SetAutoFocus(false)
-  descFrame.descriptionEditBox.EditBox:SetMaxLetters(0)
-  descFrame.descriptionEditBox.CharCount:Hide()
-  descFrame.descriptionEditBox.EditBox.Instructions:SetFontObject("GameFontNormal")
-  descFrame.descriptionEditBox.EditBox.Instructions:SetText(L["Add a description..."].."\n"..L["(automatically saved)"])
-  descFrame.descriptionEditBox:SetPoint("TOPLEFT", descFrame, "TOPLEFT", 10, -30)
-  descFrame.descriptionEditBox:SetPoint("BOTTOMRIGHT", descFrame, "BOTTOMRIGHT", -10, 10)
-  if itemData.description then -- if there is already a description for this item, we write it on frame creation
-    descFrame.descriptionEditBox.EditBox:SetText(itemData.description)
-    descFrame.descriptionEditBox.EditBox.Instructions:Hide()
-  end
-  descFrame.descriptionEditBox.EditBox:SetScript("OnTextChanged", function(self)
-    -- and here we save the description everytime the text is updated (best auto-save possible I think)
-    dataManager:UpdateDescription(itemID, self:GetText())
-    self.Instructions:SetShown(self:GetText() == "") -- we show/hide the hint
-  end)
-  widgets:SetHyperlinksEnabled(descFrame.descriptionEditBox.EditBox, true)
-  widgets:AddHyperlinkEditBox(descFrame.descriptionEditBox.EditBox)
-
-  table.insert(descFrames, descFrame) -- we save it for access, level, hide, and alpha purposes
-
-  -- // finished creating the frame
-
-  -- we update the alpha if it needs to be
-  mainFrame:Event_FrameAlphaSlider_OnValueChanged(NysTDL.db.profile.frameAlpha)
-  mainFrame:Event_FrameContentAlphaSlider_OnValueChanged(NysTDL.db.profile.frameContentAlpha)
 end
 
 function widgets:Dummy(parentFrame, relativeFrame, xOffset, yOffset)
@@ -470,7 +476,7 @@ end
 
 function widgets:CreateTDLButton()
   -- creating the big button to easily toggle the frame
-  tdlButton = widgets:Button("NysTDL_tdlButton", UIParent, string.gsub(core.toc.title, "Ny's ", ""))
+  tdlButton = widgets:Button("NysTDL_tdlButton", UIParent, core.simpleAddonName)
 
   -- properties
   tdlButton:EnableMouse(true)
@@ -720,6 +726,9 @@ function widgets:CategoryWidget(catID, parentFrame)
         categoryWidget.addEditBox:SetPoint("RIGHT", parentFrame, "RIGHT", -3, 0)
         categoryWidget.addEditBox:SetPoint("LEFT", categoryWidget.interactiveLabel, "RIGHT", 10, 0)
 
+        -- and hide the originalTabLabel so it doesn't overlap (we show it back when the edit box dissapears)
+        categoryWidget.originalTabLabel:Hide()
+
         widgets:SetFocusEditBox(categoryWidget.addEditBox) -- we give it the focus
         tutorialsManager:Validate("TM_introduction_addItem") -- tutorial
       end
@@ -795,6 +804,11 @@ function widgets:CategoryWidget(catID, parentFrame)
   categoryWidget.addEditBox:SetScript("OnEscapePressed", function(self)
     self:Hide()
     self:ClearAllPoints()
+
+    -- if the originalTabLabel was hidden because the add edit box was shown, we show it back if it's necessary
+    if catData.originalTabID ~= database.ctab() then
+      categoryWidget.originalTabLabel:Show()
+    end
   end)
   categoryWidget.addEditBox:HookScript("OnEditFocusLost", function(self)
     self:GetScript("OnEscapePressed")(self)

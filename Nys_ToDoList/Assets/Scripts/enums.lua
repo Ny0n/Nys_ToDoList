@@ -52,6 +52,7 @@ enums.maxNameWidth = {
 	[enums.tab] = 150,
 }
 
+enums.maxDescriptionCharCount = 10000
 enums.maxQuantities = {
 	[enums.item] = 1000,
 	[enums.category] = 1000,

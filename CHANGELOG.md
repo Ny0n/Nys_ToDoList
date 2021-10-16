@@ -1,8 +1,6 @@
 #### **6.0**
 
-Reworked the addon a lot, so that I could add new features that were almost impossible to do with the previous code.
-
-For this update, the main new features include:
+Reworked the addon a lot, so that I could finally add cool new features:
 
 - a new "edit mode" to delete, fav, desc, and do a lot more (no more holding keys to do stuff)
 - drag and drop is here! you can reorder categories and items just by dragging them (in edit mode)

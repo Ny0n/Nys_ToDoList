@@ -4,6 +4,7 @@ local addonName, addonTable = ...
 -- addonTable aliases
 local core = addonTable.core
 local chat = addonTable.chat
+local enums = addonTable.enums
 local utils = addonTable.utils
 local database = addonTable.database
 local mainFrame = addonTable.mainFrame
@@ -42,6 +43,23 @@ function chat:PrintForced(...)
   end
 
   DEFAULT_CHAT_FRAME:AddMessage(string.join(' ', prefix, unpack(message)))
+end
+
+function chat:CustomPrintForced(str, noprefix)
+  -- to disable the prefix
+
+  if str == nil then return end
+  if not pcall(tostring, str) then return end
+  str = tostring(str)
+
+  local hex = utils:RGBToHex(database.themes.theme)
+  local prefix = string.format("|cff%s%s|r", hex, core.toc.title..':')
+
+  if noprefix then
+    DEFAULT_CHAT_FRAME:AddMessage(str)
+  else
+    DEFAULT_CHAT_FRAME:AddMessage(prefix..' '..str)
+  end
 end
 
 -- Warning function
@@ -113,69 +131,69 @@ chat.commands = { -- TDLATER FIX if all chat commands locales are the same, we c
 
   [L["info"]] = function()
     local hex = utils:RGBToHex(database.themes.theme2)
+    local slashCommand = core.slashCommand..' '
     local str = L["Here are a few commands to help you:"].."\n"
-    str = str.." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["toggle"])
-    str = str.." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["categories"])
-    str = str.." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["hyperlinks"])
-    str = str.." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["editmode"])
-    str = str.." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["favorites"])
-    str = str.." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["descriptions"])
-    str = str.." -- "..string.format("|cff%s%s|r", hex, "/tdl "..L["tutorial"])
-    chat:PrintForced(str)
+    str = str.." -- "..string.format("|cff%s%s|r", hex, slashCommand..L["toggle"])
+    str = str.." -- "..string.format("|cff%s%s|r", hex, slashCommand..L["categories"])
+    str = str.." -- "..string.format("|cff%s%s|r", hex, slashCommand..L["hyperlinks"])
+    str = str.." -- "..string.format("|cff%s%s|r", hex, slashCommand..L["editmode"])
+    str = str.." -- "..string.format("|cff%s%s|r", hex, slashCommand..L["favorites"])
+    str = str.." -- "..string.format("|cff%s%s|r", hex, slashCommand..L["descriptions"])
+    str = str.." -- "..string.format("|cff%s%s|r", hex, slashCommand..L["tutorial"])
+    chat:CustomPrintForced(str)
   end,
 
   [L["toggle"]] = function()
-    chat:PrintForced(L["To toggle the list, you have several ways:"]
-      ..'\n- '..L["minimap button (the default)"]
-      ..'\n- '..L["a normal 'To-Do List' button"]
-      ..'\n- '..L["databroker plugin (eg. titan panel)"]
-      ..'\n- '..L["the '/tdl' command"]
-      ..'\n- '..L["key binding"]
-      ..'\n'..L["You can go to the addon options in the game's interface settings to customize this."])
+    chat:CustomPrintForced(L["To toggle the list, you have several ways:"])
+    chat:CustomPrintForced("- "..L["A minimap button (enabled by default)"], true)
+    chat:CustomPrintForced("- "..utils:SafeStringFormat(L["A movable %s button"], "\""..core.simpleAddonName.."\""), true)
+    chat:CustomPrintForced("- "..utils:SafeStringFormat(L["The %s command"], "\""..core.slashCommand.."\""), true)
+    chat:CustomPrintForced("- "..L["Databroker plugin (e.g. Titan Panel)"], true)
+    chat:CustomPrintForced("- "..L["Key binding"], true)
+    chat:CustomPrintForced(L["You can go to the addon options in the game's interface settings to customize this."], true)
   end,
 
   [L["categories"]] = function()
-    chat:PrintForced(L["Information on categories:"]
-      .."\n- "..L["Left-click on the category names to expand or shrink their content."]
-      .."\n- "..L["Right-click on the category names to add new items."])
+    chat:CustomPrintForced(L["Information on categories:"])
+    chat:CustomPrintForced("- "..L["Left-click on the category names to expand or shrink their content."], true)
+    chat:CustomPrintForced("- "..L["Right-click on the category names to add new items."], true)
   end,
 
   [L["favorites"]] = function()
-    chat:PrintForced(L["You can favorite items!"]..' '..L["(toggle the edit mode to do so)"]
-      .."\n- "..L["customizable color"]
-      .."\n- "..L["sorted first in categories"]
-      .."\n- "..L["have their own more visible remaining numbers"]
-      .."\n- "..L["have an auto chat warning/reminder system!"]
-      .."\n- "..L["the item cannot be deleted"])
+    chat:CustomPrintForced(L["You can favorite items!"]..' '..L["(toggle the edit mode to do so)"])
+    chat:CustomPrintForced("- "..L["Customizable color"], true)
+    chat:CustomPrintForced("- "..L["Sorted first in categories"], true)
+    chat:CustomPrintForced("- "..L["More visible remaining numbers"], true)
+    chat:CustomPrintForced("- "..L["Chat warning/reminder system"], true)
+    chat:CustomPrintForced("- "..L["The item cannot be deleted"], true)
   end,
 
   [L["descriptions"]] = function()
-    chat:PrintForced(L["You can add descriptions on items!"]..' '..L["(toggle the edit mode to do so)"]
-      .."\n- "..L["they are auto-saved and have no length limitations"]
-      .."\n- "..L["the item cannot be deleted"]..' '..L["(empty the description if you want to do so)"])
+    chat:CustomPrintForced(L["You can add descriptions on items!"]..' '..L["(toggle the edit mode to do so)"])
+    chat:CustomPrintForced("- "..L["They are automatically saved"], true)
+    chat:CustomPrintForced("- "..utils:SafeStringFormat(L["You can write up to %i characters"], enums.maxDescriptionCharCount), true)
+    chat:CustomPrintForced("- "..L["The item cannot be deleted"]..' '..L["(empty the description if you want to do so)"], true)
   end,
 
   [L["hyperlinks"]] = function()
-    chat:PrintForced(L["You can add hyperlinks in the list!"]
-      ..' '..L["It works the same way as when you link items or other things in the chat, just shift-click!"])
+    chat:CustomPrintForced(L["You can add hyperlinks in the list!"])
+    chat:CustomPrintForced(L["It works the same way as when you link items or other things in the chat, just shift-click!"], true)
   end,
 
   [L["editmode"]] = function()
-    chat:PrintForced(L["Either right-click anywhere on the list, or click on the dedicated button to toggle the edit mode."]
-      .."\n"..L["In edit mode, you can:"]
-      .."\n- "..L["Delete items and categories"]
-      .."\n- "..L["Favorite and add descriptions on items"]
-      .."\n- "..L["Rename items and categories (double-click)"]
-      .."\n- "..L["Reorder/Sort the list (drag & drop)"]
-      .."\n- "..L["Resize the list"]
-      .."\n- "..L["Undo what you deleted and access special actions for the tab"]
-  )
-  tutorialsManager:Validate("TM_introduction_editmodeChat")
+    chat:CustomPrintForced(L["Either right-click anywhere on the list, or click on the dedicated button to toggle the edit mode."])
+    chat:CustomPrintForced("- "..L["Delete items and categories"], true)
+    chat:CustomPrintForced("- "..L["Favorite and add descriptions on items"], true)
+    chat:CustomPrintForced("- "..L["Rename items and categories (double-click)"], true)
+    chat:CustomPrintForced("- "..L["Reorder/Sort the list (drag & drop)"], true)
+    chat:CustomPrintForced("- "..L["Access tab actions and an undo button"], true)
+    chat:CustomPrintForced("- "..L["Resize the list"], true)
+    tutorialsManager:Validate("TM_introduction_editmodeChat")
   end,
 
   [L["tutorial"]] = function()
     tutorialsManager:Reset()
-    chat:PrintForced(L["The tutorial has been reset!"])
+    chat:CustomPrintForced(L["The tutorial has been reset!"])
   end,
 }
 
@@ -184,7 +202,7 @@ function chat.HandleSlashCommands(str)
   local path = chat.commands -- alias
 
   if #str == 0 then
-    -- we just entered "/tdl" with no additional args
+    -- we just entered the slash command with no additional args
     path[""]()
     return
   end
