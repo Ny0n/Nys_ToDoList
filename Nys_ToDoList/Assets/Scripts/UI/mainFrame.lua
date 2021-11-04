@@ -1149,7 +1149,7 @@ local function generateFrameContent()
   tutorialsManager:SetPoint("TM_introduction_addNewCat", "TOP", content.categoryButton, "BOTTOM", 0, -18)
 
   -- undo button
-  content.undoButton = widgets:IconTooltipButton(content, "NysTDL_UndoButton", L["Undo last remove"].."\n"..L["(tabs included)"])
+  content.undoButton = widgets:IconTooltipButton(content, "NysTDL_UndoButton", L["Undo last remove"].."\n"..L["(including tabs)"])
   content.undoButton:SetPoint("RIGHT", content.editModeButton, "LEFT", 2, 0)
   content.undoButton:SetScript("OnClick", function() dataManager:Undo() end)
   content.undoButton:Hide()
