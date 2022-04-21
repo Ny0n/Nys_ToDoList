@@ -1,3 +1,5 @@
+.vscode/
+.idea/
 .other/private/
 .other/build/package/
 Nys_ToDoList/Libs/*

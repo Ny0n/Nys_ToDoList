@@ -62,22 +62,22 @@
 -- print(nil or false)
 -- select(2, nil)
 
--- local random = math.random
--- local function newID()
--- 	local template ='xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
--- 	return (select(1, string.gsub(template, '[xy]', function(c)
--- 		local v = (c == 'x') and random(0, 0xf) or random(8, 0xb)
--- 		return string.format('%x', v)
--- 	end)))
---
--- 	-- local newID = NysTDL.db.global.nextID
--- 	-- NysTDL.db.global.nextID = NysTDL.db.global.nextID + 1
--- 	-- return newID
--- end
+local random = math.random
+local function newID()
+	local template ='xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
+	return (select(1, string.gsub(template, '[xy]', function(c)
+		local v = (c == 'x') and random(0, 0xf) or random(8, 0xb)
+		return string.format('%x', v)
+    end)))
 
--- for i=1, 10 do
---   print(newID())
--- end
+	-- local newID = NysTDL.db.global.nextID
+	-- NysTDL.db.global.nextID = NysTDL.db.global.nextID + 1
+	-- return newID
+end
+
+for i=1, 10 do
+  print(newID())
+end
 
 -- local uuid = newID()
 -- local uuid2 = "037ab5d1-a971-4ed1-82d6-a7fa089b4401"
@@ -86,4 +86,4 @@
 -- print(string.match(uuid2, '^[0-9a-f]+-[0-9a-f]+-[0-5][0-9a-f]+-[089ab][0-9a-f]+-[0-9a-f]+$'))
 -- print(string.match({}, '^[0-9a-f]+-[0-9a-f]+-[0-5][0-9a-f]+-[089ab][0-9a-f]+-[0-9a-f]+$'))
 
-print(86410%86400)
+-- print(86410%86400)
