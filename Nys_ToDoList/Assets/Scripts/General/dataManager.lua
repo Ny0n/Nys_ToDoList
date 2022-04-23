@@ -132,9 +132,9 @@ function dataManager:Find(ID)
 	for i=1,2 do -- global, profile
 		local isGlobal = i==2
 		local locations = dataManager:GetData(isGlobal, true)
-		for enum,table in pairs(locations) do -- itemsList, categoriesList, tabsList
-			if table[ID] ~= nil then -- presence test
-				return enum, isGlobal, table[ID], dataManager:GetData(isGlobal)
+		for enum, tbl in pairs(locations) do -- itemsList, categoriesList, tabsList
+			if tbl[ID] ~= nil then -- presence test
+				return enum, isGlobal, tbl[ID], dataManager:GetData(isGlobal)
 			end
 		end
 	end
@@ -386,24 +386,24 @@ function dataManager:CreateItem(itemName, tabID, catID)
 	if not dataManager:CheckName(itemName, enums.item) then return end
 
 	local itemData = { -- itemData
-    name = itemName,
-    originalTabID = tabID,
-    tabIDs = { -- we display the item in these tabs, updated later
+		name = itemName,
+		originalTabID = tabID,
+		tabIDs = { -- we display the item in these tabs, updated later
 			-- [tabID] = true,
 			-- ...
 		},
-    catID = catID, -- for convenience when deleting items, so that we can remove them from its respective category easily
-    -- item specific data
-    checked = false,
-    accountWide = false, -- user set, used in global tabs
-    accountChecked = { -- user set, used in global tabs
-      -- [profileName] = false or true, -- first one is self, and is the only one for profile items
-      -- [profileName] = false or true, -- others are used only for global items
-      -- ...
-    },
-    favorite = false,
-    description = false,
-  }
+		catID = catID, -- for convenience when deleting items, so that we can remove them from its respective category easily
+		-- item specific data
+		-- accountWide = false, -- user set, used in global tabs
+		-- accountChecked = { -- user set, used in global tabs
+		--   -- [profileName] = false or true, -- first one is self, and is the only one for profile items
+		--   -- [profileName] = false or true, -- others are used only for global items
+		--   -- ...
+		-- },
+		checked = false,
+		favorite = false,
+		description = false,
+	}
 
 	return addItem(dataManager:NewID(), itemData)
 end
@@ -459,23 +459,23 @@ function dataManager:CreateCategory(catName, tabID, parentCatID)
 	end
 
 	local catData = { -- catData
-    name = catName,
-    originalTabID = tabID,
-    tabIDs = { -- we display the category in these tabs, updated later
+		name = catName,
+		originalTabID = tabID,
+		tabIDs = { -- we display the category in these tabs, updated later
 			-- [tabID] = true,
-      -- ...
+			-- ...
 		},
-    closedInTabIDs = {
-      -- [tabID] = true,
-      -- ...
-    },
-    parentCatID = parentCatID,
-    orderedContentIDs = { -- content of the cat, ordered (tinsert(contentOrderedIDs, 1, ID)), SECOND LOOP ON THIS FOR ITEMS AND RECURSIVELY ON SUB-CATEGORIES
-      -- [catID or itemID], -- [1]
-      -- [catID or itemID], -- [2]
-      -- ... -- [...]
-    },
-  }
+		closedInTabIDs = {
+			-- [tabID] = true,
+			-- ...
+		},
+		parentCatID = parentCatID,
+		orderedContentIDs = { -- content of the cat, ordered (tinsert(contentOrderedIDs, 1, ID)), SECOND LOOP ON THIS FOR ITEMS AND RECURSIVELY ON SUB-CATEGORIES
+			-- [catID or itemID], -- [1]
+			-- [catID or itemID], -- [2]
+			-- ... -- [...]
+		},
+	}
 
 	catData.tabIDs[tabID] = true
 
@@ -526,20 +526,20 @@ function dataManager:CreateTab(tabName, isGlobal)
 	if not dataManager:CheckName(tabName, enums.tab) then return end
 
 	local tabData = { -- tabData
-    name = tabName,
+		name = tabName,
 		orderedCatIDs = { -- content of the tab, ordered (table.insert(contentOrderedIDs, 1, ID)), FIRST LOOP ON THIS FOR CATEGORIES
-      -- [catID], -- [1]
-      -- [catID], -- [2]
-      -- ... -- [...]
-    },
+			-- [catID], -- [1]
+			-- [catID], -- [2]
+			-- ... -- [...]
+		},
 		-- tab specific data
 		shownIDs = { -- user set
-      -- [tabID] = true,
-      -- ...
-    },
-    hideCheckedItems = false, -- user set
-    deleteCheckedItems = false, -- user set
-  }
+			-- [tabID] = true,
+			-- ...
+		},
+		hideCheckedItems = false, -- user set
+		deleteCheckedItems = false, -- user set
+	}
 
 	resetManager:InitTabData(tabData)
 
@@ -865,7 +865,7 @@ function dataManager:DeleteTab(tabID)
 		end
 	end
 
- 	-- we delete everything inside the tab, this means every category inside of it
+	-- we delete everything inside the tab, this means every category inside of it
 	local copy = utils:Deepcopy(tabData.orderedCatIDs)
 	local nbToUndo = 0
 
@@ -1469,7 +1469,7 @@ function dataManager:GetCatNumbers(catID)
 	-- // less hardcore than GetRemainingNumbers, this func returns the general content of a given gategory
 	-- returns a table containing the following keys:
 	-- - total 			-- subCats + items
-	-- 	- subCats 	-- nb of subCats
+	-- 	- subCats 		-- nb of subCats
 	-- 	- items 		-- nb of items
 	-- 		- desc 		-- at least have a desc
 	-- 		- favs 		-- at least is fav

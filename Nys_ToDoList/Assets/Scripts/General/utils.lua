@@ -142,10 +142,10 @@ function utils:HasHyperlink(s)
   return false
 end
 
-function utils:HasValue(table, value)
+function utils:HasValue(tbl, value)
   local isPresent, key = false, 0
-  if type(table) == "table" then -- just in case
-	  for k, v in pairs(table) do
+  if type(tbl) == "table" then -- just in case
+	  for k, v in pairs(tbl) do
 	    if v == value then
 	      isPresent = true
 	      key = k
@@ -156,9 +156,9 @@ function utils:HasValue(table, value)
   return isPresent, key
 end
 
-function utils:HasKey(table, key)
-  if type(table) == "table" then -- just in case
-	  for k in pairs(table) do
+function utils:HasKey(tbl, key)
+  if type(tbl) == "table" then -- just in case
+	  for k in pairs(tbl) do
 	    if (k == key) then
 	      return true
 	    end

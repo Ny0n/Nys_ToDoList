@@ -8,6 +8,7 @@ addonTable.database = {}
 addonTable.dataManager = {}
 addonTable.enums = {}
 addonTable.events = {}
+addonTable.migration = {}
 addonTable.optionsManager = {}
 addonTable.resetManager = {}
 addonTable.tutorialsManager = {}
