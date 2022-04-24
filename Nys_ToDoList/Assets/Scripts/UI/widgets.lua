@@ -7,6 +7,7 @@ local utils = addonTable.utils
 local enums = addonTable.enums
 local widgets = addonTable.widgets
 local database = addonTable.database
+local migration = addonTable.migration
 local dragndrop = addonTable.dragndrop
 local mainFrame = addonTable.mainFrame
 local tabsFrame = addonTable.tabsFrame
@@ -394,9 +395,13 @@ end
 
 --/*******************/ LABELS /*************************/--
 
-function widgets:NoPointsLabel(relativeFrame, name, text)
+function widgets:NoPointsLabel(relativeFrame, name, text, font)
   local label = relativeFrame:CreateFontString(name)
-  label:SetFontObject("GameFontHighlightLarge")
+  if font and type(font) == "string" then
+    label:SetFontObject(font)
+  else
+    label:SetFontObject("GameFontHighlightLarge")
+  end
   label:SetText(text)
   return label
 end
@@ -1099,7 +1104,7 @@ function widgets:Initialize()
   -- databroker:CreateTooltipFrame() -- TDLATER
   databroker:CreateMinimapButton()
   mainFrame:CreateTDLFrame()
-  tabsFrame:CreateFrame(mainFrame:GetFrame())
+  tabsFrame:CreateTabsFrame()
 
   -- then we manage the widgetsFrame
   widgetsFrame.timeSinceLastUpdate = 0

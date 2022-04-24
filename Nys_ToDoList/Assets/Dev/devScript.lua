@@ -25,7 +25,8 @@ local L = core.L
 -- Tests function (for me :p)
 function Nys_Tests(yes, ...)
   if yes == 1 then -- tests profile
-    print(mainFrame:GetFrame():GetFrameStrata())
+    optionsManager:ToggleOptions()
+    -- print(mainFrame:GetFrame():GetFrameStrata())
     -- tutorialsManager:UpdateFramesVisibility()
 
     do return end

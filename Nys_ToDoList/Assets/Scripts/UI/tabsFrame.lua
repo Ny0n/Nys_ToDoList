@@ -236,15 +236,14 @@ function private:RefreshSize()
   end
 
 	scrollFrame:ClearAllPoints()
-	local tdlFrame = mainFrame:GetFrame()
 	if hasOverflow then
 		overflowButtonFrame:SetShown(true)
-	  scrollFrame:SetPoint("TOPLEFT", tdlFrame, "BOTTOMLEFT", leftScrollFrameOffset, 2)
-	  scrollFrame:SetPoint("BOTTOMRIGHT", tdlFrame, "BOTTOMRIGHT", -overflowButtonWidth+rightScrollFrameOffset, -40)
+	  scrollFrame:SetPoint("TOPLEFT", mainFrame.tdlFrame, "BOTTOMLEFT", leftScrollFrameOffset, 2)
+	  scrollFrame:SetPoint("BOTTOMRIGHT", mainFrame.tdlFrame, "BOTTOMRIGHT", -overflowButtonWidth+rightScrollFrameOffset, -40)
 	else
 		overflowButtonFrame:SetShown(false)
-	  scrollFrame:SetPoint("TOPLEFT", tdlFrame, "BOTTOMLEFT", leftScrollFrameOffset, 2)
-	  scrollFrame:SetPoint("BOTTOMRIGHT", tdlFrame, "BOTTOMRIGHT", 0, -40)
+	  scrollFrame:SetPoint("TOPLEFT", mainFrame.tdlFrame, "BOTTOMLEFT", leftScrollFrameOffset, 2)
+	  scrollFrame:SetPoint("BOTTOMRIGHT", mainFrame.tdlFrame, "BOTTOMRIGHT", 0, -40)
 	end
 
 	private:SnapToTab(tabToSnapTo)
@@ -521,11 +520,11 @@ end
 
 --/*******************/ INITIALIZATION /*************************/--
 
-function tabsFrame:CreateFrame(tdlFrame)
+function tabsFrame:CreateTabsFrame()
   -- // scrollFrame
-  scrollFrame = CreateFrame("ScrollFrame", nil, tdlFrame, "UIPanelScrollFrameTemplate")
-  scrollFrame:SetPoint("TOPLEFT", tdlFrame, "BOTTOMLEFT", leftScrollFrameOffset, 2)
-  scrollFrame:SetPoint("BOTTOMRIGHT", tdlFrame, "BOTTOMRIGHT", 0, -40)
+  scrollFrame = CreateFrame("ScrollFrame", nil, mainFrame.tdlFrame, "UIPanelScrollFrameTemplate")
+  scrollFrame:SetPoint("TOPLEFT", mainFrame.tdlFrame, "BOTTOMLEFT", leftScrollFrameOffset, 2)
+  scrollFrame:SetPoint("BOTTOMRIGHT", mainFrame.tdlFrame, "BOTTOMRIGHT", 0, -40)
   scrollFrame:SetClipsChildren(true)
   scrollFrame.ScrollBar:Hide()
   scrollFrame.ScrollBar:ClearAllPoints()
@@ -559,8 +558,8 @@ function tabsFrame:CreateFrame(tdlFrame)
 	-- // overflowButton / overflowButtonFrame
 	 -- !! both overflowButtonFrame and overflowButtonFrame.backdrop are there only to beautify the button,
 	 -- by creating a better backdrop and masking of the border
-	overflowButtonFrame = CreateFrame("Frame", nil, tdlFrame, nil)
-	overflowButtonFrame:SetPoint("TOPRIGHT", tdlFrame, "BOTTOMRIGHT", overflowButtonRightOffsetX, 2)
+	overflowButtonFrame = CreateFrame("Frame", nil, mainFrame.tdlFrame, nil)
+	overflowButtonFrame:SetPoint("TOPRIGHT", mainFrame.tdlFrame, "BOTTOMRIGHT", overflowButtonRightOffsetX, 2)
   overflowButtonFrame:SetSize(overflowButtonSize, overflowButtonSize)
   overflowButtonFrame:SetFrameStrata("LOW")
 	overflowButtonFrame:SetClipsChildren(true)
@@ -593,7 +592,7 @@ function tabsFrame:CreateFrame(tdlFrame)
 		self:SetPoint("CENTER", self:GetParent(), "CENTER", 0, 0)
 	end)
 
-	overflowList = CreateFrame("Frame", nil, tdlFrame, BackdropTemplateMixin and "BackdropTemplate" or nil)
+	overflowList = CreateFrame("Frame", nil, mainFrame.tdlFrame, BackdropTemplateMixin and "BackdropTemplate" or nil)
 	overflowList:SetBackdrop({
     bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
     edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
@@ -627,18 +626,20 @@ end
 
 function tabsFrame:Init()
 	tabsFrame.authorized = false
-  -- // widgets
+
+	-- // widgets
 	-- we delete and hide each widget
-  for tabID in pairs(tabWidgets) do
-    tabsFrame:DeleteTab(tabID)
-  end
-  wipe(tabWidgets)
-  wipe(listButtonWidgets)
+	for tabID in pairs(tabWidgets) do
+		tabsFrame:DeleteTab(tabID)
+	end
+	wipe(tabWidgets)
+	wipe(listButtonWidgets)
 
 	-- before (re)creating them
-  for tabID,tabData in dataManager:ForEach(enums.tab, false) do -- TDLATER global too
-    tabsFrame:UpdateTab(tabID)
-  end
+	for tabID,tabData in dataManager:ForEach(enums.tab, false) do -- TDLATER global too
+		tabsFrame:UpdateTab(tabID)
+	end
+
 	tabsFrame.authorized = true
 
 	-- one big refresh

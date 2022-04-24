@@ -5,7 +5,9 @@ local _, addonTable = ...
 local core = addonTable.core
 local enums = addonTable.enums
 local utils = addonTable.utils
+local widgets = addonTable.widgets
 local migration = addonTable.migration
+local mainFrame = addonTable.mainFrame
 local dataManager = addonTable.dataManager
 
 -- Variables
@@ -23,10 +25,11 @@ local migrationData = {
         "5.5",
         "6.0"
     },
-    codes = {}, -- defined at the end of the file
+    codes = {}, -- defined later in the file
     failed = {
         savedItemsList = {},
         version = "",
+        codes = {}, -- defined later in the file
     },
 }
 
@@ -38,6 +41,10 @@ end
 
 function migration:Migrate()
     -- this is for doing specific things ONLY when the addon gets updated and its version changes
+
+    if NysTDL.db.profile.migrationData.failed then
+        private:Failed()
+    end
 
     -- checking for an addon update, globally
     if NysTDL.db.global.latestVersion ~= core.toc.version then
@@ -76,7 +83,7 @@ function private:ProfileNewVersion() -- profile
     -- var version migration
     local success, errmsg = pcall(private.CheckVarsMigration) -- pcall(<err>)
     if not success then -- oh boy
-        private:Failed(errmsg)
+        private:Failed(errmsg, true)
     end
 end
 
@@ -93,6 +100,7 @@ function private:TryToMigrate(toVersion)
     -- this func will only call the right migrations, depending on the current and last version of the addon
     if utils:IsVersionOlderThan(NysTDL.db.profile.latestVersion, toVersion) then
         -- the safeguard
+        print("SAFEGUARD -- " .. toVersion)
         migrationData.failed.savedItemsList = utils:Deepcopy(NysTDL.db.profile.itemsList)
         migrationData.failed.version = toVersion
 
@@ -281,6 +289,8 @@ migrationData.codes["6.0"] = function()
             end
         end
 
+        error()
+
         -- then we add the cat to each of those found tabs
         local allCatID, dailyCatID, weeklyCatID
         for _,tabName in pairs(contentTabs) do
@@ -375,6 +385,206 @@ end
 
 -- // **************/ AUTOMATIC MIGRATION FAILED /************** // --
 
-function private:Failed(errmsg)
-    
+local migrationFrame
+local migrationFrameWidgets = {}
+
+function private:Failed(errmsg, original)
+    if original then
+        print("ORIGINAL")
+        local migrationDataSV = NysTDL.db.profile.migrationData
+        migrationDataSV.failed = true
+        migrationDataSV.savedItemsList = migrationData.failed.savedItemsList
+        print(#migrationDataSV.savedItemsList)
+        migrationDataSV.version = migrationData.failed.version
+        migrationDataSV.errmsg = errmsg
+        NysTDL.db.profile.itemsList = {}
+    end
+
+    private:CreateMigrationFrame()
+end
+
+function private:CreateMigrationFrame()
+    if migrationFrame then
+        migrationFrame:Hide()
+        migrationFrame:ClearAllPoints()
+    end
+
+    -- we create the migration frame
+    migrationFrame = CreateFrame("Frame", nil, mainFrame.tdlFrame, BackdropTemplateMixin and "BackdropTemplate" or nil)
+
+    -- background
+    migrationFrame:SetBackdrop({
+        bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = false, tileSize = 1, edgeSize = 12,
+        insets = { left = 2, right = 2, top = 2, bottom = 2 }
+    })
+
+    migrationFrame:SetBackdropColor(0, 0, 0, 1)
+    migrationFrame:SetBackdropBorderColor(1, 1, 1, 1)
+
+    -- properties
+    migrationFrame:SetClampedToScreen(true)
+    migrationFrame:SetFrameStrata("LOW")
+
+    -- we resize the frame
+    migrationFrame:SetSize(260, 300)
+
+    -- we reposition the frame
+    migrationFrame:ClearAllPoints()
+    migrationFrame:SetPoint("TOPLEFT", mainFrame.tdlFrame, "TOPRIGHT", 0, 0)
+
+    -- // CREATING THE CONTENT OF THE FRAME // --
+
+    -- // scroll frame (almost everything will be inside of it using a scroll child frame, see generateFrameContent())
+
+    migrationFrame.ScrollFrame = CreateFrame("ScrollFrame", nil, migrationFrame, "UIPanelScrollFrameTemplate")
+    migrationFrame.ScrollFrame:SetPoint("TOPLEFT", migrationFrame, "TOPLEFT", 4, - 4)
+    migrationFrame.ScrollFrame:SetPoint("BOTTOMRIGHT", migrationFrame, "BOTTOMRIGHT", - 4, 4)
+    migrationFrame.ScrollFrame:SetScript("OnMouseWheel", private.Event_ScrollFrame_OnMouseWheel)
+    migrationFrame.ScrollFrame:SetClipsChildren(true)
+
+    -- // outside the scroll frame
+
+    -- scroll bar
+    migrationFrame.ScrollFrame.ScrollBar:ClearAllPoints()
+    migrationFrame.ScrollFrame.ScrollBar:SetPoint("TOPLEFT", migrationFrame.ScrollFrame, "TOPRIGHT", - 16, - 17)
+    migrationFrame.ScrollFrame.ScrollBar:SetPoint("BOTTOMLEFT", migrationFrame.ScrollFrame, "BOTTOMRIGHT", - 16, 16)
+
+    -- creating the content, scroll child of ScrollFrame (everything will be inside of it)
+    migrationFrame.content = CreateFrame("Frame", nil, migrationFrame.ScrollFrame)
+    migrationFrame.content:SetSize(enums.tdlFrameDefaultWidth, 1) -- y is determined by the elements inside of it
+    migrationFrame.ScrollFrame:SetScrollChild(migrationFrame.content)
+
+    -- displaying the data to manually migrate
+    private:Refresh(NysTDL.db.profile.migrationData.version) -- migrationData.failed.codes call
+end
+
+function private:Event_ScrollFrame_OnMouseWheel(delta)
+    -- defines how fast we can scroll throught the frame
+    local newValue = migrationFrame.ScrollFrame:GetVerticalScroll() - (delta * 20)
+
+    if newValue < 0 then
+        newValue = 0
+    elseif newValue > migrationFrame.ScrollFrame:GetVerticalScrollRange() then
+        newValue = migrationFrame.ScrollFrame:GetVerticalScrollRange()
+    end
+
+    migrationFrame.ScrollFrame:SetVerticalScroll(newValue)
+end
+
+-- // **************************** // --
+
+local function CreateCategoryWidget(catName)
+    local categoryWidget = CreateFrame("Frame", nil, migrationFrame.content, nil)
+    categoryWidget:SetSize(1, 1) -- so that its children are visible
+
+    -- / label
+    categoryWidget.label = widgets:NoPointsLabel(categoryWidget, nil, catName)
+    categoryWidget.label:ClearAllPoints()
+    categoryWidget.label:SetPoint("LEFT", categoryWidget, "LEFT", 0, 0)
+
+    -- -- / removeBtn
+    -- categoryWidget.removeBtn = widgets:RemoveButton(categoryWidget, categoryWidget)
+    -- categoryWidget.removeBtn:SetPoint("LEFT", categoryWidget, "LEFT", 0, -1)
+    -- categoryWidget.removeBtn:SetScript("OnClick", function() -- todo put in migration failed code, not here bc diff for everyone
+    --     NysTDL.db.profile.migrationData.savedItemsList
+    --     private:Refresh(NysTDL.db.profile.migrationData.version)
+    -- end)
+
+    return categoryWidget
+end
+
+local function CreateItemWidget(itemName, itemData, catName) -- todo same for cat name ? ^
+    local itemWidget = CreateFrame("Frame", nil, migrationFrame.content, nil)
+    itemWidget:SetSize(1, 1) -- so that its children are visible
+
+    -- / label
+    itemWidget.label = widgets:NoPointsLabel(itemWidget, nil, itemName, "GameFontNormal")
+    itemWidget.label:ClearAllPoints()
+    itemWidget.label:SetPoint("LEFT", itemWidget, "LEFT", 18, 0)
+
+    -- / removeBtn
+    itemWidget.removeBtn = widgets:RemoveButton(itemWidget, itemWidget)
+    itemWidget.removeBtn:SetPoint("LEFT", itemWidget, "LEFT", 0, -1)
+    itemWidget.removeBtn:SetScript("OnClick", function()
+        if NysTDL.db.profile.migrationData.savedItemsList[catName] then
+            NysTDL.db.profile.migrationData.savedItemsList[catName][itemName] = nil
+            if not next(NysTDL.db.profile.migrationData.savedItemsList[catName]) then
+                NysTDL.db.profile.migrationData.savedItemsList[catName] = nil
+            end
+        end
+        private:Refresh(NysTDL.db.profile.migrationData.version)
+    end)
+
+    -- -- / infoBtn
+    -- itemWidget.infoBtn = widgets:RemoveButton(itemWidget, itemWidget)
+    -- itemWidget.infoBtn:SetPoint("LEFT", itemWidget, "LEFT", -10, -1)
+    -- itemWidget.infoBtn:SetScript("OnClick", function() --[[ TODO ]] end)
+
+    return itemWidget
+end
+
+function private:Refresh(version)
+    -- first we clear everything
+    for _,frame in ipairs(migrationFrameWidgets) do
+        frame:Hide()
+        frame:ClearAllPoints()
+    end
+    wipe(migrationFrameWidgets)
+    print(version)
+
+    -- then we repopulate (if there are things to show)
+
+    if not next(NysTDL.db.profile.migrationData.savedItemsList) then -- we're done
+        NysTDL.db.profile.migrationData.failed = nil
+        NysTDL.db.profile.migrationData.savedItemsList = nil
+        NysTDL.db.profile.migrationData.version = nil
+        NysTDL.db.profile.migrationData.errmsg = nil
+
+        migrationFrame:Hide()
+        migrationFrame:ClearAllPoints()
+        return
+    end
+
+    migrationData.failed.codes[version]()
+
+    -- and finally, this is just to add a space after the last item, just so it looks nice
+    local itemWidget = CreateFrame("Frame", nil, migrationFrame.content, nil)
+    itemWidget:SetSize(1, 1) -- so that its children are visible
+
+    local spaceLabel = itemWidget:CreateFontString(nil)
+    spaceLabel:SetFontObject("GameFontHighlightLarge")
+    spaceLabel:SetText(" ")
+    spaceLabel:ClearAllPoints()
+    spaceLabel:SetPoint("LEFT", itemWidget, "LEFT", 0, 0)
+
+    itemWidget:ClearAllPoints()
+    local point, _, relativePoint, ofsx, ofsy = migrationFrameWidgets[#migrationFrameWidgets]:GetPoint()
+    itemWidget:SetPoint(point, itemWidget:GetParent(), relativePoint, ofsx, ofsy - 10)
+    itemWidget:Show()
+    table.insert(migrationFrameWidgets, itemWidget)
+end
+
+-- / migration failed from 5.5+ to 6.0+
+migrationData.failed.codes["6.0"] = function()
+    local y, ydelta, xdelta = 16, 20, 10
+    for catName,items in pairs(NysTDL.db.profile.migrationData.savedItemsList) do
+        -- categories
+        local categoryWidget = CreateCategoryWidget(catName)
+        categoryWidget:ClearAllPoints()
+        categoryWidget:SetPoint("TOPLEFT", categoryWidget:GetParent(), "TOPLEFT", xdelta, -y)
+        table.insert(migrationFrameWidgets, categoryWidget)
+        y = y + ydelta
+
+        for itemName,itemData in pairs(items) do
+            -- items
+            local itemWidget = CreateItemWidget(itemName, itemData, catName)
+            itemWidget:ClearAllPoints()
+            itemWidget:SetPoint("TOPLEFT", itemWidget:GetParent(), "TOPLEFT", xdelta*2, -y)
+            itemWidget:Show()
+            table.insert(migrationFrameWidgets, itemWidget)
+            y = y + ydelta
+        end
+    end
 end

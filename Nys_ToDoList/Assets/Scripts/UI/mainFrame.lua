@@ -20,7 +20,7 @@ local L = core.L
 -- local LDD = core.LDD
 
 -- THE frame
-local tdlFrame
+mainFrame.tdlFrame = CreateFrame("Frame", nil, UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil)
 mainFrame.editMode = false
 
 -- profile-dependant variables (those are reset in mainFrame:Init())
@@ -62,6 +62,8 @@ contentWidgets = {
 ]]
 
 -- these are for code comfort
+
+local tdlFrame = mainFrame.tdlFrame
 
 local centerXOffset = 165
 local lineOffset = 120
@@ -1214,8 +1216,7 @@ end
 -- // Creating the main frame
 
 function mainFrame:CreateTDLFrame()
-  -- we create the list
-  tdlFrame = CreateFrame("Frame", nil, UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil)
+  -- // we create the list
 
   -- background
   tdlFrame:SetBackdrop({

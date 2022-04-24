@@ -20,6 +20,7 @@
   <Script file="Assets\Scripts\General\database.lua"/>
   <Script file="Assets\Scripts\General\dataManager.lua"/>
   <Script file="Assets\Scripts\General\events.lua"/>
+  <Script file="Assets\Scripts\General\migration.lua"/>
   <Script file="Assets\Scripts\General\optionsManager.lua"/>
   <Script file="Assets\Scripts\General\resetManager.lua"/>
   <Script file="Assets\Scripts\General\tutorialsManager.lua"/>
