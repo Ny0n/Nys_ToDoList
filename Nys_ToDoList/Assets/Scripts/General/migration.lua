@@ -6,6 +6,7 @@ local core = addonTable.core
 local enums = addonTable.enums
 local utils = addonTable.utils
 local widgets = addonTable.widgets
+local database = addonTable.database
 local migration = addonTable.migration
 local mainFrame = addonTable.mainFrame
 local dataManager = addonTable.dataManager
@@ -32,10 +33,6 @@ local migrationData = {
         codes = {}, -- defined later in the file
     },
 }
-
-function private:InitMigrationFrame()
-
-end
 
 -- // **************************** // --
 
@@ -385,8 +382,17 @@ end
 
 -- // **************/ AUTOMATIC MIGRATION FAILED /************** // --
 
-local migrationFrame
-local migrationFrameWidgets = {}
+local recoveryList = {
+    frame = nil,
+    content = nil, -- shortcut to recoveryList.frame.body.list
+    copyBox = nil, -- shortcut to recoveryList.frame.footer.copyBox
+    widgets = {},
+
+    -- info
+    width = 260,
+    height = 300,
+    ySize = 40, -- header/footer...
+}
 
 function private:Failed(errmsg, original)
     if original then
@@ -400,83 +406,144 @@ function private:Failed(errmsg, original)
         NysTDL.db.profile.itemsList = {}
     end
 
-    private:CreateMigrationFrame()
+    private:CreateRecoveryList()
 end
 
-function private:CreateMigrationFrame()
-    if migrationFrame then
-        migrationFrame:Hide()
-        migrationFrame:ClearAllPoints()
+function private:CreateRecoveryList()
+    if recoveryList.frame then
+        recoveryList.frame:Hide()
+        recoveryList.frame:ClearAllPoints()
     end
 
-    -- we create the migration frame
-    migrationFrame = CreateFrame("Frame", nil, mainFrame.tdlFrame, BackdropTemplateMixin and "BackdropTemplate" or nil)
+    -- we create the recovery frame
+    recoveryList.frame = CreateFrame("Frame", "NysTDL_recoveryList", mainFrame.tdlFrame, BackdropTemplateMixin and "BackdropTemplate" or nil)
+    local frame = recoveryList.frame
 
     -- background
-    migrationFrame:SetBackdrop({
+    frame:SetBackdrop({
         bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
         edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
         tile = false, tileSize = 1, edgeSize = 12,
         insets = { left = 2, right = 2, top = 2, bottom = 2 }
     })
 
-    migrationFrame:SetBackdropColor(0, 0, 0, 1)
-    migrationFrame:SetBackdropBorderColor(1, 1, 1, 1)
+    frame:SetBackdropColor(0, 0, 0, 1)
+    frame:SetBackdropBorderColor(1, 1, 1, 1)
 
     -- properties
-    migrationFrame:SetClampedToScreen(true)
-    migrationFrame:SetFrameStrata("LOW")
+    frame:SetClampedToScreen(true)
+    frame:SetFrameStrata("HIGH")
 
     -- we resize the frame
-    migrationFrame:SetSize(260, 300)
+    frame:SetSize(recoveryList.width, recoveryList.height)
 
     -- we reposition the frame
-    migrationFrame:ClearAllPoints()
-    migrationFrame:SetPoint("TOPLEFT", mainFrame.tdlFrame, "TOPRIGHT", 0, 0)
+    frame:ClearAllPoints()
+    frame:SetPoint("TOPLEFT", mainFrame.tdlFrame, "TOPRIGHT", 0, 0)
 
     -- // CREATING THE CONTENT OF THE FRAME // --
 
-    -- // scroll frame (almost everything will be inside of it using a scroll child frame, see generateFrameContent())
+    --[[
+        The frame is organised in 3 parts:
+            - header    => the title
+            - body      => the content (scroll frame & scroll bar & list)
+            - footer    => the copy edit box
+    ]]
 
-    migrationFrame.ScrollFrame = CreateFrame("ScrollFrame", nil, migrationFrame, "UIPanelScrollFrameTemplate")
-    migrationFrame.ScrollFrame:SetPoint("TOPLEFT", migrationFrame, "TOPLEFT", 4, - 4)
-    migrationFrame.ScrollFrame:SetPoint("BOTTOMRIGHT", migrationFrame, "BOTTOMRIGHT", - 4, 4)
-    migrationFrame.ScrollFrame:SetScript("OnMouseWheel", private.Event_ScrollFrame_OnMouseWheel)
-    migrationFrame.ScrollFrame:SetClipsChildren(true)
+    local linesTheme = database.themes.white
+    frame.topLine = widgets:ThemeLine(frame, linesTheme, 0.7)
+    frame.topLine:SetStartPoint("TOPLEFT", 3, -recoveryList.ySize+1) -- +lineThickness/2
+    frame.topLine:SetEndPoint("TOPLEFT", recoveryList.width-3, -recoveryList.ySize+1)
+    frame.bottomLine = widgets:ThemeLine(frame, linesTheme, 0.7)
+    frame.bottomLine:SetStartPoint("BOTTOMLEFT", 3, recoveryList.ySize-1) -- -lineThickness/2
+    frame.bottomLine:SetEndPoint("BOTTOMLEFT", recoveryList.width-3, recoveryList.ySize-1)
 
-    -- // outside the scroll frame
+    -- // part 1: the header
+    frame.header = CreateFrame("Frame", nil, frame)
+    local header = frame.header
 
-    -- scroll bar
-    migrationFrame.ScrollFrame.ScrollBar:ClearAllPoints()
-    migrationFrame.ScrollFrame.ScrollBar:SetPoint("TOPLEFT", migrationFrame.ScrollFrame, "TOPRIGHT", - 16, - 17)
-    migrationFrame.ScrollFrame.ScrollBar:SetPoint("BOTTOMLEFT", migrationFrame.ScrollFrame, "BOTTOMRIGHT", - 16, 16)
+    header:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
+    header:SetPoint("BOTTOMRIGHT", frame, "TOPRIGHT", 0, -recoveryList.ySize)
 
-    -- creating the content, scroll child of ScrollFrame (everything will be inside of it)
-    migrationFrame.content = CreateFrame("Frame", nil, migrationFrame.ScrollFrame)
-    migrationFrame.content:SetSize(enums.tdlFrameDefaultWidth, 1) -- y is determined by the elements inside of it
-    migrationFrame.ScrollFrame:SetScrollChild(migrationFrame.content)
+    -- /-> title
 
-    -- displaying the data to manually migrate
+    header.title = widgets:NoPointsLabel(header, nil, "Recovery List")
+    header.title:SetPoint("TOP", header, "TOP", 0, -12)
+
+    -- // part 2: the body
+    frame.body = CreateFrame("Frame", nil, frame)
+    local body = frame.body
+
+    body:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, -recoveryList.ySize)
+    body:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, recoveryList.ySize)
+
+    -- /-> scroll frame
+
+    body.ScrollFrame = CreateFrame("ScrollFrame", nil, body, "UIPanelScrollFrameTemplate")
+    body.ScrollFrame:SetPoint("TOPLEFT", body, "TOPLEFT", 3, -1) -- exclusive
+    body.ScrollFrame:SetPoint("BOTTOMRIGHT", body, "BOTTOMRIGHT", -3, 1) -- exclusive
+    body.ScrollFrame:SetScript("OnMouseWheel", private.Event_ScrollFrame_OnMouseWheel)
+    body.ScrollFrame:SetClipsChildren(true)
+
+    -- /-> scroll bar
+
+    body.ScrollFrame.ScrollBar:ClearAllPoints()
+    body.ScrollFrame.ScrollBar:SetPoint("TOPLEFT", body.ScrollFrame, "TOPRIGHT", - 18, - 18)
+    body.ScrollFrame.ScrollBar:SetPoint("BOTTOMLEFT", body.ScrollFrame, "BOTTOMRIGHT", - 18, 17)
+
+    -- /-> list
+
+    -- creating the list, scroll child of ScrollFrame
+    body.list = CreateFrame("Frame")
+    body.list:SetSize(recoveryList.width-20, 1) -- y is determined by the elements inside of it
+    body.ScrollFrame:SetScrollChild(body.list)
+    recoveryList.content = body.list -- shortcut
+
+    -- // part 3: the copy edit box
+    frame.footer = CreateFrame("Frame", nil, frame)
+    local footer = frame.footer
+
+    footer:SetPoint("TOPLEFT", frame, "BOTTOMLEFT", 0, recoveryList.ySize)
+    footer:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
+
+    -- /-> copy edit box
+    footer.copyBox = CreateFrame("EditBox", nil, footer, "InputBoxTemplate")
+    footer.copyBox:SetSize(recoveryList.width-40, 30)
+    footer.copyBox:SetFontObject("GameFontHighlightLarge")
+    footer.copyBox:SetAutoFocus(false)
+    footer.copyBox:SetPoint("LEFT", footer, "LEFT", 15, 1)
+    footer.copyBox:SetHitRectInsets(5, 5, 7, 7)
+    footer.copyBox.hint = widgets:HintLabel(footer.copyBox, nil, "Copy...")
+    footer.copyBox.hint:SetPoint("LEFT", footer.copyBox, "LEFT", 0, 0)
+    footer.copyBox:HookScript("OnTextChanged", function(self)
+        footer.copyBox.hint:SetShown(#self:GetText() <= 0)
+    end)
+    widgets:SetHyperlinksEnabled(footer.copyBox, true)
+    recoveryList.copyBox = footer.copyBox -- shortcut
+
+    -- // finishing: displaying the data to manually migrate
     private:Refresh(NysTDL.db.profile.migrationData.version) -- migrationData.failed.codes call
 end
 
 function private:Event_ScrollFrame_OnMouseWheel(delta)
     -- defines how fast we can scroll throught the frame
-    local newValue = migrationFrame.ScrollFrame:GetVerticalScroll() - (delta * 20)
+    local ScrollFrame, speed = recoveryList.frame.body.ScrollFrame, 20
+
+    local newValue = ScrollFrame:GetVerticalScroll() - (delta * speed)
 
     if newValue < 0 then
         newValue = 0
-    elseif newValue > migrationFrame.ScrollFrame:GetVerticalScrollRange() then
-        newValue = migrationFrame.ScrollFrame:GetVerticalScrollRange()
+    elseif newValue > ScrollFrame:GetVerticalScrollRange() then
+        newValue = ScrollFrame:GetVerticalScrollRange()
     end
 
-    migrationFrame.ScrollFrame:SetVerticalScroll(newValue)
+    ScrollFrame:SetVerticalScroll(newValue)
 end
 
 -- // **************************** // --
 
 local function CreateCategoryWidget(catName)
-    local categoryWidget = CreateFrame("Frame", nil, migrationFrame.content, nil)
+    local categoryWidget = CreateFrame("Frame", nil, recoveryList.content, nil)
     categoryWidget:SetSize(1, 1) -- so that its children are visible
 
     -- / label
@@ -496,13 +563,19 @@ local function CreateCategoryWidget(catName)
 end
 
 local function CreateItemWidget(itemName, itemData, catName) -- todo same for cat name ? ^
-    local itemWidget = CreateFrame("Frame", nil, migrationFrame.content, nil)
+    local itemWidget = CreateFrame("Frame", nil, recoveryList.content, nil)
     itemWidget:SetSize(1, 1) -- so that its children are visible
 
     -- / label
-    itemWidget.label = widgets:NoPointsLabel(itemWidget, nil, itemName, "GameFontNormal")
+    itemWidget.label = CreateFrame("Button", nil, itemWidget, "NysTDL_CustomListButton")
+	itemWidget.label:SetText(itemName)
+	itemWidget.label:SetSize(widgets:GetWidth(itemName, "GameFontNormalSmall"), 15)
+	itemWidget.label:SetScript("OnClick", function(self)
+        recoveryList.copyBox:SetText(self:GetText())
+        widgets:SetFocusEditBox(recoveryList.copyBox)
+	end)
     itemWidget.label:ClearAllPoints()
-    itemWidget.label:SetPoint("LEFT", itemWidget, "LEFT", 18, 0)
+    itemWidget.label:SetPoint("LEFT", itemWidget, "LEFT", 36, 0)
 
     -- / removeBtn
     itemWidget.removeBtn = widgets:RemoveButton(itemWidget, itemWidget)
@@ -518,20 +591,22 @@ local function CreateItemWidget(itemName, itemData, catName) -- todo same for ca
     end)
 
     -- -- / infoBtn
-    -- itemWidget.infoBtn = widgets:RemoveButton(itemWidget, itemWidget)
-    -- itemWidget.infoBtn:SetPoint("LEFT", itemWidget, "LEFT", -10, -1)
-    -- itemWidget.infoBtn:SetScript("OnClick", function() --[[ TODO ]] end)
+    itemWidget.infoBtn = widgets:HelpButton(itemWidget)
+    itemWidget.infoBtn.tooltip = nil
+    itemWidget.infoBtn:SetPoint("LEFT", itemWidget, "LEFT", 24, -2)
+    itemWidget.infoBtn:SetScale(0.6)
+    itemWidget.infoBtn:SetScript("OnClick", function() --[[ TODO ]] end)
 
     return itemWidget
 end
 
 function private:Refresh(version)
     -- first we clear everything
-    for _,frame in ipairs(migrationFrameWidgets) do
+    for _,frame in ipairs(recoveryList.widgets) do
         frame:Hide()
         frame:ClearAllPoints()
     end
-    wipe(migrationFrameWidgets)
+    wipe(recoveryList.widgets)
     print(version)
 
     -- then we repopulate (if there are things to show)
@@ -542,15 +617,15 @@ function private:Refresh(version)
         NysTDL.db.profile.migrationData.version = nil
         NysTDL.db.profile.migrationData.errmsg = nil
 
-        migrationFrame:Hide()
-        migrationFrame:ClearAllPoints()
+        recoveryList.frame:Hide()
+        recoveryList.frame:ClearAllPoints()
         return
     end
 
     migrationData.failed.codes[version]()
 
     -- and finally, this is just to add a space after the last item, just so it looks nice
-    local itemWidget = CreateFrame("Frame", nil, migrationFrame.content, nil)
+    local itemWidget = CreateFrame("Frame", nil, recoveryList.content, nil)
     itemWidget:SetSize(1, 1) -- so that its children are visible
 
     local spaceLabel = itemWidget:CreateFontString(nil)
@@ -560,10 +635,10 @@ function private:Refresh(version)
     spaceLabel:SetPoint("LEFT", itemWidget, "LEFT", 0, 0)
 
     itemWidget:ClearAllPoints()
-    local point, _, relativePoint, ofsx, ofsy = migrationFrameWidgets[#migrationFrameWidgets]:GetPoint()
+    local point, _, relativePoint, ofsx, ofsy = recoveryList.widgets[#recoveryList.widgets]:GetPoint()
     itemWidget:SetPoint(point, itemWidget:GetParent(), relativePoint, ofsx, ofsy - 10)
     itemWidget:Show()
-    table.insert(migrationFrameWidgets, itemWidget)
+    table.insert(recoveryList.widgets, itemWidget)
 end
 
 -- / migration failed from 5.5+ to 6.0+
@@ -574,7 +649,7 @@ migrationData.failed.codes["6.0"] = function()
         local categoryWidget = CreateCategoryWidget(catName)
         categoryWidget:ClearAllPoints()
         categoryWidget:SetPoint("TOPLEFT", categoryWidget:GetParent(), "TOPLEFT", xdelta, -y)
-        table.insert(migrationFrameWidgets, categoryWidget)
+        table.insert(recoveryList.widgets, categoryWidget)
         y = y + ydelta
 
         for itemName,itemData in pairs(items) do
@@ -583,7 +658,7 @@ migrationData.failed.codes["6.0"] = function()
             itemWidget:ClearAllPoints()
             itemWidget:SetPoint("TOPLEFT", itemWidget:GetParent(), "TOPLEFT", xdelta*2, -y)
             itemWidget:Show()
-            table.insert(migrationFrameWidgets, itemWidget)
+            table.insert(recoveryList.widgets, itemWidget)
             y = y + ydelta
         end
     end

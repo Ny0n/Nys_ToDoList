@@ -271,7 +271,7 @@ function private:RefreshPoints()
 end
 
 function private:RefreshOverflowList()
-  -- updates the pos of each ListButtonWidget, which ones are shown, and adapts the height of the overflowList
+	-- updates the pos of each ListButtonWidget, which ones are shown, and adapts the height of the overflowList
 	for _,listButton in pairs(listButtonWidgets) do
 		listButton:ClearAllPoints()
 		listButton:Hide()
@@ -280,26 +280,28 @@ function private:RefreshOverflowList()
 	end
 
 	local tabsList = select(3, dataManager:GetData(_currentState))
-  local lastWidget, rightSide
-  for _,tabID in ipairs(tabsList.orderedTabIDs) do
-    if listButtonWidgets[tabID] then
+	local lastWidget, rightSide
+	for _,tabID in ipairs(tabsList.orderedTabIDs) do
+		if listButtonWidgets[tabID] then
 			if utils:HasValue(_shownWholeTabs, tabID) then
 				rightSide = true
 			else -- !! if the tab is not already shown as a button under the list
 				if not lastWidget then
 					listButtonWidgets[tabID]:SetPoint("TOP", overflowList.content.title, "BOTTOM", 0, -5)
-	      else
-	        listButtonWidgets[tabID]:SetPoint("TOP", lastWidget, "BOTTOM", 0, -2)
-	      end
+				else
+					listButtonWidgets[tabID]:SetPoint("TOP", lastWidget, "BOTTOM", 0, -2)
+				end
 				listButtonWidgets[tabID]:Show()
+
 				if rightSide then
 					listButtonWidgets[tabID].ArrowRIGHT:Show()
 				else
 					listButtonWidgets[tabID].ArrowLEFT:Show()
 				end
-	      lastWidget = listButtonWidgets[tabID]
+
+				lastWidget = listButtonWidgets[tabID]
 			end
-    end
+		end
 	end
 
 	if not lastWidget then lastWidget = overflowList.content.title end
@@ -450,19 +452,19 @@ function tabsFrame:SetContentAlpha(alpha)
 end
 
 function tabsFrame:UpdateTab(tabID)
-  -- updates (create/update) the given tab's associated button
+	-- updates (create/update) the given tab's associated button
 
-  if tabWidgets[tabID] then
-    tabWidgets[tabID]:ClearAllPoints()
-    tabWidgets[tabID]:Hide()
-  end
-  if listButtonWidgets[tabID] then
-    listButtonWidgets[tabID]:ClearAllPoints()
-    listButtonWidgets[tabID]:Hide()
-  end
+	if tabWidgets[tabID] then
+		tabWidgets[tabID]:ClearAllPoints()
+		tabWidgets[tabID]:Hide()
+	end
+	if listButtonWidgets[tabID] then
+		listButtonWidgets[tabID]:ClearAllPoints()
+		listButtonWidgets[tabID]:Hide()
+	end
 
-  tabWidgets[tabID] = private:TabWidget(tabID, content)
-  listButtonWidgets[tabID] = private:ListButtonWidget(tabID, overflowList.content)
+	tabWidgets[tabID] = private:TabWidget(tabID, content)
+	listButtonWidgets[tabID] = private:ListButtonWidget(tabID, overflowList.content)
 
 	-- we update the alpha for the new tab (and for everything else)
 	tabsFrame:SetAlpha(NysTDL.db.profile.frameAlpha/100)
@@ -521,13 +523,13 @@ end
 --/*******************/ INITIALIZATION /*************************/--
 
 function tabsFrame:CreateTabsFrame()
-  -- // scrollFrame
-  scrollFrame = CreateFrame("ScrollFrame", nil, mainFrame.tdlFrame, "UIPanelScrollFrameTemplate")
-  scrollFrame:SetPoint("TOPLEFT", mainFrame.tdlFrame, "BOTTOMLEFT", leftScrollFrameOffset, 2)
-  scrollFrame:SetPoint("BOTTOMRIGHT", mainFrame.tdlFrame, "BOTTOMRIGHT", 0, -40)
-  scrollFrame:SetClipsChildren(true)
-  scrollFrame.ScrollBar:Hide()
-  scrollFrame.ScrollBar:ClearAllPoints()
+	-- // scrollFrame
+	scrollFrame = CreateFrame("ScrollFrame", nil, mainFrame.tdlFrame, "UIPanelScrollFrameTemplate")
+	scrollFrame:SetPoint("TOPLEFT", mainFrame.tdlFrame, "BOTTOMLEFT", leftScrollFrameOffset, 2)
+	scrollFrame:SetPoint("BOTTOMRIGHT", mainFrame.tdlFrame, "BOTTOMRIGHT", 0, -40)
+	scrollFrame:SetClipsChildren(true)
+	scrollFrame.ScrollBar:Hide()
+	scrollFrame.ScrollBar:ClearAllPoints()
 	scrollFrame:SetScript("OnShow", function()
 		private:SnapToTab(lastLeftTab or private:GetLeftMostTab())
 		tabsFrame:Refresh()
@@ -550,37 +552,37 @@ function tabsFrame:CreateTabsFrame()
 		end
 	end)
 
-  -- // content
-  content = CreateFrame("Frame", "NysTDL_tabsFrame_content", scrollFrame) -- NAME IS MANDATORY HERE (bc there are tabs)
-  content:SetSize(1, 1) -- just to show everything inside of it
-  scrollFrame:SetScrollChild(content)
+	-- // content
+	content = CreateFrame("Frame", "NysTDL_tabsFrame_content", scrollFrame) -- NAME IS MANDATORY HERE (bc there are tabs)
+	content:SetSize(1, 1) -- just to show everything inside of it
+	scrollFrame:SetScrollChild(content)
 
 	-- // overflowButton / overflowButtonFrame
-	 -- !! both overflowButtonFrame and overflowButtonFrame.backdrop are there only to beautify the button,
-	 -- by creating a better backdrop and masking of the border
+	-- !! both overflowButtonFrame and overflowButtonFrame.backdrop are there only to beautify the button,
+	-- by creating a better backdrop and masking of the border
 	overflowButtonFrame = CreateFrame("Frame", nil, mainFrame.tdlFrame, nil)
 	overflowButtonFrame:SetPoint("TOPRIGHT", mainFrame.tdlFrame, "BOTTOMRIGHT", overflowButtonRightOffsetX, 2)
-  overflowButtonFrame:SetSize(overflowButtonSize, overflowButtonSize)
-  overflowButtonFrame:SetFrameStrata("LOW")
+	overflowButtonFrame:SetSize(overflowButtonSize, overflowButtonSize)
+	overflowButtonFrame:SetFrameStrata("LOW")
 	overflowButtonFrame:SetClipsChildren(true)
 
 	overflowButtonFrame.backdrop = CreateFrame("Frame", nil, overflowButtonFrame, BackdropTemplateMixin and "BackdropTemplate" or nil)
 	overflowButtonFrame.backdrop:SetBackdrop({
-    bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
-    edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-    tile = false, tileSize = 1, edgeSize = 10,
-    insets = { left = 2, right = 2, top = 2, bottom = 2 }
-  })
+		bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+		edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+		tile = false, tileSize = 1, edgeSize = 10,
+		insets = { left = 2, right = 2, top = 2, bottom = 2 }
+	})
 	overflowButtonFrame.backdrop:SetPoint("TOPLEFT", overflowButtonFrame, "TOPLEFT", 0, 4)
-  overflowButtonFrame.backdrop:SetSize(overflowButtonFrame:GetWidth(), overflowButtonFrame:GetHeight()+2)
+	overflowButtonFrame.backdrop:SetSize(overflowButtonFrame:GetWidth(), overflowButtonFrame:GetHeight()+2)
 	overflowButtonFrame.backdrop:SetClipsChildren(true)
 
 	overflowButtonFrame.btn = CreateFrame("Button", nil, overflowButtonFrame.backdrop, "NysTDL_OverflowButton")
-  overflowButtonFrame.btn:SetPoint("CENTER", overflowButtonFrame.backdrop, "CENTER", 0, 0)
+	overflowButtonFrame.btn:SetPoint("CENTER", overflowButtonFrame.backdrop, "CENTER", 0, 0)
 	local btnIconScale = 0.65 -- value between 0 and 1
-  overflowButtonFrame.btn:SetSize(overflowButtonFrame:GetWidth()*btnIconScale, (overflowButtonFrame:GetHeight()*btnIconScale)/2)
+	overflowButtonFrame.btn:SetSize(overflowButtonFrame:GetWidth()*btnIconScale, (overflowButtonFrame:GetHeight()*btnIconScale)/2)
 	local inset = -overflowButtonFrame:GetWidth()*(1-btnIconScale)
-  overflowButtonFrame.btn:SetHitRectInsets(inset, inset, inset, inset)
+	overflowButtonFrame.btn:SetHitRectInsets(inset, inset, inset, inset)
 	overflowButtonFrame.btn.Highlight:SetPoint("TOPLEFT", overflowButtonFrame.backdrop, "TOPLEFT", 2, -4)
 	overflowButtonFrame.btn.Highlight:SetPoint("BOTTOMRIGHT", overflowButtonFrame.backdrop, "BOTTOMRIGHT", -2, 2)
 	overflowButtonFrame.btn:SetScript("OnMouseDown", function(self)
@@ -594,16 +596,16 @@ function tabsFrame:CreateTabsFrame()
 
 	overflowList = CreateFrame("Frame", nil, mainFrame.tdlFrame, BackdropTemplateMixin and "BackdropTemplate" or nil)
 	overflowList:SetBackdrop({
-    bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
-    edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-    tile = false, tileSize = 1, edgeSize = 12,
-    insets = { left = 2, right = 2, top = 2, bottom = 2 }
-  })
+		bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+		edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+		tile = false, tileSize = 1, edgeSize = 12,
+		insets = { left = 2, right = 2, top = 2, bottom = 2 }
+	})
 	overflowList:SetPoint("TOPRIGHT", overflowButtonFrame, "BOTTOMRIGHT", 0, -5)
 	overflowList:SetSize(150, 1) -- the height is updated dynamically
-  overflowList:EnableMouse(true)
-  overflowList:SetClampedToScreen(true)
-  overflowList:SetToplevel(true)
+	overflowList:EnableMouse(true)
+	overflowList:SetClampedToScreen(true)
+	overflowList:SetToplevel(true)
 	overflowList:Hide()
 
 	overflowList.content = CreateFrame("Frame", nil, overflowList)

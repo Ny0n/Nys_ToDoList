@@ -692,4 +692,35 @@
 		<NormalFont style="GameFontNormalSmall"/>
 	</Button>
 
+  <!-- Same as the one just before, but simpler -->
+  <Button name="NysTDL_CustomListButton" virtual="true">
+		<Layers>
+			<Layer level="BACKGROUND">
+				<Texture name="$parentHighlight" file="Interface\QuestFrame\UI-QuestTitleHighlight" parentKey="Highlight" alphaMode="ADD" setAllPoints="true" hidden="true"/>
+			</Layer>
+			<Layer level="BORDER">
+				<Texture name="$parentGlow" file="Interface\ChatFrame\ChatFrameTab-NewMessage" parentKey="Glow" alphaMode="ADD" hidden="true">
+					<Anchors>
+						<Anchor point="BOTTOMLEFT" x="8" y="-2"/>
+						<Anchor point="BOTTOMRIGHT" x="-8" y="-2"/>
+					</Anchors>
+				</Texture>
+			</Layer>
+		</Layers>
+		<Scripts>
+			<OnEnter>
+				self.Highlight:Show()
+			</OnEnter>
+			<OnLeave>
+				self.Highlight:Hide()
+			</OnLeave>
+		</Scripts>
+		<ButtonText>
+			<Anchors>
+				<Anchor point="LEFT" x="0" y="0"/>
+			</Anchors>
+		</ButtonText>
+		<NormalFont style="GameFontNormalSmall"/>
+	</Button>
+
 </Ui>

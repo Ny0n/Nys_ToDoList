@@ -73,11 +73,11 @@ function Nys_Tests(yes, ...)
     end
     print(tdlFrame.fadeInfo.finishedFunc)
   elseif yes == 4 then
-    local catData = select(3, dataManager:Find(...))
-  	for contentOrder,contentID in ipairs(catData.orderedContentIDs) do
-      local enum, _, contentData = dataManager:Find(contentID)
-      print(contentOrder, enum, contentData.name)
-    end
+    -- local catData = select(3, dataManager:Find(...))
+  	-- for contentOrder,contentID in ipairs(catData.orderedContentIDs) do
+    --   local enum, _, contentData = dataManager:Find(contentID)
+    --   print(contentOrder, enum, contentData.name)
+    -- end
 
 
   	-- for tabID, tabData in dataManager:ForEach(enums.tab, false) do

@@ -26,6 +26,8 @@ database.themes = {
   theme = { 0, 204, 255 }, -- theme
   theme2 = { 0, 204, 102 }, -- theme2
   theme_yellow = { 255, 216, 0 }, -- theme_yellow
+  white = { 255, 255, 255 },
+  black = { 0, 0, 0 },
 }
 
 -- AceDB defaults table
