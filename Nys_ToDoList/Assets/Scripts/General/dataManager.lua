@@ -96,23 +96,65 @@ end
 
 -- id func
 function dataManager:NewID()
-	-- no dashes uuid
-	local template ='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
-	return (select(1, string.gsub(template, 'x', function(c)
-		local v = random(0, 0xf)
-		return string.format('%x', v)
-	end)))
+	--[[
+		This function returns the global saved variable "NysTDL.db.global.nextID" as it is,
+		then increments it by one, using the hexadecimal base.
 
-	-- -- uuid
-	-- local template ='xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
-	-- return (select(1, string.gsub(template, '[xy]', function(c)
-	-- 	local v = (c == 'x') and random(0, 0xf) or random(8, 0xb)
-	-- 	return string.format('%x', v)
-	-- end)))
+		! the benefit of this func over using an integer with string.format("%x", ...) is that no numbers are used !
+		-- I'm incrementing NysTDL.db.global.nextID hexadecimally using only strings --
+		-> this means that I am not bound to the limits of lua numbers,
+			but to the limit of lua strings, which in hex terms, is infinitely bigger.
+	]]
 
-	-- local newID = NysTDL.db.global.nextID
-	-- NysTDL.db.global.nextID = NysTDL.db.global.nextID + 1
-	-- return newID
+	-- hexadecimal
+	local base = "0123456789abcdef"
+	local newChar = "1"
+
+	-- // script start
+
+	local g = NysTDL.db.global
+
+	-- safeguard
+	local sg = function()
+		g.nextID = string.format("%x", os.time())
+	end
+
+	if type(g.nextID) ~= "string" or #g.nextID == 0 then sg() end -- safeguard #1
+	g.nextID = g.nextID:lower()
+
+	local newID = g.nextID -- first we save the ID that will be returned by this call (nextID)
+
+	-- and then, we increment nextID by one
+
+	---------------------
+
+	local index = #g.nextID
+
+	repeat
+		local char = g.nextID:sub(index, index)
+		if #char == 0 then
+			g.nextID = newChar .. g.nextID
+			break
+		end
+
+		local baseIndex = base:find(char)
+		if not baseIndex then -- safeguard #2
+			sg()
+			return dataManager:NewID()
+		end
+
+		baseIndex = baseIndex + 1
+		if baseIndex > #base then -- was last char
+			baseIndex = 1
+		end
+
+		g.nextID = g.nextID:sub(1, index-1) .. base:sub(baseIndex, baseIndex) .. g.nextID:sub(index+1, #g.nextID)
+		index = index - 1
+	until baseIndex ~= 1
+
+	---------------------
+
+	return newID
 end
 
 function dataManager:IsID(ID)

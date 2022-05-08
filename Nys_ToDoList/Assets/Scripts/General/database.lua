@@ -48,6 +48,9 @@ database.defaults = {
       },
     },
 
+    -- // Global ID
+    nextID = "001", -- forever increasing, default "001"
+
     -- // Misc
     tuto_progression = 0,
     -- tutorials_progression = {}, TDLATER
