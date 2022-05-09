@@ -116,7 +116,12 @@ function dataManager:NewID()
 
 	-- safeguard
 	local sg = function()
-		g.nextID = string.format("%x", os.time())
+		local success, result = pcall(time) -- Overkill, I know, but better safe than sorry ;)
+		if success then
+			g.nextID = string.format("%x", result)
+		else
+			g.nextID = "001"
+		end
 	end
 
 	if type(g.nextID) ~= "string" or #g.nextID == 0 then sg() end -- safeguard #1

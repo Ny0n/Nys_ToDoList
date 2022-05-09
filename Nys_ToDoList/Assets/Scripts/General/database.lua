@@ -49,7 +49,7 @@ database.defaults = {
     },
 
     -- // Global ID
-    nextID = "001", -- forever increasing, default "001"
+    nextID = "", -- forever increasing, defaults to the current time (time()) in hexadecimal
 
     -- // Misc
     tuto_progression = 0,

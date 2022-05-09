@@ -13,7 +13,7 @@
   <Script file="Assets\Scripts\core.lua"/> <!-- #1 to be loaded -->
   <Script file="Assets\Scripts\enums.lua"/> <!-- #2 to be loaded -->
   <!--@do-not-package@-->
-  <Script file="Assets\Dev\devScript.lua"/>
+  <Script file="Assets\Dev\devTests.lua"/>
   <!--@end-do-not-package@-->
   <!-- General -->
   <Script file="Assets\Scripts\General\chat.lua"/>
