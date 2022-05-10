@@ -330,9 +330,9 @@ end
 
 -- // other
 
-function widgets:SetFocusEditBox(editBox) -- DRY
+function widgets:SetFocusEditBox(editBox, forceHighlight) -- DRY
   editBox:SetFocus()
-  if NysTDL.db.profile.highlightOnFocus then
+  if forceHighlight or NysTDL.db.profile.highlightOnFocus then
     editBox:HighlightText()
   else
     editBox:HighlightText(0, 0)
@@ -468,6 +468,7 @@ end
 function widgets:HelpButton(relativeFrame)
   local btn = CreateFrame("Button", nil, relativeFrame, "NysTDL_HelpButton")
   btn.tooltip = L["Information"]
+  btn:SetAlpha(0.7)
 
   -- these are for changing the color depending on the mouse actions (since they are custom xml)
   btn:HookScript("OnEnter", function(self)
@@ -645,6 +646,38 @@ function widgets:DescButton(widget, parent)
     end
   end)
   return btn
+end
+
+function widgets:ValidButton(parent)
+	local btn = CreateFrame("Button", nil, parent, "NysTDL_ValidButton")
+	local function toGreen()
+		btn.Icon = btn.IconGreen
+		btn.IconYellow:Hide()
+		btn.IconGreen:Show()
+	end
+	local function toYellow()
+		btn.Icon = btn.IconYellow
+		btn.IconGreen:Hide()
+		btn.IconYellow:Show()
+	end
+	toYellow()
+
+	-- these are for changing the color depending on the mouse actions (since they are custom xml)
+	btn:HookScript("OnEnter", function()
+		toGreen()
+	end)
+	btn:HookScript("OnLeave", function(self)
+		if not self.pressed then
+			toYellow()
+		end
+	end)
+	btn:HookScript("OnMouseUp", function()
+		toYellow()
+	end)
+	btn:HookScript("OnShow", function()
+		toYellow()
+	end)
+	return btn
 end
 
 --/*******************/ ITEM/CATEGORY WIDGETS /*************************/--

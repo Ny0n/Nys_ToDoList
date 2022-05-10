@@ -519,18 +519,28 @@ function private:CreateRecoveryList()
 
     -- /-> copy edit box
     footer.copyBox = CreateFrame("EditBox", nil, footer, "InputBoxTemplate")
-    footer.copyBox:SetSize(recoveryList.width-40, 30)
+    footer.copyBox:SetHeight(30)
     footer.copyBox:SetFontObject("GameFontHighlightLarge")
     footer.copyBox:SetAutoFocus(false)
     footer.copyBox:SetPoint("LEFT", footer, "LEFT", 15, 1)
     footer.copyBox:SetHitRectInsets(5, 5, 7, 7)
-    footer.copyBox.hint = widgets:HintLabel(footer.copyBox, nil, "Copy...")
+    footer.copyBox.hint = widgets:HintLabel(footer.copyBox, nil, "Ctrl+C...")
     footer.copyBox.hint:SetPoint("LEFT", footer.copyBox, "LEFT", 0, 0)
     footer.copyBox:HookScript("OnTextChanged", function(self)
         footer.copyBox.hint:SetShown(#self:GetText() <= 0)
     end)
     widgets:SetHyperlinksEnabled(footer.copyBox, true)
     recoveryList.copyBox = footer.copyBox -- shortcut
+
+    -- /-> copy btn (select all btn)
+    footer.copyBtn = CreateFrame("Button", nil, footer, "NysTDL_CopyButton")
+    footer.copyBtn.tooltip = "Ctrl+A"
+    footer.copyBtn:SetSize(30, 30)
+    footer.copyBtn:SetPoint("RIGHT", footer, "RIGHT", -7, 0)
+    footer.copyBtn:SetScript("OnClick", function()
+        widgets:SetFocusEditBox(recoveryList.copyBox, true)
+    end)
+    footer.copyBox:SetPoint("RIGHT", footer.copyBtn, "LEFT", -3, 0)
 
     -- // finishing: displaying the data to manually migrate
     private:Refresh(NysTDL.db.profile.migrationData.version) -- migrationData.failed.codes call
@@ -651,20 +661,22 @@ function private:NewItemWidget(itemName)
 	itemWidget.label:SetSize(widgets:GetWidth(itemName, "GameFontNormalSmall"), 15)
 	itemWidget.label:SetScript("OnClick", function(self)
         recoveryList.copyBox:SetText(self:GetText())
-        widgets:SetFocusEditBox(recoveryList.copyBox)
+        widgets:SetFocusEditBox(recoveryList.copyBox, true)
 	end)
     itemWidget.label:ClearAllPoints()
     itemWidget.label:SetPoint("LEFT", itemWidget, "LEFT", 36, 0)
 
     -- / removeBtn
-    itemWidget.removeBtn = widgets:RemoveButton(itemWidget, itemWidget)
+    itemWidget.removeBtn = widgets:ValidButton(itemWidget)
     itemWidget.removeBtn:SetPoint("LEFT", itemWidget, "LEFT", 0, -1)
+    -- OnClick set later
 
     -- / infoBtn
     itemWidget.infoBtn = widgets:HelpButton(itemWidget)
     itemWidget.infoBtn.tooltip = nil
-    itemWidget.infoBtn:SetPoint("LEFT", itemWidget, "LEFT", 24, -2)
+    itemWidget.infoBtn:SetPoint("LEFT", itemWidget, "LEFT", 24, -1)
     itemWidget.infoBtn:SetScale(0.6)
+    -- OnClick set later
 
     -- /-> position
 	itemWidget:ClearAllPoints()

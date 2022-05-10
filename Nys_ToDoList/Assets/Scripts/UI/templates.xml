@@ -66,7 +66,9 @@
         if self.name == "UndoButton" then yOffset = -3 end
         if self.name == "CategoryButton" then yOffset = -3 end
 
-        self.Icon:SetPoint("CENTER", xOffset, yOffset) self.Icon:SetAlpha(0.5)
+        self.Icon:SetPoint("CENTER", xOffset, yOffset)
+        self.Icon:SetAlpha(0.5)
+        self.pressed = true
       </OnMouseDown>
       <OnMouseUp>
         if not self:IsEnabled() then return end
@@ -79,7 +81,9 @@
         if self.name == "UndoButton" then yOffset = -0.5 end
         if self.name == "CategoryButton" then yOffset = -1 end
 
-        self.Icon:SetPoint("CENTER", xOffset, yOffset) self.Icon:SetAlpha(1)
+        self.Icon:SetPoint("CENTER", xOffset, yOffset)
+        self.Icon:SetAlpha(1)
+        self.pressed = false
       </OnMouseUp>
       <OnShow>
         <!-- reset the icon's position and opacity -->
@@ -91,7 +95,9 @@
         if self.name == "UndoButton" then yOffset = -0.5 end
         if self.name == "CategoryButton" then yOffset = -1 end
 
-        self.Icon:SetPoint("CENTER", xOffset, yOffset) self.Icon:SetAlpha(1)
+        self.Icon:SetPoint("CENTER", xOffset, yOffset)
+        self.Icon:SetAlpha(1)
+        self.pressed = false
       </OnShow>
     </Scripts>
   </Frame>
@@ -247,6 +253,23 @@
       </Layer>
     </Layers>
   </Button>
+  
+  <!-- Edit Mode button -->
+  <Button name="NysTDL_CopyButton" inherits="NysTDL_IconButtonTooltipScripts" virtual="true">
+    <Size x="32" y="32"/>
+    <KeyValues>
+		<KeyValue key="tooltip" value=""/>
+		<KeyValue key="name" value="EditModeButton"/>
+    </KeyValues>
+	<NormalTexture file="Interface\FriendsFrame\UI-FriendsList-Small-Up"/>
+	<PushedTexture file="Interface\FriendsFrame\UI-FriendsList-Small-Down"/>
+	<HighlightTexture file="Interface\Buttons\UI-Common-MouseHilight" alphaMode="ADD" alpha="0.75">
+		<Anchors>
+		<Anchor point="TOPLEFT" x="2" y="-2"/>
+		<Anchor point="BOTTOMRIGHT" x="-2" y="2"/>
+		</Anchors>
+	</HighlightTexture>
+  </Button>
 
   <!-- Frame Options button -->
   <Button name="NysTDL_FrameOptionsButton" inherits="NysTDL_IconButtonTemplate, NysTDL_IconButtonTooltipScripts, NysTDL_IconButtonPositionScripts" virtual="true">
@@ -374,6 +397,33 @@
           </Anchors>
         </Texture>
       </Layer>
+    </Layers>
+  </Button>
+
+  <!-- Valid button -->
+  <Button name="NysTDL_ValidButton" inherits="NysTDL_IconButtonPositionScripts" virtual="true">
+    <Size x="12" y="11"/> <!-- Size of interactable zone -->
+	<KeyValues>
+		<KeyValue key="name" value="ValidButton"/>
+	</KeyValues>
+    <Layers>
+		<Layer level="BACKGROUND">
+			<Texture parentKey="Icon"/>
+			<Texture parentKey="IconGreen" file="Interface\Tooltips\AchievementCompare">
+				<TexCoords left="0.03125" right="0.3125" top="0.125" bottom="0.75"/>
+				<Size x="12" y="11"/> <!-- Size of the texture -->
+				<Anchors>
+					<Anchor point="CENTER"/>
+				</Anchors>
+			</Texture>
+				<Texture parentKey="IconYellow" file="Interface\Tooltips\AchievementCompare">
+				<TexCoords left="0.375" right="0.65625" top="0.125" bottom="0.75"/>
+				<Size x="12" y="11"/> <!-- Size of the texture -->
+				<Anchors>
+					<Anchor point="CENTER"/>
+				</Anchors>
+			</Texture>
+		</Layer>
     </Layers>
   </Button>
 
