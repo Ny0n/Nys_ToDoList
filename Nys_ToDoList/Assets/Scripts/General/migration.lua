@@ -396,6 +396,7 @@ end
 
 local recoveryList = {
     frame = nil,
+    tooltip = nil,
     content = nil, -- shortcut to recoveryList.frame.body.list
     copyBox = nil, -- shortcut to recoveryList.frame.footer.copyBox
     widgets = {},
@@ -424,10 +425,16 @@ function private:CreateRecoveryList()
         recoveryList.frame:Hide()
         recoveryList.frame:ClearAllPoints()
     end
+    if recoveryList.tooltip then
+        recoveryList.tooltip:Hide()
+    end
 
     -- we create the recovery frame
     recoveryList.frame = CreateFrame("Frame", "NysTDL_recoveryList", mainFrame.tdlFrame, BackdropTemplateMixin and "BackdropTemplate" or nil)
     local frame = recoveryList.frame
+
+    -- and our GameTooltip
+    recoveryList.tooltip = CreateFrame("GameTooltip", "NysTDL_recoveryList_GameTooltip", nil, "GameTooltipTemplate")
 
     -- background
     frame:SetBackdrop({
@@ -676,7 +683,39 @@ function private:NewItemWidget(itemName)
     itemWidget.infoBtn.tooltip = nil
     itemWidget.infoBtn:SetPoint("LEFT", itemWidget, "LEFT", 24, -1)
     itemWidget.infoBtn:SetScale(0.6)
-    -- OnClick set later
+    itemWidget.infoBtn:HookScript("OnClick", function(self)
+        recoveryList.copyBox:SetText(self:GetParent().i.description or "<no description>")
+        widgets:SetFocusEditBox(recoveryList.copyBox, true)
+    end)
+    itemWidget.infoBtn:HookScript("OnEnter", function(self)
+        local i = self:GetParent().i
+        local tabName, checked, favorite, description = i.tabName, i.checked, i.favorite, i.description -- those are set dynamically
+
+        -- <!> tooltip content <!>
+
+        local tooltip = recoveryList.tooltip
+        if not tooltip then return end
+
+        tooltip:SetOwner(self, "ANCHOR_TOP", 0, 5)
+
+        tooltip:AddLine("Tab: " .. (tabName or "--"))
+        if checked then
+            tooltip:AddLine("Checked: yes")
+        end
+        if favorite then
+            tooltip:AddLine("Favorite: yes")
+        end
+        if description then
+            tooltip:AddLine("Description: Click to copy")
+        end
+
+        tooltip:Show()
+    end)
+    itemWidget.infoBtn:HookScript("OnLeave", function(self)
+        if recoveryList.tooltip and recoveryList.tooltip.Hide then
+            recoveryList.tooltip:Hide()
+        end
+    end)
 
     -- /-> position
 	itemWidget:ClearAllPoints()
@@ -706,9 +745,6 @@ migrationData.failed.codes["6.0"] = function()
 
         private:Refresh(NysTDL.db.profile.migrationData.version)
     end
-    local infoBtnFunc = function(self)
-        
-    end
 
     for catName,items in pairs(NysTDL.db.profile.migrationData.savedItemsList) do -- categories
 
@@ -720,10 +756,15 @@ migrationData.failed.codes["6.0"] = function()
 
             -- == item ==
             local itemWidget = private:NewItemWidget(itemName)
-            itemWidget.removeBtn:SetScript("OnClick", removeBtnFunc)
-            itemWidget.infoBtn:SetScript("OnClick", infoBtnFunc)
+            itemWidget.removeBtn:HookScript("OnClick", removeBtnFunc)
             itemWidget.i.catName = catName
             itemWidget.i.itemName = itemName
+            if type(itemData) == "table" then -- custom data
+                itemWidget.i.tabName = itemData.tabName
+                itemWidget.i.checked = itemData.checked
+                itemWidget.i.favorite = itemData.favorite
+                itemWidget.i.description = itemData.description
+            end
             -- ==========
 
         end
