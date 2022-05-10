@@ -75,9 +75,9 @@ database.defaults = {
 
     -- // MIGRATION DATA
     migrationData = {
-      failed = false,
-      savedItemsList = {},
-      version = "",
+      failed = nil,
+      savedItemsList = nil,
+      version = nil,
       errmsg = nil,
     },
 

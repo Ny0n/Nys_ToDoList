@@ -60,7 +60,7 @@ end
 -- // **************************** // --
 
 -- these two functions are called only once, each time there is an addon update
-function private:GlobalNewVersion() -- global
+function private:GlobalNewVersion()
     -- // updates the global saved variables once after an update
 
     if utils:IsVersionOlderThan(NysTDL.db.global.latestVersion, "6.0") then -- if we come from before 6.0
@@ -71,25 +71,36 @@ function private:GlobalNewVersion() -- global
     end
 end
 
-function private:ProfileNewVersion() -- profile
+function private:ProfileNewVersion()
     -- // updates each profile saved variables once after an update
 
     -- by default after each update, we empty the undo table
     wipe(NysTDL.db.profile.undoTable)
 
     -- var version migration
-    local success, errmsg = pcall(private.CheckVarsMigration) -- pcall(<err>)
+    private:CheckVarsMigration()
+end
+
+-- // **************************** // --
+
+local xpcall = xpcall
+
+local function errorhandler(err)
+	return "Message: \"" .. err .. "\"\n"
+		.. "Stack: \"" .. debugstack() .. "\""
+end
+
+function private:CheckVarsMigration()
+    -- // VAR VERSIONS MIGRATION
+    local success, errmsg = xpcall(private.ExecVarsMigration, errorhandler) -- xpcall(<err?>)
     if not success then -- oh boy
         private:Failed(errmsg, true)
     end
 end
 
--- // **************************** // --
-
-function private:CheckVarsMigration()
-    -- // VAR VERSIONS MIGRATION
+function private:ExecVarsMigration()
     for _,version in ipairs(migrationData.versions) do -- ORDERED
-        private:TryToMigrate(version) -- <err>
+        private:TryToMigrate(version) -- <err?>
     end
 end
 
@@ -122,10 +133,11 @@ function private:TryToMigrate(toVersion)
             And with this data, i will create a new frame that will display it to the player,
             so that he can migrate manually the data.
         ]]
-        migrationData.codes[toVersion]() -- <err>
+        migrationData.codes[toVersion]() -- <err?>
 
         NysTDL.db.profile.latestVersion = toVersion -- success, onto the next one
     end
+    print("SAFEGUARD -- FINISHED OK")
 end
 
 -- // **************************** // --
@@ -286,7 +298,7 @@ migrationData.codes["6.0"] = function()
             end
         end
 
-        error()
+        error("je suis l'erreur")
 
         -- then we add the cat to each of those found tabs
         local allCatID, dailyCatID, weeklyCatID
@@ -396,11 +408,9 @@ local recoveryList = {
 
 function private:Failed(errmsg, original)
     if original then
-        print("ORIGINAL")
         local migrationDataSV = NysTDL.db.profile.migrationData
         migrationDataSV.failed = true
         migrationDataSV.savedItemsList = migrationData.failed.savedItemsList
-        print(#migrationDataSV.savedItemsList)
         migrationDataSV.version = migrationData.failed.version
         migrationDataSV.errmsg = errmsg
         NysTDL.db.profile.itemsList = {}
@@ -433,6 +443,7 @@ function private:CreateRecoveryList()
     -- properties
     frame:SetClampedToScreen(true)
     frame:SetFrameStrata("HIGH")
+	frame:HookScript("OnUpdate", private.Event_recoveryFrame_OnUpdate)
 
     -- we resize the frame
     frame:SetSize(recoveryList.width, recoveryList.height)
@@ -540,65 +551,17 @@ function private:Event_ScrollFrame_OnMouseWheel(delta)
     ScrollFrame:SetVerticalScroll(newValue)
 end
 
+function private:Event_recoveryFrame_OnUpdate()
+	if not next(NysTDL.db.profile.migrationData) then
+        recoveryList.frame:Hide()
+        recoveryList.frame:ClearAllPoints()
+        return
+	end
+end
+
 -- // **************************** // --
 
-local function CreateCategoryWidget(catName)
-    local categoryWidget = CreateFrame("Frame", nil, recoveryList.content, nil)
-    categoryWidget:SetSize(1, 1) -- so that its children are visible
-
-    -- / label
-    categoryWidget.label = widgets:NoPointsLabel(categoryWidget, nil, catName)
-    categoryWidget.label:ClearAllPoints()
-    categoryWidget.label:SetPoint("LEFT", categoryWidget, "LEFT", 0, 0)
-
-    -- -- / removeBtn
-    -- categoryWidget.removeBtn = widgets:RemoveButton(categoryWidget, categoryWidget)
-    -- categoryWidget.removeBtn:SetPoint("LEFT", categoryWidget, "LEFT", 0, -1)
-    -- categoryWidget.removeBtn:SetScript("OnClick", function() -- todo put in migration failed code, not here bc diff for everyone
-    --     NysTDL.db.profile.migrationData.savedItemsList
-    --     private:Refresh(NysTDL.db.profile.migrationData.version)
-    -- end)
-
-    return categoryWidget
-end
-
-local function CreateItemWidget(itemName, itemData, catName) -- todo same for cat name ? ^
-    local itemWidget = CreateFrame("Frame", nil, recoveryList.content, nil)
-    itemWidget:SetSize(1, 1) -- so that its children are visible
-
-    -- / label
-    itemWidget.label = CreateFrame("Button", nil, itemWidget, "NysTDL_CustomListButton")
-	itemWidget.label:SetText(itemName)
-	itemWidget.label:SetSize(widgets:GetWidth(itemName, "GameFontNormalSmall"), 15)
-	itemWidget.label:SetScript("OnClick", function(self)
-        recoveryList.copyBox:SetText(self:GetText())
-        widgets:SetFocusEditBox(recoveryList.copyBox)
-	end)
-    itemWidget.label:ClearAllPoints()
-    itemWidget.label:SetPoint("LEFT", itemWidget, "LEFT", 36, 0)
-
-    -- / removeBtn
-    itemWidget.removeBtn = widgets:RemoveButton(itemWidget, itemWidget)
-    itemWidget.removeBtn:SetPoint("LEFT", itemWidget, "LEFT", 0, -1)
-    itemWidget.removeBtn:SetScript("OnClick", function()
-        if NysTDL.db.profile.migrationData.savedItemsList[catName] then
-            NysTDL.db.profile.migrationData.savedItemsList[catName][itemName] = nil
-            if not next(NysTDL.db.profile.migrationData.savedItemsList[catName]) then
-                NysTDL.db.profile.migrationData.savedItemsList[catName] = nil
-            end
-        end
-        private:Refresh(NysTDL.db.profile.migrationData.version)
-    end)
-
-    -- -- / infoBtn
-    itemWidget.infoBtn = widgets:HelpButton(itemWidget)
-    itemWidget.infoBtn.tooltip = nil
-    itemWidget.infoBtn:SetPoint("LEFT", itemWidget, "LEFT", 24, -2)
-    itemWidget.infoBtn:SetScale(0.6)
-    itemWidget.infoBtn:SetScript("OnClick", function() --[[ TODO ]] end)
-
-    return itemWidget
-end
+local currentY, deltaY, deltaX
 
 function private:Refresh(version)
     -- first we clear everything
@@ -607,20 +570,28 @@ function private:Refresh(version)
         frame:ClearAllPoints()
     end
     wipe(recoveryList.widgets)
-    print(version)
+    currentY, deltaY, deltaX = 16, 20, 10
+
+	if not recoveryList.frame then
+		return
+	end
 
     -- then we repopulate (if there are things to show)
 
-    if not next(NysTDL.db.profile.migrationData.savedItemsList) then -- we're done
+    if not next(NysTDL.db.profile.migrationData) or not next(NysTDL.db.profile.migrationData.savedItemsList) then -- if there are no items left to migrate
+        -- we're done, so we clear every migration data
         NysTDL.db.profile.migrationData.failed = nil
         NysTDL.db.profile.migrationData.savedItemsList = nil
         NysTDL.db.profile.migrationData.version = nil
         NysTDL.db.profile.migrationData.errmsg = nil
 
+        -- and we hide the recovery list once and for all
         recoveryList.frame:Hide()
         recoveryList.frame:ClearAllPoints()
         return
     end
+
+    print("Refresh - " .. version)
 
     migrationData.failed.codes[version]()
 
@@ -641,25 +612,108 @@ function private:Refresh(version)
     table.insert(recoveryList.widgets, itemWidget)
 end
 
+function private:NewCategoryWidget(catName)
+    local categoryWidget = CreateFrame("Frame", nil, recoveryList.content, nil)
+    categoryWidget:SetSize(1, 1) -- so that its children are visible
+
+    -- / label
+    categoryWidget.label = widgets:NoPointsLabel(categoryWidget, nil, catName)
+    categoryWidget.label:ClearAllPoints()
+    categoryWidget.label:SetPoint("LEFT", categoryWidget, "LEFT", 0, 0)
+
+    -- -- / removeBtn
+    -- categoryWidget.removeBtn = widgets:RemoveButton(categoryWidget, categoryWidget)
+    -- categoryWidget.removeBtn:SetPoint("LEFT", categoryWidget, "LEFT", 0, -1)
+    -- categoryWidget.removeBtn:SetScript("OnClick", function() -- todo put in migration failed code, not here bc diff for everyone
+    --     NysTDL.db.profile.migrationData.savedItemsList
+    --     private:Refresh(NysTDL.db.profile.migrationData.version)
+    -- end)
+
+    categoryWidget.i = {} -- free space
+
+    -- /-> position
+    categoryWidget:ClearAllPoints()
+    categoryWidget:SetPoint("TOPLEFT", categoryWidget:GetParent(), "TOPLEFT", deltaX, -currentY)
+    table.insert(recoveryList.widgets, categoryWidget)
+    currentY = currentY + deltaY
+
+    return categoryWidget
+end
+
+function private:NewItemWidget(itemName)
+
+    local itemWidget = CreateFrame("Frame", nil, recoveryList.content, nil)
+    itemWidget:SetSize(1, 1) -- so that its children are visible
+
+    -- / label
+    itemWidget.label = CreateFrame("Button", nil, itemWidget, "NysTDL_CustomListButton")
+	itemWidget.label:SetText(itemName)
+	itemWidget.label:SetSize(widgets:GetWidth(itemName, "GameFontNormalSmall"), 15)
+	itemWidget.label:SetScript("OnClick", function(self)
+        recoveryList.copyBox:SetText(self:GetText())
+        widgets:SetFocusEditBox(recoveryList.copyBox)
+	end)
+    itemWidget.label:ClearAllPoints()
+    itemWidget.label:SetPoint("LEFT", itemWidget, "LEFT", 36, 0)
+
+    -- / removeBtn
+    itemWidget.removeBtn = widgets:RemoveButton(itemWidget, itemWidget)
+    itemWidget.removeBtn:SetPoint("LEFT", itemWidget, "LEFT", 0, -1)
+
+    -- / infoBtn
+    itemWidget.infoBtn = widgets:HelpButton(itemWidget)
+    itemWidget.infoBtn.tooltip = nil
+    itemWidget.infoBtn:SetPoint("LEFT", itemWidget, "LEFT", 24, -2)
+    itemWidget.infoBtn:SetScale(0.6)
+
+    -- /-> position
+	itemWidget:ClearAllPoints()
+	itemWidget:SetPoint("TOPLEFT", itemWidget:GetParent(), "TOPLEFT", deltaX*2, -currentY)
+	table.insert(recoveryList.widgets, itemWidget)
+	currentY = currentY + deltaY
+
+    itemWidget.i = {} -- free space
+
+    return itemWidget
+end
+
+-- // **************************** // --
+
 -- / migration failed from 5.5+ to 6.0+
 migrationData.failed.codes["6.0"] = function()
-    local y, ydelta, xdelta = 16, 20, 10
-    for catName,items in pairs(NysTDL.db.profile.migrationData.savedItemsList) do
-        -- categories
-        local categoryWidget = CreateCategoryWidget(catName)
-        categoryWidget:ClearAllPoints()
-        categoryWidget:SetPoint("TOPLEFT", categoryWidget:GetParent(), "TOPLEFT", xdelta, -y)
-        table.insert(recoveryList.widgets, categoryWidget)
-        y = y + ydelta
+    local removeBtnFunc = function(self)
+        local catName, itemName = self:GetParent().i.catName, self:GetParent().i.itemName
+        local list = NysTDL.db.profile.migrationData.savedItemsList
 
-        for itemName,itemData in pairs(items) do
-            -- items
-            local itemWidget = CreateItemWidget(itemName, itemData, catName)
-            itemWidget:ClearAllPoints()
-            itemWidget:SetPoint("TOPLEFT", itemWidget:GetParent(), "TOPLEFT", xdelta*2, -y)
-            itemWidget:Show()
-            table.insert(recoveryList.widgets, itemWidget)
-            y = y + ydelta
+        if list[catName] then
+            list[catName][itemName] = nil
+            if not next(list[catName]) then
+                list[catName] = nil
+            end
+        end
+
+        private:Refresh(NysTDL.db.profile.migrationData.version)
+    end
+    local infoBtnFunc = function(self)
+        
+    end
+
+    for catName,items in pairs(NysTDL.db.profile.migrationData.savedItemsList) do -- categories
+
+        -- == cat ==
+        local catWidget = private:NewCategoryWidget(catName)
+        -- =========
+
+        for itemName,itemData in pairs(items) do -- items
+
+            -- == item ==
+            local itemWidget = private:NewItemWidget(itemName)
+            itemWidget.removeBtn:SetScript("OnClick", removeBtnFunc)
+            itemWidget.infoBtn:SetScript("OnClick", infoBtnFunc)
+            itemWidget.i.catName = catName
+            itemWidget.i.itemName = itemName
+            -- ==========
+
         end
     end
 end

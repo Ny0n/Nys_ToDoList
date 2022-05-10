@@ -1087,130 +1087,130 @@ local function generateMenuTabActions()
 end
 
 local function generateFrameContent()
-  -- // generating the content (top to bottom)
+    -- // generating the content (top to bottom)
 
-  -- creating content, scroll child of ScrollFrame (everything will be inside of it)
-  tdlFrame.content = CreateFrame("Frame", nil, tdlFrame.ScrollFrame)
-  tdlFrame.content:SetSize(enums.tdlFrameDefaultWidth-30, 1) -- y is determined by the elements inside of it
-  tdlFrame.ScrollFrame:SetScrollChild(tdlFrame.content)
-  local content = tdlFrame.content
+    -- creating content, scroll child of ScrollFrame (everything will be inside of it)
+    tdlFrame.content = CreateFrame("Frame", nil, tdlFrame.ScrollFrame)
+    tdlFrame.content:SetSize(enums.tdlFrameDefaultWidth-30, 1) -- y is determined by the elements inside of it
+    tdlFrame.ScrollFrame:SetScrollChild(tdlFrame.content)
+    local content = tdlFrame.content
 
-  -- title
-  content.title = widgets:NoPointsLabel(content, nil, string.gsub(core.toc.title, "Ny's ", ""))
-  content.title:SetPoint("CENTER", content, "TOPLEFT", centerXOffset, -18)
-  content.title:SetFontObject("GameFontNormalLarge")
-  -- left/right lines
-  content.titleLL = widgets:ThemeLine(content, database.themes.theme_yellow, 0.8)
-  content.titleLR = widgets:ThemeLine(content, database.themes.theme_yellow, 0.8)
-  setDoubleLinePoints(content.titleLL, content.titleLR, content.title:GetWidth(), -20)
+    -- title
+    content.title = widgets:NoPointsLabel(content, nil, string.gsub(core.toc.title, "Ny's ", ""))
+    content.title:SetPoint("CENTER", content, "TOPLEFT", centerXOffset, -18)
+    content.title:SetFontObject("GameFontNormalLarge")
+    -- left/right lines
+    content.titleLL = widgets:ThemeLine(content, database.themes.theme_yellow, 0.8)
+    content.titleLR = widgets:ThemeLine(content, database.themes.theme_yellow, 0.8)
+    setDoubleLinePoints(content.titleLL, content.titleLR, content.title:GetWidth(), -20)
 
-  -- remaining numbers labels
-  content.remaining = widgets:NoPointsLabel(content, nil, L["Remaining:"])
-  content.remaining:SetPoint("TOPLEFT", content.title, "TOP", -140, -32)
-  content.remaining:SetFontObject("GameFontNormalLarge")
-  content.remainingNumber = widgets:NoPointsLabel(content, nil, "...")
-  content.remainingNumber:SetPoint("LEFT", content.remaining, "RIGHT", 3, 0)
-  content.remainingNumber:SetFontObject("GameFontNormalLarge")
-  content.remainingFavsNumber = widgets:NoPointsLabel(content, nil, "...")
-  content.remainingFavsNumber:SetPoint("LEFT", content.remainingNumber, "RIGHT", 3, 0)
-  content.remainingFavsNumber:SetFontObject("GameFontNormalLarge")
+    -- remaining numbers labels
+    content.remaining = widgets:NoPointsLabel(content, nil, L["Remaining:"])
+    content.remaining:SetPoint("TOPLEFT", content.title, "TOP", -140, -32)
+    content.remaining:SetFontObject("GameFontNormalLarge")
+    content.remainingNumber = widgets:NoPointsLabel(content, nil, "...")
+    content.remainingNumber:SetPoint("LEFT", content.remaining, "RIGHT", 3, 0)
+    content.remainingNumber:SetFontObject("GameFontNormalLarge")
+    content.remainingFavsNumber = widgets:NoPointsLabel(content, nil, "...")
+    content.remainingFavsNumber:SetPoint("LEFT", content.remainingNumber, "RIGHT", 3, 0)
+    content.remainingFavsNumber:SetFontObject("GameFontNormalLarge")
 
-  -- help button
-  content.helpButton = widgets:HelpButton(content)
-  content.helpButton:SetPoint("TOPRIGHT", content.title, "TOP", 140, -25)
-  content.helpButton:SetScript("OnClick", function()
-    SlashCmdList.NysTDL(L["info"])
-    tutorialsManager:Validate("TM_introduction_getMoreInfo")
-  end)
-  tutorialsManager:SetPoint("TM_introduction_getMoreInfo", "LEFT", content.helpButton, "RIGHT", 18, 0)
+    -- help button
+    content.helpButton = widgets:HelpButton(content)
+    content.helpButton:SetPoint("TOPRIGHT", content.title, "TOP", 140, -25)
+    content.helpButton:SetScript("OnClick", function()
+        SlashCmdList.NysTDL(L["info"])
+        tutorialsManager:Validate("TM_introduction_getMoreInfo")
+    end)
+    tutorialsManager:SetPoint("TM_introduction_getMoreInfo", "LEFT", content.helpButton, "RIGHT", 18, 0)
 
-  -- edit mode button
-  content.editModeButton = widgets:IconTooltipButton(content, "NysTDL_EditModeButton", L["Toggle edit mode"])
-  content.editModeButton:SetPoint("RIGHT", content.helpButton, "LEFT", 2, 0)
-  content.editModeButton:SetScript("OnClick", function()
-    tutorialsManager:Validate("TM_introduction_editmode") -- i need to place this here to be sure it was a user action
-    mainFrame:ToggleEditMode()
-  end)
-  tutorialsManager:SetPoint("TM_introduction_editmode", "BOTTOM", content.editModeButton, "TOP", 0, 18)
-  -- tutorialsManager:SetPoint("TM_editmode_editmodeBtn", "BOTTOM", content.editModeButton, "TOP", 0, 18) -- TDLATER
+    -- edit mode button
+    content.editModeButton = widgets:IconTooltipButton(content, "NysTDL_EditModeButton", L["Toggle edit mode"])
+    content.editModeButton:SetPoint("RIGHT", content.helpButton, "LEFT", 2, 0)
+    content.editModeButton:SetScript("OnClick", function()
+        tutorialsManager:Validate("TM_introduction_editmode") -- i need to place this here to be sure it was a user action
+        mainFrame:ToggleEditMode()
+    end)
+    tutorialsManager:SetPoint("TM_introduction_editmode", "BOTTOM", content.editModeButton, "TOP", 0, 18)
+    -- tutorialsManager:SetPoint("TM_editmode_editmodeBtn", "BOTTOM", content.editModeButton, "TOP", 0, 18) -- TDLATER
 
-  -- frame options menu button
-  content.frameOptionsButton = widgets:IconTooltipButton(content, "NysTDL_FrameOptionsButton", L["Frame options"])
-  content.frameOptionsButton:SetPoint("RIGHT", content.editModeButton, "LEFT", 2, 0)
-  content.frameOptionsButton:SetScript("OnClick", function()
-    menuClick(enums.menus.frameopt)
-  end)
-  tutorialsManager:SetPoint("TM_introduction_accessOptions", "BOTTOM", content.frameOptionsButton, "TOP", 0, 18)
+    -- frame options menu button
+    content.frameOptionsButton = widgets:IconTooltipButton(content, "NysTDL_FrameOptionsButton", L["Frame options"])
+    content.frameOptionsButton:SetPoint("RIGHT", content.editModeButton, "LEFT", 2, 0)
+    content.frameOptionsButton:SetScript("OnClick", function()
+        menuClick(enums.menus.frameopt)
+    end)
+    tutorialsManager:SetPoint("TM_introduction_accessOptions", "BOTTOM", content.frameOptionsButton, "TOP", 0, 18)
 
-  -- category menu button
-  content.categoryButton = widgets:IconTooltipButton(content, "NysTDL_CategoryButton", L["Add a category"])
-  content.categoryButton:SetPoint("RIGHT", content.frameOptionsButton, "LEFT", 2, 0)
-  content.categoryButton:SetScript("OnClick", function()
-    menuClick(enums.menus.addcat)
-  end)
-  tutorialsManager:SetPoint("TM_introduction_addNewCat", "TOP", content.categoryButton, "BOTTOM", 0, -18)
+    -- category menu button
+    content.categoryButton = widgets:IconTooltipButton(content, "NysTDL_CategoryButton", L["Add a category"])
+    content.categoryButton:SetPoint("RIGHT", content.frameOptionsButton, "LEFT", 2, 0)
+    content.categoryButton:SetScript("OnClick", function()
+        menuClick(enums.menus.addcat)
+    end)
+    tutorialsManager:SetPoint("TM_introduction_addNewCat", "TOP", content.categoryButton, "BOTTOM", 0, -18)
 
-  -- undo button
-  content.undoButton = widgets:IconTooltipButton(content, "NysTDL_UndoButton", L["Undo last remove"].."\n"..L["(including tabs)"])
-  content.undoButton:SetPoint("RIGHT", content.editModeButton, "LEFT", 2, 0)
-  content.undoButton:SetScript("OnClick", function() dataManager:Undo() end)
-  content.undoButton:Hide()
-  tutorialsManager:SetPoint("TM_editmode_buttons", "BOTTOM", content.undoButton, "TOP", -15, 18)
-  tutorialsManager:SetPoint("TM_editmode_undo", "BOTTOM", content.undoButton, "TOP", 0, 18)
+    -- tab actions menu button
+    content.tabActionsButton = widgets:IconTooltipButton(content, "NysTDL_TabActionsButton", L["Tab actions"])
+    content.tabActionsButton:SetPoint("RIGHT", content.editModeButton, "LEFT", 2, 0)
+    content.tabActionsButton:SetScript("OnClick", function()
+        menuClick(enums.menus.tabact)
+    end)
+    content.tabActionsButton:Hide()
 
-  -- tab actions menu button
-  content.tabActionsButton = widgets:IconTooltipButton(content, "NysTDL_TabActionsButton", L["Tab actions"])
-  content.tabActionsButton:SetPoint("RIGHT", content.undoButton, "LEFT", 2, 0)
-  content.tabActionsButton:SetScript("OnClick", function()
-    menuClick(enums.menus.tabact)
-  end)
-  content.tabActionsButton:Hide()
+    -- undo button
+    content.undoButton = widgets:IconTooltipButton(content, "NysTDL_UndoButton", L["Undo last remove"].."\n".."("..L["item"].."/"..L["category"].."/"..L["tab"]..")")
+    content.undoButton:SetPoint("RIGHT", content.tabActionsButton, "LEFT", 2, 0)
+    content.undoButton:SetScript("OnClick", function() dataManager:Undo() end)
+    content.undoButton:Hide()
+    tutorialsManager:SetPoint("TM_editmode_buttons", "BOTTOM", content.undoButton, "TOP", -15, 18)
+    tutorialsManager:SetPoint("TM_editmode_undo", "BOTTOM", content.undoButton, "TOP", 0, 18)
 
-  -- // menus
-  local contentWidth, menuEnum = content:GetWidth()
-  content.menuFrames = {
-    -- these will be replaced in the code,
-    -- but i'm putting them here just so i can remember how this table works
-    -- --> selected = enums.menus.xxx,
-    -- --> [enums.menus.xxx] = frame,
-    -- --> [enums.menus.xxx] = frame,
-    -- --> [enums.menus.xxx] = frame,
-  }
+    -- // menus
+    local contentWidth, menuEnum = content:GetWidth()
+    content.menuFrames = {
+        -- these will be replaced in the code,
+        -- but i'm putting them here just so i can remember how this table works
+        -- --> selected = enums.menus.xxx,
+        -- --> [enums.menus.xxx] = frame,
+        -- --> [enums.menus.xxx] = frame,
+        -- --> [enums.menus.xxx] = frame,
+    }
 
-  -- / add a category sub-menu
+    -- / add a category sub-menu
 
-  menuEnum = enums.menus.addcat
-  content.menuFrames[menuEnum] = CreateFrame("Frame", nil, tdlFrame.content)
-  content.menuFrames[menuEnum]:SetPoint("TOPLEFT", tdlFrame.content, "TOPLEFT", 0, lineBottomY)
-  content.menuFrames[menuEnum]:SetSize(contentWidth, 110) -- CVAL (coded value, non automatic)
-  generateMenuAddACategory()
+    menuEnum = enums.menus.addcat
+    content.menuFrames[menuEnum] = CreateFrame("Frame", nil, tdlFrame.content)
+    content.menuFrames[menuEnum]:SetPoint("TOPLEFT", tdlFrame.content, "TOPLEFT", 0, lineBottomY)
+    content.menuFrames[menuEnum]:SetSize(contentWidth, 110) -- CVAL (coded value, non automatic)
+    generateMenuAddACategory()
 
-  -- / frame options sub-menu
+    -- / frame options sub-menu
 
-  menuEnum = enums.menus.frameopt
-  content.menuFrames[menuEnum] = CreateFrame("Frame", nil, tdlFrame.content)
-  content.menuFrames[menuEnum]:SetPoint("TOPLEFT", tdlFrame.content, "TOPLEFT", 0, lineBottomY)
-  content.menuFrames[menuEnum]:SetSize(contentWidth, 235) -- CVAL
-  generateMenuFrameOptions()
+    menuEnum = enums.menus.frameopt
+    content.menuFrames[menuEnum] = CreateFrame("Frame", nil, tdlFrame.content)
+    content.menuFrames[menuEnum]:SetPoint("TOPLEFT", tdlFrame.content, "TOPLEFT", 0, lineBottomY)
+    content.menuFrames[menuEnum]:SetSize(contentWidth, 235) -- CVAL
+    generateMenuFrameOptions()
 
-  -- / tab actions sub-menu
+    -- / tab actions sub-menu
 
-  menuEnum = enums.menus.tabact
-  content.menuFrames[menuEnum] = CreateFrame("Frame", nil, tdlFrame.content)
-  content.menuFrames[menuEnum]:SetPoint("TOPLEFT", tdlFrame.content, "TOPLEFT", 0, lineBottomY)
-  content.menuFrames[menuEnum]:SetSize(contentWidth, 240) -- CVAL
-  generateMenuTabActions()
+    menuEnum = enums.menus.tabact
+    content.menuFrames[menuEnum] = CreateFrame("Frame", nil, tdlFrame.content)
+    content.menuFrames[menuEnum]:SetPoint("TOPLEFT", tdlFrame.content, "TOPLEFT", 0, lineBottomY)
+    content.menuFrames[menuEnum]:SetSize(contentWidth, 240) -- CVAL
+    generateMenuTabActions()
 
-  -- below the menus
-  content.lineBottom = widgets:ThemeLine(content, database.themes.theme, 0.7)
+    -- below the menus
+    content.lineBottom = widgets:ThemeLine(content, database.themes.theme, 0.7)
 
-  content.nothingLabel = widgets:HintLabel(content, nil, L["This tab is empty"])
-  content.nothingLabel:SetPoint("TOP", content.lineBottom, "TOP", 0, -20)
+    content.nothingLabel = widgets:HintLabel(content, nil, L["This tab is empty"])
+    content.nothingLabel:SetPoint("TOP", content.lineBottom, "TOP", 0, -20)
 
-  content.loadOrigin = widgets:Dummy(content, content.lineBottom, 0, 0)
-  content.loadOrigin:SetPoint("TOPLEFT", content.lineBottom, "TOPLEFT", unpack(enums.loadOriginOffset))
+    content.loadOrigin = widgets:Dummy(content, content.lineBottom, 0, 0)
+    content.loadOrigin:SetPoint("TOPLEFT", content.lineBottom, "TOPLEFT", unpack(enums.loadOriginOffset))
 
-  content.dummyBottomFrame = widgets:Dummy(content, content, 0, 0) -- this one if for putting a margin at the bottom of the content (mainly to leave space for the dropping of cat)
+    content.dummyBottomFrame = widgets:Dummy(content, content, 0, 0) -- this one if for putting a margin at the bottom of the content (mainly to leave space for the dropping of cat)
 end
 
 -- // Creating the main frame

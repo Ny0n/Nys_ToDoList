@@ -184,7 +184,6 @@ L["Tuesday"] = true
 L["tutorial"] = true
 L["Uncheck"] = true
 L["Undo last remove"] = true
-L["(including tabs)"] = true
 L["unlock minimap button"] = true
 L["WARNING"] = true
 L["Warnings"] = true
