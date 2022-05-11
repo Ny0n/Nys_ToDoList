@@ -23,7 +23,7 @@
 # this is just to have an access to the old saved variables for a potential migration, they are not actually used anymore
 ## SavedVariablesPerCharacter: ToDoListSV, ToDoListSV_itemsList, ToDoListSV_checkedButtons, ToDoListSV_autoReset, ToDoListSV_lastLoadedTab
 
-## OptionalDeps: Ace3, LibDBIcon-1.0
-## X-Embeds: Ace3, LibDBIcon-1.0
+## OptionalDeps: Ace3, LibDBIcon-1.0, LibQTip-1.0
+## X-Embeds: Ace3, LibDBIcon-1.0, LibQTip-1.0
 
 Main.xml

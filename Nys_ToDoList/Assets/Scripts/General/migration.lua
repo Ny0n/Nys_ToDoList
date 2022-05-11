@@ -13,6 +13,7 @@ local dataManager = addonTable.dataManager
 
 -- Variables
 local L = core.L
+local LibQTip = core.LibQTip
 
 -- // **************************** // --
 
@@ -28,7 +29,7 @@ local migrationData = {
     },
     codes = {}, -- defined later in the file
     failed = {
-        savedItemsList = {},
+        saved = {},
         version = "",
         codes = {}, -- defined later in the file
     },
@@ -109,7 +110,6 @@ function private:TryToMigrate(toVersion)
     if utils:IsVersionOlderThan(NysTDL.db.profile.latestVersion, toVersion) then
         -- the safeguard
         print("SAFEGUARD -- " .. toVersion)
-        migrationData.failed.savedItemsList = utils:Deepcopy(NysTDL.db.profile.itemsList)
         migrationData.failed.version = toVersion
 
         --[[
@@ -269,6 +269,9 @@ end
 -- !! IMPORTANT !! profile.latestVersion was introduced in 5.6, so every migration from further on won't need double checks
 migrationData.codes["6.0"] = function()
     local profile = NysTDL.db.profile
+    migrationData.failed.saved = utils:Deepcopy(profile.itemsList)
+
+    -- ================== --
 
     -- first we get the itemsList and delete it, so that we can start filling it correctly
     local itemsList = profile.itemsList -- saving it for use
@@ -396,6 +399,7 @@ end
 
 local recoveryList = {
     frame = nil,
+    tutoFrame = nil,
     tooltip = nil,
     content = nil, -- shortcut to recoveryList.frame.body.list
     copyBox = nil, -- shortcut to recoveryList.frame.footer.copyBox
@@ -403,17 +407,23 @@ local recoveryList = {
 
     -- info
     width = 260,
-    height = 300,
-    ySize = 40, -- header/footer...
+    height = 320,
+    topSize = 40,
+    bottomSize = 60,
 }
+
+function private:CheckSaved()
+    return not (not next(NysTDL.db.profile.migrationData) or type(NysTDL.db.profile.migrationData.saved) ~= "table" or not next(NysTDL.db.profile.migrationData.saved))
+end
 
 function private:Failed(errmsg, original)
     if original then
         local migrationDataSV = NysTDL.db.profile.migrationData
         migrationDataSV.failed = true
-        migrationDataSV.savedItemsList = migrationData.failed.savedItemsList
+        migrationDataSV.saved = migrationData.failed.saved
         migrationDataSV.version = migrationData.failed.version
         migrationDataSV.errmsg = errmsg
+        migrationDataSV.tuto = true
         NysTDL.db.profile.itemsList = {}
     end
 
@@ -425,16 +435,27 @@ function private:CreateRecoveryList()
         recoveryList.frame:Hide()
         recoveryList.frame:ClearAllPoints()
     end
-    if recoveryList.tooltip then
-        recoveryList.tooltip:Hide()
-    end
 
     -- we create the recovery frame
     recoveryList.frame = CreateFrame("Frame", "NysTDL_recoveryList", mainFrame.tdlFrame, BackdropTemplateMixin and "BackdropTemplate" or nil)
     local frame = recoveryList.frame
 
-    -- and our GameTooltip
-    recoveryList.tooltip = CreateFrame("GameTooltip", "NysTDL_recoveryList_GameTooltip", nil, "GameTooltipTemplate")
+    -- as well as the tuto frame
+    if NysTDL.db.profile.migrationData.tuto then
+        recoveryList.tutoFrame = widgets:TutorialFrame("NysTDL_recoveryList_tutoFrame", true, "DOWN", "You can click on any name to put it in the input field below, you can then Ctrl+C/Ctrl+V", 200, 50)
+        recoveryList.tutoFrame.closeButton:SetScript("OnClick", function()
+            recoveryList.tutoFrame:Hide()
+            recoveryList.tutoFrame:ClearAllPoints()
+            NysTDL.db.profile.migrationData.tuto = nil
+        end)
+
+        recoveryList.tutoFrame:SetParent(frame)
+
+        recoveryList.tutoFrame:ClearAllPoints()
+        recoveryList.tutoFrame:SetPoint("BOTTOM", frame, "TOP", 0, 20)
+
+        recoveryList.tutoFrame:Show()
+    end
 
     -- background
     frame:SetBackdrop({
@@ -470,18 +491,18 @@ function private:CreateRecoveryList()
 
     local linesTheme = database.themes.white
     frame.topLine = widgets:ThemeLine(frame, linesTheme, 0.7)
-    frame.topLine:SetStartPoint("TOPLEFT", 3, -recoveryList.ySize+1) -- +lineThickness/2
-    frame.topLine:SetEndPoint("TOPLEFT", recoveryList.width-3, -recoveryList.ySize+1)
+    frame.topLine:SetStartPoint("TOPLEFT", 3, -recoveryList.topSize+1) -- +lineThickness/2
+    frame.topLine:SetEndPoint("TOPLEFT", recoveryList.width-3, -recoveryList.topSize+1)
     frame.bottomLine = widgets:ThemeLine(frame, linesTheme, 0.7)
-    frame.bottomLine:SetStartPoint("BOTTOMLEFT", 3, recoveryList.ySize-1) -- -lineThickness/2
-    frame.bottomLine:SetEndPoint("BOTTOMLEFT", recoveryList.width-3, recoveryList.ySize-1)
+    frame.bottomLine:SetStartPoint("BOTTOMLEFT", 3, recoveryList.bottomSize-1) -- -lineThickness/2
+    frame.bottomLine:SetEndPoint("BOTTOMLEFT", recoveryList.width-3, recoveryList.bottomSize-1)
 
     -- // part 1: the header
     frame.header = CreateFrame("Frame", nil, frame)
     local header = frame.header
 
     header:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
-    header:SetPoint("BOTTOMRIGHT", frame, "TOPRIGHT", 0, -recoveryList.ySize)
+    header:SetPoint("BOTTOMRIGHT", frame, "TOPRIGHT", 0, -recoveryList.topSize)
 
     -- /-> title
 
@@ -492,8 +513,8 @@ function private:CreateRecoveryList()
     frame.body = CreateFrame("Frame", nil, frame)
     local body = frame.body
 
-    body:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, -recoveryList.ySize)
-    body:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, recoveryList.ySize)
+    body:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, -recoveryList.topSize)
+    body:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, recoveryList.bottomSize)
 
     -- /-> scroll frame
 
@@ -521,33 +542,44 @@ function private:CreateRecoveryList()
     frame.footer = CreateFrame("Frame", nil, frame)
     local footer = frame.footer
 
-    footer:SetPoint("TOPLEFT", frame, "BOTTOMLEFT", 0, recoveryList.ySize)
+    footer:SetPoint("TOPLEFT", frame, "BOTTOMLEFT", 0, recoveryList.bottomSize)
     footer:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
 
     -- /-> copy edit box
-    footer.copyBox = CreateFrame("EditBox", nil, footer, "InputBoxTemplate")
-    footer.copyBox:SetHeight(30)
-    footer.copyBox:SetFontObject("GameFontHighlightLarge")
-    footer.copyBox:SetAutoFocus(false)
-    footer.copyBox:SetPoint("LEFT", footer, "LEFT", 15, 1)
-    footer.copyBox:SetHitRectInsets(5, 5, 7, 7)
-    footer.copyBox.hint = widgets:HintLabel(footer.copyBox, nil, "Ctrl+C...")
-    footer.copyBox.hint:SetPoint("LEFT", footer.copyBox, "LEFT", 0, 0)
-    footer.copyBox:HookScript("OnTextChanged", function(self)
-        footer.copyBox.hint:SetShown(#self:GetText() <= 0)
+    footer.copyBox = CreateFrame("ScrollFrame", nil, frame, "InputScrollFrameTemplate")
+    footer.copyBox:SetPoint("TOPLEFT", footer, "TOPLEFT", 10, -10)
+    footer.copyBox:SetPoint("BOTTOMRIGHT", footer, "BOTTOMRIGHT", -10, 10)
+    footer.copyBox.EditBox:SetFontObject("ChatFontNormal")
+    footer.copyBox.EditBox:SetAutoFocus(false)
+    footer.copyBox.ScrollBar.ScrollDownButton:ClearAllPoints()
+    footer.copyBox.ScrollBar.ScrollDownButton:SetPoint("BOTTOMRIGHT", footer.copyBox, "BOTTOMRIGHT", -1, 0)
+
+    -- /--> char count
+    footer.copyBox.EditBox:SetMaxLetters(enums.maxDescriptionCharCount)
+    footer.copyBox.CharCount:Hide() -- TDLATER polish
+
+    -- /--> hint
+    footer.copyBox.EditBox.Instructions:SetFontObject("GameFontNormal")
+    footer.copyBox.EditBox.Instructions:SetText("Ctrl+C...")
+
+    -- /--> scripts
+    footer:SetScript("OnUpdate", function() -- don't ask me why
+        footer.copyBox.EditBox:SetWidth(footer.copyBox:GetWidth() - 25)
+        -- footer.copyBox.ScrollBar:Hide()
+        footer.copyBox.ScrollBar.ScrollUpButton:Hide()
+        footer.copyBox.ScrollBar.ThumbTexture:Hide()
     end)
-    widgets:SetHyperlinksEnabled(footer.copyBox, true)
-    recoveryList.copyBox = footer.copyBox -- shortcut
+    widgets:SetHyperlinksEnabled(footer.copyBox.EditBox, true)
+    recoveryList.copyBox = footer.copyBox.EditBox -- shortcut
 
     -- /-> copy btn (select all btn)
     footer.copyBtn = CreateFrame("Button", nil, footer, "NysTDL_CopyButton")
     footer.copyBtn.tooltip = "Ctrl+A"
     footer.copyBtn:SetSize(30, 30)
-    footer.copyBtn:SetPoint("RIGHT", footer, "RIGHT", -7, 0)
+    footer.copyBtn:SetPoint("TOPRIGHT", footer, "TOPRIGHT", -5, -6)
     footer.copyBtn:SetScript("OnClick", function()
         widgets:SetFocusEditBox(recoveryList.copyBox, true)
     end)
-    footer.copyBox:SetPoint("RIGHT", footer.copyBtn, "LEFT", -3, 0)
 
     -- // finishing: displaying the data to manually migrate
     private:Refresh(NysTDL.db.profile.migrationData.version) -- migrationData.failed.codes call
@@ -595,12 +627,9 @@ function private:Refresh(version)
 
     -- then we repopulate (if there are things to show)
 
-    if not next(NysTDL.db.profile.migrationData) or not next(NysTDL.db.profile.migrationData.savedItemsList) then -- if there are no items left to migrate
+    if not private:CheckSaved() then -- if there are no items left to migrate
         -- we're done, so we clear every migration data
-        NysTDL.db.profile.migrationData.failed = nil
-        NysTDL.db.profile.migrationData.savedItemsList = nil
-        NysTDL.db.profile.migrationData.version = nil
-        NysTDL.db.profile.migrationData.errmsg = nil
+        wipe(NysTDL.db.profile.migrationData)
 
         -- and we hide the recovery list once and for all
         recoveryList.frame:Hide()
@@ -634,17 +663,22 @@ function private:NewCategoryWidget(catName)
     categoryWidget:SetSize(1, 1) -- so that its children are visible
 
     -- / label
-    categoryWidget.label = widgets:NoPointsLabel(categoryWidget, nil, catName)
+    categoryWidget.label = CreateFrame("Button", nil, categoryWidget, "NysTDL_CustomListButton")
+	categoryWidget.label.Highlight:SetDesaturated(true)
+	categoryWidget.label:SetNormalFontObject("GameFontHighlightLarge")
+	categoryWidget.label:SetText(catName)
+	categoryWidget.label:SetSize(widgets:GetWidth(catName, "GameFontHighlightLarge"), 15)
+	categoryWidget.label:SetScript("OnClick", function(self)
+        recoveryList.copyBox:SetText(self:GetText())
+        widgets:SetFocusEditBox(recoveryList.copyBox, true)
+	end)
     categoryWidget.label:ClearAllPoints()
     categoryWidget.label:SetPoint("LEFT", categoryWidget, "LEFT", 0, 0)
 
     -- -- / removeBtn
-    -- categoryWidget.removeBtn = widgets:RemoveButton(categoryWidget, categoryWidget)
+    -- categoryWidget.removeBtn = widgets:ValidButton(categoryWidget)
     -- categoryWidget.removeBtn:SetPoint("LEFT", categoryWidget, "LEFT", 0, -1)
-    -- categoryWidget.removeBtn:SetScript("OnClick", function() -- todo put in migration failed code, not here bc diff for everyone
-    --     NysTDL.db.profile.migrationData.savedItemsList
-    --     private:Refresh(NysTDL.db.profile.migrationData.version)
-    -- end)
+    -- -- OnClick set later
 
     categoryWidget.i = {} -- free space
 
@@ -693,12 +727,16 @@ function private:NewItemWidget(itemName)
 
         -- <!> tooltip content <!>
 
+        recoveryList.tooltip = LibQTip:Acquire("NysTDL_recoveryList_tooltip", 1)
         local tooltip = recoveryList.tooltip
-        if not tooltip then return end
 
-        tooltip:SetOwner(self, "ANCHOR_TOP", 0, 5)
+        tooltip:SmartAnchorTo(self)
+        tooltip:ClearAllPoints()
+        tooltip:SetPoint("BOTTOMRIGHT", self, "TOPRIGHT", 0, 0)
 
-        tooltip:AddLine("Tab: " .. (tabName or "--"))
+        tooltip:AddHeader("Tab: " .. (tabName or "--"))
+        tooltip:SetLineTextColor(1, unpack(database.themes.theme_yellow))
+
         if checked then
             tooltip:AddLine("Checked: yes")
         end
@@ -712,9 +750,8 @@ function private:NewItemWidget(itemName)
         tooltip:Show()
     end)
     itemWidget.infoBtn:HookScript("OnLeave", function(self)
-        if recoveryList.tooltip and recoveryList.tooltip.Hide then
-            recoveryList.tooltip:Hide()
-        end
+        LibQTip:Release(recoveryList.tooltip)
+        recoveryList.tooltip = nil
     end)
 
     -- /-> position
@@ -734,7 +771,12 @@ end
 migrationData.failed.codes["6.0"] = function()
     local removeBtnFunc = function(self)
         local catName, itemName = self:GetParent().i.catName, self:GetParent().i.itemName
-        local list = NysTDL.db.profile.migrationData.savedItemsList
+        local list = NysTDL.db.profile.migrationData.saved
+
+        if not private:CheckSaved() then
+            private:Refresh(NysTDL.db.profile.migrationData.version)
+            return
+        end
 
         if list[catName] then
             list[catName][itemName] = nil
@@ -746,7 +788,7 @@ migrationData.failed.codes["6.0"] = function()
         private:Refresh(NysTDL.db.profile.migrationData.version)
     end
 
-    for catName,items in pairs(NysTDL.db.profile.migrationData.savedItemsList) do -- categories
+    for catName,items in pairs(NysTDL.db.profile.migrationData.saved) do -- categories
 
         -- == cat ==
         local catWidget = private:NewCategoryWidget(catName)

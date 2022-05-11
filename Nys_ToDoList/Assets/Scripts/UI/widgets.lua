@@ -61,7 +61,7 @@ end
 function widgets:EditBoxInsertLink(text)
   -- when we shift-click on things, we hook the link from the chat function,
   -- and add it to the one of my edit boxes who has the focus (if there is one)
-  -- basically, it's what allow hyperlinks in my addon edit boxes
+  -- basically, it's what allows hyperlinks in my addon edit boxes
   for _, v in pairs(hyperlinkEditBoxes) do
 		if v and v:IsVisible() and v:HasFocus() then
 			v:Insert(text)
@@ -375,8 +375,8 @@ function widgets:TutorialFrame(tutoName, showCloseButton, arrowSide, text, width
 
   if showCloseButton then
     tutoFrame.closeButton = CreateFrame("Button", nil, tutoFrame, "UIPanelCloseButton")
-    tutoFrame.closeButton:SetPoint("TOPRIGHT", tutoFrame, "TOPRIGHT", 6, 6)
-    tutoFrame.closeButton:SetScript("OnClick", function() tutorialsManager:Next() end)
+    tutoFrame.closeButton:SetPoint("TOPRIGHT", tutoFrame, "TOPRIGHT", 4, 4)
+    tutoFrame.closeButton:SetScript("OnClick", function() tutorialsManager:Next() end) -- overridable
     tutoFrameRightDist = tutoFrame.closeButton:GetWidth() + 10
   end
 

@@ -38,6 +38,7 @@ core.AceGUI = LibStub("AceGUI-3.0")
 core.L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 core.LDB = LibStub("LibDataBroker-1.1")
 core.LDBIcon = LibStub("LibDBIcon-1.0")
+core.LibQTip = LibStub('LibQTip-1.0')
 -- core.LDD = LibStub:GetLibrary("LibUIDropDownMenu-4.0")
 
 -- LOCALE CHECK

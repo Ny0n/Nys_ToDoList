@@ -6,6 +6,7 @@
   <!-- General -->
   <Script file="LibStub\LibStub.lua"/>
   <Include file="CallbackHandler-1.0\CallbackHandler-1.0.xml"/>
+  <Include file="LibQTip-1.0\lib.xml"/>
   <!-- <Include file="!LibUIDropDownMenu\LibUIDropDownMenu\LibUIDropDownMenu.xml"/> -->
 
   <!-- Ace3 -->
