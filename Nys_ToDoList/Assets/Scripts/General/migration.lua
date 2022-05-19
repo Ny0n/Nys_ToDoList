@@ -301,7 +301,7 @@ migrationData.codes["6.0"] = function()
             end
         end
 
-        error("je suis l'erreur")
+        -- error("je suis l'erreur")
 
         -- then we add the cat to each of those found tabs
         local allCatID, dailyCatID, weeklyCatID

@@ -1160,7 +1160,8 @@ function dataManager:IsProtected(ID)
 	local enum, _, dataTable, itemsList, categoriesList, tabsList = dataManager:Find(ID)
 
 	if enum == enums.item then -- item
-		return dataTable.favorite or dataTable.description
+		-- return dataTable.favorite or dataTable.description
+		return false
 	elseif enum == enums.category then -- category
 		return false -- TDLATER IsProtected category
 	elseif enum == enums.tab then -- tab
