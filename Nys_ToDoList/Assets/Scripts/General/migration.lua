@@ -946,16 +946,94 @@ end
 
 -- // **************************** // --
 
--- / migration failed from 5.5+ to 6.0+
-migrationData.failed.codes["6.0"] = function()
+-- / migration failed from 1.0+ to 2.0+
+migrationData.failed.codes["2.0"] = function()
     local removeBtnFunc = function(self)
-        local catName, itemName = self:GetParent().i.catName, self:GetParent().i.itemName
-        local list = NysTDL.db.profile.migrationData.saved
-
         if not private:CheckSaved() then
             private:Refresh()
             return
         end
+
+        -- ===================== --
+
+
+
+        -- ===================== --
+
+        private:Refresh(NysTDL.db.profile.migrationData.version)
+    end
+
+end
+
+-- / migration failed from 2.0+ to 4.0+
+migrationData.failed.codes["4.0"] = function()
+    local removeBtnFunc = function(self)
+        if not private:CheckSaved() then
+            private:Refresh()
+            return
+        end
+
+        -- ===================== --
+
+
+
+        -- ===================== --
+
+        private:Refresh(NysTDL.db.profile.migrationData.version)
+    end
+
+end
+
+-- / migration failed from 4.0+ to 5.0+
+migrationData.failed.codes["5.0"] = function()
+    local removeBtnFunc = function(self)
+        if not private:CheckSaved() then
+            private:Refresh()
+            return
+        end
+
+        -- ===================== --
+
+
+
+        -- ===================== --
+
+        private:Refresh(NysTDL.db.profile.migrationData.version)
+    end
+
+end
+
+-- / migration failed from 5.0+ to 5.5+
+migrationData.failed.codes["5.5"] = function()
+    local removeBtnFunc = function(self)
+        if not private:CheckSaved() then
+            private:Refresh()
+            return
+        end
+
+        -- ===================== --
+
+
+
+        -- ===================== --
+
+        private:Refresh(NysTDL.db.profile.migrationData.version)
+    end
+
+end
+
+-- / migration failed from 5.5+ to 6.0+
+migrationData.failed.codes["6.0"] = function()
+    local removeBtnFunc = function(self)
+        if not private:CheckSaved() then
+            private:Refresh()
+            return
+        end
+
+        -- ===================== --
+
+        local catName, itemName = self:GetParent().i.catName, self:GetParent().i.itemName
+        local list = NysTDL.db.profile.migrationData.saved
 
         if list[catName] then
             list[catName][itemName] = nil
@@ -964,18 +1042,20 @@ migrationData.failed.codes["6.0"] = function()
             end
         end
 
+        -- ===================== --
+
         private:Refresh(NysTDL.db.profile.migrationData.version)
     end
 
     for catName,items in pairs(NysTDL.db.profile.migrationData.saved) do -- categories
 
-        -- == cat ==
+        -- == cat == --
         local catWidget = private:NewCategoryWidget(catName)
-        -- =========
+        -- ========= --
 
         for itemName,itemData in pairs(items) do -- items
 
-            -- == item ==
+            -- == item == --
             local itemWidget = private:NewItemWidget(itemName)
             itemWidget.removeBtn:HookScript("OnClick", removeBtnFunc)
             itemWidget.i.catName = catName
@@ -986,7 +1066,7 @@ migrationData.failed.codes["6.0"] = function()
                 itemWidget.i.favorite = itemData.favorite
                 itemWidget.i.description = itemData.description
             end
-            -- ==========
+            -- ========== --
 
         end
     end
