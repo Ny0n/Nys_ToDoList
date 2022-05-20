@@ -528,11 +528,11 @@ function private:CreateRecoveryList()
     header:SetPoint("BOTTOMRIGHT", frame, "TOPRIGHT", 0, -recoveryList.topSize)
 
     -- /-> title
-    header.title = widgets:NoPointsLabel(header, nil, "Recovery List")
+    header.title = widgets:NoPointsLabel(header, nil, L["Recovery List"])
     header.title:SetPoint("TOP", header, "TOP", 0, -12)
 
     -- /-> clearButton
-    header.clearButton = widgets:IconTooltipButton(header, "NysTDL_ClearButton", "Clear everything".."\n! ".."Only do this when you are done".." !\n(".."Double Right-Click"..")")
+    header.clearButton = widgets:IconTooltipButton(header, "NysTDL_ClearButton", L["Clear everything"].."\n! "..L["Only do this when you are done"].." !\n("..L["Double Right-Click"]..")")
     header.clearButton:SetPoint("RIGHT", header, "RIGHT", -10, 0)
     header.clearButton:SetSize(26, 26)
     header.clearButton:RegisterForClicks("RightButtonUp") -- only responds to right-clicks
@@ -547,7 +547,7 @@ function private:CreateRecoveryList()
     end)
 
     -- /-> warningButton
-    header.warningButton = widgets:IconTooltipButton(header, "NysTDL_CopyButton", "Reopen error message")
+    header.warningButton = widgets:IconTooltipButton(header, "NysTDL_CopyButton", L["Reopen error message"])
     header.warningButton:SetNormalTexture("Interface\\CHATFRAME\\UI-ChatIcon-Chat-Up")
     header.warningButton:SetPushedTexture("Interface\\CHATFRAME\\UI-ChatIcon-Chat-Down")
     header.warningButton:SetPoint("LEFT", header, "LEFT", 10, 0)
@@ -606,7 +606,7 @@ function private:CreateRecoveryList()
 
     -- /--> hint
     footer.copyBox.EditBox.Instructions:SetFontObject("GameFontNormal")
-    footer.copyBox.EditBox.Instructions:SetText("Ctrl+C...")
+    footer.copyBox.EditBox.Instructions:SetText(L["Ctrl+C"].."...")
 
     -- /--> scripts
     footer:SetScript("OnUpdate", function() -- don't ask me why
@@ -619,7 +619,7 @@ function private:CreateRecoveryList()
     recoveryList.copyBox = footer.copyBox.EditBox -- shortcut
 
     -- /-> copy btn (select all btn)
-    footer.copyBtn = widgets:IconTooltipButton(footer, "NysTDL_CopyButton", "Ctrl+A")
+    footer.copyBtn = widgets:IconTooltipButton(footer, "NysTDL_CopyButton", L["Ctrl+A"])
     footer.copyBtn:SetSize(30, 30)
     footer.copyBtn:SetPoint("TOPRIGHT", footer, "TOPRIGHT", -5, -6)
     footer.copyBtn:SetScript("OnClick", function()
@@ -632,7 +632,7 @@ end
 
 function private:Event_ScrollFrame_OnMouseWheel(delta)
     -- defines how fast we can scroll throught the frame
-    local ScrollFrame, speed = recoveryList.frame.body.ScrollFrame, 20
+    local ScrollFrame, speed = self, 20
 
     local newValue = ScrollFrame:GetVerticalScroll() - (delta * speed)
 
@@ -690,41 +690,57 @@ function private:CreateWarning()
 
     local msgWidth = 280
 
-    frame.content = CreateFrame("Frame", nil, frame)
+    -- /-> close button
+    frame.closeButton = CreateFrame("Button", nil, frame, "NysTDL_CloseButton")
+    frame.closeButton:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -1, -1)
+    frame.closeButton:SetScript("onClick", function() mainFrame.tdlFrame:Hide() end)
+
+    -- /-> scroll frame
+    frame.ScrollFrame = CreateFrame("ScrollFrame", nil, frame, "UIPanelScrollFrameTemplate")
+    frame.ScrollFrame:SetPoint("TOPLEFT", frame, "TOPLEFT", 5, -5)
+    frame.ScrollFrame:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -5, 5)
+    frame.ScrollFrame:SetScript("OnMouseWheel", private.Event_ScrollFrame_OnMouseWheel)
+    frame.ScrollFrame:SetClipsChildren(true)
+
+    -- /-> scroll bar
+    frame.ScrollFrame.ScrollBar:ClearAllPoints()
+    frame.ScrollFrame.ScrollBar:SetPoint("TOPLEFT", frame.ScrollFrame, "TOPRIGHT", - 16, - 36)
+    frame.ScrollFrame.ScrollBar:SetPoint("BOTTOMLEFT", frame.ScrollFrame, "BOTTOMRIGHT", - 16, 16)
+
+    -- /-> content
+    frame.content = CreateFrame("Frame")
+    frame.content:SetPoint("TOPLEFT", frame.ScrollFrame, "TOPLEFT")
+    frame.content:SetWidth(frame:GetWidth()-30)
+    frame.ScrollFrame:SetScrollChild(frame.content)
     local content = frame.content
 
     content:SetAllPoints(frame)
 
-    -- /-> close button
-    content.closeButton = CreateFrame("Button", nil, content, "NysTDL_CloseButton")
-    content.closeButton:SetPoint("TOPRIGHT", content, "TOPRIGHT", -1, -1)
-    content.closeButton:SetScript("onClick", function() mainFrame.tdlFrame:Hide() end)
-
     -- /-> title
-    local titlePos = -25
-    content.title = widgets:NoPointsLabel(content, nil, utils:ColorText(database.themes.red, "WARNING"))
+    local titlePos = -20
+    content.title = widgets:NoPointsLabel(content, nil, utils:ColorText(database.themes.red, L["WARNING"]))
     content.title:SetPoint("TOP", content, "TOP", 0, titlePos)
 
     -- /-> sorryMsg
     local sorryMsgPos = titlePos - 30
-    content.sorryMsg = widgets:NoPointsLabel(content, nil, "An unexpected error was detected during the automatic migration from 5.7.1 to 6.0, you will have to manually add your items back using the recovery list. I'm really sorry about the inconvenience...")
+    content.sorryMsg = widgets:NoPointsLabel(content, nil, L["An unexpected error was detected during the automatic migration from 5.7.1 to 6.0, you will have to manually add your items back using the recovery list. I'm really sorry about the inconvenience..."])
     content.sorryMsg:SetPoint("TOP", content, "TOP", 0, sorryMsgPos)
     content.sorryMsg:SetWidth(msgWidth)
 
     -- /-> doNotMsg
-    local doNotMsgPos = sorryMsgPos - 15 - content.sorryMsg:GetHeight()
-    content.doNotMsg = widgets:NoPointsLabel(content, nil, utils:ColorText(database.themes.yellow, "Don't go back to the last version, it won't solve the problem"))
+    local doNotMsgPos = sorryMsgPos - content.sorryMsg:GetHeight() - 15
+    content.doNotMsg = widgets:NoPointsLabel(content, nil, utils:ColorText(database.themes.yellow, L["Don't go back to the last version, it won't solve the problem"]))
     content.doNotMsg:SetPoint("TOP", content, "TOP", 0, doNotMsgPos)
     content.doNotMsg:SetWidth(msgWidth)
 
     -- /-> errMsg
-    local errMsgPos = doNotMsgPos - 15 - content.doNotMsg:GetHeight()
-    content.errMsg = widgets:NoPointsLabel(content, nil, "Please copy and post this error message as an issue to GitHub so that I can fix this problem as quickly as possible:")
+    local errMsgPos = doNotMsgPos - content.doNotMsg:GetHeight() - 15
+    content.errMsg = widgets:NoPointsLabel(content, nil, L["Please copy and post this error message as an issue to GitHub so that I can fix this problem as quickly as possible:"])
     content.errMsg:SetPoint("TOP", content, "TOP", 0, errMsgPos)
     content.errMsg:SetWidth(msgWidth)
 
     -- /-> errMsgField
-    local errMsgFieldPos = errMsgPos - 8 - content.errMsg:GetHeight()
+    local errMsgFieldPos = errMsgPos - content.errMsg:GetHeight() - 8
     content.errMsgField = CreateFrame("EditBox", nil, content, "InputBoxTemplate")
     content.errMsgField:SetSize(200, 32)
     content.errMsgField:SetFontObject("GameFontHighlightLarge")
@@ -732,8 +748,7 @@ function private:CreateWarning()
     content.errMsgField:SetPoint("TOP", content, "TOP", -25, errMsgFieldPos)
 
     -- /-> errMsgCopyBtn (select all btn)
-    content.errMsgCopyBtn = CreateFrame("Button", nil, content, "NysTDL_CopyButton")
-    content.errMsgCopyBtn.tooltip = "Ctrl+A"
+    content.errMsgCopyBtn = widgets:IconTooltipButton(content, "NysTDL_CopyButton", L["Ctrl+A"])
     content.errMsgCopyBtn:SetSize(32, 32)
     content.errMsgCopyBtn:SetPoint("LEFT", content.errMsgField, "RIGHT", 2, 0)
     content.errMsgCopyBtn:SetScript("OnClick", function()
@@ -741,7 +756,7 @@ function private:CreateWarning()
     end)
 
     -- /-> errMsgResetBtn
-    content.errMsgResetBtn = widgets:IconTooltipButton(content, "NysTDL_UndoButton", "Reset")
+    content.errMsgResetBtn = widgets:IconTooltipButton(content, "NysTDL_UndoButton", L["Reset"])
     content.errMsgResetBtn:SetSize(32, 32)
     content.errMsgResetBtn:SetPoint("LEFT", content.errMsgCopyBtn, "RIGHT", -2, 0)
     content.errMsgResetBtn:SetScript("OnClick", function()
@@ -755,13 +770,18 @@ function private:CreateWarning()
     content.errMsgField:HighlightText(0, 0)
 
     -- /-> openListBtn
-    content.openListBtn = widgets:Button("NysTDL_recoveryList_openListBtn_"..dataManager:NewID(), content, "Open Recovery List")
-    content.openListBtn:SetPoint("BOTTOM", content, "BOTTOM", 0, 32)
+    local openListBtnPos = errMsgFieldPos - 50
+    content.openListBtn = widgets:Button("NysTDL_recoveryList_openListBtn_"..dataManager:NewID(), content, L["Open Recovery List"])
+    content.openListBtn:SetPoint("TOP", content, "TOP", 0, openListBtnPos)
     content.openListBtn:SetScript("OnClick", function()
         frame:Hide()
         recoveryList.frame:Show()
         NysTDL.db.profile.migrationData.warning = false
     end)
+
+    frame.content:SetHeight(-openListBtnPos + content.openListBtn:GetHeight() + 25)
+    frame.ScrollFrame:SetVerticalScroll(1) -- this fixes a positionning bug
+    frame.ScrollFrame:SetVerticalScroll(0)
 end
 
 -- // **************************** // --
@@ -876,7 +896,7 @@ function private:NewItemWidget(itemName)
     itemWidget.infoBtn:SetPoint("LEFT", itemWidget, "LEFT", 24, -1)
     itemWidget.infoBtn:SetScale(0.6)
     itemWidget.infoBtn:HookScript("OnClick", function(self)
-        recoveryList.copyBox:SetText(self:GetParent().i.description or "<no description>")
+        recoveryList.copyBox:SetText(self:GetParent().i.description or ("<"..L["No description"]..">"))
         widgets:SetFocusEditBox(recoveryList.copyBox, true)
     end)
     itemWidget.infoBtn:HookScript("OnEnter", function(self)
@@ -892,17 +912,18 @@ function private:NewItemWidget(itemName)
         tooltip:ClearAllPoints()
         tooltip:SetPoint("BOTTOMRIGHT", self, "TOPRIGHT", 0, 0)
 
-        tooltip:AddHeader("Tab: " .. (type(tabName) == "string" and tabName or "--"))
+        tabName = L[tabName]
+        tooltip:AddHeader(L["Tab"]..": " .. (type(tabName) == "string" and tabName or "--"))
         tooltip:SetLineTextColor(1, unpack(database.themes.theme_yellow))
 
         if checked then
-            tooltip:AddLine("Checked: yes")
+            tooltip:AddLine(L["Checked"]..": "..L["Yes"])
         end
         if favorite then
-            tooltip:AddLine("Favorite: yes")
+            tooltip:AddLine(L["Favorite"]..": "..L["Yes"])
         end
         if description then
-            tooltip:AddLine("Description: Click to copy")
+            tooltip:AddLine(L["Description"]..": "..L["Click to copy"])
         end
 
         tooltip:Show()

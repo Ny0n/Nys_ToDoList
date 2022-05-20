@@ -6,6 +6,25 @@ addonTable.devLocale = L
 
 -- "방탄소년단" test locale (:D)
 
+L["Click to copy"] = true
+L["No"] = true
+L["Yes"] = true
+L["Description"] = true
+L["Favorite"] = true
+L["Checked"] = true
+L["Tab"] = true
+L["No description"] = true
+L["Recovery List"] = true
+L["Open Recovery List"] = true
+L["Please copy and post this error message as an issue to GitHub so that I can fix this problem as quickly as possible:"] = true
+L["Don't go back to the last version, it won't solve the problem"] = true
+L["An unexpected error was detected during the automatic migration from 5.7.1 to 6.0, you will have to manually add your items back using the recovery list. I'm really sorry about the inconvenience..."] = true
+L["Ctrl+A"] = true
+L["Ctrl+C"] = true
+L["Reopen error message"] = true
+L["Double Right-Click"] = true
+L["Only do this when you are done"] = true
+L["Clear everything"] = true
 L["Please type %s and read the chat message for more information about this mode"] = true
 L["To delete items and do a lot more, you can right-click anywhere on the list or click on this button to toggle the edit mode"] = true
 L["(there must be at least one left)"] = true
