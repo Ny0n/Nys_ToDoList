@@ -173,3 +173,8 @@ function utils:GetKeyFromValue(tabSource, value)
   end
   return nil
 end
+
+function utils:ColorText(colorTable, text)
+	-- alpha is 1
+	return string.format("|cff%s%s|r", utils:RGBToHex(colorTable), text)
+end

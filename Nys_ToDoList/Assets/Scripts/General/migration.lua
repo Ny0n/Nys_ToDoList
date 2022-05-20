@@ -40,7 +40,7 @@ local migrationData = {
 function migration:Migrate()
     -- this is for doing specific things ONLY when the addon gets updated and its version changes
 
-    if NysTDL.db.profile.migrationData.failed then
+    if NysTDL.db.profile.migrationData.failed then -- the migration was not completed last session, so we recreate the recovery list
         private:Failed()
     end
 
@@ -301,7 +301,7 @@ migrationData.codes["6.0"] = function()
             end
         end
 
-        -- error("je suis l'erreur")
+        error("je suis l'erreur")
 
         -- then we add the cat to each of those found tabs
         local allCatID, dailyCatID, weeklyCatID
@@ -399,6 +399,7 @@ end
 
 local recoveryList = {
     frame = nil,
+    warningFrame = nil,
     tutoFrame = nil,
     tooltip = nil,
     content = nil, -- shortcut to recoveryList.frame.body.list
@@ -423,11 +424,32 @@ function private:Failed(errmsg, original)
         migrationDataSV.saved = migrationData.failed.saved
         migrationDataSV.version = migrationData.failed.version
         migrationDataSV.errmsg = errmsg
+        migrationDataSV.warning = true
         migrationDataSV.tuto = true
         NysTDL.db.profile.itemsList = {}
     end
 
     private:CreateRecoveryList()
+    private:CreateWarning()
+    if NysTDL.db.profile.migrationData.warning then
+        recoveryList.frame:Hide()
+    else
+        recoveryList.warningFrame:Hide()
+    end
+
+    if original then
+        -- because I don't want the warning frame to be movable, and it needs to be mouse enabled,
+        -- I reset the main frame's size and pos to the default values, just one time.
+
+        -- pos
+        local points, _ = NysTDL.db.profile.framePos, nil
+        points.point, _, points.relativePoint, points.xOffset, points.yOffset = "CENTER", nil, "CENTER", 0, 0
+        mainFrame.tdlFrame:ClearAllPoints()
+        mainFrame.tdlFrame:SetPoint(points.point, nil, points.relativePoint, points.xOffset, points.yOffset)
+
+        -- size
+        mainFrame.tdlFrame:SetSize(enums.tdlFrameDefaultWidth, enums.tdlFrameDefaultHeight) -- this will also call the event to scale the frame
+    end
 end
 
 function private:CreateRecoveryList()
@@ -608,6 +630,117 @@ function private:Event_recoveryFrame_OnUpdate()
 	end
 end
 
+function private:CreateWarning()
+    if recoveryList.warningFrame then
+        recoveryList.warningFrame:Hide()
+        recoveryList.warningFrame:ClearAllPoints()
+    end
+
+    -- we create the recovery frame
+    recoveryList.warningFrame = CreateFrame("Frame", "NysTDL_recoveryList_warningFrame", mainFrame.tdlFrame, BackdropTemplateMixin and "BackdropTemplate" or nil)
+    local frame = recoveryList.warningFrame
+
+    -- background
+    frame:SetBackdrop({
+        bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = false, tileSize = 1, edgeSize = 12,
+        insets = { left = 2, right = 2, top = 2, bottom = 2 }
+    })
+
+    frame:SetBackdropColor(0, 0, 0, 1)
+    frame:SetBackdropBorderColor(1, 1, 1, 1)
+
+    -- properties
+    frame:SetClampedToScreen(true)
+    frame:SetFrameStrata("HIGH")
+    frame:EnableMouse(true)
+
+    -- we resize the frame
+    frame:SetSize(enums.tdlFrameDefaultWidth, enums.tdlFrameDefaultHeight)
+
+    -- we reposition the frame
+    frame:ClearAllPoints()
+    frame:SetPoint("TOPLEFT", mainFrame.tdlFrame, "TOPLEFT", 0, 0)
+
+    -- // CREATING THE CONTENT OF THE FRAME // --
+
+    local msgWidth = 280
+
+    frame.content = CreateFrame("Frame", nil, frame)
+    local content = frame.content
+
+    content:SetAllPoints(frame)
+
+    -- /-> close button
+    content.closeButton = CreateFrame("Button", nil, content, "NysTDL_CloseButton")
+    content.closeButton:SetPoint("TOPRIGHT", content, "TOPRIGHT", -1, -1)
+    content.closeButton:SetScript("onClick", function() mainFrame.tdlFrame:Hide() end)
+
+    -- /-> title
+    local titlePos = -25
+    content.title = widgets:NoPointsLabel(content, nil, utils:ColorText(database.themes.red, "WARNING"))
+    content.title:SetPoint("TOP", content, "TOP", 0, titlePos)
+
+    -- /-> sorryMsg
+    local sorryMsgPos = titlePos - 30
+    content.sorryMsg = widgets:NoPointsLabel(content, nil, "An unexpected error was detected during the automatic migration from 5.7.1 to 6.0, you will have to manually add your items back using the recovery list. I'm really sorry about the inconvenience...")
+    content.sorryMsg:SetPoint("TOP", content, "TOP", 0, sorryMsgPos)
+    content.sorryMsg:SetWidth(msgWidth)
+
+    -- /-> doNotMsg
+    local doNotMsgPos = sorryMsgPos - 15 - content.sorryMsg:GetHeight()
+    content.doNotMsg = widgets:NoPointsLabel(content, nil, utils:ColorText(database.themes.yellow, "Don't go back to the last version, it won't solve the problem"))
+    content.doNotMsg:SetPoint("TOP", content, "TOP", 0, doNotMsgPos)
+    content.doNotMsg:SetWidth(msgWidth)
+
+    -- /-> errMsg
+    local errMsgPos = doNotMsgPos - 15 - content.doNotMsg:GetHeight()
+    content.errMsg = widgets:NoPointsLabel(content, nil, "Please copy and post this error message as an issue to GitHub so that I can fix this problem as quickly as possible:")
+    content.errMsg:SetPoint("TOP", content, "TOP", 0, errMsgPos)
+    content.errMsg:SetWidth(msgWidth)
+
+    -- /-> errMsgField
+    local errMsgFieldPos = errMsgPos - 8 - content.errMsg:GetHeight()
+    content.errMsgField = CreateFrame("EditBox", nil, content, "InputBoxTemplate")
+    content.errMsgField:SetSize(200, 32)
+    content.errMsgField:SetFontObject("GameFontHighlightLarge")
+    content.errMsgField:SetAutoFocus(false)
+    content.errMsgField:SetPoint("TOP", content, "TOP", -25, errMsgFieldPos)
+
+    -- /-> errMsgCopyBtn (select all btn)
+    content.errMsgCopyBtn = CreateFrame("Button", nil, content, "NysTDL_CopyButton")
+    content.errMsgCopyBtn.tooltip = "Ctrl+A"
+    content.errMsgCopyBtn:SetSize(32, 32)
+    content.errMsgCopyBtn:SetPoint("LEFT", content.errMsgField, "RIGHT", 2, 0)
+    content.errMsgCopyBtn:SetScript("OnClick", function()
+        widgets:SetFocusEditBox(content.errMsgField, true)
+    end)
+
+    -- /-> errMsgResetBtn
+    content.errMsgResetBtn = widgets:IconTooltipButton(content, "NysTDL_UndoButton", "Reset")
+    content.errMsgResetBtn:SetSize(32, 32)
+    content.errMsgResetBtn:SetPoint("LEFT", content.errMsgCopyBtn, "RIGHT", -2, 0)
+    content.errMsgResetBtn:SetScript("OnClick", function()
+        content.errMsgField:SetText(NysTDL.db.profile.migrationData.errmsg or "")
+        content.errMsgField:SetCursorPosition(0)
+        content.errMsgCopyBtn:GetScript("OnClick")()
+    end)
+
+    -- /--> init errMsgField
+    content.errMsgResetBtn:GetScript("OnClick")()
+    content.errMsgField:HighlightText(0, 0)
+
+    -- /-> openListBtn
+    content.openListBtn = widgets:Button("NysTDL_recoveryList_openListBtn_"..dataManager:NewID(), content, "Open Recovery List")
+    content.openListBtn:SetPoint("BOTTOM", content, "BOTTOM", 0, 32)
+    content.openListBtn:SetScript("OnClick", function()
+        frame:Hide()
+        recoveryList.frame:Show()
+        NysTDL.db.profile.migrationData.warning = false
+    end)
+end
+
 -- // **************************** // --
 
 local currentY, deltaY, deltaX
@@ -734,7 +867,7 @@ function private:NewItemWidget(itemName)
         tooltip:ClearAllPoints()
         tooltip:SetPoint("BOTTOMRIGHT", self, "TOPRIGHT", 0, 0)
 
-        tooltip:AddHeader("Tab: " .. (tabName or "--"))
+        tooltip:AddHeader("Tab: " .. (type(tabName) == "string" and tabName or "--"))
         tooltip:SetLineTextColor(1, unpack(database.themes.theme_yellow))
 
         if checked then

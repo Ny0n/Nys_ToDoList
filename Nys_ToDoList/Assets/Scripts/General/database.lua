@@ -28,6 +28,8 @@ database.themes = {
   theme_yellow = { 255, 216, 0 }, -- theme_yellow
   white = { 255, 255, 255 },
   black = { 0, 0, 0 },
+  red = { 255, 0, 0 },
+  yellow = { 255, 180, 0 },
 }
 
 -- AceDB defaults table
@@ -74,11 +76,12 @@ database.defaults = {
     undoTable = {},
 
     -- // MIGRATION DATA
-    migrationData = {
+    migrationData = { -- see private:Failed in migration.lua
       failed = nil,
       saved = nil,
       version = nil,
       errmsg = nil,
+      warning = nil,
       tuto = nil,
     },
 

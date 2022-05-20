@@ -764,8 +764,8 @@ function widgets:CategoryWidget(catID, parentFrame)
       -- and if we are opening it
       if categoryWidget.addEditBox:IsShown() then
         -- we reset the points
+		categoryWidget.addEditBox:SetPoint("LEFT", categoryWidget.interactiveLabel, "RIGHT", 10, 0)
         categoryWidget.addEditBox:SetPoint("RIGHT", parentFrame, "RIGHT", -3, 0)
-        categoryWidget.addEditBox:SetPoint("LEFT", categoryWidget.interactiveLabel, "RIGHT", 10, 0)
 
         -- and hide the originalTabLabel so it doesn't overlap (we show it back when the edit box dissapears)
         categoryWidget.originalTabLabel:Hide()
@@ -831,7 +831,7 @@ function widgets:CategoryWidget(catID, parentFrame)
   categoryWidget.hiddenLabel:Hide()
 
   -- / addEditBox
-  categoryWidget.addEditBox = widgets:NoPointsCatEditBox(categoryWidget)
+  categoryWidget.addEditBox = widgets:NoPointsCatEditBox("NysTDL_"..catID.."_widget_addEditBox", categoryWidget)
   categoryWidget.addEditBox:SetHeight(30)
   categoryWidget.addEditBox:Hide()
   categoryWidget.addEditBox:SetScript("OnEnterPressed", function(self)
@@ -845,14 +845,17 @@ function widgets:CategoryWidget(catID, parentFrame)
   categoryWidget.addEditBox:SetScript("OnEscapePressed", function(self)
     self:Hide()
     self:ClearAllPoints()
-
+  end)
+  categoryWidget.addEditBox:HookScript("OnEditFocusLost", function(self)
+    if not NysTDL.db.profile.migrationData.failed then
+      self:GetScript("OnEscapePressed")(self)
+    end
+  end)
+  categoryWidget.addEditBox:SetScript("OnHide", function(self)
     -- if the originalTabLabel was hidden because the add edit box was shown, we show it back if it's necessary
     if catData.originalTabID ~= database.ctab() then
       categoryWidget.originalTabLabel:Show()
     end
-  end)
-  categoryWidget.addEditBox:HookScript("OnEditFocusLost", function(self)
-    self:GetScript("OnEscapePressed")(self)
   end)
   widgets:AddHyperlinkEditBox(categoryWidget.addEditBox)
 
@@ -1057,8 +1060,8 @@ function widgets:NoPointsRenameEditBox(relativeFrame, text, width, height)
   return renameEditBox
 end
 
-function widgets:NoPointsCatEditBox(categoryWidget)
-  local edb = CreateFrame("EditBox", nil, categoryWidget, "InputBoxTemplate")
+function widgets:NoPointsCatEditBox(name, categoryWidget)
+  local edb = CreateFrame("EditBox", name, categoryWidget, "InputBoxTemplate")
   edb:SetAutoFocus(false)
   -- edb:SetTextInsets(0, 15, 0, 0)
   -- local btn = CreateFrame("Button", nil, edb, "NysTDL_AddButton")

@@ -605,6 +605,7 @@ local function recursiveLoad(tabID, tabData, catWidget, p)
   catWidget.emptyLabel:Hide()
   catWidget.hiddenLabel:Hide()
   if catData.closedInTabIDs[tabID] then -- if the cat is closed
+    catWidget.addEditBox:Hide()
     p.newY = p.newY - enums.ofsyCat
   else -- if the cat is opened, we display all of its content
     p.newY = p.newY - enums.ofsyCatContent
@@ -686,7 +687,7 @@ local function loadList()
       catWidget.originalTabLabel:Hide()
     else -- if the tab is showing a cat that was not created here, we show the label specifying the cat's original tab
       catWidget.originalTabLabel:SetText(utils:SafeStringFormat(L["(%s tab)"], dataManager:GetName(catWidget.catData.originalTabID)))
-      catWidget.originalTabLabel:Show()
+      catWidget.originalTabLabel:SetShown(not catWidget.addEditBox:IsShown())
     end
 
     recursiveLoad(tabID, tabData, catWidget, p)
