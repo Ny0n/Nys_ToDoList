@@ -254,12 +254,12 @@
     </Layers>
   </Button>
   
-  <!-- Edit Mode button -->
+  <!-- Copy button -->
   <Button name="NysTDL_CopyButton" inherits="NysTDL_IconButtonTooltipScripts" virtual="true">
     <Size x="32" y="32"/>
     <KeyValues>
 		<KeyValue key="tooltip" value=""/>
-		<KeyValue key="name" value="EditModeButton"/>
+		<KeyValue key="name" value="CopyButton"/>
     </KeyValues>
 	<NormalTexture file="Interface\FriendsFrame\UI-FriendsList-Small-Up"/>
 	<PushedTexture file="Interface\FriendsFrame\UI-FriendsList-Small-Down"/>

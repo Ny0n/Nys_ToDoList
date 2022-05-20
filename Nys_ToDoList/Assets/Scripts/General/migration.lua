@@ -414,6 +414,7 @@ local recoveryList = {
 }
 
 function private:CheckSaved()
+    -- returns false if migrationData or migrationData.saved are empty
     return not (not next(NysTDL.db.profile.migrationData) or type(NysTDL.db.profile.migrationData.saved) ~= "table" or not next(NysTDL.db.profile.migrationData.saved))
 end
 
@@ -527,9 +528,35 @@ function private:CreateRecoveryList()
     header:SetPoint("BOTTOMRIGHT", frame, "TOPRIGHT", 0, -recoveryList.topSize)
 
     -- /-> title
-
     header.title = widgets:NoPointsLabel(header, nil, "Recovery List")
     header.title:SetPoint("TOP", header, "TOP", 0, -12)
+
+    -- /-> clearButton
+    header.clearButton = widgets:IconTooltipButton(header, "NysTDL_ClearButton", "Clear everything".."\n! ".."Only do this when you are done".." !\n(".."Double Right-Click"..")")
+    header.clearButton:SetPoint("RIGHT", header, "RIGHT", -10, 0)
+    header.clearButton:SetSize(26, 26)
+    header.clearButton:RegisterForClicks("RightButtonUp") -- only responds to right-clicks
+    header.clearButton:SetScript("OnDoubleClick", function(self, button)
+        if button == "RightButton" then
+            if type(NysTDL.db.profile.migrationData) == "table" and type(NysTDL.db.profile.migrationData.saved) == "table" then
+                wipe(NysTDL.db.profile.migrationData.saved)
+                NysTDL.db.profile.migrationData.saved = nil
+            end
+            private:Refresh()
+        end
+    end)
+
+    -- /-> warningButton
+    header.warningButton = widgets:IconTooltipButton(header, "NysTDL_CopyButton", "Reopen error message")
+    header.warningButton:SetNormalTexture("Interface\\CHATFRAME\\UI-ChatIcon-Chat-Up")
+    header.warningButton:SetPushedTexture("Interface\\CHATFRAME\\UI-ChatIcon-Chat-Down")
+    header.warningButton:SetPoint("LEFT", header, "LEFT", 10, 0)
+    header.warningButton:SetSize(26, 26)
+    header.warningButton:SetScript("OnClick", function()
+        recoveryList.frame:Hide()
+        recoveryList.warningFrame:Show()
+        NysTDL.db.profile.migrationData.warning = true
+    end)
 
     -- // part 2: the body
     frame.body = CreateFrame("Frame", nil, frame)
@@ -539,7 +566,6 @@ function private:CreateRecoveryList()
     body:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, recoveryList.bottomSize)
 
     -- /-> scroll frame
-
     body.ScrollFrame = CreateFrame("ScrollFrame", nil, body, "UIPanelScrollFrameTemplate")
     body.ScrollFrame:SetPoint("TOPLEFT", body, "TOPLEFT", 3, -1) -- exclusive
     body.ScrollFrame:SetPoint("BOTTOMRIGHT", body, "BOTTOMRIGHT", -3, 1) -- exclusive
@@ -547,13 +573,11 @@ function private:CreateRecoveryList()
     body.ScrollFrame:SetClipsChildren(true)
 
     -- /-> scroll bar
-
     body.ScrollFrame.ScrollBar:ClearAllPoints()
     body.ScrollFrame.ScrollBar:SetPoint("TOPLEFT", body.ScrollFrame, "TOPRIGHT", - 18, - 18)
     body.ScrollFrame.ScrollBar:SetPoint("BOTTOMLEFT", body.ScrollFrame, "BOTTOMRIGHT", - 18, 17)
 
     -- /-> list
-
     -- creating the list, scroll child of ScrollFrame
     body.list = CreateFrame("Frame")
     body.list:SetSize(recoveryList.width-20, 1) -- y is determined by the elements inside of it
@@ -595,8 +619,7 @@ function private:CreateRecoveryList()
     recoveryList.copyBox = footer.copyBox.EditBox -- shortcut
 
     -- /-> copy btn (select all btn)
-    footer.copyBtn = CreateFrame("Button", nil, footer, "NysTDL_CopyButton")
-    footer.copyBtn.tooltip = "Ctrl+A"
+    footer.copyBtn = widgets:IconTooltipButton(footer, "NysTDL_CopyButton", "Ctrl+A")
     footer.copyBtn:SetSize(30, 30)
     footer.copyBtn:SetPoint("TOPRIGHT", footer, "TOPRIGHT", -5, -6)
     footer.copyBtn:SetScript("OnClick", function()
@@ -770,7 +793,9 @@ function private:Refresh(version)
         return
     end
 
-    print("Refresh - " .. version)
+    if not version then
+        return
+    end
 
     migrationData.failed.codes[version]()
 
@@ -907,7 +932,7 @@ migrationData.failed.codes["6.0"] = function()
         local list = NysTDL.db.profile.migrationData.saved
 
         if not private:CheckSaved() then
-            private:Refresh(NysTDL.db.profile.migrationData.version)
+            private:Refresh()
             return
         end
 
