@@ -108,8 +108,7 @@ end
 function private:TryToMigrate(toVersion)
     -- this func will only call the right migrations, depending on the current and last version of the addon
     if utils:IsVersionOlderThan(NysTDL.db.profile.latestVersion, toVersion) then
-        -- the safeguard
-        print("SAFEGUARD -- " .. toVersion)
+        -- the safeguard, second part is at the start of each migration code (saving the data)
         migrationData.failed.version = toVersion
 
         --[[
@@ -137,7 +136,6 @@ function private:TryToMigrate(toVersion)
 
         NysTDL.db.profile.latestVersion = toVersion -- success, onto the next one
     end
-    print("SAFEGUARD -- FINISHED OK")
 end
 
 -- // **************************** // --
@@ -390,8 +388,6 @@ migrationData.codes["6.0"] = function()
         end
     end
 
-    error("je suis l'erreur")
-
     -- // we also update the tabs in accordance with the tabs SV
 
     if profile.deleteAllTabItems then
@@ -482,14 +478,15 @@ function private:Failed(errmsg, original)
         -- because I don't want the warning frame to be movable, and it needs to be mouse enabled,
         -- I reset the main frame's size and pos to the default values, just one time.
 
+        -- size
+        NysTDL.db.profile.frameSize.width = enums.tdlFrameDefaultWidth
+        NysTDL.db.profile.frameSize.height = enums.tdlFrameDefaultHeight
+
         -- pos
         local points, _ = NysTDL.db.profile.framePos, nil
         points.point, _, points.relativePoint, points.xOffset, points.yOffset = "CENTER", nil, "CENTER", 0, 0
-        mainFrame.tdlFrame:ClearAllPoints()
-        mainFrame.tdlFrame:SetPoint(points.point, nil, points.relativePoint, points.xOffset, points.yOffset)
 
-        -- size
-        mainFrame.tdlFrame:SetSize(enums.tdlFrameDefaultWidth, enums.tdlFrameDefaultHeight) -- this will also call the event to scale the frame
+        --we only need to update the saved avrs, so that when the tdlFrame initializes, it uses them and updates accordingly.
     end
 end
 
@@ -1065,7 +1062,7 @@ migrationData.failed.codes["2.0"] = function()
         if catName ~= "Daily" and catName ~= "Weekly" then -- oh yea
 
             -- == cat == --
-            private:NewCategoryWidget(catName)
+            local catWidget = private:NewCategoryWidget(catName)
             -- ========= --
 
             for _,itemName in ipairs(items) do
@@ -1084,6 +1081,14 @@ migrationData.failed.codes["2.0"] = function()
                     itemWidget.i.tabName = "All"
                 end
                 itemWidget.i.checked = utils:HasValue(saved.checkedButtons, itemName)
+
+                if itemWidget.i.tabName == "All" then
+                    catWidget.i.allTab = true
+                elseif itemWidget.i.tabName == "Daily" then
+                    catWidget.i.dailyTab = true
+                elseif itemWidget.i.tabName == "Weekly" then
+                    catWidget.i.weeklyTab = true
+                end
                 -- ========== --
 
             end
@@ -1135,7 +1140,7 @@ migrationData.failed.codes["5.5"] = function()
     for catName,items in pairs(saved.itemsList) do
 
         -- == cat == --
-        private:NewCategoryWidget(catName)
+        local catWidget = private:NewCategoryWidget(catName)
         -- ========= --
 
         for _,itemName in ipairs(items) do
@@ -1156,6 +1161,14 @@ migrationData.failed.codes["5.5"] = function()
             itemWidget.i.checked = utils:HasValue(saved.checkedButtons, itemName)
             itemWidget.i.favorite = utils:HasValue(saved.itemsFavorite, itemName)
             itemWidget.i.description = type(saved.itemsDesc) == "table" and saved.itemsDesc[itemName] or nil
+
+            if itemWidget.i.tabName == "All" then
+                catWidget.i.allTab = true
+            elseif itemWidget.i.tabName == "Daily" then
+                catWidget.i.dailyTab = true
+            elseif itemWidget.i.tabName == "Weekly" then
+                catWidget.i.weeklyTab = true
+            end
             -- ========== --
 
         end
