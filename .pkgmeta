@@ -14,6 +14,7 @@ externals:
   Nys_ToDoList/Libs/AceTimer-3.0:         https://repos.curseforge.com/wow/ace3/trunk/AceTimer-3.0
   Nys_ToDoList/Libs/AceEvent-3.0:         https://repos.curseforge.com/wow/ace3/trunk/AceEvent-3.0
   Nys_ToDoList/Libs/LibDBIcon-1.0:        https://repos.curseforge.com/wow/libdbicon-1-0/trunk/LibDBIcon-1.0
+  Nys_ToDoList/Libs/LibQTip-1.0:          https://repos.curseforge.com/wow/libqtip-1-0
 
 tools-used:
   - libdatabroker-1-1

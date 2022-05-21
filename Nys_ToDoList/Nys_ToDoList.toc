@@ -1,11 +1,11 @@
 # /run print((select(4, GetBuildInfo())))
 #@retail@
-## Interface: 90100
+## Interface: 90200
 #@end-retail@
 #@non-retail@
 # ## Interface: 11306
 #@end-non-retail@
-## Version: 6.0
+## Version: 6.0.1-beta
 
 ## Author: Nyony (on Twitch)
 ## Title: Ny's To-Do List
@@ -23,7 +23,7 @@
 # this is just to have an access to the old saved variables for a potential migration, they are not actually used anymore
 ## SavedVariablesPerCharacter: ToDoListSV, ToDoListSV_itemsList, ToDoListSV_checkedButtons, ToDoListSV_autoReset, ToDoListSV_lastLoadedTab
 
-## OptionalDeps: Ace3, LibDBIcon-1.0
-## X-Embeds: Ace3, LibDBIcon-1.0
+## OptionalDeps: Ace3, LibDBIcon-1.0, LibQTip-1.0
+## X-Embeds: Ace3, LibDBIcon-1.0, LibQTip-1.0
 
 Main.xml

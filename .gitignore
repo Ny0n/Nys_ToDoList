@@ -1,5 +1,9 @@
+.vscode/
+.idea/
 .other/private/
 .other/build/package/
 Nys_ToDoList/Libs/*
 !Nys_ToDoList/Libs/embeds.xml
 !Nys_ToDoList/Libs/LibDataBroker-1.1/
+Nys_ToDoList/Assets/Dev/*
+!Nys_ToDoList/Assets/Dev/devLocale.lua

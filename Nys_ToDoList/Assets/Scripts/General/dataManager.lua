@@ -96,23 +96,70 @@ end
 
 -- id func
 function dataManager:NewID()
-	-- no dashes uuid
-	local template ='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
-	return (select(1, string.gsub(template, 'x', function(c)
-		local v = random(0, 0xf)
-		return string.format('%x', v)
-	end)))
+	--[[
+		This function returns the global saved variable "NysTDL.db.global.nextID" as it is,
+		then increments it by one, using the hexadecimal base.
 
-	-- -- uuid
-	-- local template ='xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
-	-- return (select(1, string.gsub(template, '[xy]', function(c)
-	-- 	local v = (c == 'x') and random(0, 0xf) or random(8, 0xb)
-	-- 	return string.format('%x', v)
-	-- end)))
+		! the benefit of this func over using an integer with string.format("%x", ...) is that no numbers are used !
+		-- I'm incrementing NysTDL.db.global.nextID hexadecimally using only strings --
+		-> this means that I am not bound to the limits of lua numbers,
+			but to the limit of lua strings, which in hex terms, is infinitely bigger.
+	]]
 
-	-- local newID = NysTDL.db.global.nextID
-	-- NysTDL.db.global.nextID = NysTDL.db.global.nextID + 1
-	-- return newID
+	-- hexadecimal
+	local base = "0123456789abcdef"
+	local newChar = "1"
+
+	-- // script start
+
+	local g = NysTDL.db.global
+
+	-- safeguard
+	local sg = function()
+		local success, result = pcall(time) -- Overkill, I know, but better safe than sorry ;)
+		if success then
+			g.nextID = string.format("%x", result)
+		else
+			g.nextID = "001"
+		end
+	end
+
+	if type(g.nextID) ~= "string" or #g.nextID == 0 then sg() end -- safeguard #1
+	g.nextID = g.nextID:lower()
+
+	local newID = g.nextID -- first we save the ID that will be returned by this call (nextID)
+
+	-- and then, we increment nextID by one
+
+	---------------------
+
+	local index = #g.nextID
+
+	repeat
+		local char = g.nextID:sub(index, index)
+		if #char == 0 then
+			g.nextID = newChar .. g.nextID
+			break
+		end
+
+		local baseIndex = base:find(char)
+		if not baseIndex then -- safeguard #2
+			sg()
+			return dataManager:NewID()
+		end
+
+		baseIndex = baseIndex + 1
+		if baseIndex > #base then -- was last char
+			baseIndex = 1
+		end
+
+		g.nextID = g.nextID:sub(1, index-1) .. base:sub(baseIndex, baseIndex) .. g.nextID:sub(index+1, #g.nextID)
+		index = index - 1
+	until baseIndex ~= 1
+
+	---------------------
+
+	return newID
 end
 
 function dataManager:IsID(ID)
@@ -132,9 +179,9 @@ function dataManager:Find(ID)
 	for i=1,2 do -- global, profile
 		local isGlobal = i==2
 		local locations = dataManager:GetData(isGlobal, true)
-		for enum,table in pairs(locations) do -- itemsList, categoriesList, tabsList
-			if table[ID] ~= nil then -- presence test
-				return enum, isGlobal, table[ID], dataManager:GetData(isGlobal)
+		for enum, tbl in pairs(locations) do -- itemsList, categoriesList, tabsList
+			if tbl[ID] ~= nil then -- presence test
+				return enum, isGlobal, tbl[ID], dataManager:GetData(isGlobal)
 			end
 		end
 	end
@@ -386,24 +433,24 @@ function dataManager:CreateItem(itemName, tabID, catID)
 	if not dataManager:CheckName(itemName, enums.item) then return end
 
 	local itemData = { -- itemData
-    name = itemName,
-    originalTabID = tabID,
-    tabIDs = { -- we display the item in these tabs, updated later
+		name = itemName,
+		originalTabID = tabID,
+		tabIDs = { -- we display the item in these tabs, updated later
 			-- [tabID] = true,
 			-- ...
 		},
-    catID = catID, -- for convenience when deleting items, so that we can remove them from its respective category easily
-    -- item specific data
-    checked = false,
-    accountWide = false, -- user set, used in global tabs
-    accountChecked = { -- user set, used in global tabs
-      -- [profileName] = false or true, -- first one is self, and is the only one for profile items
-      -- [profileName] = false or true, -- others are used only for global items
-      -- ...
-    },
-    favorite = false,
-    description = false,
-  }
+		catID = catID, -- for convenience when deleting items, so that we can remove them from its respective category easily
+		-- item specific data
+		-- accountWide = false, -- user set, used in global tabs
+		-- accountChecked = { -- user set, used in global tabs
+		--   -- [profileName] = false or true, -- first one is self, and is the only one for profile items
+		--   -- [profileName] = false or true, -- others are used only for global items
+		--   -- ...
+		-- },
+		checked = false,
+		favorite = false,
+		description = false,
+	}
 
 	return addItem(dataManager:NewID(), itemData)
 end
@@ -459,23 +506,23 @@ function dataManager:CreateCategory(catName, tabID, parentCatID)
 	end
 
 	local catData = { -- catData
-    name = catName,
-    originalTabID = tabID,
-    tabIDs = { -- we display the category in these tabs, updated later
+		name = catName,
+		originalTabID = tabID,
+		tabIDs = { -- we display the category in these tabs, updated later
 			-- [tabID] = true,
-      -- ...
+			-- ...
 		},
-    closedInTabIDs = {
-      -- [tabID] = true,
-      -- ...
-    },
-    parentCatID = parentCatID,
-    orderedContentIDs = { -- content of the cat, ordered (tinsert(contentOrderedIDs, 1, ID)), SECOND LOOP ON THIS FOR ITEMS AND RECURSIVELY ON SUB-CATEGORIES
-      -- [catID or itemID], -- [1]
-      -- [catID or itemID], -- [2]
-      -- ... -- [...]
-    },
-  }
+		closedInTabIDs = {
+			-- [tabID] = true,
+			-- ...
+		},
+		parentCatID = parentCatID,
+		orderedContentIDs = { -- content of the cat, ordered (tinsert(contentOrderedIDs, 1, ID)), SECOND LOOP ON THIS FOR ITEMS AND RECURSIVELY ON SUB-CATEGORIES
+			-- [catID or itemID], -- [1]
+			-- [catID or itemID], -- [2]
+			-- ... -- [...]
+		},
+	}
 
 	catData.tabIDs[tabID] = true
 
@@ -526,20 +573,20 @@ function dataManager:CreateTab(tabName, isGlobal)
 	if not dataManager:CheckName(tabName, enums.tab) then return end
 
 	local tabData = { -- tabData
-    name = tabName,
+		name = tabName,
 		orderedCatIDs = { -- content of the tab, ordered (table.insert(contentOrderedIDs, 1, ID)), FIRST LOOP ON THIS FOR CATEGORIES
-      -- [catID], -- [1]
-      -- [catID], -- [2]
-      -- ... -- [...]
-    },
+			-- [catID], -- [1]
+			-- [catID], -- [2]
+			-- ... -- [...]
+		},
 		-- tab specific data
 		shownIDs = { -- user set
-      -- [tabID] = true,
-      -- ...
-    },
-    hideCheckedItems = false, -- user set
-    deleteCheckedItems = false, -- user set
-  }
+			-- [tabID] = true,
+			-- ...
+		},
+		hideCheckedItems = false, -- user set
+		deleteCheckedItems = false, -- user set
+	}
 
 	resetManager:InitTabData(tabData)
 
@@ -765,7 +812,7 @@ function dataManager:DeleteItem(itemID)
 
 	local itemData, itemsList = select(3, dataManager:Find(itemID))
 
-  -- // we delete the item and all its related data
+	-- // we delete the item and all its related data
 
 	-- we update its data (pretty much the reverse actions of the Add func)
 	dataManager:UpdateTabsDisplay(itemData.originalTabID, false, itemID)
@@ -773,7 +820,7 @@ function dataManager:DeleteItem(itemID)
 
 	local undoData = dataManager:CreateUndo(itemID)
 	dataManager:AddUndo(undoData)
-  itemsList[itemID] = nil -- delete action
+	itemsList[itemID] = nil -- delete action
 
 	-- we hide a potentially opened desc frame
 	widgets:DescFrameHide(itemID)
@@ -865,7 +912,7 @@ function dataManager:DeleteTab(tabID)
 		end
 	end
 
- 	-- we delete everything inside the tab, this means every category inside of it
+	-- we delete everything inside the tab, this means every category inside of it
 	local copy = utils:Deepcopy(tabData.orderedCatIDs)
 	local nbToUndo = 0
 
@@ -1113,7 +1160,8 @@ function dataManager:IsProtected(ID)
 	local enum, _, dataTable, itemsList, categoriesList, tabsList = dataManager:Find(ID)
 
 	if enum == enums.item then -- item
-		return dataTable.favorite or dataTable.description
+		-- return dataTable.favorite or dataTable.description
+		return false
 	elseif enum == enums.category then -- category
 		return false -- TDLATER IsProtected category
 	elseif enum == enums.tab then -- tab
@@ -1469,7 +1517,7 @@ function dataManager:GetCatNumbers(catID)
 	-- // less hardcore than GetRemainingNumbers, this func returns the general content of a given gategory
 	-- returns a table containing the following keys:
 	-- - total 			-- subCats + items
-	-- 	- subCats 	-- nb of subCats
+	-- 	- subCats 		-- nb of subCats
 	-- 	- items 		-- nb of items
 	-- 		- desc 		-- at least have a desc
 	-- 		- favs 		-- at least is fav

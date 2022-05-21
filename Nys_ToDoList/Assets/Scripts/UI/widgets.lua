@@ -7,6 +7,7 @@ local utils = addonTable.utils
 local enums = addonTable.enums
 local widgets = addonTable.widgets
 local database = addonTable.database
+local migration = addonTable.migration
 local dragndrop = addonTable.dragndrop
 local mainFrame = addonTable.mainFrame
 local tabsFrame = addonTable.tabsFrame
@@ -60,7 +61,7 @@ end
 function widgets:EditBoxInsertLink(text)
   -- when we shift-click on things, we hook the link from the chat function,
   -- and add it to the one of my edit boxes who has the focus (if there is one)
-  -- basically, it's what allow hyperlinks in my addon edit boxes
+  -- basically, it's what allows hyperlinks in my addon edit boxes
   for _, v in pairs(hyperlinkEditBoxes) do
 		if v and v:IsVisible() and v:HasFocus() then
 			v:Insert(text)
@@ -329,18 +330,21 @@ end
 
 -- // other
 
-function widgets:SetFocusEditBox(editBox) -- DRY
+function widgets:SetFocusEditBox(editBox, forceHighlight) -- DRY
   editBox:SetFocus()
-  if NysTDL.db.profile.highlightOnFocus then
+  if forceHighlight or NysTDL.db.profile.highlightOnFocus then
     editBox:HighlightText()
   else
     editBox:HighlightText(0, 0)
   end
 end
 
-function widgets:GetWidth(text)
+function widgets:GetWidth(text, font)
   -- not the length (#) of a string, but the width it takes when placed on the screen as a font string
   local l = widgets:NoPointsLabel(UIParent, nil, text)
+  if font then
+    l:SetFontObject(font)
+  end
   return l:GetWidth()
 end
 
@@ -371,8 +375,8 @@ function widgets:TutorialFrame(tutoName, showCloseButton, arrowSide, text, width
 
   if showCloseButton then
     tutoFrame.closeButton = CreateFrame("Button", nil, tutoFrame, "UIPanelCloseButton")
-    tutoFrame.closeButton:SetPoint("TOPRIGHT", tutoFrame, "TOPRIGHT", 6, 6)
-    tutoFrame.closeButton:SetScript("OnClick", function() tutorialsManager:Next() end)
+    tutoFrame.closeButton:SetPoint("TOPRIGHT", tutoFrame, "TOPRIGHT", 4, 4)
+    tutoFrame.closeButton:SetScript("OnClick", function() tutorialsManager:Next() end) -- overridable
     tutoFrameRightDist = tutoFrame.closeButton:GetWidth() + 10
   end
 
@@ -394,9 +398,13 @@ end
 
 --/*******************/ LABELS /*************************/--
 
-function widgets:NoPointsLabel(relativeFrame, name, text)
+function widgets:NoPointsLabel(relativeFrame, name, text, font)
   local label = relativeFrame:CreateFontString(name)
-  label:SetFontObject("GameFontHighlightLarge")
+  if font and type(font) == "string" then
+    label:SetFontObject(font)
+  else
+    label:SetFontObject("GameFontHighlightLarge")
+  end
   label:SetText(text)
   return label
 end
@@ -460,6 +468,7 @@ end
 function widgets:HelpButton(relativeFrame)
   local btn = CreateFrame("Button", nil, relativeFrame, "NysTDL_HelpButton")
   btn.tooltip = L["Information"]
+  btn:SetAlpha(0.7)
 
   -- these are for changing the color depending on the mouse actions (since they are custom xml)
   btn:HookScript("OnEnter", function(self)
@@ -639,6 +648,38 @@ function widgets:DescButton(widget, parent)
   return btn
 end
 
+function widgets:ValidButton(parent)
+	local btn = CreateFrame("Button", nil, parent, "NysTDL_ValidButton")
+	local function toGreen()
+		btn.Icon = btn.IconGreen
+		btn.IconYellow:Hide()
+		btn.IconGreen:Show()
+	end
+	local function toYellow()
+		btn.Icon = btn.IconYellow
+		btn.IconGreen:Hide()
+		btn.IconYellow:Show()
+	end
+	toYellow()
+
+	-- these are for changing the color depending on the mouse actions (since they are custom xml)
+	btn:HookScript("OnEnter", function()
+		toGreen()
+	end)
+	btn:HookScript("OnLeave", function(self)
+		if not self.pressed then
+			toYellow()
+		end
+	end)
+	btn:HookScript("OnMouseUp", function()
+		toYellow()
+	end)
+	btn:HookScript("OnShow", function()
+		toYellow()
+	end)
+	return btn
+end
+
 --/*******************/ ITEM/CATEGORY WIDGETS /*************************/--
 
 --[[
@@ -723,8 +764,8 @@ function widgets:CategoryWidget(catID, parentFrame)
       -- and if we are opening it
       if categoryWidget.addEditBox:IsShown() then
         -- we reset the points
+		categoryWidget.addEditBox:SetPoint("LEFT", categoryWidget.interactiveLabel, "RIGHT", 10, 0)
         categoryWidget.addEditBox:SetPoint("RIGHT", parentFrame, "RIGHT", -3, 0)
-        categoryWidget.addEditBox:SetPoint("LEFT", categoryWidget.interactiveLabel, "RIGHT", 10, 0)
 
         -- and hide the originalTabLabel so it doesn't overlap (we show it back when the edit box dissapears)
         categoryWidget.originalTabLabel:Hide()
@@ -790,7 +831,7 @@ function widgets:CategoryWidget(catID, parentFrame)
   categoryWidget.hiddenLabel:Hide()
 
   -- / addEditBox
-  categoryWidget.addEditBox = widgets:NoPointsCatEditBox(categoryWidget)
+  categoryWidget.addEditBox = widgets:NoPointsCatEditBox("NysTDL_"..catID.."_widget_addEditBox", categoryWidget)
   categoryWidget.addEditBox:SetHeight(30)
   categoryWidget.addEditBox:Hide()
   categoryWidget.addEditBox:SetScript("OnEnterPressed", function(self)
@@ -804,14 +845,17 @@ function widgets:CategoryWidget(catID, parentFrame)
   categoryWidget.addEditBox:SetScript("OnEscapePressed", function(self)
     self:Hide()
     self:ClearAllPoints()
-
+  end)
+  categoryWidget.addEditBox:HookScript("OnEditFocusLost", function(self)
+    if not NysTDL.db.profile.migrationData.failed then
+      self:GetScript("OnEscapePressed")(self)
+    end
+  end)
+  categoryWidget.addEditBox:SetScript("OnHide", function(self)
     -- if the originalTabLabel was hidden because the add edit box was shown, we show it back if it's necessary
     if catData.originalTabID ~= database.ctab() then
       categoryWidget.originalTabLabel:Show()
     end
-  end)
-  categoryWidget.addEditBox:HookScript("OnEditFocusLost", function(self)
-    self:GetScript("OnEscapePressed")(self)
   end)
   widgets:AddHyperlinkEditBox(categoryWidget.addEditBox)
 
@@ -1016,8 +1060,8 @@ function widgets:NoPointsRenameEditBox(relativeFrame, text, width, height)
   return renameEditBox
 end
 
-function widgets:NoPointsCatEditBox(categoryWidget)
-  local edb = CreateFrame("EditBox", nil, categoryWidget, "InputBoxTemplate")
+function widgets:NoPointsCatEditBox(name, categoryWidget)
+  local edb = CreateFrame("EditBox", name, categoryWidget, "InputBoxTemplate")
   edb:SetAutoFocus(false)
   -- edb:SetTextInsets(0, 15, 0, 0)
   -- local btn = CreateFrame("Button", nil, edb, "NysTDL_AddButton")
@@ -1099,7 +1143,7 @@ function widgets:Initialize()
   -- databroker:CreateTooltipFrame() -- TDLATER
   databroker:CreateMinimapButton()
   mainFrame:CreateTDLFrame()
-  tabsFrame:CreateFrame(mainFrame:GetFrame())
+  tabsFrame:CreateTabsFrame()
 
   -- then we manage the widgetsFrame
   widgetsFrame.timeSinceLastUpdate = 0

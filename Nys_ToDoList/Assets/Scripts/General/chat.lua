@@ -165,14 +165,12 @@ chat.commands = { -- TDLATER FIX if all chat commands locales are the same, we c
     chat:CustomPrintForced("- "..L["Sorted first in categories"], true)
     chat:CustomPrintForced("- "..L["More visible remaining numbers"], true)
     chat:CustomPrintForced("- "..L["Chat warning/reminder system"], true)
-    chat:CustomPrintForced("- "..L["The item cannot be deleted"], true)
   end,
 
   [L["descriptions"]] = function()
     chat:CustomPrintForced(L["You can add descriptions on items!"]..' '..L["(toggle the edit mode to do so)"])
     chat:CustomPrintForced("- "..L["They are automatically saved"], true)
     chat:CustomPrintForced("- "..utils:SafeStringFormat(L["You can write up to %i characters"], enums.maxDescriptionCharCount), true)
-    chat:CustomPrintForced("- "..L["The item cannot be deleted"]..' '..L["(empty the description if you want to do so)"], true)
   end,
 
   [L["hyperlinks"]] = function()

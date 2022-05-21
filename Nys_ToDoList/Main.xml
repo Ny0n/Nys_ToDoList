@@ -13,13 +13,14 @@
   <Script file="Assets\Scripts\core.lua"/> <!-- #1 to be loaded -->
   <Script file="Assets\Scripts\enums.lua"/> <!-- #2 to be loaded -->
   <!--@do-not-package@-->
-  <Script file="Assets\Dev\devScript.lua"/>
+  <Script file="Assets\Dev\devTests.lua"/>
   <!--@end-do-not-package@-->
   <!-- General -->
   <Script file="Assets\Scripts\General\chat.lua"/>
   <Script file="Assets\Scripts\General\database.lua"/>
   <Script file="Assets\Scripts\General\dataManager.lua"/>
   <Script file="Assets\Scripts\General\events.lua"/>
+  <Script file="Assets\Scripts\General\migration.lua"/>
   <Script file="Assets\Scripts\General\optionsManager.lua"/>
   <Script file="Assets\Scripts\General\resetManager.lua"/>
   <Script file="Assets\Scripts\General\tutorialsManager.lua"/>
