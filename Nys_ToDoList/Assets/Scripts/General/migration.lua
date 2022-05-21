@@ -390,6 +390,8 @@ migrationData.codes["6.0"] = function()
         end
     end
 
+    error("je suis l'erreur")
+
     -- // we also update the tabs in accordance with the tabs SV
 
     if profile.deleteAllTabItems then
@@ -570,7 +572,7 @@ function private:CreateRecoveryList()
     header.title:SetPoint("TOP", header, "TOP", 0, -12)
 
     -- /-> clearButton
-    header.clearButton = widgets:IconTooltipButton(header, "NysTDL_ClearButton", L["Clear everything"].."\n! "..L["Only do this when you are done"].." !\n("..L["Double Right-Click"]..")")
+    header.clearButton = widgets:IconTooltipButton(header, "NysTDL_ClearButton", L["Clear everything"].."\n"..L["Only do this when you are done!"].."\n("..L["Double Right-Click"]..")")
     header.clearButton:SetPoint("RIGHT", header, "RIGHT", -10, 0)
     header.clearButton:SetSize(26, 26)
     header.clearButton:RegisterForClicks("RightButtonUp") -- only responds to right-clicks
@@ -761,7 +763,7 @@ function private:CreateWarning()
 
     -- /-> sorryMsg
     local sorryMsgPos = titlePos - 30
-    content.sorryMsg = widgets:NoPointsLabel(content, nil, L["An unexpected error was detected during the automatic migration from 5.7.1 to 6.0, you will have to manually add your items back using the recovery list. I'm really sorry about the inconvenience..."])
+    content.sorryMsg = widgets:NoPointsLabel(content, nil, L["An unexpected error was detected during the update to 6.0, you will have to manually add your items back using the recovery list. I'm really sorry about the inconvenience..."])
     content.sorryMsg:SetPoint("TOP", content, "TOP", 0, sorryMsgPos)
     content.sorryMsg:SetWidth(msgWidth)
 
@@ -888,13 +890,50 @@ function private:NewCategoryWidget(catName)
         recoveryList.copyBox:SetText(self:GetText())
         widgets:SetFocusEditBox(recoveryList.copyBox, true)
 	end)
+    categoryWidget.label:HookScript("OnEnter", function(self)
+        local i = self:GetParent().i
+        local allTab, dailyTab, weeklyTab = i.allTab, i.dailyTab, i.weeklyTab -- those are set dynamically
+
+        -- <!> tooltip content <!>
+
+        recoveryList.tooltip = LibQTip:Acquire("NysTDL_recoveryList_tooltip", 1)
+        local tooltip = recoveryList.tooltip
+
+        tooltip:SmartAnchorTo(self)
+        tooltip:ClearAllPoints()
+        tooltip:SetPoint("BOTTOMLEFT", self, "TOPLEFT", 0, 0)
+
+        local tabName, last = nil, false
+        if allTab then
+            tabName = L["All"]
+            last = true
+        end
+        if dailyTab then
+            if last then
+                tabName = tabName .. ", " .. L["Daily"]
+            else
+                tabName = L["Daily"]
+            end
+            last = true
+        end
+        if weeklyTab then
+            if last then
+                tabName = tabName .. ", " .. L["Weekly"]
+            else
+                tabName = L["Weekly"]
+            end
+        end
+        tooltip:AddHeader(L["Tab"]..": " .. (type(tabName) == "string" and tabName or "--"))
+        tooltip:SetLineTextColor(1, unpack(database.themes.theme_yellow))
+
+        tooltip:Show()
+    end)
+    categoryWidget.label:HookScript("OnLeave", function(self)
+        LibQTip:Release(recoveryList.tooltip)
+        recoveryList.tooltip = nil
+    end)
     categoryWidget.label:ClearAllPoints()
     categoryWidget.label:SetPoint("LEFT", categoryWidget, "LEFT", 0, 0)
-
-    -- -- / removeBtn
-    -- categoryWidget.removeBtn = widgets:ValidButton(categoryWidget)
-    -- categoryWidget.removeBtn:SetPoint("LEFT", categoryWidget, "LEFT", 0, -1)
-    -- -- OnClick set later
 
     categoryWidget.i = {} -- free space
 
@@ -1152,7 +1191,7 @@ migrationData.failed.codes["6.0"] = function()
     for catName,items in pairs(NysTDL.db.profile.migrationData.saved) do -- categories
 
         -- == cat == --
-        private:NewCategoryWidget(catName)
+        local catWidget = private:NewCategoryWidget(catName)
         -- ========= --
 
         for itemName,itemData in pairs(items) do -- items
@@ -1166,6 +1205,14 @@ migrationData.failed.codes["6.0"] = function()
                 itemWidget.i.checked = itemData.checked
                 itemWidget.i.favorite = itemData.favorite
                 itemWidget.i.description = itemData.description
+
+                if itemWidget.i.tabName == "All" then
+                    catWidget.i.allTab = true
+                elseif itemWidget.i.tabName == "Daily" then
+                    catWidget.i.dailyTab = true
+                elseif itemWidget.i.tabName == "Weekly" then
+                    catWidget.i.weeklyTab = true
+                end
             end
             -- ========== --
 
