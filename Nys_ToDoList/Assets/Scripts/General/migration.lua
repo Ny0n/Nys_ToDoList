@@ -145,9 +145,16 @@ end
 -- / migration from 1.0+ to 2.0+
 local ToDoListSV_transfert
 migrationData.codes["2.0"] = function()
-        -- (potential) saved variables in 1.0+ : ToDoListSV_checkedButtons, ToDoListSV_itemsList, ToDoListSV_autoReset, ToDoListSV_lastLoadedTab
-        -- saved variables in 2.0+ : ToDoListSV
-        if ToDoListSV_checkedButtons or ToDoListSV_itemsList or ToDoListSV_autoReset or ToDoListSV_lastLoadedTab then
+
+    -- (potential) saved variables in 1.0+ : ToDoListSV_checkedButtons, ToDoListSV_itemsList, ToDoListSV_autoReset, ToDoListSV_lastLoadedTab
+    -- saved variables in 2.0+ : ToDoListSV
+    if ToDoListSV_checkedButtons or ToDoListSV_itemsList or ToDoListSV_autoReset or ToDoListSV_lastLoadedTab then
+        migrationData.failed.saved = {}
+        migrationData.failed.saved.itemsList = utils:Deepcopy(ToDoListSV_itemsList)
+        migrationData.failed.saved.checkedButtons = utils:Deepcopy(ToDoListSV_checkedButtons)
+
+        -- // == start migration == // --
+
         ToDoListSV_transfert = {
             -- we only care about those two to be transfered to 6.0+
             itemsList = ToDoListSV_itemsList or { ["Daily"] = {}, ["Weekly"] = {} },
@@ -170,6 +177,13 @@ migrationData.codes["4.0"] = function()
     -- saved variables in 4.0+ : NysToDoListDB (AceDB)
     if ToDoListSV or ToDoListSV_transfert then -- // double check
         ToDoListSV_transfert = ToDoListSV_transfert or ToDoListSV
+
+        migrationData.failed.saved = {}
+        migrationData.failed.saved.itemsList = utils:Deepcopy(ToDoListSV_transfert.itemsList)
+        migrationData.failed.saved.checkedButtons = utils:Deepcopy(ToDoListSV_transfert.checkedButtons)
+
+        -- // == start migration == // --
+
         -- again, only those two are useful
         profile.itemsList = utils:Deepcopy(ToDoListSV_transfert.itemsList) or { ["Daily"] = {}, ["Weekly"] = {} }
         profile.checkedButtons = utils:Deepcopy(ToDoListSV_transfert.checkedButtons) or {}
@@ -196,6 +210,13 @@ migrationData.codes["5.0"] = function()
     end
 
     if profile.itemsList and (profile.itemsList["Daily"] and profile.itemsList["Weekly"]) and not nextFormat then -- // triple check
+
+        migrationData.failed.saved = {}
+        migrationData.failed.saved.itemsList = utils:Deepcopy(profile.itemsList)
+        migrationData.failed.saved.checkedButtons = utils:Deepcopy(profile.checkedButtons)
+
+        -- // == start migration == // --
+
         -- we only extract the daily and weekly tables to be on their own
         profile.itemsDaily = utils:Deepcopy(profile.itemsList["Daily"]) or {}
         profile.itemsWeekly = utils:Deepcopy(profile.itemsList["Weekly"]) or {}
@@ -212,6 +233,17 @@ migrationData.codes["5.5"] = function()
 
     -- every var here will be transfered INSIDE the items data
     if profile.itemsDaily or profile.itemsWeekly or profile.itemsFavorite or profile.itemsDesc or profile.checkedButtons then -- // double check
+
+        migrationData.failed.saved = {}
+        migrationData.failed.saved.itemsList = utils:Deepcopy(profile.itemsList)
+        migrationData.failed.saved.checkedButtons = utils:Deepcopy(profile.checkedButtons)
+        migrationData.failed.saved.itemsDaily = utils:Deepcopy(profile.itemsDaily)
+        migrationData.failed.saved.itemsWeekly = utils:Deepcopy(profile.itemsWeekly)
+        migrationData.failed.saved.itemsFavorite = utils:Deepcopy(profile.itemsFavorite)
+        migrationData.failed.saved.itemsDesc = utils:Deepcopy(profile.itemsDesc)
+
+        -- // == start migration == // --
+
         -- we need to change the saved variables to the new format
         local oldItemsList = utils:Deepcopy(profile.itemsList)
         profile.itemsList = {}
@@ -220,6 +252,8 @@ migrationData.codes["5.5"] = function()
             profile.itemsList[catName] = {}
             for _, itemName in pairs(itemNames) do -- and for every item we had
                 -- first we get the previous data elements from the item
+
+                error("je suis l'erreur")
 
                 -- / tabName
                 -- no need for the locale here, i actually DID force-use the english names in my previous code,
@@ -271,7 +305,7 @@ migrationData.codes["6.0"] = function()
     local profile = NysTDL.db.profile
     migrationData.failed.saved = utils:Deepcopy(profile.itemsList)
 
-    -- ================== --
+    -- // == start migration == // --
 
     -- first we get the itemsList and delete it, so that we can start filling it correctly
     local itemsList = profile.itemsList -- saving it for use
@@ -300,8 +334,6 @@ migrationData.codes["6.0"] = function()
                 table.insert(contentTabs, itemData.tabName)
             end
         end
-
-        error("je suis l'erreur")
 
         -- then we add the cat to each of those found tabs
         local allCatID, dailyCatID, weeklyCatID
@@ -869,7 +901,7 @@ function private:NewCategoryWidget(catName)
     return categoryWidget
 end
 
-function private:NewItemWidget(itemName)
+function private:NewItemWidget(itemName, removeBtnFunc)
 
     local itemWidget = CreateFrame("Frame", nil, recoveryList.content, nil)
     itemWidget:SetSize(1, 1) -- so that its children are visible
@@ -888,7 +920,7 @@ function private:NewItemWidget(itemName)
     -- / removeBtn
     itemWidget.removeBtn = widgets:ValidButton(itemWidget)
     itemWidget.removeBtn:SetPoint("LEFT", itemWidget, "LEFT", 0, -1)
-    -- OnClick set later
+    itemWidget.removeBtn:HookScript("OnClick", removeBtnFunc)
 
     -- / infoBtn
     itemWidget.infoBtn = widgets:HelpButton(itemWidget)
@@ -956,51 +988,73 @@ migrationData.failed.codes["2.0"] = function()
 
         -- ===================== --
 
+        local catName, itemName = self:GetParent().i.catName, self:GetParent().i.itemName
+        local list = NysTDL.db.profile.migrationData.saved.itemsList
 
+        if list[catName] then
+            table.remove(list[catName], (select(2, utils:HasValue(list[catName], itemName))))
+            if not next(list[catName]) then
+                list[catName] = nil
+            end
+        end
+
+        local finished = true
+        for catName in pairs(list) do
+            if catName ~= "Daily" and catName ~= "Weekly" then
+                finished = false
+                break
+            end
+        end
+
+        if finished then
+            NysTDL.db.profile.migrationData.saved = nil
+        end
 
         -- ===================== --
 
         private:Refresh(NysTDL.db.profile.migrationData.version)
     end
 
+    local saved = NysTDL.db.profile.migrationData.saved
+    for catName,items in pairs(saved.itemsList) do
+        if catName ~= "Daily" and catName ~= "Weekly" then -- oh yea
+
+            -- == cat == --
+            private:NewCategoryWidget(catName)
+            -- ========= --
+
+            for _,itemName in ipairs(items) do
+
+                -- == item == --
+                local itemWidget = private:NewItemWidget(itemName, removeBtnFunc)
+                itemWidget.i.catName = catName
+                itemWidget.i.itemName = itemName
+
+                -- custom data
+                if utils:HasValue(saved.itemsList["Daily"], itemName) then
+                    itemWidget.i.tabName = "Daily"
+                elseif utils:HasValue(saved.itemsList["Weekly"], itemName) then
+                    itemWidget.i.tabName = "Weekly"
+                else
+                    itemWidget.i.tabName = "All"
+                end
+                itemWidget.i.checked = utils:HasValue(saved.checkedButtons, itemName)
+                -- ========== --
+
+            end
+
+        end
+    end
 end
 
 -- / migration failed from 2.0+ to 4.0+
 migrationData.failed.codes["4.0"] = function()
-    local removeBtnFunc = function(self)
-        if not private:CheckSaved() then
-            private:Refresh()
-            return
-        end
-
-        -- ===================== --
-
-
-
-        -- ===================== --
-
-        private:Refresh(NysTDL.db.profile.migrationData.version)
-    end
-
+    migrationData.failed.codes["2.0"]() -- pretty much the same thing, though the saved is populated differently in the migrationData.codes["4.0"]
 end
 
 -- / migration failed from 4.0+ to 5.0+
 migrationData.failed.codes["5.0"] = function()
-    local removeBtnFunc = function(self)
-        if not private:CheckSaved() then
-            private:Refresh()
-            return
-        end
-
-        -- ===================== --
-
-
-
-        -- ===================== --
-
-        private:Refresh(NysTDL.db.profile.migrationData.version)
-    end
-
+    migrationData.failed.codes["4.0"]() -- again, same thing
 end
 
 -- / migration failed from 5.0+ to 5.5+
@@ -1050,14 +1104,13 @@ migrationData.failed.codes["6.0"] = function()
     for catName,items in pairs(NysTDL.db.profile.migrationData.saved) do -- categories
 
         -- == cat == --
-        local catWidget = private:NewCategoryWidget(catName)
+        private:NewCategoryWidget(catName)
         -- ========= --
 
         for itemName,itemData in pairs(items) do -- items
 
             -- == item == --
-            local itemWidget = private:NewItemWidget(itemName)
-            itemWidget.removeBtn:HookScript("OnClick", removeBtnFunc)
+            local itemWidget = private:NewItemWidget(itemName, removeBtnFunc)
             itemWidget.i.catName = catName
             itemWidget.i.itemName = itemName
             if type(itemData) == "table" then -- custom data
