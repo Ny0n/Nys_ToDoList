@@ -253,8 +253,6 @@ migrationData.codes["5.5"] = function()
             for _, itemName in pairs(itemNames) do -- and for every item we had
                 -- first we get the previous data elements from the item
 
-                error("je suis l'erreur")
-
                 -- / tabName
                 -- no need for the locale here, i actually DID force-use the english names in my previous code,
                 -- the shown names being the only ones different
@@ -452,6 +450,7 @@ end
 
 function private:Failed(errmsg, original)
     if original then
+        -- we save the fail data to the database so that we can keep it between sessions
         local migrationDataSV = NysTDL.db.profile.migrationData
         migrationDataSV.failed = true
         migrationDataSV.saved = migrationData.failed.saved
@@ -459,7 +458,14 @@ function private:Failed(errmsg, original)
         migrationDataSV.errmsg = errmsg
         migrationDataSV.warning = true
         migrationDataSV.tuto = true
+
+        -- and then, we reset once the list, the catList, and the tabs content, just so that we start with a clean state,
+        -- this is in case the error created corrupted data (unusable/wrong/incomplete)
         NysTDL.db.profile.itemsList = {}
+        NysTDL.db.profile.categoriesList = {}
+        for _,tabData in dataManager:ForEach(enums.tab) do
+            tabData.orderedCatIDs = {}
+        end
     end
 
     private:CreateRecoveryList()
@@ -1067,13 +1073,55 @@ migrationData.failed.codes["5.5"] = function()
 
         -- ===================== --
 
+        local catName, itemName = self:GetParent().i.catName, self:GetParent().i.itemName
+        local list = NysTDL.db.profile.migrationData.saved.itemsList
 
+        if list[catName] then
+            table.remove(list[catName], (select(2, utils:HasValue(list[catName], itemName))))
+            if not next(list[catName]) then
+                list[catName] = nil
+            end
+        end
+
+        if not next(list) then
+            NysTDL.db.profile.migrationData.saved = nil
+        end
 
         -- ===================== --
 
         private:Refresh(NysTDL.db.profile.migrationData.version)
     end
 
+    local saved = NysTDL.db.profile.migrationData.saved
+    for catName,items in pairs(saved.itemsList) do
+
+        -- == cat == --
+        private:NewCategoryWidget(catName)
+        -- ========= --
+
+        for _,itemName in ipairs(items) do
+
+            -- == item == --
+            local itemWidget = private:NewItemWidget(itemName, removeBtnFunc)
+            itemWidget.i.catName = catName
+            itemWidget.i.itemName = itemName
+
+            -- custom data
+            if utils:HasValue(saved.itemsDaily, itemName) then
+                itemWidget.i.tabName = "Daily"
+            elseif utils:HasValue(saved.itemsWeekly, itemName) then
+                itemWidget.i.tabName = "Weekly"
+            else
+                itemWidget.i.tabName = "All"
+            end
+            itemWidget.i.checked = utils:HasValue(saved.checkedButtons, itemName)
+            itemWidget.i.favorite = utils:HasValue(saved.itemsFavorite, itemName)
+            itemWidget.i.description = type(saved.itemsDesc) == "table" and saved.itemsDesc[itemName] or nil
+            -- ========== --
+
+        end
+
+    end
 end
 
 -- / migration failed from 5.5+ to 6.0+
