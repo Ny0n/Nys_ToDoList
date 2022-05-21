@@ -1,6 +1,6 @@
 # /run print((select(4, GetBuildInfo())))
 #@retail@
-## Interface: 90105
+## Interface: 90200
 #@end-retail@
 #@non-retail@
 # ## Interface: 11306
