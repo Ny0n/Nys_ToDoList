@@ -602,10 +602,11 @@ end
 
 local function recursiveLoad(tabID, tabData, catWidget, p)
   local catData = catWidget.catData
+  catWidget.addEditBox:Hide()
   catWidget.emptyLabel:Hide()
   catWidget.hiddenLabel:Hide()
+
   if catData.closedInTabIDs[tabID] then -- if the cat is closed
-    catWidget.addEditBox:Hide()
     p.newY = p.newY - enums.ofsyCat
   else -- if the cat is opened, we display all of its content
     p.newY = p.newY - enums.ofsyCatContent

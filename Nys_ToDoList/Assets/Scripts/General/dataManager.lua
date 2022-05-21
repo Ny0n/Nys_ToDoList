@@ -812,7 +812,7 @@ function dataManager:DeleteItem(itemID)
 
 	local itemData, itemsList = select(3, dataManager:Find(itemID))
 
-  -- // we delete the item and all its related data
+	-- // we delete the item and all its related data
 
 	-- we update its data (pretty much the reverse actions of the Add func)
 	dataManager:UpdateTabsDisplay(itemData.originalTabID, false, itemID)
@@ -820,7 +820,7 @@ function dataManager:DeleteItem(itemID)
 
 	local undoData = dataManager:CreateUndo(itemID)
 	dataManager:AddUndo(undoData)
-  itemsList[itemID] = nil -- delete action
+	itemsList[itemID] = nil -- delete action
 
 	-- we hide a potentially opened desc frame
 	widgets:DescFrameHide(itemID)
