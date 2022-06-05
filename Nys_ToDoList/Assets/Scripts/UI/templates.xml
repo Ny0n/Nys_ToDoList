@@ -228,29 +228,35 @@
   </Button>
 
   <!-- Edit Mode button -->
-  <Button name="NysTDL_EditModeButton" inherits="NysTDL_IconButtonTemplate, NysTDL_IconButtonTooltipScripts, NysTDL_IconButtonPositionScripts" virtual="true">
+  <Button name="NysTDL_EditModeButton" inherits="NysTDL_IconButtonTooltipScripts" virtual="true">
     <Size x="32" y="32"/>
     <KeyValues>
-      <KeyValue key="tooltip" value=""/>
-      <KeyValue key="name" value="EditModeButton"/>
+		<KeyValue key="tooltip" value=""/>
+		<KeyValue key="name" value="EditModeButton"/>
     </KeyValues>
+    <NormalTexture file="Interface\FriendsFrame\UI-FriendsList-Large-Up">
+    <!-- <NormalTexture file="Interface\FriendsFrame\UI-FriendsList-Small-Up"> -->
+      	<Color r="0.75" g="0.75" b="0.75"/>
+    </NormalTexture>
+    <PushedTexture file="Interface\FriendsFrame\UI-FriendsList-Large-Down">
+    <!-- <PushedTexture file="Interface\FriendsFrame\UI-FriendsList-Small-Down"> -->
+		<Color r="0.75" g="0.75" b="0.75"/>
+    </PushedTexture>
+    <HighlightTexture file="Interface\Buttons\UI-Common-MouseHilight" alphaMode="ADD" alpha="0.75">
+		<Anchors>
+			<Anchor point="TOPLEFT" x="2" y="-2"/>
+			<Anchor point="BOTTOMRIGHT" x="-2" y="2"/>
+		</Anchors>
+    </HighlightTexture>
     <Layers>
-      <Layer level="OVERLAY">
-        <Texture parentKey="Icon" file="Interface\BUTTONS\UI-OptionsButton">
-          <Size x="14" y="14"/>
-          <Anchors>
-            <Anchor point="CENTER"/>
-          </Anchors>
-        </Texture>
-      </Layer>
-      <Layer level="OVERLAY">
-        <Texture parentKey="Glow" file="Interface\BUTTONS\CheckButtonGlow" hidden="true">
-          <Size x="40" y="40"/>
-          <Anchors>
-            <Anchor point="CENTER"/>
-          </Anchors>
-        </Texture>
-      </Layer>
+		<Layer level="OVERLAY">
+			<Texture parentKey="Glow" file="Interface\BUTTONS\CheckButtonGlow" hidden="true">
+				<Size x="40" y="40"/>
+				<Anchors>
+					<Anchor point="CENTER" x="-1"/>
+				</Anchors>
+			</Texture>
+		</Layer>
     </Layers>
   </Button>
   

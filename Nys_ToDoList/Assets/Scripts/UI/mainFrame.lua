@@ -369,7 +369,8 @@ function mainFrame:ToggleEditMode(state, forceUpdate)
   -- // start
 
   -- edit mode button
-  tdlFrame.content.editModeButton.Icon:SetDesaturated(mainFrame.editMode and 1 or nil)
+  tdlFrame.content.editModeButton:GetNormalTexture():SetDesaturated(mainFrame.editMode and 1 or nil)
+  tdlFrame.content.editModeButton:GetPushedTexture():SetDesaturated(mainFrame.editMode and 1 or nil)
   tdlFrame.content.editModeButton.Glow:SetShown(mainFrame.editMode)
 
   -- content widgets buttons
