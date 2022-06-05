@@ -84,9 +84,9 @@ function tutorialsManager:CreateTutoFrames()
   -- POLISH if text is bigger than width, ... by default but not right AND frame strata too high
   tutorialFrames.TM_introduction_addNewCat = widgets:TutorialFrame("TM_introduction_addNewCat", false, "UP", L["Start by adding a new category!"], 190, 50)
   tutorialFrames.TM_introduction_addCat = widgets:TutorialFrame("TM_introduction_addCat", true, "UP", L["This will add your category to the current tab"], 240, 50)
-  tutorialFrames.TM_introduction_addItem = widgets:TutorialFrame("TM_introduction_addItem", false, "RIGHT", L["To add new items to existing categories, just right-click the category names!"], 220, 50)
+  tutorialFrames.TM_introduction_addItem = widgets:TutorialFrame("TM_introduction_addItem", false, "RIGHT", L["To add new items to existing categories, just right-click the category names"], 220, 50)
   tutorialFrames.TM_introduction_accessOptions = widgets:TutorialFrame("TM_introduction_accessOptions", false, "DOWN", L["You can access the options from here"], 220, 50)
-  tutorialFrames.TM_introduction_getMoreInfo = widgets:TutorialFrame("TM_introduction_getMoreInfo", false, "LEFT", L["If you're having any problems, or you just want more information, you can always click here to print help in the chat!"], 275, 50)
+  tutorialFrames.TM_introduction_getMoreInfo = widgets:TutorialFrame("TM_introduction_getMoreInfo", false, "LEFT", L["If you're having any problems or you just want more information, you can always click here to print help in the chat!"], 275, 50)
   tutorialFrames.TM_introduction_editmode = widgets:TutorialFrame("TM_introduction_editmode", false, "DOWN", L["To delete items and do a lot more, you can right-click anywhere on the list or click on this button to toggle the edit mode"], 275, 50)
   tutorialFrames.TM_introduction_editmodeChat = widgets:TutorialFrame("TM_introduction_editmodeChat", true, "RIGHT", utils:SafeStringFormat(L["Please type %s and read the chat message for more information about this mode"], "\""..core.slashCommand..' '..L["editmode"].."\""), 275, 50)
 

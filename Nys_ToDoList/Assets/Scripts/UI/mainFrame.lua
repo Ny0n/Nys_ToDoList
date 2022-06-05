@@ -959,7 +959,7 @@ local function generateMenuAddACategory()
 
   --/************************************************/--
 
-  menuframe.addBtn = widgets:Button("addButton", menuframe, L["Add category"])
+  menuframe.addBtn = widgets:Button("addButton", menuframe, L["Add"])
   menuframe.addBtn:SetPoint("TOP", menuframe.menuTitle, "TOP", 0, -65)
   menuframe.addBtn:SetScript("OnClick", addCat)
 
@@ -1030,9 +1030,9 @@ local function generateMenuFrameOptions()
   --/************************************************/--
 
   menuframe.affectDesc = CreateFrame("CheckButton", nil, menuframe, "ChatConfigCheckButtonTemplate")
-  menuframe.affectDesc.tooltip = L["Share the opacity options of this frame onto the description frames (only when checked)"]
+  menuframe.affectDesc.tooltip = L["Share the opacity options of the list to the description frames"].." ("..L["Only when checked"]..")"
   menuframe.affectDesc:SetPoint("TOP", menuframe.frameContentAlphaSlider, "TOP", 0, -40)
-  menuframe.affectDesc.Text:SetText(L["Affect description frames"])
+  menuframe.affectDesc.Text:SetText(L["Apply to description frames"])
   menuframe.affectDesc.Text:SetFontObject("GameFontHighlight")
   menuframe.affectDesc.Text:ClearAllPoints()
   menuframe.affectDesc.Text:SetPoint("TOP", menuframe.affectDesc, "BOTTOM")
@@ -1107,7 +1107,7 @@ local function generateFrameContent()
     setDoubleLinePoints(content.titleLL, content.titleLR, content.title:GetWidth(), -20)
 
     -- remaining numbers labels
-    content.remaining = widgets:NoPointsLabel(content, nil, L["Remaining:"])
+    content.remaining = widgets:NoPointsLabel(content, nil, L["Remaining"]..":")
     content.remaining:SetPoint("TOPLEFT", content.title, "TOP", -140, -32)
     content.remaining:SetFontObject("GameFontNormalLarge")
     content.remainingNumber = widgets:NoPointsLabel(content, nil, "...")
@@ -1294,7 +1294,7 @@ function mainFrame:CreateTDLFrame()
 
   -- resize button
   tdlFrame.resizeButton = CreateFrame("Button", nil, tdlFrame, "NysTDL_TooltipResizeButton")
-  tdlFrame.resizeButton.tooltip = L["Left click - resize"].."\n"..L["Right click - reset"]
+  tdlFrame.resizeButton.tooltip = L["Left-Click"].." - "..L["Resize the list"].."\n"..L["Right-Click"].." - "..L["Reset"]
   tdlFrame.resizeButton:SetPoint("BOTTOMRIGHT", -3, 3)
   tdlFrame.resizeButton:SetScript("OnMouseDown", function(self, button)
     if (button == "LeftButton") then

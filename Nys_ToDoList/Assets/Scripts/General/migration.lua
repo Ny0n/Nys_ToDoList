@@ -755,7 +755,7 @@ function private:CreateWarning()
 
     -- /-> title
     local titlePos = -20
-    content.title = widgets:NoPointsLabel(content, nil, utils:ColorText(database.themes.red, L["WARNING"]))
+    content.title = widgets:NoPointsLabel(content, nil, utils:ColorText(database.themes.red, L["Warning"]:upper()))
     content.title:SetPoint("TOP", content, "TOP", 0, titlePos)
 
     -- /-> sorryMsg

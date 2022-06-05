@@ -395,7 +395,7 @@ end
 
 local function addItem(itemID, itemData)
 	if dataManager:GetQuantity(enums.item) >= enums.maxQuantities[enums.item] then -- temp limit
-		chat:Print(utils:SafeStringFormat(L["Cannot add %s (max quantity reached)"], L["Item"]:lower()))
+		chat:Print(utils:SafeStringFormat(L["Cannot add %s"].." ("..L["Max quantity reached"]..")", L["Item"]:lower()))
 		return
 	end
 
@@ -459,7 +459,7 @@ end
 
 local function addCategory(catID, catData)
 	if dataManager:GetQuantity(enums.category) >= enums.maxQuantities[enums.category] then -- temp limit
-		chat:Print(utils:SafeStringFormat(L["Cannot add %s (max quantity reached)"], L["Category"]:lower()))
+		chat:Print(utils:SafeStringFormat(L["Cannot add %s"].." ("..L["Max quantity reached"]..")", L["Category"]:lower()))
 		return
 	end
 
@@ -533,7 +533,7 @@ end
 
 local function addTab(tabID, tabData, isGlobal)
 	if dataManager:GetQuantity(enums.tab) >= enums.maxQuantities[enums.tab] then -- temp limit
-		chat:Print(utils:SafeStringFormat(L["Cannot add %s (max quantity reached)"], L["Tab"]:lower()))
+		chat:Print(utils:SafeStringFormat(L["Cannot add %s"].." ("..L["Max quantity reached"]..")", L["Tab"]:lower()))
 		return
 	end
 

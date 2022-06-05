@@ -133,7 +133,7 @@ function NysTDL:OnInitialize()
     end
 
     local hex = utils:RGBToHex(database.themes.theme2)
-    chat:Print(L["addon loaded!"]..' ('..string.format("|cff%s%s|r", hex, core.slashCommand..' '..L["info"])..')')
+    chat:Print(L["Addon loaded!"].." ("..string.format("|cff%s%s|r", hex, core.slashCommand.." "..L["info"])..")")
     core.loaded = true
 end
 

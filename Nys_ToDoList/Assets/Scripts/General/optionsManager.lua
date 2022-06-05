@@ -920,9 +920,9 @@ function optionsManager:Initialize()
   -- we also modify it a bit to better fit our needs (by adding some confirm pop-ups)
   local args = utils:Deepcopy(optionsManager.optionsTable.args.child_profiles.args.profiles.args)
   args.reset.confirm = true
-  args.reset.confirmText = L["WARNING"]..'\n\n'..L["Resetting this profile will also clear the list."]..'\n'..L["Are you sure?"]..'\n'
+  args.reset.confirmText = L["Warning"]:upper().."\n\n"..L["Resetting this profile will also clear the list"]..".\n"..L["Are you sure?"].."\n"
   args.copyfrom.confirm = true
-  args.copyfrom.confirmText = L["This action will override your settings, including the list."]..'\n'..L["Are you sure?"]..'\n'
+  args.copyfrom.confirmText = L["This action will override your settings, including the list"]..".\n"..L["Are you sure?"].."\n"
   optionsManager.optionsTable.args.child_profiles.args.profiles.args = args
 
   -- we add our frame to wow's interface options panel
