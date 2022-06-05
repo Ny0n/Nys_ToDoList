@@ -687,7 +687,7 @@ local function loadList()
     if catWidget.catData.originalTabID == tabID then
       catWidget.originalTabLabel:Hide()
     else -- if the tab is showing a cat that was not created here, we show the label specifying the cat's original tab
-      catWidget.originalTabLabel:SetText(utils:SafeStringFormat(L["(%s tab)"], dataManager:GetName(catWidget.catData.originalTabID)))
+      catWidget.originalTabLabel:SetText("("..dataManager:GetName(catWidget.catData.originalTabID)..")")
       catWidget.originalTabLabel:SetShown(not catWidget.addEditBox:IsShown())
     end
 
@@ -777,7 +777,7 @@ local function generateMenuAddACategory()
 
   --/************************************************/--
 
-  menuframe.labelCategoryName = widgets:NoPointsLabel(menuframe, nil, L["Name:"])
+  menuframe.labelCategoryName = widgets:NoPointsLabel(menuframe, nil, L["Name"]..":")
   menuframe.labelCategoryName:SetPoint("TOPLEFT", menuframe.menuTitle, "TOP", -140, -32)
 
   menuframe.categoryEditBox = CreateFrame("EditBox", nil, menuframe, "InputBoxTemplate") -- edit box to put the new category name
@@ -1161,7 +1161,7 @@ local function generateFrameContent()
     content.tabActionsButton:Hide()
 
     -- undo button
-    content.undoButton = widgets:IconTooltipButton(content, "NysTDL_UndoButton", L["Undo last remove"].."\n".."("..L["item"].."/"..L["category"].."/"..L["tab"]..")")
+    content.undoButton = widgets:IconTooltipButton(content, "NysTDL_UndoButton", L["Undo last remove"].."\n".."("..L["Item"]:lower().."/"..L["Category"]:lower().."/"..L["Tab"]:lower()..")")
     content.undoButton:SetPoint("RIGHT", content.tabActionsButton, "LEFT", 2, 0)
     content.undoButton:SetScript("OnClick", function() dataManager:Undo() end)
     content.undoButton:Hide()
@@ -1206,7 +1206,7 @@ local function generateFrameContent()
     -- below the menus
     content.lineBottom = widgets:ThemeLine(content, database.themes.theme, 0.7)
 
-    content.nothingLabel = widgets:HintLabel(content, nil, L["This tab is empty"])
+    content.nothingLabel = widgets:HintLabel(content, nil, L["Empty tab"].."\n"..L["Start by adding a new category!"])
     content.nothingLabel:SetPoint("TOP", content.lineBottom, "TOP", 0, -20)
 
     content.loadOrigin = widgets:Dummy(content, content.lineBottom, 0, 0)

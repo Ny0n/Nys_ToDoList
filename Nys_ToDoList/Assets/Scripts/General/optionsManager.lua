@@ -55,7 +55,7 @@ local tabManagementTable = {
         type = "execute",
         name = L["Delete tab"],
         confirm = true,
-        confirmText = L["Deleting this tab will delete everything that was created in it."].."\n"..L["Are you sure?"],
+        confirmText = L["Deleting this tab will delete everything that was created in it"]..".\n"..L["Are you sure?"],
         func = function(info)
           local tabID = getTabInfo(info)
           dataManager:DeleteTab(tabID)
@@ -69,7 +69,7 @@ local tabManagementTable = {
       removeTabDescription = {
         order = 1.2,
         type = "description",
-        name = L["Cannot remove this tab"]..' '..L["(there must be at least one left)"],
+        name = L["Cannot remove this tab"].."\n("..L["There must be at least one left"]..")",
         hidden = function(info)
           local tabID = getTabInfo(info)
           return not dataManager:IsProtected(tabID)
@@ -92,7 +92,7 @@ local tabManagementTable = {
         order = 1.4,
         type = "toggle",
         name = L["Instant refresh"],
-        desc = L["Delete/Hide items instantly when checking them"].."\n"..L["(profile dependant)"],
+        desc = L["Delete/Hide items instantly when checking them"].."\n("..L["Applies to all tabs"]..")",
         get = function(info)
           return NysTDL.db.profile.instantRefresh
         end,
@@ -540,7 +540,7 @@ local function createAddonOptionsTable()
                 order = 3.8,
                 type = "toggle",
                 name = L["Highlight edit boxes"],
-                desc = L["When focusing on edit boxes, automatically highlights the text inside"],
+                desc = L["When clicking on edit boxes, automatically highlights the text inside"],
               }, -- highlightOnFocus
               favoritesColor = {
                 order = 3.4,
@@ -619,7 +619,7 @@ local function createAddonOptionsTable()
               keyBind = {
                 type = "keybinding",
                 name = L["Show/Hide the list"],
-                desc = L["Bind a key to toggle the list"]..'\n'..L["(independant from profile)"],
+                desc = L["Bind a key to toggle the list"],
                 order = 1.1,
                 get = function() return GetBindingKey("NysTDL") end,
                 set = function(info, newKey)
@@ -774,13 +774,13 @@ local function createAddonOptionsTable()
                 order = 0.1,
                 type = "toggle",
                 name = L["Show chat messages"],
-                desc = L["Enable or disable non-essential chat messages"]..'\n'..L["(warnings ignore this option)"],
+                desc = L["Enable or disable non-essential chat messages"].."\n("..L["Warnings ignore this option"]..")",
               }, -- showChatMessages
               showWarnings = {
                 order = 1.1,
                 type = "toggle",
                 name = L["Show warnings"],
-                desc = L["Enable or disable the chat warning/reminder system"]..'\n'..L["(chat message when logging in)"],
+                desc = L["Enable or disable the chat warning/reminder system"].."\n("..L["Chat message when logging in"]..")",
               }, -- showWarnings
               groupWarnings = {
                 order = 1.2,

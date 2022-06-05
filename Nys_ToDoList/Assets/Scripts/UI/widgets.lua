@@ -273,7 +273,7 @@ function widgets:DescriptionFrame(itemWidget)
 
   -- /-> hint
   descFrame.descriptionEditBox.EditBox.Instructions:SetFontObject("GameFontNormal")
-  descFrame.descriptionEditBox.EditBox.Instructions:SetText(L["Add a description..."].."\n"..L["(automatically saved)"])
+  descFrame.descriptionEditBox.EditBox.Instructions:SetText(L["Add a description"].."...\n("..L["Automatically saved"]..")")
 
   -- /-> scripts
   descFrame.descriptionEditBox.EditBox:HookScript("OnTextChanged", function(self)
@@ -822,11 +822,11 @@ function widgets:CategoryWidget(catID, parentFrame)
   categoryWidget.originalTabLabel = widgets:HintLabel(categoryWidget.interactiveLabel, nil, "")
 
   -- / emptyLabel
-  categoryWidget.emptyLabel = widgets:HintLabel(categoryWidget, nil, L["this category is empty"])
+  categoryWidget.emptyLabel = widgets:HintLabel(categoryWidget, nil, L["Empty category"])
   categoryWidget.emptyLabel:SetPoint("LEFT", categoryWidget, "TOPLEFT", enums.ofsxContent, -enums.ofsyCatContent)
 
   -- / hiddenLabel
-  categoryWidget.hiddenLabel = widgets:HintLabel(categoryWidget, nil, L["all items are done"])
+  categoryWidget.hiddenLabel = widgets:HintLabel(categoryWidget, nil, L["Completed category"])
   categoryWidget.hiddenLabel:SetPoint("LEFT", categoryWidget, "TOPLEFT", enums.ofsxContent, -enums.ofsyCatContent)
   categoryWidget.hiddenLabel:Hide()
 

@@ -179,13 +179,13 @@ chat.commands = { -- TDLATER FIX if all chat commands locales are the same, we c
   end,
 
   [L["editmode"]] = function()
-    chat:CustomPrintForced(L["Either right-click anywhere on the list, or click on the dedicated button to toggle the edit mode."])
+    chat:CustomPrintForced(L["Either right-click anywhere on the list, or click on the dedicated button to toggle the edit mode"]..".")
     chat:CustomPrintForced("- "..L["Delete items and categories"], true)
     chat:CustomPrintForced("- "..L["Favorite and add descriptions on items"], true)
-    chat:CustomPrintForced("- "..L["Rename items and categories (double-click)"], true)
-    chat:CustomPrintForced("- "..L["Reorder/Sort the list (drag & drop)"], true)
-    chat:CustomPrintForced("- "..L["Access tab actions and an undo button"], true)
-    chat:CustomPrintForced("- "..L["Resize the list"], true)
+    chat:CustomPrintForced("- "..L["Rename items and categories"].." ("..L["Double-Click"]..")", true)
+    chat:CustomPrintForced("- "..L["Reorder/Sort the list"].." ("..L["Drag and Drop"]..")", true)
+    chat:CustomPrintForced("- "..utils:SafeStringFormat(L["Access new buttons: %s and %s"], "\""..L["Undo last remove"].."\"", "\""..L["Tab actions"].."\""), true)
+    chat:CustomPrintForced("- "..L["Resize the list"].." ("..L["Button in the bottom-right"]..")", true)
     tutorialsManager:Validate("TM_introduction_editmodeChat")
   end,
 

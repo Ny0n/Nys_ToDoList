@@ -211,7 +211,7 @@ function dataManager:GetData(isGlobal, tableMode)
 end
 
 function dataManager:GetName(ID)
-	return select(3, dataManager:Find(ID)).name
+	return select(3, dataManager:Find(ID)).name or ""
 end
 
 function dataManager:GetPosData(ID, tabID, onlyPos)
@@ -395,7 +395,7 @@ end
 
 local function addItem(itemID, itemData)
 	if dataManager:GetQuantity(enums.item) >= enums.maxQuantities[enums.item] then -- temp limit
-		chat:Print(utils:SafeStringFormat(L["Cannot add %s (max quantity reached)"], L["item"]))
+		chat:Print(utils:SafeStringFormat(L["Cannot add %s (max quantity reached)"], L["Item"]:lower()))
 		return
 	end
 
@@ -459,7 +459,7 @@ end
 
 local function addCategory(catID, catData)
 	if dataManager:GetQuantity(enums.category) >= enums.maxQuantities[enums.category] then -- temp limit
-		chat:Print(utils:SafeStringFormat(L["Cannot add %s (max quantity reached)"], L["category"]))
+		chat:Print(utils:SafeStringFormat(L["Cannot add %s (max quantity reached)"], L["Category"]:lower()))
 		return
 	end
 
@@ -533,7 +533,7 @@ end
 
 local function addTab(tabID, tabData, isGlobal)
 	if dataManager:GetQuantity(enums.tab) >= enums.maxQuantities[enums.tab] then -- temp limit
-		chat:Print(utils:SafeStringFormat(L["Cannot add %s (max quantity reached)"], L["tab"]))
+		chat:Print(utils:SafeStringFormat(L["Cannot add %s (max quantity reached)"], L["Tab"]:lower()))
 		return
 	end
 
@@ -870,7 +870,7 @@ function dataManager:DeleteCat(catID)
 		dataManager:UpdateTabsDisplay(catData.originalTabID, false, catID)
 
 		dataManager:AddUndo(undoData)
-	  categoriesList[catID] = nil -- delete action
+	  	categoriesList[catID] = nil -- delete action
 
 		mainFrame:DeleteWidget(catID)
 
@@ -878,7 +878,7 @@ function dataManager:DeleteCat(catID)
 		result = true
 	else
 		if not clearing then
-			chat:Print(L["Could not empty category, some of its items are protected"])
+			chat:Print(L["Could not empty category"].." ("..L["Some of its content is protected"]..")")
 		end
 	end
 
@@ -958,7 +958,7 @@ function dataManager:DeleteTab(tabID)
 
 		result = true
 	else
-		chat:Print(L["Could not empty tab, some of its contents are protected"])
+		chat:Print(L["Could not empty tab"].." ("..L["Some of its content is protected"]..")")
 	end
 
 	if nbToUndo > 0 then
@@ -1041,10 +1041,10 @@ function dataManager:Undo()
 				tinsert(NysTDL.db.profile.undoTable, toUndo)
 			else
 				if not undoing then
-					local type = ((toUndo.enum == enums.item) and L["item"])
-					or ((toUndo.enum == enums.category) and L["category"])
-					or ((toUndo.enum == enums.tab) and L["tab"])
-					chat:Print(utils:SafeStringFormat(L["Added %s back (%s)"], "\""..dataManager:GetName(toUndo.ID).."\"", type))
+					local type = ((toUndo.enum == enums.item) and L["Item"]:lower())
+					or ((toUndo.enum == enums.category) and L["Category"]:lower())
+					or ((toUndo.enum == enums.tab) and L["Tab"]:lower())
+					chat:Print(utils:SafeStringFormat(L["Added %s back"].." ("..type..")", "\""..dataManager:GetName(toUndo.ID).."\""))
 				end
 			end
 		end
@@ -1386,7 +1386,7 @@ function dataManager:ClearTab(tabID)
 	dataManager:SetRefresh(true, refreshID)
 
 	for catID,catData in dataManager:ForEach(enums.category, tabID) do -- if there are cats left
-		chat:Print(L["Could not empty tab, some of its contents are protected"])
+		chat:Print(L["Could not empty tab"].." ("..L["Some of its content is protected"]..")")
 		break
 	end
 

@@ -4,6 +4,24 @@ addonTable.devLocale = L
 
 -- ============================================ --
 
+--[[
+    LOCALES RULES:
+        - try to always set the first char as a maj, and lower the string in the code
+        - remove all ending ponctuations like ".", ":", ";", as well as parentheses when it englobes the whole locale
+        - try to be as generic as possible, so that some locales are reusable in multiple locations
+        - for locales with text in parentheses, take out that text and set it as a locale on its own, while removing the parentheses
+
+        - for locales with replacement characters like %s or %i, add a context on curseforge
+        - specify on curseforge the gender of what we're talking about (ex: "there must be at least one left" -> we're talking about a tab)
+]]
+
+-- tester mnt:
+--L["there must be at least one left"]
+--L["Applies to all tabs"]
+--L["Access new buttons: %s and %s"]
+--L["Added %s back"]
+
+
 -- "방탄소년단" test locale (:D)
 
 L["Click to copy"] = true
@@ -12,13 +30,12 @@ L["Yes"] = true
 L["Description"] = true
 L["Favorite"] = true
 L["Checked"] = true
-L["Tab"] = true
 L["No description"] = true
 L["Recovery List"] = true
 L["Open Recovery List"] = true
-L["Please copy and post this error message as an issue to GitHub so that I can fix this problem as quickly as possible:"] = true
+L["Please copy and post this error message as an issue on GitHub so that I can fix this problem as quickly as possible"] = true
 L["Don't go back to the last version, it won't solve the problem"] = true
-L["An unexpected error was detected during the update to 6.0, you will have to manually add your items back using the recovery list. I'm really sorry about the inconvenience..."] = true
+L["An unexpected error was detected during the addon update, you will have to manually add your items back using the recovery list"] = true
 L["Ctrl+A"] = true
 L["Ctrl+C"] = true
 L["Reopen error message"] = true
@@ -27,11 +44,11 @@ L["Only do this when you are done!"] = true
 L["Clear everything"] = true
 L["Please type %s and read the chat message for more information about this mode"] = true
 L["To delete items and do a lot more, you can right-click anywhere on the list or click on this button to toggle the edit mode"] = true
-L["(there must be at least one left)"] = true
+L["There must be at least one left"] = true
 L["Cannot remove this tab"] = true
-L["This tab is empty"] = true
-L["all items are done"] = true
-L["this category is empty"] = true
+L["Empty tab"] = true
+L["Completed category"] = true
+L["Empty category"] = true
 L["Other Tabs"] = true
 L["Hour"] = true
 L["Minute"] = true
@@ -45,11 +62,13 @@ L["Configure reset times"] = true
 L["Reset days"] = true
 L["Auto-Reset"] = true
 L["Shown tabs"] = true
-L["(profile dependant)"] = true
+L["Profile-wide"] = true
+L["Account-wide"] = true
+L["Applies to all tabs"] = true
 L["Delete/Hide items instantly when checking them"] = true
 L["Rename"] = true
 L["Delete tab"] = true
-L["Deleting this tab will delete everything that was created in it."] = true
+L["Deleting this tab will delete everything that was created in it"] = true
 L["Profile tabs"] = true
 L["Create a new tab"] = true
 L["Tab Management"] = true
@@ -57,24 +76,27 @@ L["List"] = true
 L["Open All"] = true
 L["Close All"] = true
 L["Toggle edit mode"] = true
-L["Name:"] = true
-L["Access tab actions and an undo button"] = true
+L["Name"] = true
+L["Access new buttons: %s and %s"] = true
 L["Resize the list"] = true
-L["Reorder/Sort the list (drag & drop)"] = true
-L["Rename items and categories (double-click)"] = true
+L["Button in the bottom-right"] = true
+L["Reorder/Sort the list"] = true
+L["Drag and Drop"] = true
+L["Rename items and categories"] = true
+L["Double-Click"] = true
 L["Favorite and add descriptions on items"] = true
 L["Delete items and categories"] = true
-L["(%s tab)"] = true
 L["Reset"] = true
 L["Clear undo successful!"] = true
 L["Clear undo interrupted"] = true
-L["Could not empty category, some of its items are protected"] = true
-L["Could not empty tab, some of its contents are protected"] = true
-L["Added %s back (%s)"] = true
+L["Could not empty category"] = true
+L["Could not empty tab"] = true
+L["Some of its content is protected"] = true
+L["Added %s back"] = true
 L["Nothing to undo"] = true
-L["item"] = true
-L["category"] = true
-L["tab"] = true
+L["Item"] = true
+L["Category"] = true
+L["Tab"] = true
 L["Cannot add %s (max quantity reached)"] = true
 L["This name already exists"] = true
 L["Name is too large"] = true
@@ -91,17 +113,16 @@ L["Delete checked items"] = true
 L["Tabs"] = true
 L["Profiles"] = true
 L["editmode"] = true
-L["Either right-click anywhere on the list, or click on the dedicated button to toggle the edit mode."] = true
+L["Either right-click anywhere on the list, or click on the dedicated button to toggle the edit mode"] = true
 L["Highlight edit boxes"] = true
-L["When focusing on edit boxes, automatically highlights the text inside"] = true
-L["(automatically saved)"] = true
-L["(chat message when logging in)"] = true
-L["(independant from profile)"] = true
-L["(warnings ignore this option)"] = true
+L["When clicking on edit boxes, automatically highlights the text inside"] = true
+L["Automatically saved"] = true
+L["Chat message when logging in"] = true
+L["Warnings ignore this option"] = true
 L["A movable %s button"] = true
 L["A simple interface to remember everything you need to do!"] = true
 L["Add a category"] = true
-L["Add a description..."] = true
+L["Add a description"] = true
 L["Add category"] = true
 L["addon loaded!"] = true
 L["Affect description frames"] = true
