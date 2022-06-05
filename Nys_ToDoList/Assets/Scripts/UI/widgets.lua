@@ -433,9 +433,10 @@ end
 
 --/*******************/ BUTTONS /*************************/--
 
-function widgets:Button(name, relativeFrame, text, iconPath, fc)
+function widgets:Button(name, relativeFrame, text, iconPath, fc, bonusWidth)
   fc = fc or false
   iconPath = type(iconPath) == "string" and iconPath or nil
+  bonusWidth = bonusWidth or 0
 
   local btn = CreateFrame("Button", name, relativeFrame, "NysTDL_NormalButton")
 
@@ -454,7 +455,7 @@ function widgets:Button(name, relativeFrame, text, iconPath, fc)
     btn:HookScript("OnMouseDown", function(self) self.Icon:SetPoint("LEFT", self, "LEFT", 12, -2) end)
     btn:HookScript("OnMouseUp", function(self) self.Icon:SetPoint("LEFT", self, "LEFT", 10, 0) end)
   end
-  btn:SetWidth(w + 20)
+  btn:SetWidth(w + 20 + bonusWidth)
 
   return btn
 end

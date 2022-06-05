@@ -6,21 +6,14 @@ addonTable.devLocale = L
 
 --[[
     LOCALES RULES:
-        - try to always set the first char as a maj, and lower the string in the code
-        - remove all ending ponctuations like ".", ":", ";", as well as parentheses when it englobes the whole locale
+        - try to always set the first char as a maj, and lower/upper the string later in the code
+        - remove all ending ponctuations like ".", ":", ";", as well as parentheses when it englobes the whole locale -- do it in the code
+        - for locales with text in parentheses, take out that text and set it as a locale on its own, while removing the parentheses -- link them in the code
         - try to be as generic as possible, so that some locales are reusable in multiple locations
-        - for locales with text in parentheses, take out that text and set it as a locale on its own, while removing the parentheses
 
         - for locales with replacement characters like %s or %i, add a context on curseforge
-        - specify on curseforge the gender of what we're talking about (ex: "there must be at least one left" -> we're talking about a tab)
+        - specify on curseforge what we're talking about (ex: "there must be at least one left" -> we're talking about a tab)
 ]]
-
--- tester mnt:
---L["there must be at least one left"]
---L["Applies to all tabs"]
---L["Access new buttons: %s and %s"]
---L["Added %s back"]
-
 
 -- "방탄소년단" test locale (:D)
 
@@ -192,6 +185,7 @@ L["Settings"] = true
 L["Share the opacity options of the list to the description frames"] = true
 L["Only when checked"] = true
 L["Shift-Click"] = true
+L["Alt-Click"] = true
 L["Show chat messages"] = true
 L["Show minimap button"] = true
 L["Show movable button"] = true
@@ -206,7 +200,7 @@ L["Tab actions"] = true
 L["The %s command"] = true
 L["The tutorial has been reset"] = true
 L["They are automatically saved"] = true
-L["This action will override your settings, including the list"] = true
+L["This action will overwrite your settings, including the list"] = true
 L["This will add your category to the current tab"] = true
 L["Thursday"] = true
 L["To add new items to existing categories, just right-click the category names"] = true

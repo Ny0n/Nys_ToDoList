@@ -959,7 +959,7 @@ local function generateMenuAddACategory()
 
   --/************************************************/--
 
-  menuframe.addBtn = widgets:Button("addButton", menuframe, L["Add"])
+  menuframe.addBtn = widgets:Button("NysTDL_category_addButton", menuframe, L["Add"], nil, nil, 40)
   menuframe.addBtn:SetPoint("TOP", menuframe.menuTitle, "TOP", 0, -65)
   menuframe.addBtn:SetScript("OnClick", addCat)
 
@@ -1206,8 +1206,9 @@ local function generateFrameContent()
     -- below the menus
     content.lineBottom = widgets:ThemeLine(content, database.themes.theme, 0.7)
 
-    content.nothingLabel = widgets:HintLabel(content, nil, L["Empty tab"].."\n"..L["Start by adding a new category!"])
+    content.nothingLabel = widgets:HintLabel(content, nil, L["Empty tab"].."\n\n"..L["Start by adding a new category!"])
     content.nothingLabel:SetPoint("TOP", content.lineBottom, "TOP", 0, -20)
+    content.nothingLabel:SetWidth(220)
 
     content.loadOrigin = widgets:Dummy(content, content.lineBottom, 0, 0)
     content.loadOrigin:SetPoint("TOPLEFT", content.lineBottom, "TOPLEFT", unpack(enums.loadOriginOffset))
