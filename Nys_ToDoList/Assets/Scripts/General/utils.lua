@@ -3,6 +3,7 @@ local addonName, addonTable = ...
 
 -- addonTable aliases
 local core = addonTable.core
+local enums = addonTable.enums
 local utils = addonTable.utils
 
 -- Variables
@@ -125,7 +126,7 @@ function utils:SafeStringFormat(str, ...)
       if (string.find(dup, toMatch)) then
         dup = string.gsub(dup, toMatch, "", 1)
       else
-        return str.."|cffff0000 --> !"..L["translation error"].."!|r"
+        return str.."|cffff0000 --> "..enums.translationErrMsg.."|r"
       end
     end
   end

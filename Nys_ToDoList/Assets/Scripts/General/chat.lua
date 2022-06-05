@@ -88,7 +88,7 @@ function chat:Warn()
             local hex = utils:RGBToHex({ NysTDL.db.profile.favoritesColor[1]*255, NysTDL.db.profile.favoritesColor[2]*255, NysTDL.db.profile.favoritesColor[3]*255} )
             msg = string.format("|cff%s%s|r", hex, msg)
             if not haveWarned then self:PrintForced(warn) haveWarned = true end
-            self:PrintForced(utils:SafeStringFormat(L["You still have %s favorite item(s) to do before the next reset, don't forget them!"], msg))
+            self:PrintForced(utils:SafeStringFormat(L["You still have %s favorite item(s) to do before the next reset"]..".", msg))
           end
         end
       end
@@ -175,7 +175,7 @@ chat.commands = { -- TDLATER FIX if all chat commands locales are the same, we c
 
   [L["hyperlinks"]] = function()
     chat:CustomPrintForced(L["You can add hyperlinks in the list!"])
-    chat:CustomPrintForced(L["It works the same way as when you link items or other things in the chat, just shift-click!"], true)
+    chat:CustomPrintForced(L["It works the same way as when you link items or other things in the chat, just shift-click"]..".", true)
   end,
 
   [L["editmode"]] = function()

@@ -59,7 +59,9 @@ enums.maxQuantities = {
 	[enums.tab] = 20,
 }
 
-enums.defaultResetTimeName = L["Reset"]..' '.."1"
+enums.translationErrMsg = "Translation error"
+
+enums.defaultResetTimeName = L["Reset"].." 1"
 
 enums.days = {
   [2] = L["Monday"],

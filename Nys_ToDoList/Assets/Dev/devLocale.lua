@@ -7,8 +7,8 @@ addonTable.devLocale = L
 --[[
     LOCALES RULES:
         - try to always set the first char as a maj, and lower/upper the string later in the code
-        - remove all ending ponctuations like ".", ":", ";", as well as parentheses when it englobes the whole locale -- do it in the code
-        - for locales with text in parentheses, take out that text and set it as a locale on its own, while removing the parentheses -- link them in the code
+        - remove all ending ponctuations like ".", ":", ";", "!", as well as parentheses when it englobes the whole locale -- add it in the code
+        - for locales with some text in parentheses, take out that text and set it as a locale on its own, while removing the parentheses -- bind them in the code
         - try to be as generic as possible, so that some locales are reusable in multiple locations
 
         - for locales with replacement characters like %s or %i, add a context on curseforge
@@ -33,7 +33,7 @@ L["Ctrl+A"] = true
 L["Ctrl+C"] = true
 L["Reopen error message"] = true
 L["Double Right-Click"] = true
-L["Only do this when you are done!"] = true
+L["Only do this when you are done"] = true
 L["Clear everything"] = true
 L["Please type %s and read the chat message for more information about this mode"] = true
 L["To delete items and do a lot more, you can right-click anywhere on the list or click on this button to toggle the edit mode"] = true
@@ -80,8 +80,8 @@ L["Double-Click"] = true
 L["Favorite and add descriptions on items"] = true
 L["Delete items and categories"] = true
 L["Reset"] = true
-L["Clear undo successful!"] = true
-L["Clear undo interrupted"] = true
+L["Undo successful"] = true
+L["Undo interrupted"] = true
 L["Could not empty category"] = true
 L["Could not empty tab"] = true
 L["Some of its content is protected"] = true
@@ -114,7 +114,7 @@ L["Automatically saved"] = true
 L["Chat message when logging in"] = true
 L["Warnings ignore this option"] = true
 L["A movable %s button"] = true
-L["A simple interface to remember everything you need to do!"] = true
+L["A simple interface to remember everything you need to do!"] = true -- toc notes
 L["Add a category"] = true
 L["Add a description"] = true
 L["Add"] = true
@@ -160,7 +160,7 @@ L["If you're having any problems or you just want more information, you can alwa
 L["info"] = true -- command
 L["Information"] = true
 L["Information on categories"] = true
-L["It works the same way as when you link items or other things in the chat, just shift-click!"] = true
+L["It works the same way as when you link items or other things in the chat, just shift-click"] = true
 L["Key binding"] = true
 L["Left-click on the category names to expand or shrink their content"] = true
 L["Lock minimap button"] = true
@@ -212,7 +212,6 @@ L["You can write up to %i characters"] = true
 L["toggle"] = true -- command
 L["Too.. Many.. Colors..."] = true
 L["Total number of items left to do before tomorrow"] = true
-L["translation error"] = true -- special
 L["Tuesday"] = true
 L["tutorial"] = true -- command
 L["Uncheck"] = true
@@ -227,4 +226,4 @@ L["You can add descriptions on items!"] = true
 L["You can add hyperlinks in the list!"] = true
 L["You can favorite items!"] = true
 L["You can go to the addon options in the game's interface settings to customize this"] = true
-L["You still have %s favorite item(s) to do before the next reset, don't forget them!"] = true
+L["You still have %s favorite item(s) to do before the next reset"] = true

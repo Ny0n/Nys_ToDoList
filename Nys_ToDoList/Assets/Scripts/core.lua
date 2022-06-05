@@ -54,6 +54,7 @@ core.toc.version = GetAddOnMetadata(addonName, "Version")
 
 -- every addon versions up to the current one, to keep track of them
 core.toc.versions = {
+  "6.0.2-beta",
   "6.0.1-beta",
   "6.0", -- redid the source code and separated it in different files, started using unique IDs, reworked the migration codes
   "5.7.1",

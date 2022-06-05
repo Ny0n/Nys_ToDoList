@@ -1016,7 +1016,7 @@ function dataManager:Undo()
 					success = not not dataManager:Undo()
 					if not success then
 						tinsert(NysTDL.db.profile.undoTable, toUndo-(i-1))
-						chat:PrintForced(L["Clear undo interrupted"])
+						chat:PrintForced(L["Undo interrupted"])
 						break
 					end
 				end
@@ -1024,7 +1024,7 @@ function dataManager:Undo()
 				dataManager:SetUndoing(false, undoingID)
 
 				if not undoing and success then
-					chat:Print(L["Clear undo successful!"])
+					chat:Print(L["Undo successful"])
 				end
 			else -- when we find a "0", we pass it like it was never here, and directly go undo the next item
 				success = not not dataManager:Undo()
