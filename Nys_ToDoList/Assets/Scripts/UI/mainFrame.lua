@@ -603,7 +603,7 @@ end
 
 local function recursiveLoad(tabID, tabData, catWidget, p)
   local catData = catWidget.catData
-  catWidget.addEditBox:Hide()
+  catWidget.addEditBox:Hide() -- we always hide every addEditBox on list Refresh
   catWidget.emptyLabel:Hide()
   catWidget.hiddenLabel:Hide()
 
@@ -689,7 +689,7 @@ local function loadList()
       catWidget.originalTabLabel:Hide()
     else -- if the tab is showing a cat that was not created here, we show the label specifying the cat's original tab
       catWidget.originalTabLabel:SetText("("..dataManager:GetName(catWidget.catData.originalTabID)..")")
-      catWidget.originalTabLabel:SetShown(not catWidget.addEditBox:IsShown())
+      catWidget.originalTabLabel:Show()
     end
 
     recursiveLoad(tabID, tabData, catWidget, p)

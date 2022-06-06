@@ -1232,3 +1232,21 @@ migrationData.failed.codes["6.0"] = function()
         end
     end
 end
+
+--@do-not-package@
+
+-- // **************************** // --
+
+function migration:TestFunc()
+    local migrationDataSV = NysTDL.db.profile.migrationData
+    migrationDataSV.failed = true
+    migrationDataSV.saved = {["Cat1"] = {["Item1"] = {["tabName"] = "Daily"}}}
+    migrationDataSV.version = "6.0"
+    migrationDataSV.errmsg = "Custom"
+    migrationDataSV.warning = false
+    migrationDataSV.tuto = false
+
+    private:Failed(nil, false)
+end
+
+--@end-do-not-package@

@@ -757,23 +757,6 @@ function widgets:CategoryWidget(catID, parentFrame)
       -- we toggle its edit box
       categoryWidget.addEditBox:SetShown(not categoryWidget.addEditBox:IsShown())
       -- categoryWidget.addCatEditBox:SetShown(not categoryWidget.addCatEditBox:IsShown()) -- TDLATER sub-cats
-
-      -- we clear its points
-      categoryWidget.addEditBox:ClearAllPoints()
-      -- categoryWidget.addCatEditBox:ClearAllPoints() -- TDLATER sub-cats
-
-      -- and if we are opening it
-      if categoryWidget.addEditBox:IsShown() then
-        -- we reset the points
-		categoryWidget.addEditBox:SetPoint("LEFT", categoryWidget.interactiveLabel, "RIGHT", 10, 0)
-        categoryWidget.addEditBox:SetPoint("RIGHT", parentFrame, "RIGHT", -3, 0)
-
-        -- and hide the originalTabLabel so it doesn't overlap (we show it back when the edit box dissapears)
-        categoryWidget.originalTabLabel:Hide()
-
-        widgets:SetFocusEditBox(categoryWidget.addEditBox) -- we give it the focus
-        tutorialsManager:Validate("TM_introduction_addItem") -- tutorial
-      end
     end
   end)
   categoryWidget.interactiveLabel.Button:SetScript("OnDoubleClick", function(self)
@@ -836,21 +819,33 @@ function widgets:CategoryWidget(catID, parentFrame)
   categoryWidget.addEditBox:SetHeight(30)
   categoryWidget.addEditBox:Hide()
   categoryWidget.addEditBox:SetScript("OnEnterPressed", function(self)
-    if dataManager:CreateItem(self:GetText(), catData.originalTabID, catID) then
+    if dataManager:CreateItem(self:GetText(), catData.originalTabID, catID) then -- calls mainFrame:Refresh()
       self:SetText("") -- we clear the box if the adding was a success
     end
     self:Show() -- we keep it shown to add more items
-    widgets:SetFocusEditBox(self)
   end)
   -- cancelling
   categoryWidget.addEditBox:SetScript("OnEscapePressed", function(self)
     self:Hide()
-    self:ClearAllPoints()
   end)
   categoryWidget.addEditBox:HookScript("OnEditFocusLost", function(self)
     if not NysTDL.db.profile.migrationData.failed then
       self:GetScript("OnEscapePressed")(self)
     end
+  end)
+  categoryWidget.addEditBox:SetScript("OnShow", function(self)
+	-- // we reset its points
+	categoryWidget.addEditBox:ClearAllPoints()
+	categoryWidget.addEditBox:SetPoint("LEFT", categoryWidget.interactiveLabel, "RIGHT", 10, 0)
+	categoryWidget.addEditBox:SetPoint("RIGHT", parentFrame, "RIGHT", -3, 0)
+	-- categoryWidget.addCatEditBox:ClearAllPoints() -- TDLATER sub-cats
+
+	-- // we give it the focus
+	widgets:SetFocusEditBox(categoryWidget.addEditBox)
+	tutorialsManager:Validate("TM_introduction_addItem") -- tutorial
+
+	-- we hide the originalTabLabel so it doesn't overlap (we show it back when the edit box dissapears)
+	categoryWidget.originalTabLabel:Hide()
   end)
   categoryWidget.addEditBox:SetScript("OnHide", function(self)
     -- if the originalTabLabel was hidden because the add edit box was shown, we show it back if it's necessary
