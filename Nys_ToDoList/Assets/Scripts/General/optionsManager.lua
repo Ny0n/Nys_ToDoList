@@ -618,7 +618,7 @@ local function createAddonOptionsTable()
               }, -- minimapButtonTooltip
               keyBind = {
                 type = "keybinding",
-                name = L["Show/Hide the list"],
+                name = L["Show/Hide the To-Do List"],
                 desc = L["Bind a key to toggle the list"],
                 order = 1.1,
                 get = function() return GetBindingKey("NysTDL") end,
