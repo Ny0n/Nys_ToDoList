@@ -95,7 +95,6 @@ L["Max quantity reached"] = true
 L["This name already exists"] = true
 L["Name is too large"] = true
 L["Name cannot be empty"] = true
-L["Show/Hide the list"] = true
 L["Show/Hide the To-Do List"] = true
 L["Open by default"] = true
 L["Keeps the list opened if it was during last session"] = true

@@ -569,7 +569,7 @@ function private:CreateRecoveryList()
     header.title:SetPoint("TOP", header, "TOP", 0, -12)
 
     -- /-> clearButton
-    header.clearButton = widgets:IconTooltipButton(header, "NysTDL_ClearButton", L["Clear everything"].."\n"..L["Only do this when you are done"].."\n("..L["Double Right-Click"]..")")
+    header.clearButton = widgets:IconTooltipButton(header, "NysTDL_ClearButton", L["Clear everything"].."\n"..L["Only do this when you are done"].."!\n("..L["Double Right-Click"]..")")
     header.clearButton:SetPoint("RIGHT", header, "RIGHT", -10, 0)
     header.clearButton:SetSize(26, 26)
     header.clearButton:RegisterForClicks("RightButtonUp") -- only responds to right-clicks
