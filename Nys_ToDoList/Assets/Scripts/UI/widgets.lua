@@ -834,20 +834,21 @@ function widgets:CategoryWidget(catID, parentFrame)
     end
   end)
   categoryWidget.addEditBox:SetScript("OnShow", function(self)
-	-- // we reset its points
-	categoryWidget.addEditBox:ClearAllPoints()
-	categoryWidget.addEditBox:SetPoint("LEFT", categoryWidget.interactiveLabel, "RIGHT", 10, 0)
-	categoryWidget.addEditBox:SetPoint("RIGHT", parentFrame, "RIGHT", -3, 0)
-	-- categoryWidget.addCatEditBox:ClearAllPoints() -- TDLATER sub-cats
+    -- // we reset its points
+    categoryWidget.addEditBox:ClearAllPoints()
+    categoryWidget.addEditBox:SetPoint("LEFT", categoryWidget.interactiveLabel, "RIGHT", 10, 0)
+    categoryWidget.addEditBox:SetPoint("RIGHT", parentFrame, "RIGHT", -3, 0)
+    -- categoryWidget.addCatEditBox:ClearAllPoints() -- TDLATER sub-cats
 
-	-- // we give it the focus
-	widgets:SetFocusEditBox(categoryWidget.addEditBox)
-	tutorialsManager:Validate("TM_introduction_addItem") -- tutorial
+    -- // we give it the focus
+    widgets:SetFocusEditBox(categoryWidget.addEditBox)
+    tutorialsManager:Validate("TM_introduction_addItem") -- tutorial
 
-	-- we hide the originalTabLabel so it doesn't overlap (we show it back when the edit box dissapears)
-	categoryWidget.originalTabLabel:Hide()
+    -- we hide the originalTabLabel so it doesn't overlap (we show it back when the edit box dissapears)
+    categoryWidget.originalTabLabel:Hide()
   end)
   categoryWidget.addEditBox:SetScript("OnHide", function(self)
+    self:ClearAllPoints()
     -- if the originalTabLabel was hidden because the add edit box was shown, we show it back if it's necessary
     if catData.originalTabID ~= database.ctab() then
       categoryWidget.originalTabLabel:Show()
