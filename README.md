@@ -1,7 +1,7 @@
 # Ny's To-Do List
 WoW addon for retail
 
-![Preview](https://github.com/Ny0n/Nys_ToDoList/blob/main/.other/previews/preview1.png?raw=true)
+![Preview](https://github.com/Ny0n/Nys_ToDoList/blob/main/.other/previews/previewBase.png?raw=true)
 
 This addon provides a simple frame where you can view and store all your to-do's,
 and everything can be sorted as daily or weekly, in which case it will reset automatically when the time comes!
