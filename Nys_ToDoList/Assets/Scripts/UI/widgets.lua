@@ -273,7 +273,7 @@ function widgets:DescriptionFrame(itemWidget)
 
   -- /-> hint
   descFrame.descriptionEditBox.EditBox.Instructions:SetFontObject("GameFontNormal")
-  descFrame.descriptionEditBox.EditBox.Instructions:SetText(L["Add a description..."].."\n"..L["(automatically saved)"])
+  descFrame.descriptionEditBox.EditBox.Instructions:SetText(L["Add a description"].."...\n("..L["Automatically saved"]..")")
 
   -- /-> scripts
   descFrame.descriptionEditBox.EditBox:HookScript("OnTextChanged", function(self)
@@ -433,9 +433,10 @@ end
 
 --/*******************/ BUTTONS /*************************/--
 
-function widgets:Button(name, relativeFrame, text, iconPath, fc)
+function widgets:Button(name, relativeFrame, text, iconPath, fc, bonusWidth)
   fc = fc or false
   iconPath = type(iconPath) == "string" and iconPath or nil
+  bonusWidth = bonusWidth or 0
 
   local btn = CreateFrame("Button", name, relativeFrame, "NysTDL_NormalButton")
 
@@ -454,7 +455,7 @@ function widgets:Button(name, relativeFrame, text, iconPath, fc)
     btn:HookScript("OnMouseDown", function(self) self.Icon:SetPoint("LEFT", self, "LEFT", 12, -2) end)
     btn:HookScript("OnMouseUp", function(self) self.Icon:SetPoint("LEFT", self, "LEFT", 10, 0) end)
   end
-  btn:SetWidth(w + 20)
+  btn:SetWidth(w + 20 + bonusWidth)
 
   return btn
 end
@@ -756,23 +757,6 @@ function widgets:CategoryWidget(catID, parentFrame)
       -- we toggle its edit box
       categoryWidget.addEditBox:SetShown(not categoryWidget.addEditBox:IsShown())
       -- categoryWidget.addCatEditBox:SetShown(not categoryWidget.addCatEditBox:IsShown()) -- TDLATER sub-cats
-
-      -- we clear its points
-      categoryWidget.addEditBox:ClearAllPoints()
-      -- categoryWidget.addCatEditBox:ClearAllPoints() -- TDLATER sub-cats
-
-      -- and if we are opening it
-      if categoryWidget.addEditBox:IsShown() then
-        -- we reset the points
-		categoryWidget.addEditBox:SetPoint("LEFT", categoryWidget.interactiveLabel, "RIGHT", 10, 0)
-        categoryWidget.addEditBox:SetPoint("RIGHT", parentFrame, "RIGHT", -3, 0)
-
-        -- and hide the originalTabLabel so it doesn't overlap (we show it back when the edit box dissapears)
-        categoryWidget.originalTabLabel:Hide()
-
-        widgets:SetFocusEditBox(categoryWidget.addEditBox) -- we give it the focus
-        tutorialsManager:Validate("TM_introduction_addItem") -- tutorial
-      end
     end
   end)
   categoryWidget.interactiveLabel.Button:SetScript("OnDoubleClick", function(self)
@@ -822,11 +806,11 @@ function widgets:CategoryWidget(catID, parentFrame)
   categoryWidget.originalTabLabel = widgets:HintLabel(categoryWidget.interactiveLabel, nil, "")
 
   -- / emptyLabel
-  categoryWidget.emptyLabel = widgets:HintLabel(categoryWidget, nil, L["this category is empty"])
+  categoryWidget.emptyLabel = widgets:HintLabel(categoryWidget, nil, L["Empty category"])
   categoryWidget.emptyLabel:SetPoint("LEFT", categoryWidget, "TOPLEFT", enums.ofsxContent, -enums.ofsyCatContent)
 
   -- / hiddenLabel
-  categoryWidget.hiddenLabel = widgets:HintLabel(categoryWidget, nil, L["all items are done"])
+  categoryWidget.hiddenLabel = widgets:HintLabel(categoryWidget, nil, L["Completed category"])
   categoryWidget.hiddenLabel:SetPoint("LEFT", categoryWidget, "TOPLEFT", enums.ofsxContent, -enums.ofsyCatContent)
   categoryWidget.hiddenLabel:Hide()
 
@@ -835,23 +819,36 @@ function widgets:CategoryWidget(catID, parentFrame)
   categoryWidget.addEditBox:SetHeight(30)
   categoryWidget.addEditBox:Hide()
   categoryWidget.addEditBox:SetScript("OnEnterPressed", function(self)
-    if dataManager:CreateItem(self:GetText(), catData.originalTabID, catID) then
+    if dataManager:CreateItem(self:GetText(), catData.originalTabID, catID) then -- calls mainFrame:Refresh()
       self:SetText("") -- we clear the box if the adding was a success
     end
     self:Show() -- we keep it shown to add more items
-    widgets:SetFocusEditBox(self)
   end)
   -- cancelling
   categoryWidget.addEditBox:SetScript("OnEscapePressed", function(self)
     self:Hide()
-    self:ClearAllPoints()
   end)
   categoryWidget.addEditBox:HookScript("OnEditFocusLost", function(self)
     if not NysTDL.db.profile.migrationData.failed then
       self:GetScript("OnEscapePressed")(self)
     end
   end)
+  categoryWidget.addEditBox:SetScript("OnShow", function(self)
+    -- // we reset its points
+    categoryWidget.addEditBox:ClearAllPoints()
+    categoryWidget.addEditBox:SetPoint("LEFT", categoryWidget.interactiveLabel, "RIGHT", 10, 0)
+    categoryWidget.addEditBox:SetPoint("RIGHT", parentFrame, "RIGHT", -3, 0)
+    -- categoryWidget.addCatEditBox:ClearAllPoints() -- TDLATER sub-cats
+
+    -- // we give it the focus
+    widgets:SetFocusEditBox(categoryWidget.addEditBox)
+    tutorialsManager:Validate("TM_introduction_addItem") -- tutorial
+
+    -- we hide the originalTabLabel so it doesn't overlap (we show it back when the edit box dissapears)
+    categoryWidget.originalTabLabel:Hide()
+  end)
   categoryWidget.addEditBox:SetScript("OnHide", function(self)
+    self:ClearAllPoints()
     -- if the originalTabLabel was hidden because the add edit box was shown, we show it back if it's necessary
     if catData.originalTabID ~= database.ctab() then
       categoryWidget.originalTabLabel:Show()

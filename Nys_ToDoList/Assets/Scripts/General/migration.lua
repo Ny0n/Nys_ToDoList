@@ -569,7 +569,7 @@ function private:CreateRecoveryList()
     header.title:SetPoint("TOP", header, "TOP", 0, -12)
 
     -- /-> clearButton
-    header.clearButton = widgets:IconTooltipButton(header, "NysTDL_ClearButton", L["Clear everything"].."\n"..L["Only do this when you are done!"].."\n("..L["Double Right-Click"]..")")
+    header.clearButton = widgets:IconTooltipButton(header, "NysTDL_ClearButton", L["Clear everything"].."\n"..L["Only do this when you are done"].."!\n("..L["Double Right-Click"]..")")
     header.clearButton:SetPoint("RIGHT", header, "RIGHT", -10, 0)
     header.clearButton:SetSize(26, 26)
     header.clearButton:RegisterForClicks("RightButtonUp") -- only responds to right-clicks
@@ -755,12 +755,12 @@ function private:CreateWarning()
 
     -- /-> title
     local titlePos = -20
-    content.title = widgets:NoPointsLabel(content, nil, utils:ColorText(database.themes.red, L["WARNING"]))
+    content.title = widgets:NoPointsLabel(content, nil, utils:ColorText(database.themes.red, L["Warning"]:upper()))
     content.title:SetPoint("TOP", content, "TOP", 0, titlePos)
 
     -- /-> sorryMsg
     local sorryMsgPos = titlePos - 30
-    content.sorryMsg = widgets:NoPointsLabel(content, nil, L["An unexpected error was detected during the update to 6.0, you will have to manually add your items back using the recovery list. I'm really sorry about the inconvenience..."])
+    content.sorryMsg = widgets:NoPointsLabel(content, nil, L["An unexpected error was detected during the addon update, you will have to manually add your items back using the recovery list"])
     content.sorryMsg:SetPoint("TOP", content, "TOP", 0, sorryMsgPos)
     content.sorryMsg:SetWidth(msgWidth)
 
@@ -772,7 +772,7 @@ function private:CreateWarning()
 
     -- /-> errMsg
     local errMsgPos = doNotMsgPos - content.doNotMsg:GetHeight() - 15
-    content.errMsg = widgets:NoPointsLabel(content, nil, L["Please copy and post this error message as an issue to GitHub so that I can fix this problem as quickly as possible:"])
+    content.errMsg = widgets:NoPointsLabel(content, nil, L["Please copy and post this error message as an issue on GitHub so that I can fix this problem as quickly as possible"]..":")
     content.errMsg:SetPoint("TOP", content, "TOP", 0, errMsgPos)
     content.errMsg:SetWidth(msgWidth)
 
@@ -1232,3 +1232,21 @@ migrationData.failed.codes["6.0"] = function()
         end
     end
 end
+
+--@do-not-package@
+
+-- // **************************** // --
+
+function migration:TestFunc()
+    local migrationDataSV = NysTDL.db.profile.migrationData
+    migrationDataSV.failed = true
+    migrationDataSV.saved = {["Cat1"] = {["Item1"] = {["tabName"] = "Daily"}}}
+    migrationDataSV.version = "6.0"
+    migrationDataSV.errmsg = "Custom"
+    migrationDataSV.warning = false
+    migrationDataSV.tuto = false
+
+    private:Failed(nil, false)
+end
+
+--@end-do-not-package@

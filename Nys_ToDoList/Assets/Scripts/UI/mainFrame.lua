@@ -369,7 +369,8 @@ function mainFrame:ToggleEditMode(state, forceUpdate)
   -- // start
 
   -- edit mode button
-  tdlFrame.content.editModeButton.Icon:SetDesaturated(mainFrame.editMode and 1 or nil)
+  tdlFrame.content.editModeButton:GetNormalTexture():SetDesaturated(mainFrame.editMode and 1 or nil)
+  tdlFrame.content.editModeButton:GetPushedTexture():SetDesaturated(mainFrame.editMode and 1 or nil)
   tdlFrame.content.editModeButton.Glow:SetShown(mainFrame.editMode)
 
   -- content widgets buttons
@@ -602,7 +603,7 @@ end
 
 local function recursiveLoad(tabID, tabData, catWidget, p)
   local catData = catWidget.catData
-  catWidget.addEditBox:Hide()
+  catWidget.addEditBox:Hide() -- we always hide every addEditBox on list Refresh
   catWidget.emptyLabel:Hide()
   catWidget.hiddenLabel:Hide()
 
@@ -687,8 +688,8 @@ local function loadList()
     if catWidget.catData.originalTabID == tabID then
       catWidget.originalTabLabel:Hide()
     else -- if the tab is showing a cat that was not created here, we show the label specifying the cat's original tab
-      catWidget.originalTabLabel:SetText(utils:SafeStringFormat(L["(%s tab)"], dataManager:GetName(catWidget.catData.originalTabID)))
-      catWidget.originalTabLabel:SetShown(not catWidget.addEditBox:IsShown())
+      catWidget.originalTabLabel:SetText("("..dataManager:GetName(catWidget.catData.originalTabID)..")")
+      catWidget.originalTabLabel:Show()
     end
 
     recursiveLoad(tabID, tabData, catWidget, p)
@@ -777,7 +778,7 @@ local function generateMenuAddACategory()
 
   --/************************************************/--
 
-  menuframe.labelCategoryName = widgets:NoPointsLabel(menuframe, nil, L["Name:"])
+  menuframe.labelCategoryName = widgets:NoPointsLabel(menuframe, nil, L["Name"]..":")
   menuframe.labelCategoryName:SetPoint("TOPLEFT", menuframe.menuTitle, "TOP", -140, -32)
 
   menuframe.categoryEditBox = CreateFrame("EditBox", nil, menuframe, "InputBoxTemplate") -- edit box to put the new category name
@@ -959,7 +960,7 @@ local function generateMenuAddACategory()
 
   --/************************************************/--
 
-  menuframe.addBtn = widgets:Button("addButton", menuframe, L["Add category"])
+  menuframe.addBtn = widgets:Button("NysTDL_category_addButton", menuframe, L["Add"], nil, nil, 40)
   menuframe.addBtn:SetPoint("TOP", menuframe.menuTitle, "TOP", 0, -65)
   menuframe.addBtn:SetScript("OnClick", addCat)
 
@@ -1030,9 +1031,9 @@ local function generateMenuFrameOptions()
   --/************************************************/--
 
   menuframe.affectDesc = CreateFrame("CheckButton", nil, menuframe, "ChatConfigCheckButtonTemplate")
-  menuframe.affectDesc.tooltip = L["Share the opacity options of this frame onto the description frames (only when checked)"]
+  menuframe.affectDesc.tooltip = L["Share the opacity options of the list to the description frames"].." ("..L["Only when checked"]..")"
   menuframe.affectDesc:SetPoint("TOP", menuframe.frameContentAlphaSlider, "TOP", 0, -40)
-  menuframe.affectDesc.Text:SetText(L["Affect description frames"])
+  menuframe.affectDesc.Text:SetText(L["Apply to description frames"])
   menuframe.affectDesc.Text:SetFontObject("GameFontHighlight")
   menuframe.affectDesc.Text:ClearAllPoints()
   menuframe.affectDesc.Text:SetPoint("TOP", menuframe.affectDesc, "BOTTOM")
@@ -1107,7 +1108,7 @@ local function generateFrameContent()
     setDoubleLinePoints(content.titleLL, content.titleLR, content.title:GetWidth(), -20)
 
     -- remaining numbers labels
-    content.remaining = widgets:NoPointsLabel(content, nil, L["Remaining:"])
+    content.remaining = widgets:NoPointsLabel(content, nil, L["Remaining"]..":")
     content.remaining:SetPoint("TOPLEFT", content.title, "TOP", -140, -32)
     content.remaining:SetFontObject("GameFontNormalLarge")
     content.remainingNumber = widgets:NoPointsLabel(content, nil, "...")
@@ -1161,7 +1162,7 @@ local function generateFrameContent()
     content.tabActionsButton:Hide()
 
     -- undo button
-    content.undoButton = widgets:IconTooltipButton(content, "NysTDL_UndoButton", L["Undo last remove"].."\n".."("..L["item"].."/"..L["category"].."/"..L["tab"]..")")
+    content.undoButton = widgets:IconTooltipButton(content, "NysTDL_UndoButton", L["Undo last remove"].."\n".."("..L["Item"]:lower().."/"..L["Category"]:lower().."/"..L["Tab"]:lower()..")")
     content.undoButton:SetPoint("RIGHT", content.tabActionsButton, "LEFT", 2, 0)
     content.undoButton:SetScript("OnClick", function() dataManager:Undo() end)
     content.undoButton:Hide()
@@ -1206,8 +1207,9 @@ local function generateFrameContent()
     -- below the menus
     content.lineBottom = widgets:ThemeLine(content, database.themes.theme, 0.7)
 
-    content.nothingLabel = widgets:HintLabel(content, nil, L["This tab is empty"])
+    content.nothingLabel = widgets:HintLabel(content, nil, L["Empty tab"].."\n\n"..L["Start by adding a new category!"])
     content.nothingLabel:SetPoint("TOP", content.lineBottom, "TOP", 0, -20)
+    content.nothingLabel:SetWidth(220)
 
     content.loadOrigin = widgets:Dummy(content, content.lineBottom, 0, 0)
     content.loadOrigin:SetPoint("TOPLEFT", content.lineBottom, "TOPLEFT", unpack(enums.loadOriginOffset))
@@ -1294,7 +1296,7 @@ function mainFrame:CreateTDLFrame()
 
   -- resize button
   tdlFrame.resizeButton = CreateFrame("Button", nil, tdlFrame, "NysTDL_TooltipResizeButton")
-  tdlFrame.resizeButton.tooltip = L["Left click - resize"].."\n"..L["Right click - reset"]
+  tdlFrame.resizeButton.tooltip = L["Left-Click"].." - "..L["Resize the list"].."\n"..L["Right-Click"].." - "..L["Reset"]
   tdlFrame.resizeButton:SetPoint("BOTTOMRIGHT", -3, 3)
   tdlFrame.resizeButton:SetScript("OnMouseDown", function(self, button)
     if (button == "LeftButton") then
