@@ -11,72 +11,70 @@ local L = core.L
 
 --/*******************/ COMMON (utils) FUNCTIONS /*************************/--
 
+function utils:IsReleaseTypeOlderThan(v1, v2)
+    -- Compares the release type of both versions to figure out if v1's release type is older than v2
+    -- alpha < beta < release ("alpha" < "beta" < "")
+    -- we first release alpha versions, then beta, then release
+    -- (that's what I mean by "which release type is older", alpha is older than beta, which itself is older than release)
+
+    local releaseTypes = {
+        -- older
+        "alpha",
+        "beta",
+        -- "",
+        -- newer
+    }
+
+    local versions = {
+        [v1] = 1,
+        [v2] = 1
+    }
+
+    for v in pairs(versions) do
+        for i,releaseType in ipairs(releaseTypes) do
+            if string.find(v, releaseType) then
+                break
+            end
+            versions[v] = i+1
+        end
+    end
+
+    return versions[v1] < versions[v2]
+end
+
 function utils:IsVersionOlderThan(v1, v2)
-  -- This function can compare two addon version strings,
-  -- and tell if the first one is older than the second one
-  -- (meaning: was v1 a version released before v2?).
-  -- equivalent thing as testing v1 < v2
+    -- This function can compare two addon version strings,
+    -- and tell if the first one is older than the second one
+    -- (meaning: was v1 a version released before v2?).
+    -- equivalent thing as testing v1 < v2
 
-  ----------------------------------------------
+    if (not v1) or (v1 == "") then return true end -- old version (special case)
+    if (not v2) or (v2 == "") then return false end -- should never happen
 
-  local function isReleaseTypeOlderThan(v1, v2)
-      -- Compares the release type of both versions to figure out if v1 is older than v2
-      -- release > beta > alpha ("" > "-beta" > "-alpha")
+    local f1 = string.gmatch(v1, "%d+")
+    local f2 = string.gmatch(v2, "%d+")
 
-      local releaseTypes = {
-          -- older
-          "alpha",
-          "beta",
-          -- "",
-          -- newer
-      }
+    while true do
+        local n1 = f1()
+        local n2 = f2()
 
-      local versions = {
-          [v1] = 1,
-          [v2] = 1
-      }
+        if not n1 and not n2 then
+            return utils:IsReleaseTypeOlderThan(v1, v2)
+        end
 
-      for v in pairs(versions) do
-          for i,releaseType in ipairs(releaseTypes) do
-              if string.find(v, releaseType) then
-                  break
-              end
-              versions[v] = i+1
-          end
-      end
+        if not (n1 and n2) then
+            return n2 and true or false
+        end
 
-      return versions[v1] < versions[v2]
-  end
+        n1 = tonumber(n1)
+        n2 = tonumber(n2)
 
-  ----------------------------------------------
-
-  if (not v1) or (v1 == "") then return true end -- old version (special case)
-  if (not v2) or (v2 == "") then return false end -- should never happen
-  
-  local f1 = string.gmatch(v1, "%d+")
-  local f2 = string.gmatch(v2, "%d+")
-  
-  while true do
-      local n1 = f1()
-      local n2 = f2()
-  
-      if not n1 and not n2 then
-          return isReleaseTypeOlderThan(v1, v2)
-      end
-  
-      if not (n1 and n2) then
-          return n2 and true or false
-      end
-  
-      n1 = tonumber(n1)
-      n2 = tonumber(n2)
-
-      if n1 < n2 then
-          return true
-      elseif n1 > n2 then
-          return false
-      end
-  end
+        if n1 < n2 then
+            return true
+        elseif n1 > n2 then
+            return false
+        end
+    end
 end
 
 function utils:Clamp(number, min, max)
