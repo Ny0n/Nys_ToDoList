@@ -11,31 +11,70 @@ local L = core.L
 
 --/*******************/ COMMON (utils) FUNCTIONS /*************************/--
 
-function utils:IsVersionOlderThan(latestVersion, vMax) -- equivalent thing as testing v < vMax
-  if (not latestVersion) or (latestVersion == "") then return true end -- old version
-  if not utils:HasValue(core.toc.versions, latestVersion) then return false end -- "future" version
-  if not utils:HasValue(core.toc.versions, vMax) then return true end -- "future" version
-  for i,version in ipairs(core.toc.versions) do -- from recent to old
-    if version == latestVersion then
-      return false
-    elseif version == vMax then
-      return true
+function utils:IsReleaseTypeOlderThan(v1, v2)
+    -- Compares the release type of both versions to figure out if v1's release type is older than v2
+    -- alpha < beta < release ("alpha" < "beta" < "")
+    -- we first release alpha versions, then beta, then release
+    -- (that's what I mean by "which release type is older", alpha is older than beta, which itself is older than release)
+
+    local releaseTypes = {
+        -- older
+        "alpha",
+        "beta",
+        -- "",
+        -- newer
+    }
+
+    local versions = {
+        [v1] = 1,
+        [v2] = 1
+    }
+
+    for v in pairs(versions) do
+        for i,releaseType in ipairs(releaseTypes) do
+            if string.find(v, releaseType) then
+                break
+            end
+            versions[v] = i+1
+        end
     end
-  end
+
+    return versions[v1] < versions[v2]
 end
 
-function utils:GetAllVersionsOlderThan(v) -- returns a table containing every version number older than the given one
-  if not utils:HasValue(core.toc.versions, v) then return utils:Deepcopy(core.toc.versions) end -- "future" version
-  local versions = {}
-  local startAdding = false
-  for i,version in ipairs(core.toc.versions) do -- from recent to old
-    if startAdding then
-      table.insert(versions, version)
-    elseif version == v then
-      startAdding = true
+function utils:IsVersionOlderThan(v1, v2)
+    -- This function can compare two addon version strings,
+    -- and tell if the first one is older than the second one
+    -- (meaning: was v1 a version released before v2?).
+    -- equivalent thing as testing v1 < v2
+
+    if (not v1) or (v1 == "") then return true end -- old version (special case)
+    if (not v2) or (v2 == "") then return false end -- should never happen
+
+    local f1 = string.gmatch(v1, "%d+")
+    local f2 = string.gmatch(v2, "%d+")
+
+    while true do
+        local n1 = f1()
+        local n2 = f2()
+
+        if not n1 and not n2 then
+            return utils:IsReleaseTypeOlderThan(v1, v2)
+        end
+
+        if not (n1 and n2) then
+            return n2 and true or false
+        end
+
+        n1 = tonumber(n1)
+        n2 = tonumber(n2)
+
+        if n1 < n2 then
+            return true
+        elseif n1 > n2 then
+            return false
+        end
     end
-  end
-  return versions
 end
 
 function utils:Clamp(number, min, max)
@@ -126,7 +165,7 @@ function utils:SafeStringFormat(str, ...)
       if (string.find(dup, toMatch)) then
         dup = string.gsub(dup, toMatch, "", 1)
       else
-        return str.."|cffff0000 --> "..enums.translationErrMsg.."|r"
+        return str.." "..enums.translationErrMsg
       end
     end
   end

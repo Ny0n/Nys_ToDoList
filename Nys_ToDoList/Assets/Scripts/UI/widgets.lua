@@ -17,14 +17,23 @@ local tutorialsManager = addonTable.tutorialsManager
 
 -- Variables
 local L = core.L
+local LibQTip = core.LibQTip
 
 widgets.frame = CreateFrame("Frame", nil, UIParent) -- utility frame
 local widgetsFrame = widgets.frame
 
 local tdlButton
 local hyperlinkEditBoxes = {}
-local descFrames = {}
-local descFrameLevelDiff = 20
+local descFrames = { -- all opened description frames
+	-- [itemID] = frame,
+	-- ...
+}
+local descFrameInfo = {
+	width = 180,
+	height = 110,
+	buttons = 75, -- the additional space to account for the buttons at the right of the title
+	font = "ChatFontNormal"
+}
 
 local updateRate = 0.05
 local refreshRate = 1
@@ -135,26 +144,28 @@ function widgets:UpdateDescFramesTitle()
 end
 
 function widgets:DescFrameHide(itemID)
-  -- here, if the name matches one of the opened description frames, we hide that frame, delete it from memory and reupdate the levels of every other active ones
-  for pos, frame in ipairs(descFrames) do
-    if frame.itemID == itemID then
-      frame:Hide()
-      frame:ClearAllPoints()
-      widgets:RemoveHyperlinkEditBox(frame.descriptionEditBox.EditBox)
-      table.remove(descFrames, pos) -- we remove the desc frame from the descFrames table
-      return true
-    end
-  end
-  return false
+	-- we hide and delete the description frame of itemID if it exists
+	local frame = descFrames[itemID]
+
+	if frame then
+		frame:Hide()
+		frame:ClearAllPoints()
+		widgets:RemoveHyperlinkEditBox(frame.descriptionEditBox.EditBox)
+		descFrames[itemID] = nil
+		return true
+	end
+
+	return false
 end
 
 function widgets:WipeDescFrames()
-  -- to reset the desc frames
-  for _, frame in pairs(descFrames) do
-    widgets:RemoveHyperlinkEditBox(frame.descriptionEditBox.EditBox)
-    frame:Hide()
-  end
-  wipe(descFrames)
+	-- resets every desc frame
+	for _, frame in pairs(descFrames) do
+		frame:Hide()
+		frame:ClearAllPoints()
+		widgets:RemoveHyperlinkEditBox(frame.descriptionEditBox.EditBox)
+	end
+	wipe(descFrames)
 end
 
 function widgets:DescriptionFrame(itemWidget)
@@ -171,7 +182,7 @@ function widgets:DescriptionFrame(itemWidget)
   -- we create the mini frame holding the name of the item and his description in an edit box
   local descFrame = CreateFrame("Frame", nil, UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil)
   local w = widgets:GetWidth(itemData.name)
-  descFrame:SetSize(w < 180 and 180+75 or w+75, 110) -- 75 is large enough to place the closebutton, clearbutton, and a little bit of space at the right of the name
+  descFrame:SetSize(w < descFrameInfo.width and descFrameInfo.width+descFrameInfo.buttons or w+descFrameInfo.buttons, descFrameInfo.height)
 
   -- background
   descFrame:SetBackdrop({
@@ -218,7 +229,7 @@ function widgets:DescriptionFrame(itemWidget)
   end)
 
   -- position
-  descFrame:SetPoint("BOTTOMRIGHT", itemWidget.descBtn, "TOPLEFT", 0, 0) -- we spawn it basically where we clicked
+  descFrame:SetPoint("BOTTOMRIGHT", itemWidget.descBtn, "TOPRIGHT", 0, 0) -- we spawn it basically where we clicked
 
   -- to unlink it from the itemWidget
   descFrame:StartMoving()
@@ -264,7 +275,7 @@ function widgets:DescriptionFrame(itemWidget)
   descFrame.descriptionEditBox = CreateFrame("ScrollFrame", nil, descFrame, "InputScrollFrameTemplate")
   descFrame.descriptionEditBox:SetPoint("TOPLEFT", descFrame, "TOPLEFT", 10, -30)
   descFrame.descriptionEditBox:SetPoint("BOTTOMRIGHT", descFrame, "BOTTOMRIGHT", -10, 10)
-  descFrame.descriptionEditBox.EditBox:SetFontObject("ChatFontNormal")
+  descFrame.descriptionEditBox.EditBox:SetFontObject(descFrameInfo.font)
   descFrame.descriptionEditBox.EditBox:SetAutoFocus(false)
 
   -- /-> char count
@@ -288,7 +299,7 @@ function widgets:DescriptionFrame(itemWidget)
     descFrame.descriptionEditBox.EditBox:SetText(itemData.description)
   end
 
-  table.insert(descFrames, descFrame) -- we save it for access, level, hide, and alpha purposes
+  descFrames[itemID] = descFrame -- we save it for access, hide, and alpha purposes
 
   -- // finished creating the frame
 
@@ -342,10 +353,15 @@ end
 function widgets:GetWidth(text, font)
   -- not the length (#) of a string, but the width it takes when placed on the screen as a font string
   local l = widgets:NoPointsLabel(UIParent, nil, text)
+
   if font then
     l:SetFontObject(font)
   end
-  return l:GetWidth()
+
+  local width = l:GetWidth()
+  l:Hide()
+
+  return width
 end
 
 function widgets:SetHyperlinksEnabled(frame, enabled)
@@ -604,48 +620,107 @@ function widgets:FavoriteButton(widget, parent)
 end
 
 function widgets:DescButton(widget, parent)
-  local btn = CreateFrame("Button", nil, parent, "NysTDL_DescButton")
+	local btn = CreateFrame("Button", nil, parent, "NysTDL_DescButton")
 
-  -- these are for changing the color depending on the mouse actions (since they are custom xml)
-  -- and yea, this one's a bit complicated too because it works in very specific ways
-  btn:HookScript("OnEnter", function(self)
-    if not widget.itemData.description then -- no description
-      self.Icon:SetDesaturated(nil)
-      self.Icon:SetVertexColor(1, 1, 1)
-    else
-      self:SetAlpha(0.6)
-    end
-  end)
-  btn:HookScript("OnLeave", function(self)
+	-- // Appearance
+
+	-- these are for changing the color depending on the mouse actions (since they are custom xml)
+	-- and yea, this one's a bit complicated too because it works in very specific ways
+	btn:HookScript("OnEnter", function(self)
+		if not widget.itemData.description then -- no description
+			self.Icon:SetDesaturated(nil)
+			self.Icon:SetVertexColor(1, 1, 1)
+		else
+			self:SetAlpha(0.6)
+		end
+	end)
+	btn:HookScript("OnLeave", function(self)
+		if not widget.itemData.description then
+			if tonumber(string.format("%.1f", self.Icon:GetAlpha())) ~= 0.5 then -- if we are currently clicking on the button
+				self.Icon:SetDesaturated(1)
+				self.Icon:SetVertexColor(0.4, 0.4, 0.4)
+			end
+		else
+			self:SetAlpha(1)
+		end
+	end)
+	btn:HookScript("OnMouseUp", function(self)
+		self:SetAlpha(1)
+		if not widget.itemData.description then
+			self.Icon:SetDesaturated(1)
+			self.Icon:SetVertexColor(0.4, 0.4, 0.4)
+		end
+	end)
+	btn:HookScript("PostClick", function(self)
+		self:GetScript("OnShow")(self)
+	end)
+	btn:HookScript("OnShow", function(self)
+		self:SetAlpha(1)
+		if not widget.itemData.description then
+			self.Icon:SetDesaturated(1)
+			self.Icon:SetVertexColor(0.4, 0.4, 0.4)
+		else
+			self.Icon:SetDesaturated(nil)
+			self.Icon:SetVertexColor(1, 1, 1)
+		end
+	end)
+
+	-- // Tooltip
+
+	btn.tooltip = nil
+	btn.isTooltipShown = function()
+		return not (descFrames[widget.itemID] and true or false)
+	end
+
+	btn:HookScript("OnEnter", function(self)
+    -- we don't do anything in 3 cases
+      -- if we unchecked the option in the addon options
+		if not NysTDL.db.profile.descriptionTooltip then
+			return
+		end
+
+      -- if the item doesn't have a description
     if not widget.itemData.description then
-      if tonumber(string.format("%.1f", self.Icon:GetAlpha())) ~= 0.5 then -- if we are currently clicking on the button
-        self.Icon:SetDesaturated(1)
-        self.Icon:SetVertexColor(0.4, 0.4, 0.4)
-      end
-    else
-      self:SetAlpha(1)
+      return
     end
-   end)
-   btn:HookScript("OnMouseUp", function(self)
-     self:SetAlpha(1)
-     if not widget.itemData.description then
-       self.Icon:SetDesaturated(1)
-       self.Icon:SetVertexColor(0.4, 0.4, 0.4)
-     end
-   end)
-   btn:HookScript("PostClick", function(self)
-     self:GetScript("OnShow")(self)
-   end)
-  btn:HookScript("OnShow", function(self)
-    self:SetAlpha(1)
-    if not widget.itemData.description then
-      self.Icon:SetDesaturated(1)
-      self.Icon:SetVertexColor(0.4, 0.4, 0.4)
-    else
-      self.Icon:SetDesaturated(nil)
-      self.Icon:SetVertexColor(1, 1, 1)
-    end
-  end)
+
+      -- if the tooltip is already in use by someone else
+		if LibQTip:IsAcquired("NysTDL_DescButton_tooltip") then
+			return
+		end
+
+    -- we're good to go
+		btn.tooltip = LibQTip:Acquire("NysTDL_DescButton_tooltip", 1)
+		local tooltip = btn.tooltip
+
+		tooltip:Clear()
+		tooltip:SmartAnchorTo(self)
+		tooltip:ClearAllPoints()
+		tooltip:SetPoint("BOTTOMRIGHT", self, "TOPRIGHT", 0, 0)
+
+		-- we use the same code to set the description frame's width
+		local w = widgets:GetWidth(widget.itemData.name)
+		local width = w < descFrameInfo.width and descFrameInfo.width+descFrameInfo.buttons or w+descFrameInfo.buttons
+
+		tooltip:SetFont(descFrameInfo.font)
+
+		tooltip:AddLine()
+		tooltip:SetCell(1, 1, widget.itemData.description, nil, nil, nil, nil, nil, nil, width-20)
+
+		tooltip:SetShown(btn.isTooltipShown())
+	end)
+	btn:HookScript("OnLeave", function()
+		if btn.tooltip then
+			LibQTip:Release(btn.tooltip)
+			btn.tooltip = nil
+		end
+	end)
+	btn:HookScript("OnShow", function()
+		if btn.tooltip then
+			btn.tooltip:SetShown(btn.isTooltipShown())
+		end
+	end)
+
   return btn
 end
 
@@ -1113,7 +1188,7 @@ local function OnUpdate(self, elapsed)
 
     -- rainbow update
     if NysTDL.db.profile.rainbow then
-      if #descFrames > 0 or mainFrame:GetFrame():IsShown() then -- we don't really need to update the color at all times
+      if next(descFrames) or mainFrame:GetFrame():IsShown() then -- we don't really need to update the color at all times
         mainFrame:ApplyNewRainbowColor()
       end
     end

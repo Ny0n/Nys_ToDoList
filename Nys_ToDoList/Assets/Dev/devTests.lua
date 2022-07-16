@@ -51,20 +51,20 @@ function Nys_Tests(nb, ...)
 		-- ITEM EXPLOSION
 		local refreshID = dataManager:SetRefresh(false)
 
-		-- local itemTabID, itemCatID
-		-- for tabID,tabData in dataManager:ForEach(enums.tab) do
-		--   if tabData.name == "All" then
-		--     itemCatID = dataManager:CreateCategory("EXPLOSION", tabID)
-		--     itemTabID = tabID
-		--   end
-		-- end
-		-- for i = 1, 100 do
-		--   dataManager:CreateItem(tostring(i), itemTabID, itemCatID)
-		-- end
-
-		for i=1,2000 do
-		dataManager:Undo()
+		local itemTabID, itemCatID
+		for tabID,tabData in dataManager:ForEach(enums.tab) do
+			if tabData.name == "All" then
+				itemCatID = dataManager:CreateCategory("EXPLOSION", tabID)
+				itemTabID = tabID
+			end
 		end
+		for i = 1, 100 do
+			dataManager:CreateItem(tostring(i), itemTabID, itemCatID)
+		end
+
+		-- for i=1,2000 do
+		-- 	dataManager:Undo()
+		-- end
 
 		dataManager:SetRefresh(true, refreshID)
 

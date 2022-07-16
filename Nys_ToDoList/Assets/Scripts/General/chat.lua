@@ -124,7 +124,7 @@ end
 --/*******************/ CHAT COMMANDS /*************************/--
 
 -- Commands:
-chat.commands = { -- TDLATER FIX if all chat commands locales are the same, we cant access them
+chat.commands = {
   [""] = function()
     mainFrame:Toggle()
   end,
@@ -132,7 +132,9 @@ chat.commands = { -- TDLATER FIX if all chat commands locales are the same, we c
   [L["info"]] = function()
     local hex = utils:RGBToHex(database.themes.theme2)
     local slashCommand = core.slashCommand..' '
+
     local str = L["Here are a few commands to help you"]..":\n"
+
     str = str.." -- "..string.format("|cff%s%s|r", hex, slashCommand..L["toggle"])
     str = str.." -- "..string.format("|cff%s%s|r", hex, slashCommand..L["categories"])
     str = str.." -- "..string.format("|cff%s%s|r", hex, slashCommand..L["hyperlinks"])
@@ -140,6 +142,14 @@ chat.commands = { -- TDLATER FIX if all chat commands locales are the same, we c
     str = str.." -- "..string.format("|cff%s%s|r", hex, slashCommand..L["favorites"])
     str = str.." -- "..string.format("|cff%s%s|r", hex, slashCommand..L["descriptions"])
     str = str.." -- "..string.format("|cff%s%s|r", hex, slashCommand..L["tutorial"])
+    -- <!> When adding a new chat command, add its original (enUS) name in chat.commandLocales.list (in core.lua) <!>
+
+    str = str.." -- "
+
+    if not chat.commandLocales.isOK then
+      str = str..enums.translationErrMsg
+    end
+
     chat:CustomPrintForced(str)
   end,
 

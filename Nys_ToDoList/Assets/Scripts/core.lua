@@ -2,7 +2,7 @@
 local addonName, addonTable = ...
 
 -- declaring the different addon tables, one for each file
--- because i don't want to use a global variable
+-- because I don't want to use a global variable (after careful thinking, this will probably change soon :D)
 addonTable.chat = {}
 addonTable.database = {}
 addonTable.dataManager = {}
@@ -35,51 +35,77 @@ local optionsManager = addonTable.optionsManager
 -- libs
 NysTDL = LibStub("AceAddon-3.0"):NewAddon(addonName, "AceTimer-3.0", "AceEvent-3.0")
 core.AceGUI = LibStub("AceGUI-3.0")
+
 core.L = LibStub("AceLocale-3.0"):GetLocale(addonName)
+core.Locale = GetLocale()
+if core.Locale == "enGB" then
+	core.Locale = "enUS"
+end
+
 core.LDB = LibStub("LibDataBroker-1.1")
 core.LDBIcon = LibStub("LibDBIcon-1.0")
 core.LibQTip = LibStub('LibQTip-1.0')
 -- core.LDD = LibStub:GetLibrary("LibUIDropDownMenu-4.0")
 
--- LOCALE CHECK
--- if a locale is empty or only whitespace, we replace it by the original text
+-- // LOCALE CHECK
+
+chat.commandLocales = {
+	isOK = true,
+	list = {
+		["info"] = true,
+		["toggle"] = true,
+		["categories"] = true,
+		["hyperlinks"] = true,
+		["editmode"] = true,
+		["favorites"] = true,
+		["descriptions"] = true,
+		["tutorial"] = true,
+	},
+	temp = {
+		-- checking if each chat command's locale is different, otherwise we won't be able to use them
+	}
+}
+
 for orig,locale in pairs(core.L) do
-  if #locale == 0 or locale:match("^%s*$") then core.L[orig] = orig end
+	-- if a locale is empty or only whitespace, we replace it by the original text
+	-- and if it is valid, we remove any potential spaces at the start and at the end of the string (had that scenario once)
+	-- AND if it is a chat command, we remove ANY spaces we find, because they are forbidden in chat commands
+
+	if type(locale) ~= "string" or #locale == 0 or string.match(locale, "^%s*$") then
+		core.L[orig] = orig
+	else
+		if chat.commandLocales.list[orig] then
+			-- we are a chat command
+			locale = string.gsub(locale, "%s*", "")
+			if not chat.commandLocales.temp[locale] then
+				chat.commandLocales.temp[locale] = true
+			else
+				chat.commandLocales.isOK = false
+			end
+		else
+			-- we are not a chat command
+			locale = string.gsub(locale, "^%s*", "")
+			locale = string.gsub(locale, "%s*$", "")
+		end
+		core.L[orig] = locale
+	end
 end
+
+-- if a chat command was duplicated (forbidden), we reset them to their original state,
+-- and print a message in the chat to notify that there was an error (in chat.lua, check chat.commandLocales.isOK)
+chat.commandLocales.temp = nil
+if not chat.commandLocales.isOK then
+	for orig in pairs(chat.commandLocales.list) do
+		core.L[orig] = orig
+	end
+end
+
+-- //~ LOCALE CHECK
 
 -- data (from toc file)
 core.toc = {}
 core.toc.title = GetAddOnMetadata(addonName, "Title") -- better than "Nys_ToDoList"
 core.toc.version = GetAddOnMetadata(addonName, "Version")
-
--- every addon versions up to the current one, to keep track of them
-core.toc.versions = {
-  "6.0.2",
-  "6.0.1-beta",
-  "6.0", -- redid the source code and separated it in different files, started using unique IDs, reworked the migration codes
-  "5.7.1",
-  "5.7",
-  "5.6.2",
-  "5.6.1",
-  "5.6", -- final source code workflow, started keeping track of the "latestVersion"
-  "5.5.2",
-  "5.5.1", -- removed due to major bug
-  "5.5", -- removed due to major bug
-  "5.4",
-  "5.3",
-  "5.2.1",
-  "5.2",
-  "5.1",
-  "5.0.1",
-  "5.0",
-  "4.0", -- started using libraries
-  "3.0",
-  "2.0",
-  "1.3",
-  "1.2",
-  "1.1",
-  "1.0",
-}
 
 -- Variables
 local L = core.L
@@ -94,10 +120,10 @@ BINDING_NAME_NysTDL = L["Show/Hide the To-Do List"]
 -- global variables
 --@do-not-package@
 NysTDL_BACKDROP_INFO = {
-  bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
-  edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-  tile = false, tileSize = 1, edgeSize = 10,
-  insets = { left = 0, right = 0, top = 0, bottom = 0 }
+	bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+	edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+	tile = false, tileSize = 1, edgeSize = 10,
+	insets = { left = 0, right = 0, top = 0, bottom = 0 }
 }
 --@end-do-not-package@
 
@@ -129,8 +155,8 @@ function NysTDL:OnInitialize()
 
     -- checking for an addon update
     if NysTDL.db.global.addonUpdated then
-      self:AddonUpdated()
-      NysTDL.db.global.addonUpdated = false
+		self:AddonUpdated()
+		NysTDL.db.global.addonUpdated = false
     end
 
     local hex = utils:RGBToHex(database.themes.theme2)
@@ -139,5 +165,5 @@ function NysTDL:OnInitialize()
 end
 
 function NysTDL:AddonUpdated()
-  -- called once, when the addon gets an update
+	-- called once, when the addon gets an update
 end

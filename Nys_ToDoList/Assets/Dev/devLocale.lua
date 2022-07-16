@@ -7,7 +7,7 @@ addonTable.devLocale = L
 --[[
     LOCALES RULES:
         - try to always set the first char as a maj, and lower/upper the string later in the code
-        - remove all ending ponctuations like ".", ":", ";", "!", as well as parentheses when it englobes the whole locale -- add it in the code
+        - remove all ending ponctuations like ".", ":", ";", as well as parentheses when it englobes the whole locale -- add it in the code
         - for locales with some text in parentheses, take out that text and set it as a locale on its own, while removing the parentheses -- bind them in the code
         - try to be as generic as possible, so that some locales are reusable in multiple locations
 
@@ -17,6 +17,8 @@ addonTable.devLocale = L
 
 -- "방탄소년단" test locale (:D)
 
+L["Descriptions tooltip"] = true
+L["Show the description in a tooltip when hovering the icon"] = true
 L["Click to copy"] = true
 L["No"] = true
 L["Yes"] = true
@@ -205,7 +207,6 @@ L["Thursday"] = true
 L["To add new items to existing categories, just right-click the category names"] = true
 L["To toggle the list, you have several ways"] = true
 L["Toggle the list"] = true
-L["Toggles the display of the minimap button"] = true
 L["Toggles the display of the %s button"] = true
 L["You can write up to %i characters"] = true
 L["toggle"] = true -- command

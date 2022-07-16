@@ -30,6 +30,7 @@ database.themes = {
   black = { 0, 0, 0 },
   red = { 255, 0, 0 },
   yellow = { 255, 180, 0 },
+  green = { 0, 255, 0 },
 }
 
 -- AceDB defaults table
@@ -113,9 +114,10 @@ database.defaults = {
     highlightOnFocus = true,
     keepOpen = false,
     openByDefault = false,
+    descriptionTooltip = true,
 
     --'Tabs' tab
-    instantRefresh = false, -- profile dependant
+    instantRefresh = false, -- profile-wide
 
     --'Chat Messages' tab
     showChatMessages = true,
