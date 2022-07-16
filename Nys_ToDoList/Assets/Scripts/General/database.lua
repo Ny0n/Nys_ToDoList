@@ -114,9 +114,10 @@ database.defaults = {
     highlightOnFocus = true,
     keepOpen = false,
     openByDefault = false,
+    descriptionTooltip = true,
 
     --'Tabs' tab
-    instantRefresh = false, -- profile dependant
+    instantRefresh = false, -- profile-wide
 
     --'Chat Messages' tab
     showChatMessages = true,

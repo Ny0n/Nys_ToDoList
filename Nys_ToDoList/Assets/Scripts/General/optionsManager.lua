@@ -531,19 +531,25 @@ local function createAddonOptionsTable()
                 hidden = function() return not NysTDL.db.profile.keepOpen end
               }, -- openByDefault
               rememberUndo = {
-                order = 3.7,
+                order = 3.6,
                 type = "toggle",
                 name = L["Remember undos"],
                 desc = L["Save undos between sessions"],
               }, -- rememberUndo
               highlightOnFocus = {
-                order = 3.8,
+                order = 3.5,
                 type = "toggle",
                 name = L["Highlight edit boxes"],
                 desc = L["When clicking on edit boxes, automatically highlights the text inside"],
               }, -- highlightOnFocus
-              favoritesColor = {
+              descriptionTooltip = {
                 order = 3.4,
+                type = "toggle",
+                name = L["Descriptions tooltip"],
+                desc = L["Show the description in a tooltip when hovering the icon"],
+              }, -- descriptionTooltip
+              favoritesColor = {
+                order = 3.1,
                 type = "color",
                 name = L["Favorites color"],
                 desc = L["Change the color for the favorite items"],
@@ -555,13 +561,13 @@ local function createAddonOptionsTable()
                 disabled = function() return NysTDL.db.profile.rainbow end,
               }, -- favoritesColor
               rainbow = {
-                order = 3.5,
+                order = 3.2,
                 type = "toggle",
                 name = L["Rainbow"],
                 desc = L["Too.. Many.. Colors..."],
               }, -- rainbow
               rainbowSpeed = {
-                order = 3.6,
+                order = 3.3,
                 type = "range",
                 name = L["Rainbow speed"],
                 desc = L["Because why not?"],
@@ -597,7 +603,6 @@ local function createAddonOptionsTable()
                 order = 2.1,
                 type = "toggle",
                 name = L["Show minimap button"],
-                desc = L["Toggles the display of the minimap button"],
                 get = function() return not NysTDL.db.profile.minimap.hide end,
                 set = function(_, value)
                   NysTDL.db.profile.minimap.hide = not value
@@ -649,12 +654,6 @@ local function createAddonOptionsTable()
               -- / layout widgets / --
 
               -- spacers
-              spacer111 = {
-                order = 1.31,
-                type = "description",
-                width = "full",
-                name = "",
-              }, -- spacer111
               spacer199 = {
                 order = 1.99,
                 type = "description",
@@ -679,12 +678,6 @@ local function createAddonOptionsTable()
                 width = "full",
                 name = "",
               }, -- spacer331
-              spacer361 = {
-                order = 3.61,
-                type = "description",
-                width = "full",
-                name = "",
-              }, -- spacer361
               spacer399 = {
                 order = 3.99,
                 type = "description",
