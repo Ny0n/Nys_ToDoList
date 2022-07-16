@@ -1,3 +1,9 @@
+#### **6.1**
+
+- Added an option to enable a tooltip that displays the item's description when hovering the icon (ON by default)
+- Miscellaneous changes to adapt for localizations
+- Added localization for Brazilian Portuguese (ptBR)
+
 #### **6.0.2**
 
 Reworked the addon a lot, so that I could finally add cool new features:

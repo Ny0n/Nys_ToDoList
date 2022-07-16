@@ -5,7 +5,7 @@
 #@non-retail@
 # ## Interface: 11306
 #@end-non-retail@
-## Version: 6.0.2
+## Version: 6.1
 
 ## Author: Nyony (on Twitch)
 ## Title: Ny's To-Do List WIP
