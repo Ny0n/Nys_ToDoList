@@ -165,7 +165,7 @@ function utils:SafeStringFormat(str, ...)
       if (string.find(dup, toMatch)) then
         dup = string.gsub(dup, toMatch, "", 1)
       else
-        return str.."|cffff0000 --> "..enums.translationErrMsg.."|r"
+        return str.." "..enums.translationErrMsg
       end
     end
   end

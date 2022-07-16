@@ -2,8 +2,10 @@
 local addonName, addonTable = ...
 
 -- addonTable aliases
+local core = addonTable.core
 local enums = addonTable.enums
-local L = addonTable.core.L
+
+local L = core.L
 
 -- unique enums (the value NEVER changes, but i can change the left name if i want to)
 
@@ -59,7 +61,7 @@ enums.maxQuantities = {
 	[enums.tab] = 20,
 }
 
-enums.translationErrMsg = "Translation error"
+enums.translationErrMsg = "|cffffff00".."Translation error".."|r".." ".."|cffffcc00".."("..core.Locale..")".."|r"
 
 enums.defaultResetTimeName = L["Reset"].." 1"
 

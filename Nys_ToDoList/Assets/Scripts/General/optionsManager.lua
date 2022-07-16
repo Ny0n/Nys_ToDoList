@@ -18,6 +18,8 @@ local L = core.L
 local LDB = core.LDB
 local LDBIcon = core.LDBIcon
 
+local wDef = { toggle = 160, select = 265, range = 200, execute = 180, keybinding = 200, color = 180 } -- the min width (this is for the locales)
+
 local private = {}
 
 --/*******************/ OPTIONS TABLES /*************************/--
@@ -149,6 +151,7 @@ local tabManagementTable = {
         order = 1.7,
         type = "multiselect",
         name = L["Shown tabs"],
+        width = "full",
         values = function(info)
           local originalTabID, tabData = getTabInfo(info)
           local shownIDs = {}
@@ -165,7 +168,7 @@ local tabManagementTable = {
         end,
         set = function(info, key, state)
           local tabID, tabData = getTabInfo(info)
-      		dataManager:UpdateShownTabID(tabID, key, state)
+		  dataManager:UpdateShownTabID(tabID, key, state)
         end,
       },
 
@@ -235,11 +238,23 @@ local tabManagementTable = {
         name = L["Configure reset times"],
         inline = true,
         args = {
+		  isSameEachDayToggle = {
+			order = 1.1,
+			type = "toggle",
+			name = L["Same each day"],
+			get = function(info)
+			  local _, tabData = getTabInfo(info)
+			  return tabData.reset.isSameEachDay
+			end,
+			set = function(info, state)
+			  local tabID = getTabInfo(info)
+			  resetManager:UpdateIsSameEachDay(tabID, state)
+			end,
+		  },
           configureDaySelect = {
-            order = 1.1,
+            order = 1.2,
             type = "select",
             name = L["Configure day"],
-            width = 0.9,
             values = function(info)
               local _, tabData = getTabInfo(info)
               local days = {}
@@ -264,25 +279,10 @@ local tabManagementTable = {
               return tabData.reset.isSameEachDay
             end,
           },
-          isSameEachDayToggle = {
-            order = 1.2,
-            type = "toggle",
-            name = L["Same each day"],
-            width = 0.9,
-            get = function(info)
-              local _, tabData = getTabInfo(info)
-              return tabData.reset.isSameEachDay
-            end,
-            set = function(info, state)
-              local tabID = getTabInfo(info)
-              resetManager:UpdateIsSameEachDay(tabID, state)
-            end,
-          },
           addNewResetTimeExecute = {
             order = 1.3,
             type = "execute",
             name = L["Add new reset"],
-            width = 0.9,
             func = function(info)
               local tabID, _, resetData = getTabInfo(info)
               resetManager:AddResetTime(tabID, resetData)
@@ -292,7 +292,6 @@ local tabManagementTable = {
             order = 1.4,
             type = "execute",
             name = L["Remove reset"],
-            width = 0.9,
             func = function(info)
               local tabID, tabData, resetData = getTabInfo(info)
               resetManager:RemoveResetTime(tabID, resetData, tabData.reset.configureResetTime)
@@ -306,7 +305,6 @@ local tabManagementTable = {
             order = 1.5,
             type = "select",
             name = L["Configure reset"],
-            width = 0.9,
             values = function(info)
               local _, tabData, resetData = getTabInfo(info)
               local resets = {}
@@ -331,7 +329,6 @@ local tabManagementTable = {
             order = 1.6,
             type = "input",
             name = L["Rename"],
-            width = 0.9,
             get = function(info)
               local _, tabData = getTabInfo(info)
               return tabData.reset.configureResetTime
@@ -345,6 +342,7 @@ local tabManagementTable = {
             order = 1.7,
             type = "range",
             name = L["Hour"],
+			width = "double",
             min = 0,
             max = 23,
             step = 1,
@@ -362,6 +360,7 @@ local tabManagementTable = {
             order = 1.8,
             type = "range",
             name = L["Minute"],
+			width = "double",
             min = 0,
             max = 59,
             step = 1,
@@ -379,6 +378,7 @@ local tabManagementTable = {
             order = 1.9,
             type = "range",
             name = L["Second"],
+			width = "double",
             min = 0,
             max = 59,
             step = 1,
@@ -884,21 +884,21 @@ function optionsManager:ToggleOptions(fromFrame)
   end
 end
 
-function optionsManager:InitializeOptionsWidthRecursive(table, wDef)
-  for _,v in pairs(table) do
-    if v.type == "group" then
-      self:InitializeOptionsWidthRecursive(v.args, wDef)
-    elseif v.type ~= "description" and v.type ~= "header" then -- for every widget (except the descriptions and the headers), we keep their min normal width, we change it only if their name is bigger than the default width
-      local w = widgets:GetWidth(v.name)
-      if wDef[v.type] then
-        -- print (v.name.."_"..w)
-        w = tonumber(string.format("%.3f", w/wDef[v.type]))
-        if w > 1 then
-          v.width = w -- w is a factor
-        end
-      end
-    end
-  end
+function optionsManager:InitializeOptionsWidthRecursive(tbl, wDef)
+	for _,v in pairs(tbl) do
+		if v.type == "group" then
+			optionsManager:InitializeOptionsWidthRecursive(v.args, wDef)
+		elseif v.type ~= "description" and v.type ~= "header" then -- for every widget (except the descriptions and the headers), we keep their min normal width, we change it only if their name is bigger than the default width
+			local w = widgets:GetWidth(v.name)
+			if wDef[v.type] then
+				-- print (v.name.."_"..w)
+				w = tonumber(string.format("%.3f", w/wDef[v.type]))
+				if w > 1 then
+					v.width = w -- w is a factor
+				end
+			end
+		end
+	end
 end
 
 --/*******************/ INITIALIZATION /*************************/--
@@ -908,8 +908,9 @@ function optionsManager:Initialize()
   createAddonOptionsTable()
 
   -- this is for adapting the width of the widgets to the length of their respective names (that can change with the locale)
-  local wDef = { toggle = 160, select = 265, range = 200, keybinding = 200, color = 180 }
   optionsManager:InitializeOptionsWidthRecursive(optionsManager.optionsTable.args.main.args, wDef)
+  optionsManager:InitializeOptionsWidthRecursive(tabManagementTable, wDef)
+  optionsManager:InitializeOptionsWidthRecursive(tabAddTable, wDef)
 
   -- we register our options table for AceConfig
   LibStub("AceConfigRegistry-3.0"):ValidateOptionsTable(optionsManager.optionsTable, addonName)

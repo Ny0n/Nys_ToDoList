@@ -114,10 +114,25 @@ local function menuClick(menuEnum)
 end
 
 local function setDoubleLinePoints(lineLeft, lineRight, l, y)
+  local lineMinWidth = 5
+  local semiLength = l/2 + 10
+
+  if semiLength + lineMinWidth >= lineOffset then
+    lineLeft:Hide()
+    lineRight:Hide()
+    return
+  end
+
   lineLeft:SetStartPoint("TOPLEFT", centerXOffset-lineOffset, y)
   lineLeft:SetEndPoint("TOPLEFT", centerXOffset-l/2 - 10, y)
   lineRight:SetStartPoint("TOPLEFT", centerXOffset+l/2 + 10, y)
   lineRight:SetEndPoint("TOPLEFT", centerXOffset+lineOffset, y)
+  lineLeft:Show()
+  lineRight:Show()
+end
+
+local function subMenuNameFormat(name)
+	return "/ " .. (name or "") .. " \\"
 end
 
 -- // General functions
@@ -200,8 +215,27 @@ function mainFrame:UpdateRemainingNumberLabels()
 
   -- we update the numbers of remaining things to do in total for the current tab
   local numbers = dataManager:GetRemainingNumbers(nil, tabID)
-  tdlFrame.content.remainingNumber:SetText((numbers.totalUnchecked > 0 and "|cffffffff" or "|cff00ff00")..numbers.totalUnchecked.."|r")
-  tdlFrame.content.remainingFavsNumber:SetText(numbers.uncheckedFav > 0 and "("..numbers.uncheckedFav..")" or "")
+  local remainingNumberText = (numbers.totalUnchecked > 0 and "|cffffffff" or "|cff00ff00")..numbers.totalUnchecked.."|r"
+  tdlFrame.content.remainingNumber:SetText(remainingNumberText)
+  local remainingFavsNumber = numbers.uncheckedFav > 0 and "("..numbers.uncheckedFav..")" or ""
+  tdlFrame.content.remainingFavsNumber:SetText(remainingFavsNumber)
+
+  -- now we check the length of the whole "Remaining: x (x)" text,
+  -- and we scale it down if it's too long, to maxWidth.
+  -- (this is mainly to adapt for locales that are bigger than english)
+  local maxWidth = 150
+
+  local full = tdlFrame.content.remaining:GetText() .. " " .. remainingNumberText .. (#remainingFavsNumber > 0 and " "..remainingFavsNumber or "")
+  local width = widgets:GetWidth(full, "GameFontNormalLarge")
+
+  local scale = 1
+  if width > maxWidth then
+    scale = maxWidth/width
+  end
+
+  tdlFrame.content.remaining:SetTextScale(scale)
+  tdlFrame.content.remainingNumber:SetTextScale(scale)
+  tdlFrame.content.remainingFavsNumber:SetTextScale(scale)
 
   -- we update the remaining numbers of every category in the tab
   for catID,catData in dataManager:ForEach(enums.category, tabID) do
@@ -769,7 +803,7 @@ local function generateMenuAddACategory()
   --/************************************************/--
 
   -- title
-  menuframe.menuTitle = widgets:NoPointsLabel(menuframe, nil, string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), "/ "..L["Add a category"].." \\"))
+  menuframe.menuTitle = widgets:NoPointsLabel(menuframe, nil, string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), subMenuNameFormat(L["Add a category"])))
   menuframe.menuTitle:SetPoint("CENTER", menuframe, "TOPLEFT", centerXOffset, 0)
   -- left/right lines
   menuframe.menuTitleLL = widgets:ThemeLine(menuframe, database.themes.theme, 0.7)
@@ -973,7 +1007,7 @@ local function generateMenuFrameOptions()
   --/************************************************/--
 
   -- title
-  menuframe.menuTitle = widgets:NoPointsLabel(menuframe, nil, string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), "/ "..L["Frame options"].." \\"))
+  menuframe.menuTitle = widgets:NoPointsLabel(menuframe, nil, string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), subMenuNameFormat(L["Frame options"])))
   menuframe.menuTitle:SetPoint("CENTER", menuframe, "TOPLEFT", centerXOffset, 0)
   -- left/right lines
   menuframe.menuTitleLL = widgets:ThemeLine(menuframe, database.themes.theme, 0.7)
@@ -1059,7 +1093,7 @@ local function generateMenuTabActions()
   --/************************************************/--
 
   -- title
-  menuframe.menuTitle = widgets:NoPointsLabel(menuframe, nil, string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), "/ "..L["Tab actions"].." \\"))
+  menuframe.menuTitle = widgets:NoPointsLabel(menuframe, nil, string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), subMenuNameFormat(L["Tab actions"])))
   menuframe.menuTitle:SetPoint("CENTER", menuframe, "TOPLEFT", centerXOffset, 0)
   -- left/right lines
   menuframe.menuTitleLL = widgets:ThemeLine(menuframe, database.themes.theme, 0.7)
@@ -1109,7 +1143,7 @@ local function generateFrameContent()
 
     -- remaining numbers labels
     content.remaining = widgets:NoPointsLabel(content, nil, L["Remaining"]..":")
-    content.remaining:SetPoint("TOPLEFT", content.title, "TOP", -140, -32)
+    content.remaining:SetPoint("LEFT", content.title, "TOP", -140, -40)
     content.remaining:SetFontObject("GameFontNormalLarge")
     content.remainingNumber = widgets:NoPointsLabel(content, nil, "...")
     content.remainingNumber:SetPoint("LEFT", content.remaining, "RIGHT", 3, 0)
@@ -1120,7 +1154,7 @@ local function generateFrameContent()
 
     -- help button
     content.helpButton = widgets:HelpButton(content)
-    content.helpButton:SetPoint("TOPRIGHT", content.title, "TOP", 140, -25)
+    content.helpButton:SetPoint("RIGHT", content.title, "TOP", 140, -40)
     content.helpButton:SetScript("OnClick", function()
         SlashCmdList.NysTDL(L["info"])
         tutorialsManager:Validate("TM_introduction_getMoreInfo")

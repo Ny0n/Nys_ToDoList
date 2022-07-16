@@ -7,7 +7,7 @@ addonTable.devLocale = L
 --[[
     LOCALES RULES:
         - try to always set the first char as a maj, and lower/upper the string later in the code
-        - remove all ending ponctuations like ".", ":", ";", "!", as well as parentheses when it englobes the whole locale -- add it in the code
+        - remove all ending ponctuations like ".", ":", ";", as well as parentheses when it englobes the whole locale -- add it in the code
         - for locales with some text in parentheses, take out that text and set it as a locale on its own, while removing the parentheses -- bind them in the code
         - try to be as generic as possible, so that some locales are reusable in multiple locations
 

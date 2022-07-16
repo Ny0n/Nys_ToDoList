@@ -342,10 +342,15 @@ end
 function widgets:GetWidth(text, font)
   -- not the length (#) of a string, but the width it takes when placed on the screen as a font string
   local l = widgets:NoPointsLabel(UIParent, nil, text)
+
   if font then
     l:SetFontObject(font)
   end
-  return l:GetWidth()
+
+  local width = l:GetWidth()
+  l:Hide()
+
+  return width
 end
 
 function widgets:SetHyperlinksEnabled(frame, enabled)
