@@ -545,8 +545,8 @@ local function createAddonOptionsTable()
               descriptionTooltip = {
                 order = 3.4,
                 type = "toggle",
-                name = L["Descriptions tooltip"],
-                desc = L["Show the description in a tooltip when hovering the icon"],
+                name = L["Description tooltip"],
+                desc = L["Show the item's description in a tooltip when hovering the icon"],
               }, -- descriptionTooltip
               favoritesColor = {
                 order = 3.1,

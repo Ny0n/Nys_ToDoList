@@ -17,8 +17,8 @@ addonTable.devLocale = L
 
 -- "방탄소년단" test locale (:D)
 
-L["Descriptions tooltip"] = true
-L["Show the description in a tooltip when hovering the icon"] = true
+L["Description tooltip"] = true
+L["Show the item's description in a tooltip when hovering the icon"] = true
 L["Click to copy"] = true
 L["No"] = true
 L["Yes"] = true

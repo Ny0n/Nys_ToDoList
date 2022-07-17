@@ -110,6 +110,7 @@ core.toc.version = GetAddOnMetadata(addonName, "Version")
 -- Variables
 local L = core.L
 core.loaded = false
+core.addonUpdated = false
 core.slashCommand = "/tdl"
 core.simpleAddonName = string.gsub(core.toc.title, "Ny's ", "")
 
@@ -153,17 +154,31 @@ function NysTDL:OnInitialize()
 
     -- // addon fully loaded!
 
-    -- checking for an addon update
-    if NysTDL.db.global.addonUpdated then
-		self:AddonUpdated()
-		NysTDL.db.global.addonUpdated = false
-    end
-
     local hex = utils:RGBToHex(database.themes.theme2)
     chat:Print(L["Addon loaded!"].." ("..string.format("|cff%s%s|r", hex, core.slashCommand.." "..L["info"])..")")
+
+    -- checking for an addon update
+    if core.addonUpdated then
+		NysTDL:AddonUpdated()
+		core.addonUpdated = false
+    end
+
     core.loaded = true
 end
 
 function NysTDL:AddonUpdated()
 	-- called once, when the addon gets an update
+
+	local changelog = {
+		-- index table (not key-value)
+	}
+
+	if type(changelog) == "table" and #changelog > 0 then
+		chat:PrintForced("New in "..core.toc.version..":")
+		for _,v in ipairs(changelog) do
+			if type(v) == "string" then
+				chat:CustomPrintForced(v, true)
+			end
+		end
+	end
 end

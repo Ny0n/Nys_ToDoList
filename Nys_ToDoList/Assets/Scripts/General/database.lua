@@ -37,7 +37,6 @@ database.themes = {
 database.defaults = {
   global = {
     -- // Version
-    addonUpdated = true, -- used to call an update func in init, only once after each addon update
     latestVersion = "", -- used to update the global saved variables once after each addon update
 
     -- // GLOBAL DATA

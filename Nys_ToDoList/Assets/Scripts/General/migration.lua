@@ -48,7 +48,7 @@ function migration:Migrate()
     if NysTDL.db.global.latestVersion ~= core.toc.version then
         private:GlobalNewVersion()
         NysTDL.db.global.latestVersion = core.toc.version
-        NysTDL.db.global.addonUpdated = true
+        core.addonUpdated = true
     end
 
     -- checking for an addon update, for the profile that was just loaded

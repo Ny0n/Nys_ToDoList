@@ -36,7 +36,8 @@ function Nys_Tests(nb, ...)
 		-- end
 		-- print(tdlFrame.fadeInfo.finishedFunc)
 	elseif nb == 3 then
-		migration:TestFunc()
+		NysTDL:AddonUpdated()
+		-- migration:TestFunc()
 		-- for tabID, tabData in dataManager:ForEach(enums.tab, false) do
 		--   if next(tabData.reset.days) then
 		--     print(">================<")
