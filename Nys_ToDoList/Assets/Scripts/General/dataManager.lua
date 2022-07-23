@@ -1408,11 +1408,9 @@ function dataManager:DeleteCheckedItems(tabID)
 
 	local nbToUndo = 0
 	for itemID,itemData in pairs(T_DeleteCheckedItems) do -- for each item in the tab
-		itemData.checked = false -- so that if we undo it, it doesn't get deleted right away
 		if dataManager:DeleteItem(itemID) then
 			nbToUndo = nbToUndo + 1
-		else
-			itemData.checked = true
+			itemData.checked = false -- so that if we undo it, it doesn't get deleted right away
 		end
 	end
 
