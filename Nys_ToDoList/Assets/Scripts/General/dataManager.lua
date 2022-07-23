@@ -15,7 +15,7 @@ local resetManager = addonTable.resetManager
 -- this file can only call mainFrame funcs if it is specifically authorized to do so,
 -- it's to counter the fact that for some database updates
 -- (var migration, profile change, default tabs creation...)
--- i have to call funcs here before the list is created
+-- I have to call funcs here before the list is created
 
 dataManager.authorized = true
 local refreshAuthorized = true

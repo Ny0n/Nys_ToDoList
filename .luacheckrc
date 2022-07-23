@@ -43,6 +43,8 @@ globals = {
 	"bit",
 
 	-- FrameXML misc
+	"ChatFrame_OnHyperlinkShow",
+	"ChatFrame1",
 	"PanelTemplates_GetTabWidth",
 	"PanelTemplates_SetNumTabs",
 	"PanelTemplates_SetTab",
