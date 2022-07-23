@@ -42,6 +42,9 @@ globals = {
 	"bit",
 
 	-- FrameXML misc
+	"InterfaceOptionsFrame",
+	"InterfaceOptionsFrameAddOns",
+	"InterfaceOptionsFrame_OpenToCategory",
 	"BackdropTemplateMixin",
 	"C_Timer",
 	"ChatFrame_AddMessageEventFilter",
