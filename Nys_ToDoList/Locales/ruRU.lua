@@ -10,6 +10,6 @@ if not L then return end
 --@do-not-package@
 local addonTable = (select(2, ...))
 for k, v in pairs(addonTable.devLocale) do
-  L[k] = v
+	L[k] = v
 end
 --@end-do-not-package@

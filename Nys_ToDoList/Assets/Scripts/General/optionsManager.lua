@@ -15,8 +15,6 @@ local optionsManager = addonTable.optionsManager
 
 -- Variables
 local L = core.L
-local LDB = core.LDB
-local LDBIcon = core.LDBIcon
 
 local wDef = { toggle = 160, select = 265, range = 200, execute = 180, keybinding = 200, color = 180 } -- the min width (this is for the locales)
 
@@ -99,10 +97,10 @@ local tabManagementTable = {
 				type = "toggle",
 				name = L["Instant refresh"],
 				desc = L["Delete/Hide items instantly when checking them"].."\n("..L["Applies to all tabs"]..")",
-				get = function(info)
+				get = function()
 					return NysTDL.db.profile.instantRefresh
 				end,
-				set = function(info, state)
+				set = function(_, state)
 					NysTDL.db.profile.instantRefresh = state
 					mainFrame:Refresh()
 				end,
@@ -157,7 +155,7 @@ local tabManagementTable = {
 				name = L["Shown tabs"],
 				width = "full",
 				values = function(info)
-					local originalTabID, tabData = getTabInfo(info)
+					local originalTabID = getTabInfo(info)
 					local shownIDs = {}
 					for tabID,tabData in dataManager:ForEach(enums.tab, getLeaf(info, 3).arg) do
 						if tabID ~= originalTabID then
@@ -167,11 +165,11 @@ local tabManagementTable = {
 					return shownIDs
 				end,
 				get = function(info, key)
-					local tabID, tabData = getTabInfo(info)
+					local _, tabData = getTabInfo(info)
 					return not not tabData.shownIDs[key]
 				end,
 				set = function(info, key, state)
-					local tabID, tabData = getTabInfo(info)
+					local tabID = getTabInfo(info)
 					dataManager:UpdateShownTabID(tabID, key, state)
 				end,
 			},
@@ -224,7 +222,7 @@ local tabManagementTable = {
 				type = "multiselect",
 				name = L["Reset days"],
 				width = "full",
-				values = function(info)
+				values = function()
 					return enums.days
 				end,
 				get = function(info, key)
@@ -444,7 +442,7 @@ local tabAddTable = {
 		order = 1.1,
 		type = "input",
 		name = L["Create a new tab"],
-		get = function(info)
+		get = function()
 			return ""
 		end,
 		set = function(info, tabName)
@@ -562,7 +560,7 @@ local function createAddonOptionsTable()
 								get = function()
 									return unpack(NysTDL.db.profile.favoritesColor)
 								end,
-								set = function(info, ...)
+								set = function(_, ...)
 									NysTDL.db.profile.favoritesColor = { ... }
 									mainFrame:UpdateVisuals()
 								end,
@@ -594,7 +592,7 @@ local function createAddonOptionsTable()
 								get = function()
 									return NysTDL.db.profile.tdlButton.show
 								end,
-								set = function(info, value)
+								set = function(_, value)
 									NysTDL.db.profile.tdlButton.show = value
 									widgets:RefreshTDLButton()
 								end,
@@ -607,7 +605,7 @@ local function createAddonOptionsTable()
 								get = function()
 									return NysTDL.db.profile.tdlButton.red
 								end,
-								set = function(info, value)
+								set = function(_, value)
 									NysTDL.db.profile.tdlButton.red = value
 									widgets:UpdateTDLButtonColor()
 								end,
@@ -651,7 +649,7 @@ local function createAddonOptionsTable()
 								get = function()
 									return GetBindingKey("NysTDL")
 								end,
-								set = function(info, newKey)
+								set = function(_, newKey)
 									-- we only want one key to be ever bound to this
 									local key1, key2 = GetBindingKey("NysTDL") -- so first we get both keys associated to thsi addon (in case there are)
 									-- then we delete their binding from this addon (we clear every binding from this addon)
