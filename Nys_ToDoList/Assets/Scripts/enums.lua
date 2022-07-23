@@ -14,21 +14,21 @@ enums.category = "ENUMS_CATEGORY" -- category type enum
 enums.tab = "ENUMS_TAB" -- tab type enum
 
 enums.menus = {
-  addcat = "ENUMS_MENUS_1", -- addcat menu
-  frameopt = "ENUMS_MENUS_2", -- frameopt menu
-  tabact = "ENUMS_MENUS_3", -- tabactions menu
+	addcat = "ENUMS_MENUS_1", -- addcat menu
+	frameopt = "ENUMS_MENUS_2", -- frameopt menu
+	tabact = "ENUMS_MENUS_3", -- tabactions menu
 }
 
 enums.databrokerModes = {
-  simple = "ENUMS_DATABROKERMODES_1", -- simple databroker mode
-  advanced = "ENUMS_DATABROKERMODES_2", -- advanced databroker mode
-  frame = "ENUMS_DATABROKERMODES_3", -- frame databroker mode
+	simple = "ENUMS_DATABROKERMODES_1", -- simple databroker mode
+	advanced = "ENUMS_DATABROKERMODES_2", -- advanced databroker mode
+	frame = "ENUMS_DATABROKERMODES_3", -- frame databroker mode
 }
 
 enums.mainTabs = {
-  all = "All",
-  daily = "Daily",
-  weekly = "Weekly",
+	all = "All",
+	daily = "Daily",
+	weekly = "Weekly",
 }
 
 -- pure data (see those as global variables accessible by any file, but not global)
@@ -66,13 +66,13 @@ enums.translationErrMsg = "|cffffff00".."Translation error".."|r".." ".."|cffffc
 enums.defaultResetTimeName = L["Reset"].." 1"
 
 enums.days = {
-  [2] = L["Monday"],
-  [3] = L["Tuesday"],
-  [4] = L["Wednesday"],
-  [5] = L["Thursday"],
-  [6] = L["Friday"],
-  [7] = L["Saturday"],
-  [1] = L["Sunday"],
+	[2] = L["Monday"],
+	[3] = L["Tuesday"],
+	[4] = L["Wednesday"],
+	[5] = L["Thursday"],
+	[6] = L["Friday"],
+	[7] = L["Saturday"],
+	[1] = L["Sunday"],
 }
 
 -- dynamic values (still, accessible by all files)
