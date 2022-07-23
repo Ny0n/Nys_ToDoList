@@ -10,7 +10,6 @@ local widgets = addonTable.widgets
 local database = addonTable.database
 local dataManager = addonTable.dataManager
 local resetManager = addonTable.resetManager
-local optionsManager = addonTable.optionsManager
 
 -- the access to mainFrame is controlled:
 -- this file can only call mainFrame funcs if it is specifically authorized to do so,
@@ -27,16 +26,16 @@ local mainFrame = setmetatable({}, {
 	__index = function(t,k)
 		if not dataManager.authorized then return dummyFunc end
 		if not refreshAuthorized and k == "Refresh" then return dummyFunc end
-    return _mainFrame[k] -- access the original table
-  end,
+		return _mainFrame[k] -- access the original table
+	end,
 })
 
 local _tabsFrame = addonTable.tabsFrame
 local tabsFrame = setmetatable({}, {
 	__index = function(t,k)
 		if not dataManager.authorized then return dummyFunc end
-    return _tabsFrame[k] -- access the original table
-  end,
+		return _tabsFrame[k] -- access the original table
+	end,
 })
 
 -- Variables
@@ -47,10 +46,9 @@ local clearing = false
 
 -- // WoW & Lua APIs
 
-local wipe, unpack, select = wipe, unpack, select
+local wipe, select = wipe, select
 local type, pairs, ipairs = type, pairs, ipairs
 local tinsert, tremove = table.insert, table.remove
-local random = math.random
 
 --/*******************/ DATA MANAGMENT /*************************/--
 
@@ -256,8 +254,9 @@ function dataManager:GetQuantity(enum, isGlobal)
 	-- --> nil == global + profile
 	-- --> false == profile
 	-- --> true == global
+
 	-- if isGlobal ~= nil and type(isGlobal) ~= "boolean" then isGlobal = true end
-	--
+
 	-- local quantity = 0
 	-- for _ in dataManager:ForEach(enum, isGlobal) do
 	-- 	quantity = quantity + 1
@@ -754,7 +753,7 @@ function dataManager:MoveCategory(catID, newPos, newParentID, fromTabID, toTabID
 		catData.originalTabID = toTabID
 		dataManager:UpdateTabsDisplay(toTabID, true, catID)
 
-	 	-- we keep the closed state
+		-- we keep the closed state
 		catData.closedInTabIDs[toTabID] = catData.closedInTabIDs[fromTabID]
 		catData.closedInTabIDs[fromTabID] = nil
 
@@ -795,6 +794,7 @@ function dataManager:MoveTab(tabID, newPos)
 	tabsFrame:Refresh()
 end
 
+-- luacheck: push ignore
 function dataManager:ChangeTabGlobalState(tabID, newGlobalState)
 	local oldGlobalState, tabData = select(2, dataManager:Find(tabID))
 	-- TDLATER ChangeTabGlobalState
@@ -802,6 +802,7 @@ function dataManager:ChangeTabGlobalState(tabID, newGlobalState)
 	-- TDLATER ChangeTabGlobalState message
 	mainFrame:Refresh()
 end
+-- luacheck: pop
 
 -- // remove functions
 
@@ -843,7 +844,7 @@ function dataManager:DeleteCat(catID)
 
 	local catData, _, categoriesList = select(3, dataManager:Find(catID))
 
-  -- // we delete the category and all its related data
+	-- // we delete the category and all its related data
 
 	-- we delete everything inside the category, even sub-categories recursively
 	-- IMPORTANT: the use of a copy to iterate on is necessary, because in the loop,
@@ -870,7 +871,7 @@ function dataManager:DeleteCat(catID)
 		dataManager:UpdateTabsDisplay(catData.originalTabID, false, catID)
 
 		dataManager:AddUndo(undoData)
-	  	categoriesList[catID] = nil -- delete action
+		categoriesList[catID] = nil -- delete action
 
 		mainFrame:DeleteWidget(catID)
 
@@ -934,9 +935,9 @@ function dataManager:DeleteTab(tabID)
 		-- we update its data (pretty much the reverse actions of the Add func)
 
 		-- then we remove it from any other tab shown ID
-		for forTabID, tabData in dataManager:ForEach(enums.tab, isGlobal) do
+		for forTabID, forTabData in dataManager:ForEach(enums.tab, isGlobal) do
 			if forTabID ~= tabID then -- for every other tab
-				if tabData.shownIDs[tabID] then -- if it's showing the tab we're deleting
+				if forTabData.shownIDs[tabID] then -- if it's showing the tab we're deleting
 					dataManager:UpdateShownTabID(forTabID, tabID, false)
 				end
 			end
@@ -945,7 +946,7 @@ function dataManager:DeleteTab(tabID)
 		tremove(loc, pos)
 
 		dataManager:AddUndo(undoData)
-	  tabsList[tabID] = nil -- delete action
+		tabsList[tabID] = nil -- delete action
 
 		enums.quantities[enums.tab] = enums.quantities[enums.tab] - 1
 
@@ -979,9 +980,9 @@ function dataManager:CreateUndo(ID)
 	local enum, isGlobal, tableData = dataManager:Find(ID)
 
 	local newUndo = { -- number for clears, table for single data
-    enum = enum, -- what are we saving to undo?
-    ID = ID, -- ID
-    data = utils:Deepcopy(tableData), -- data
+		enum = enum, -- what are we saving to undo?
+		ID = ID, -- ID
+		data = utils:Deepcopy(tableData), -- data
 		isGlobal = isGlobal, -- used exclusively for tabs
 	}
 
@@ -1089,7 +1090,7 @@ function dataManager:UpdateTabsDisplay(shownTabID, modif, ID)
 	-- modif means adding/removing, modif = true --> adding, modif = false/nil --> removing
 	-- ID is for only updating one specific ID (itemID.tabIDs or catID.tabIDs), instead of going through everything
 	if modif == false then modif = nil end
-	local enum, isGlobal, data, itemsList, categoriesList = dataManager:Find(ID or shownTabID)
+	local enum, isGlobal, data = dataManager:Find(ID or shownTabID)
 
 	for tabID,tabData in dataManager:ForEach(enums.tab, shownTabID) do -- for every tab that is showing the originalTabID
 		-- we go through every category and every item, and for each that have
@@ -1157,7 +1158,7 @@ function dataManager:Rename(ID, newName)
 end
 
 function dataManager:IsProtected(ID)
-	local enum, _, dataTable, itemsList, categoriesList, tabsList = dataManager:Find(ID)
+	local enum, _, _, _, _, tabsList = dataManager:Find(ID)
 
 	if enum == enums.item then -- item
 		-- return dataTable.favorite or dataTable.description
@@ -1307,7 +1308,7 @@ end
 function dataManager:UpdateShownTabID(tabID, shownTabID, state)
 	-- to add/remove shown IDs in tabs
 	local isGlobal1, tabData = select(2, dataManager:Find(tabID))
-	local isGlobal2, shownTabData = select(2, dataManager:Find(shownTabID))
+	local isGlobal2 = select(2, dataManager:Find(shownTabID))
 
 	if isGlobal1 ~= isGlobal2 then -- should never happen (im just being a bit too paranoid :s)
 		error("Cannot add/remove shown IDs with different global state") -- KEEP
@@ -1385,7 +1386,7 @@ function dataManager:ClearTab(tabID)
 
 	dataManager:SetRefresh(true, refreshID)
 
-	for catID,catData in dataManager:ForEach(enums.category, tabID) do -- if there are cats left
+	for _,_ in dataManager:ForEach(enums.category, tabID) do -- luacheck: ignore -- if there are cats left
 		chat:Print(L["Could not empty tab"].." ("..L["Some of its content is protected"]..")")
 		break
 	end
@@ -1488,7 +1489,7 @@ function dataManager:GetRemainingNumbers(isGlobal, tabID, catID)
 	t.totalUnchecked = 0
 
 	local location = catID or tabID or isGlobal
-	for itemID,itemData in dataManager:ForEach(enums.item, location) do -- for each item that is in the cat
+	for _,itemData in dataManager:ForEach(enums.item, location) do -- for each item that is in the cat
 		if not tabID or itemData.tabIDs[tabID] then
 			if itemData.checked then
 				t.totalChecked = t.totalChecked + 1
@@ -1537,7 +1538,7 @@ function dataManager:GetCatNumbers(catID)
 
 	local catData = select(3, dataManager:Find(catID))
 	local contentWidgets = mainFrame:GetContentWidgets() -- to avoid using dataManager:Find() for each loop item (it's just for optimization)
-	for contentOrder,contentID in ipairs(catData.orderedContentIDs) do -- for everything that is in the cat
+	for _,contentID in ipairs(catData.orderedContentIDs) do -- for everything that is in the cat
 		local widget = contentWidgets[contentID]
 		if widget.enum == enums.category then
 			t.subCats = t.subCats + 1
@@ -1569,7 +1570,7 @@ function dataManager:GetCatCheckedNumbers(catID)
 
 	local catData = select(3, dataManager:Find(catID))
 	local contentWidgets = mainFrame:GetContentWidgets() -- to avoid using dataManager:Find() for each loop item (it's just for optimization)
-	for contentOrder,contentID in ipairs(catData.orderedContentIDs) do -- for everything that is in the cat
+	for _,contentID in ipairs(catData.orderedContentIDs) do -- for everything that is in the cat
 		local widget = contentWidgets[contentID]
 		if widget.enum == enums.category then
 			local subTotal, subChecked = dataManager:GetCatCheckedNumbers(widget.catID)

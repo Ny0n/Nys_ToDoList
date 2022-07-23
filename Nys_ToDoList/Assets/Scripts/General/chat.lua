@@ -1,5 +1,5 @@
 -- Namespaces
-local _, addonTable = ...
+local addonName, addonTable = ...
 
 -- addonTable aliases
 local core = addonTable.core
@@ -99,7 +99,7 @@ function chat:Warn()
 					local total = 0
 
 					local maxTime = time() + 86400
-					dataManager:DoIfFoundTabMatch(maxTime, "totalUnchecked", function(tabID, tabData) -- luacheck: ignore
+					dataManager:DoIfFoundTabMatch(maxTime, "totalUnchecked", function(tabID, tabData)
 						local nb = dataManager:GetRemainingNumbers(nil, tabID).totalUnchecked
 						total = total + nb
 					end, true)

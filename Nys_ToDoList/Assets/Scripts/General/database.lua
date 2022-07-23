@@ -172,7 +172,7 @@ function database:DBInit()
 	dataManager.authorized = true
 end
 
-function database:ProfileChanged(_, profile) -- luacheck: ignore
+function database:ProfileChanged(_, profile)
 	-- // here we update (basically in the same order as the core init) everything
 	-- that needs an update after a database change
 

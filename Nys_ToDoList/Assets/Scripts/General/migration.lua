@@ -1,5 +1,5 @@
 -- Namespaces
-local _, addonTable = ...
+local addonName, addonTable = ...
 
 -- addonTable aliases
 local core = addonTable.core
