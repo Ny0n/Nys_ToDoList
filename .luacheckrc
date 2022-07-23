@@ -31,7 +31,7 @@ globals = {
 	"ToDoListSV_checkedButtons",
 	"ToDoListSV_autoReset",
 	"ToDoListSV_lastLoadedTab",
-	
+
 	-- Libs globals
 	"LibStub",
 

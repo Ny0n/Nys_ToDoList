@@ -1,3 +1,5 @@
+-- luacheck: ignore 111 211 212
+
 -- Namespaces
 local addonName, addonTable = ...
 
