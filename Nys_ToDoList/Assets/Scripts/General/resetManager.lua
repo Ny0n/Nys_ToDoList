@@ -2,7 +2,7 @@
 local addonName, addonTable = ...
 
 -- addonTable aliases
-local core = addonTable.core
+local libs = addonTable.libs
 local chat = addonTable.chat
 local utils = addonTable.utils
 local enums = addonTable.enums
@@ -10,7 +10,8 @@ local dataManager = addonTable.dataManager
 local resetManager = addonTable.resetManager
 
 -- Variables
-local L = core.L
+local L = libs.L
+local AceTimer = libs.AceTimer
 local private = {}
 
 local autoResetedThisSession = false
@@ -293,7 +294,7 @@ function private:StartNextTimers(tabID)
 	-- as well as removing the content of the saved tab data (nextResetTimes), since we're gonna refill it anyways
 	if type(activeTimerIDs[tabID]) ~= "table" then activeTimerIDs[tabID] = {} end -- local var init
 	for _,timerID in pairs(activeTimerIDs[tabID]) do
-		NysTDL:CancelTimer(timerID)
+		AceTimer:CancelTimer(timerID)
 	end
 	wipe(activeTimerIDs[tabID])
 	wipe(nextResetTimes)
@@ -335,11 +336,11 @@ end
 
 function private:StartTimer(tabID, currentTime, secondsUntil)
 	-- IMPORTANT this func will never be called with secondsUntil == 0, it's at least 1 sec
-	-- (i'm doing specific verifications for this at the places i'm calling this func)
+	-- (I'm doing specific verifications for this at the places I'm calling this func)
 	-- this means that we can't start a timer that will instantly finish, it will either find an other one (the next one) or make it loop one week
 
 	local timerResetID = dataManager:NewID()
-	local timerID = NysTDL:ScheduleTimer("Timer_ResetTab", secondsUntil, tabID, timerResetID)
+	local timerID = AceTimer:ScheduleTimer("Timer_ResetTab", secondsUntil, tabID, timerResetID)
 	activeTimerIDs[tabID][timerResetID] = timerID -- we keep track of the timerIDs
 
 	-- and we keep track of the targeted time of the timer,
@@ -349,7 +350,7 @@ function private:StartTimer(tabID, currentTime, secondsUntil)
 	tabData.reset.nextResetTimes[timerResetID] = targetTime
 end
 
-function NysTDL:Timer_ResetTab(tabID, timerResetID)
+function AceTimer:Timer_ResetTab(tabID, timerResetID)
 	-- auto reset function, called by timers
 	-- (there are some checks to make sure that the func was indeed called by timers, and not by the player in-game)
 	if not tabID or not timerResetID then return end
@@ -381,7 +382,7 @@ function resetManager:Initialize(profileChanged)
 		-- so we cancel every timer we had started, without removing the saved var data in each tab
 		for _,timerIDs in pairs(activeTimerIDs) do
 			for _,timerID in pairs(timerIDs) do
-				NysTDL:CancelTimer(timerID)
+				AceTimer:CancelTimer(timerID)
 			end
 		end
 		wipe(activeTimerIDs)
@@ -434,9 +435,9 @@ function resetManager:InitTabData(tabData)
 end
 
 function private:RelinkIsSameEachDay(tabData)
-	-- this is necessary because for this feature i'm using refs with tables
+	-- this is necessary because for this feature I'm using refs with tables
 	-- and since it's saved in the saved variables files at the end of the day,
-	-- the refs dissapear, so i'm relinking them at addon reload here
+	-- the refs dissapear, so I'm relinking them at addon reload here
 	local reset = tabData.reset
 	if not reset.isSameEachDay then return end
 

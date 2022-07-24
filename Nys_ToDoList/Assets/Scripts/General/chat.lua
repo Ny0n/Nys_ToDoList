@@ -2,6 +2,7 @@
 local addonName, addonTable = ...
 
 -- addonTable aliases
+local libs = addonTable.libs
 local core = addonTable.core
 local chat = addonTable.chat
 local enums = addonTable.enums
@@ -13,12 +14,12 @@ local resetManager = addonTable.resetManager
 local tutorialsManager = addonTable.tutorialsManager
 
 -- Variables
-local L = core.L
+local L = libs.L
 
 --/*******************/ CHAT RELATED FUNCTIONS /*************************/--
 
 function chat:Print(...)
-	if not NysTDL.db.profile.showChatMessages then return end -- we don't print anything if the user chose to deactivate this
+	if not database.acedb.profile.showChatMessages then return end -- we don't print anything if the user chose to deactivate this
 	self:PrintForced(...)
 end
 
@@ -64,12 +65,12 @@ end
 
 -- Warning function
 function chat:Warn()
-	if NysTDL.db.profile.showWarnings then -- if the option is checked
+	if database.acedb.profile.showWarnings then -- if the option is checked
 		if not resetManager:autoResetedThisSessionGET() then -- we don't want to show this warning if it's the first log in of the day, only if it is the next ones
 			local haveWarned = false
 			local warn = "--------------| |cffff0000"..L["Warning"]:upper().."|r |--------------"
 
-			if NysTDL.db.profile.favoritesWarning then -- and the user allowed this functionnality
+			if database.acedb.profile.favoritesWarning then -- and the user allowed this functionnality
 				local uncheckedFav = dataManager:GetRemainingNumbers().uncheckedFav
 				if uncheckedFav > 0 then
 					local msg = ""
@@ -85,7 +86,7 @@ function chat:Warn()
 					end, true)
 
 					if msg ~= "" then
-						local hex = utils:RGBToHex({ NysTDL.db.profile.favoritesColor[1]*255, NysTDL.db.profile.favoritesColor[2]*255, NysTDL.db.profile.favoritesColor[3]*255} )
+						local hex = utils:RGBToHex({ database.acedb.profile.favoritesColor[1]*255, database.acedb.profile.favoritesColor[2]*255, database.acedb.profile.favoritesColor[3]*255} )
 						msg = string.format("|cff%s%s|r", hex, msg)
 						if not haveWarned then chat:PrintForced(warn) haveWarned = true end
 						chat:PrintForced(utils:SafeStringFormat(L["You still have %s favorite item(s) to do before the next reset"]..".", msg))
@@ -93,7 +94,7 @@ function chat:Warn()
 				end
 			end
 
-			if NysTDL.db.profile.normalWarning then
+			if database.acedb.profile.normalWarning then
 				local totalUnchecked = dataManager:GetRemainingNumbers().totalUnchecked
 				if totalUnchecked > 0 then
 					local total = 0
@@ -111,7 +112,7 @@ function chat:Warn()
 				end
 			end
 
-			-- -- TDLATER maybe also do this if i ever want to redo this system
+			-- -- TDLATER maybe also do this if I ever want to redo this system
 			-- if haveWarned then
 			-- 	local timeUntil = resetManager:GetTimeUntilReset()
 			-- 	local msg = utils:SafeStringFormat(L["Time remaining: %i hours %i min"], timeUntil.hour, timeUntil.min + 1)
@@ -123,7 +124,8 @@ end
 
 --/*******************/ CHAT COMMANDS /*************************/--
 
--- Commands:
+chat.slashCommand = "/tdl"
+
 chat.commands = {
 	[""] = function()
 		mainFrame:Toggle()
@@ -131,7 +133,7 @@ chat.commands = {
 
 	[L["info"]] = function()
 		local hex = utils:RGBToHex(database.themes.theme2)
-		local slashCommand = core.slashCommand..' '
+		local slashCommand = chat.slashCommand..' '
 
 		local str = L["Here are a few commands to help you"]..":\n"
 
@@ -157,7 +159,7 @@ chat.commands = {
 		chat:CustomPrintForced(L["To toggle the list, you have several ways"]..":")
 		chat:CustomPrintForced("- "..L["A minimap button"].." ("..L["Enabled by default"]..")", true)
 		chat:CustomPrintForced("- "..utils:SafeStringFormat(L["A movable %s button"], "\""..core.simpleAddonName.."\""), true)
-		chat:CustomPrintForced("- "..utils:SafeStringFormat(L["The %s command"], "\""..core.slashCommand.."\""), true)
+		chat:CustomPrintForced("- "..utils:SafeStringFormat(L["The %s command"], "\""..chat.slashCommand.."\""), true)
 		chat:CustomPrintForced("- "..L["Databroker plugin (e.g. Titan Panel)"], true)
 		chat:CustomPrintForced("- "..L["Key binding"], true)
 		chat:CustomPrintForced(L["You can go to the addon options in the game's interface settings to customize this"]..".", true)
@@ -205,7 +207,7 @@ chat.commands = {
 	end,
 }
 
--- Command catcher:
+-- Command catcher
 function chat.HandleSlashCommands(str)
 	local path = chat.commands -- alias
 
@@ -242,3 +244,9 @@ function chat.HandleSlashCommands(str)
 		end
 	end
 end
+
+--/*******************/ INITIALIZATION /*************************/--
+
+-- Register new Slash Commands
+SLASH_NysTDL1 = chat.slashCommand
+SlashCmdList.NysTDL = chat.HandleSlashCommands

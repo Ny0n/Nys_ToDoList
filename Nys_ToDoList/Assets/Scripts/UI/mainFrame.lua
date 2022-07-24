@@ -2,6 +2,7 @@
 local addonName, addonTable = ...
 
 -- addonTable aliases
+local libs = addonTable.libs
 local core = addonTable.core
 local enums = addonTable.enums
 local utils = addonTable.utils
@@ -16,8 +17,8 @@ local tutorialsManager = addonTable.tutorialsManager
 
 -- // Variables
 
-local L = core.L
--- local LDD = core.LDD
+local L = libs.L
+-- local LDD = libs.LDD
 
 -- THE frame
 mainFrame.tdlFrame = CreateFrame("Frame", nil, UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil)
@@ -161,7 +162,7 @@ function mainFrame:IsVisible(frame, margin)
 	-- UNUSED FUNC (not really optimized)
 
 	-- returns true if the frame is visible in the tdlFrame
-	-- (not :IsVisible(), i'm talking about wether it's currently visible in the scroll frame, or hidden because of SetClipsChildren)
+	-- (not :IsVisible(), I'm talking about wether it's currently visible in the scroll frame, or hidden because of SetClipsChildren)
 	margin = margin or 0
 
 	local listScale = tdlFrame:GetEffectiveScale()
@@ -259,10 +260,10 @@ end
 
 function mainFrame:updateFavsRemainingNumbersColor()
 	-- this updates the favorite color for every favorites remaining number label
-	tdlFrame.content.remainingFavsNumber:SetTextColor(unpack(NysTDL.db.profile.favoritesColor))
+	tdlFrame.content.remainingFavsNumber:SetTextColor(unpack(database.acedb.profile.favoritesColor))
 	for _, contentWidget in pairs(contentWidgets) do
 		if contentWidget.enum == enums.category then -- for every category widgets
-			contentWidget.favsRemainingLabel:SetTextColor(unpack(NysTDL.db.profile.favoritesColor))
+			contentWidget.favsRemainingLabel:SetTextColor(unpack(database.acedb.profile.favoritesColor))
 		end
 	end
 end
@@ -275,7 +276,7 @@ function mainFrame:UpdateItemNamesColor()
 				contentWidget.interactiveLabel.Text:SetTextColor(0, 1, 0) -- green
 			else
 				if contentWidget.itemData.favorite then
-					contentWidget.interactiveLabel.Text:SetTextColor(unpack(NysTDL.db.profile.favoritesColor)) -- colored
+					contentWidget.interactiveLabel.Text:SetTextColor(unpack(database.acedb.profile.favoritesColor)) -- colored
 				else
 					contentWidget.interactiveLabel.Text:SetTextColor(unpack(utils:ThemeDownTo01(database.themes.theme_yellow))) -- yellow
 					-- contentWidget.interactiveLabel.Text:SetTextColor(1, 1, 1) -- white
@@ -303,12 +304,12 @@ function mainFrame:UpdateCategoryNamesColor()
 end
 
 function mainFrame:ApplyNewRainbowColor()
-	-- // when called, takes the current favs color, goes to the next one i times, then updates the visual
+	-- // when called, takes the current favs color, goes to the next one 'i' times, then updates the visual
 	-- it is called by the OnUpdate event of the frame / of one of the description frames
 
-	local i = NysTDL.db.profile.rainbowSpeed
+	local i = database.acedb.profile.rainbowSpeed
 
-	local r, g, b = unpack(NysTDL.db.profile.favoritesColor)
+	local r, g, b = unpack(database.acedb.profile.favoritesColor)
 	local Cmax = math.max(r, g, b)
 	local Cmin = math.min(r, g, b)
 	local delta = Cmax - Cmin
@@ -350,7 +351,7 @@ function mainFrame:ApplyNewRainbowColor()
 	end
 
 	-- we apply the new color where it needs to be
-	NysTDL.db.profile.favoritesColor = { r, g, b }
+	database.acedb.profile.favoritesColor = { r, g, b }
 	mainFrame:updateFavsRemainingNumbersColor()
 	mainFrame:UpdateItemNamesColor()
 	widgets:UpdateDescFramesTitle()
@@ -450,7 +451,7 @@ end
 
 function mainFrame:Event_FrameAlphaSlider_OnValueChanged(value)
 	-- itemsList frame part
-	NysTDL.db.profile.frameAlpha = value
+	database.acedb.profile.frameAlpha = value
 	tdlFrame.content.menuFrames[enums.menus.frameopt].frameAlphaSliderValue:SetText(value)
 	tdlFrame:SetBackdropColor(0, 0, 0, value/100)
 	tdlFrame:SetBackdropBorderColor(1, 1, 1, value/100)
@@ -464,7 +465,7 @@ end
 
 function mainFrame:Event_FrameContentAlphaSlider_OnValueChanged(value)
 	-- itemsList frame part
-	NysTDL.db.profile.frameContentAlpha = value
+	database.acedb.profile.frameContentAlpha = value
 	tdlFrame.content.menuFrames[enums.menus.frameopt].frameContentAlphaSliderValue:SetText(value)
 	tdlFrame.content:SetAlpha(value/100) -- content
 	tdlFrame.ScrollFrame.ScrollBar:SetAlpha(value/100)
@@ -481,15 +482,15 @@ end
 function mainFrame:Event_TDLFrame_OnVisibilityUpdate()
 	-- things to do when we hide/show the list
 	menuClick() -- to close any opened menu and refresh the list
-	NysTDL.db.profile.lastListVisibility = tdlFrame:IsShown()
+	database.acedb.profile.lastListVisibility = tdlFrame:IsShown()
 	if dragndrop.dragging then dragndrop:CancelDragging() end
 	mainFrame:ToggleEditMode(false)
 end
 
 function mainFrame:Event_TDLFrame_OnSizeChanged(width, height)
 	-- saved variables
-	NysTDL.db.profile.frameSize.width = width
-	NysTDL.db.profile.frameSize.height = height
+	database.acedb.profile.frameSize.width = width
+	database.acedb.profile.frameSize.height = height
 
 	-- scaling
 	local scale = width/enums.tdlFrameDefaultWidth
@@ -708,7 +709,7 @@ end
 
 function mainFrame:DontRefreshNextTime(nb)
 	-- // this func's sole purpose is optimization:
-	-- ex: i sometimes only need to refresh the list one time after 10 operations instead of 10 times
+	-- ex: I sometimes only need to refresh the list one time after 10 operations instead of 10 times
 	if type(nb) ~= "number" then
 		nb = 1
 	end
@@ -780,9 +781,9 @@ local function generateMenuAddACategory()
 	menuframe.categoryEditBox:SetScript("OnEnterPressed", addCat) -- if we press enter, it's like we clicked on the add button
 	menuframe.categoryEditBox:HookScript("OnEditFocusGained", function(self)
 		-- since this edit box stays there, even when we lose the focus,
-		-- i have to reapply the highlight depending on the SV
+		-- I have to reapply the highlight depending on the SV
 		-- when clicking on it
-		if NysTDL.db.profile.highlightOnFocus then
+		if database.acedb.profile.highlightOnFocus then
 			self:HighlightText()
 		else
 			self:HighlightText(self:GetCursorPosition(), self:GetCursorPosition())
@@ -818,7 +819,7 @@ local function generateMenuFrameOptions()
 	-- menuframe.frameAlphaSlider:SetOrientation('HORIZONTAL')
 
 	menuframe.frameAlphaSlider:SetMinMaxValues(0, 100)
-	menuframe.frameAlphaSlider:SetValue(NysTDL.db.profile.frameAlpha)
+	menuframe.frameAlphaSlider:SetValue(database.acedb.profile.frameAlpha)
 	menuframe.frameAlphaSlider:SetValueStep(1)
 	menuframe.frameAlphaSlider:SetObeyStepOnDrag(true)
 
@@ -842,7 +843,7 @@ local function generateMenuFrameOptions()
 	-- menuframe.frameContentAlphaSlider:SetOrientation('HORIZONTAL')
 
 	menuframe.frameContentAlphaSlider:SetMinMaxValues(60, 100)
-	menuframe.frameContentAlphaSlider:SetValue(NysTDL.db.profile.frameContentAlpha)
+	menuframe.frameContentAlphaSlider:SetValue(database.acedb.profile.frameContentAlpha)
 	menuframe.frameContentAlphaSlider:SetValueStep(1)
 	menuframe.frameContentAlphaSlider:SetObeyStepOnDrag(true)
 
@@ -868,12 +869,12 @@ local function generateMenuFrameOptions()
 	menuframe.affectDesc.Text:SetPoint("TOP", menuframe.affectDesc, "BOTTOM")
 	menuframe.affectDesc:SetHitRectInsets(0, 0, 0, 0)
 	menuframe.affectDesc:SetScript("OnClick", function(self)
-		NysTDL.db.profile.affectDesc = not NysTDL.db.profile.affectDesc
-		self:SetChecked(NysTDL.db.profile.affectDesc)
-		mainFrame:Event_FrameAlphaSlider_OnValueChanged(NysTDL.db.profile.frameAlpha)
-		mainFrame:Event_FrameContentAlphaSlider_OnValueChanged(NysTDL.db.profile.frameContentAlpha)
+		database.acedb.profile.affectDesc = not database.acedb.profile.affectDesc
+		self:SetChecked(database.acedb.profile.affectDesc)
+		mainFrame:Event_FrameAlphaSlider_OnValueChanged(database.acedb.profile.frameAlpha)
+		mainFrame:Event_FrameContentAlphaSlider_OnValueChanged(database.acedb.profile.frameContentAlpha)
 	end)
-	menuframe.affectDesc:SetChecked(NysTDL.db.profile.affectDesc)
+	menuframe.affectDesc:SetChecked(database.acedb.profile.affectDesc)
 
 	--/************************************************/--
 
@@ -960,7 +961,7 @@ local function generateFrameContent()
 	content.editModeButton = widgets:IconTooltipButton(content, "NysTDL_EditModeButton", L["Toggle edit mode"])
 	content.editModeButton:SetPoint("RIGHT", content.helpButton, "LEFT", 2, 0)
 	content.editModeButton:SetScript("OnClick", function()
-		tutorialsManager:Validate("TM_introduction_editmode") -- i need to place this here to be sure it was a user action
+		tutorialsManager:Validate("TM_introduction_editmode") -- I need to place this here to be sure it was a user action
 		mainFrame:ToggleEditMode()
 	end)
 	tutorialsManager:SetPoint("TM_introduction_editmode", "BOTTOM", content.editModeButton, "TOP", 0, 18)
@@ -1087,12 +1088,12 @@ function mainFrame:CreateTDLFrame()
 		if self.hasMoved == true then
 			self:StopMovingOrSizing()
 			self.hasMoved = false
-			local points, _ = NysTDL.db.profile.framePos, nil
+			local points, _ = database.acedb.profile.framePos, nil
 			points.point, _, points.relativePoint, points.xOffset, points.yOffset = self:GetPoint()
 		end
 	end
 	tdlFrame:HookScript("OnMouseDown", function(self, button)
-		if not NysTDL.db.profile.lockList then
+		if not database.acedb.profile.lockList then
 			if button == "LeftButton" then
 				self.isMouseDown = true
 				cursorX, cursorY = GetCursorPosition()
@@ -1175,21 +1176,21 @@ function mainFrame:Init()
 	-- / now for the frame, we start by setting everything to the saved variables
 
 	-- we resize and scale the frame
-	tdlFrame:SetSize(NysTDL.db.profile.frameSize.width, NysTDL.db.profile.frameSize.height)
+	tdlFrame:SetSize(database.acedb.profile.frameSize.width, database.acedb.profile.frameSize.height)
 
 	-- we reposition the frame
-	local points = NysTDL.db.profile.framePos
+	local points = database.acedb.profile.framePos
 	tdlFrame:ClearAllPoints()
 	tdlFrame:SetPoint(points.point, nil, points.relativePoint, points.xOffset, points.yOffset) -- relativeFrame = nil -> entire screen
 
 	-- and update its elements opacity
-	mainFrame:Event_FrameAlphaSlider_OnValueChanged(NysTDL.db.profile.frameAlpha)
-	mainFrame:Event_FrameContentAlphaSlider_OnValueChanged(NysTDL.db.profile.frameContentAlpha)
+	mainFrame:Event_FrameAlphaSlider_OnValueChanged(database.acedb.profile.frameAlpha)
+	mainFrame:Event_FrameContentAlphaSlider_OnValueChanged(database.acedb.profile.frameContentAlpha)
 	-- as well as updating the elements needing an update
 	local frameopt = tdlFrame.content.menuFrames[enums.menus.frameopt]
-	frameopt.frameAlphaSlider:SetValue(NysTDL.db.profile.frameAlpha)
-	frameopt.frameContentAlphaSlider:SetValue(NysTDL.db.profile.frameContentAlpha)
-	frameopt.affectDesc:SetChecked(NysTDL.db.profile.affectDesc)
+	frameopt.frameAlphaSlider:SetValue(database.acedb.profile.frameAlpha)
+	frameopt.frameContentAlphaSlider:SetValue(database.acedb.profile.frameContentAlpha)
+	frameopt.affectDesc:SetChecked(database.acedb.profile.affectDesc)
 
 	-- we generate the widgets once
 	loadWidgets()
@@ -1197,16 +1198,16 @@ function mainFrame:Init()
 	-- we reset the edit mode state
 	mainFrame:ToggleEditMode(false, true)
 
-	--widgets:SetEditBoxesHyperlinksEnabled(true) -- see func details for why i'm not using it
+	--widgets:SetEditBoxesHyperlinksEnabled(true) -- see func details for why I'm not using it
 
 	-- // and finally, we update the list's visibility
 
 	local oldShownState = tdlFrame:IsShown()
 
-	if NysTDL.db.profile.openByDefault then
+	if database.acedb.profile.openByDefault then
 		tdlFrame:Show()
-	elseif NysTDL.db.profile.keepOpen then
-		tdlFrame:SetShown(NysTDL.db.profile.lastListVisibility)
+	elseif database.acedb.profile.keepOpen then
+		tdlFrame:SetShown(database.acedb.profile.lastListVisibility)
 	else
 		tdlFrame:Hide()
 	end

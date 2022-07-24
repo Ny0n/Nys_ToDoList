@@ -1,8 +1,38 @@
 -- Namespaces
 local addonName, addonTable = ...
 
+--/*******************/ ADDON LIBS AND DATA HANDLER /*************************/--
+
 -- declaring the different addon tables, one for each file
--- because I don't want to use a global variable (after careful thinking, this will probably change soon :D)
+-- (that way everything is private and inaccessible in-game)
+
+local LibStub = LibStub
+
+-- addon object
+NysTDL = LibStub("AceAddon-3.0"):NewAddon(addonName)
+
+-- libs
+addonTable.libs = {
+	AceConfig = LibStub("AceConfig-3.0"),
+	AceConfigCmd = LibStub("AceConfigCmd-3.0"),
+	AceConfigDialog = LibStub("AceConfigDialog-3.0"),
+	AceConfigRegistry = LibStub("AceConfigRegistry-3.0"),
+	AceDB = LibStub("AceDB-3.0"),
+	AceDBOptions = LibStub("AceDBOptions-3.0"),
+	AceEvent = LibStub("AceEvent-3.0"),
+	AceGUI = LibStub("AceGUI-3.0"),
+	AceTimer = LibStub("AceTimer-3.0"),
+
+	L = LibStub("AceLocale-3.0"):GetLocale(addonName),
+	Locale = GetLocale(),
+
+	LDB = LibStub("LibDataBroker-1.1"),
+	LDBIcon = LibStub("LibDBIcon-1.0"),
+
+	LibQTip = LibStub('LibQTip-1.0'),
+}
+
+-- files
 addonTable.chat = {}
 addonTable.database = {}
 addonTable.dataManager = {}
@@ -20,7 +50,10 @@ addonTable.tabsFrame = {}
 addonTable.widgets = {}
 addonTable.core = {}
 
+--/***************************************************************************/--
+
 -- addonTable aliases
+local libs = addonTable.libs
 local core = addonTable.core
 local chat = addonTable.chat
 local utils = addonTable.utils
@@ -30,24 +63,11 @@ local database = addonTable.database
 local resetManager = addonTable.resetManager
 local optionsManager = addonTable.optionsManager
 
---/*******************/ ADDON LIBS AND DATA HANDLER /*************************/--
+-- // LOCALE CHECK //
 
--- libs
-NysTDL = LibStub("AceAddon-3.0"):NewAddon(addonName, "AceTimer-3.0", "AceEvent-3.0")
-core.AceGUI = LibStub("AceGUI-3.0")
-
-core.L = LibStub("AceLocale-3.0"):GetLocale(addonName)
-core.Locale = GetLocale()
-if core.Locale == "enGB" then
-	core.Locale = "enUS"
+if libs.Locale == "enGB" then
+	libs.Locale = "enUS"
 end
-
-core.LDB = LibStub("LibDataBroker-1.1")
-core.LDBIcon = LibStub("LibDBIcon-1.0")
-core.LibQTip = LibStub('LibQTip-1.0')
--- core.LDD = LibStub:GetLibrary("LibUIDropDownMenu-4.0")
-
--- // LOCALE CHECK
 
 chat.commandLocales = {
 	isOK = true,
@@ -66,13 +86,13 @@ chat.commandLocales = {
 	}
 }
 
-for orig,locale in pairs(core.L) do
+for orig,locale in pairs(libs.L) do
 	-- if a locale is empty or only whitespace, we replace it by the original text
 	-- and if it is valid, we remove any potential spaces at the start and at the end of the string (had that scenario once)
 	-- AND if it is a chat command, we remove ANY spaces we find, because they are forbidden in chat commands
 
 	if type(locale) ~= "string" or #locale == 0 or string.match(locale, "^%s*$") then
-		core.L[orig] = orig
+		libs.L[orig] = orig
 	else
 		if chat.commandLocales.list[orig] then
 			-- we are a chat command
@@ -87,7 +107,7 @@ for orig,locale in pairs(core.L) do
 			locale = string.gsub(locale, "^%s*", "")
 			locale = string.gsub(locale, "%s*$", "")
 		end
-		core.L[orig] = locale
+		libs.L[orig] = locale
 	end
 end
 
@@ -96,11 +116,13 @@ end
 chat.commandLocales.temp = nil
 if not chat.commandLocales.isOK then
 	for orig in pairs(chat.commandLocales.list) do
-		core.L[orig] = orig
+		libs.L[orig] = orig
 	end
 end
 
--- //~ LOCALE CHECK
+-- //~ LOCALE CHECK ~//
+
+local L = libs.L
 
 -- data (from toc file)
 core.toc = {}
@@ -108,18 +130,16 @@ core.toc.title = GetAddOnMetadata(addonName, "Title") -- better than "Nys_ToDoLi
 core.toc.version = GetAddOnMetadata(addonName, "Version")
 
 -- Variables
-local L = core.L
 core.loaded = false
 core.addonUpdated = false
-core.slashCommand = "/tdl"
 core.simpleAddonName = string.gsub(core.toc.title, "Ny's ", "")
 
 -- Bindings.xml globals
 BINDING_HEADER_NysTDL = core.toc.title
-BINDING_NAME_NysTDL = L["Show/Hide the To-Do List"]
+BINDING_NAME_NysTDL_ToggleFrame = L["Show/Hide the To-Do List"]
 
--- global variables
 --@do-not-package@
+-- global variables
 NysTDL_BACKDROP_INFO = {
 	bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
 	edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
@@ -128,14 +148,10 @@ NysTDL_BACKDROP_INFO = {
 }
 --@end-do-not-package@
 
---/*******************/ INITIALIZATION /*************************/--
+--/*******************/ AceAddon callbacks /*************************/--
 
 function NysTDL:OnInitialize()
     -- Called when the addon has finished loading
-
-    -- Register new Slash Command
-    SLASH_NysTDL1 = core.slashCommand
-    SlashCmdList.NysTDL = chat.HandleSlashCommands
 
     -- #1 - database
     database:Initialize()
@@ -155,18 +171,28 @@ function NysTDL:OnInitialize()
     -- // addon fully loaded!
 
     local hex = utils:RGBToHex(database.themes.theme2)
-    chat:Print(L["Addon loaded!"].." ("..string.format("|cff%s%s|r", hex, core.slashCommand.." "..L["info"])..")")
+    chat:Print(L["Addon loaded!"].." ("..string.format("|cff%s%s|r", hex, chat.slashCommand.." "..L["info"])..")")
 
     -- checking for an addon update
     if core.addonUpdated then
-		NysTDL:AddonUpdated()
+		core:AddonUpdated()
 		core.addonUpdated = false
     end
 
     core.loaded = true
 end
 
-function NysTDL:AddonUpdated()
+function NysTDL:OnEnable()
+	-- TDLATER
+end
+
+function NysTDL:OnDisable()
+	-- TDLATER
+end
+
+--/*******************/ Addon Updated /*************************/--
+
+function core:AddonUpdated()
 	-- called once, when the addon gets an update
 
 	local changelog = {

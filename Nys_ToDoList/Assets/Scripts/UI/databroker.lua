@@ -2,6 +2,7 @@
 local addonName, addonTable = ...
 
 -- addonTable aliases
+local libs = addonTable.libs
 local core = addonTable.core
 local utils = addonTable.utils
 local enums = addonTable.enums
@@ -11,16 +12,17 @@ local databroker = addonTable.databroker
 local optionsManager = addonTable.optionsManager
 
 -- Variables
-local L = core.L
-local LDB = core.LDB
-local LDBIcon = core.LDBIcon
+local L = libs.L
+local LDB = libs.LDB
+local LDBIcon = libs.LDBIcon
+local AceTimer = libs.AceTimer
 
 --/***************/ TOOLTIPS /*****************/--
 
 -- // SIMPLE
 
 function databroker:DrawSimpleTooltip(tooltip)
-	if not NysTDL.db.profile.minimap.tooltip then
+	if not database.acedb.profile.minimap.tooltip then
 		tooltip:Hide()
 		return
 	end
@@ -34,7 +36,7 @@ function databroker:DrawSimpleTooltip(tooltip)
 		tooltip:AddDoubleLine(core.toc.title, core.toc.version)
 		tooltip:AddLine(string.format("|cff%s%s|r", hex, L["Click"]).." - "..string.format("|cff%s%s|r", "FFFFFF", L["Toggle the list"]))
 		tooltip:AddLine(string.format("|cff%s%s|r", hex, L["Shift-Click"]).." - "..string.format("|cff%s%s|r", "FFFFFF", L["Open addon options"]))
-		tooltip:AddLine(string.format("|cff%s%s|r", hex, L["Ctrl-Click"]).." - "..string.format("|cff%s%s|r", "FFFFFF", NysTDL.db.profile.minimap.lock and L["Unlock minimap button"] or L["Lock minimap button"]))
+		tooltip:AddLine(string.format("|cff%s%s|r", hex, L["Ctrl-Click"]).." - "..string.format("|cff%s%s|r", "FFFFFF", database.acedb.profile.minimap.lock and L["Unlock minimap button"] or L["Lock minimap button"]))
 		tooltip:Show()
 	end
 end
@@ -50,7 +52,7 @@ function databroker:SetSimpleMode()
 	function o.OnClick()
 		if IsControlKeyDown() then
 			-- lock minimap button
-			if not NysTDL.db.profile.minimap.lock then
+			if not database.acedb.profile.minimap.lock then
 				LDBIcon:Lock(addonName)
 			else
 				LDBIcon:Unlock(addonName)
@@ -73,7 +75,7 @@ end
 -- // ADVANCED
 
 function databroker:DrawAdvancedTooltip(tooltip)
-	if not NysTDL.db.profile.minimap.tooltip then -- TDLATER remove duplicates
+	if not database.acedb.profile.minimap.tooltip then -- TDLATER remove duplicates
 		tooltip:Hide()
 		return
 	end
@@ -101,7 +103,7 @@ function databroker:SetAdvancedMode()
 	function o.OnClick()
 		if IsControlKeyDown() then
 			-- lock minimap button
-			if not NysTDL.db.profile.minimap.lock then
+			if not database.acedb.profile.minimap.lock then
 				LDBIcon:Lock(addonName)
 			else
 				LDBIcon:Unlock(addonName)
@@ -148,40 +150,41 @@ function databroker:SetMode(mode)
 	elseif mode == enums.databrokerModes.frame then
 		self:SetFrameMode()
 	end
-	NysTDL.db.profile.databrokerMode = mode
+	database.acedb.profile.databrokerMode = mode
 end
 
 function databroker:CreateDatabrokerObject()
 	self.object = LDB:NewDataObject(addonName)
-	databroker:SetMode(NysTDL.db.profile.databrokerMode)
+	databroker:SetMode(database.acedb.profile.databrokerMode)
 end
 
 -- minimap button
 
 function databroker:CreateMinimapButton()
 	-- Registering the data broker and creating the button
-	LDBIcon:Register(addonName, self.object, NysTDL.db.profile.minimap)
+	LDBIcon:Register(addonName, self.object, database.acedb.profile.minimap)
 
 	-- this is the secret to correctly update the button position, (since we can't update it in the init code)
 	-- so that the first time that we click on it, it doesn't go somewhere else like so many do,
 	-- we just delay its update :D (enough number of times to be sure, considering some ppl take longer times to load the UI)
-	NysTDL.iconTimerCount = 0
-	NysTDL.iconTimerCountMax = 7
+	local iconTimerCount = 0
+	local iconTimerCountMax = 7
 	local delay = 1.2 -- in seconds
 
-	-- so here, we are, each delay for max NysTDL.iconTimerCountMax seconds calling this function
-	NysTDL.iconTimer = NysTDL:ScheduleRepeatingTimer(function()
+	-- so here, we are, each delay for max iconTimerCountMax seconds calling this function
+	local iconTimer
+	iconTimer = AceTimer:ScheduleRepeatingTimer(function()
 		-- we really do this to call this function
 		databroker:RefreshMinimapButton()
 
 		-- and here we check and stop the timer when we're done
-		NysTDL.iconTimerCount = NysTDL.iconTimerCount + 1
-		if NysTDL.iconTimerCount == NysTDL.iconTimerCountMax then
-			NysTDL:CancelTimer(NysTDL.iconTimer)
+		iconTimerCount = iconTimerCount + 1
+		if iconTimerCount == iconTimerCountMax then
+			AceTimer:CancelTimer(iconTimer)
 		end
 	end, delay)
 end
 
 function databroker:RefreshMinimapButton()
-	LDBIcon:Refresh(addonName, NysTDL.db.profile.minimap)
+	LDBIcon:Refresh(addonName, database.acedb.profile.minimap)
 end

@@ -2,7 +2,7 @@
 local addonName, addonTable = ...
 
 -- addonTable aliases
-local core = addonTable.core
+local libs = addonTable.libs
 local enums = addonTable.enums
 local widgets = addonTable.widgets
 local database = addonTable.database
@@ -11,13 +11,12 @@ local dataManager = addonTable.dataManager
 local resetManager = addonTable.resetManager
 
 -- Variables
-local L = core.L
+local L = libs.L
+local AceConfigRegistry = libs.AceConfigRegistry
 
 --/*******************/ TABLES /*************************/--
--- generating them inside functions called at initialization,
--- so they all have access to other files' functions and data
 
--- addon themes (rgb)
+-- addon themes
 database.themes = {
 	theme = { 0, 204, 255 }, -- theme
 	theme2 = { 0, 204, 102 }, -- theme2
@@ -162,8 +161,8 @@ function database:DBInit()
 	-- // initialization of elements that need to be updated correctly when the profile changes
 
 	-- remember undos
-	if not NysTDL.db.profile.rememberUndo then
-		wipe(NysTDL.db.profile.undoTable)
+	if not database.acedb.profile.rememberUndo then
+		wipe(database.acedb.profile.undoTable)
 	end
 
 	-- data quantities
@@ -180,7 +179,7 @@ function database:ProfileChanged(_, profile)
 	database:DBInit()
 
 	-- #2 - options
-	LibStub("AceConfigRegistry-3.0"):NotifyChange(addonName)
+	AceConfigRegistry:NotifyChange(addonName)
 
 	-- #last-1 - widgets (we update che changes to the UI elements)
 	widgets:ProfileChanged()
@@ -194,9 +193,9 @@ end
 function database.ctab(newTabID) -- easy access to that specific database variable
 	-- sets or gets the currently selected tab ID
 	if dataManager:IsID(newTabID) then
-		NysTDL.db.profile.currentTab = newTabID
+		database.acedb.profile.currentTab = newTabID
 	end
-	return NysTDL.db.profile.currentTab
+	return database.acedb.profile.currentTab
 end
 
 function database:CreateDefaultTabs()
@@ -239,12 +238,12 @@ end
 
 function database:Initialize()
 	-- Saved variable database
-	NysTDL.db = LibStub("AceDB-3.0"):New("NysToDoListDB", database.defaults) -- THE important line
-	database:DBInit() -- initialization for some elements of the db
+	database.acedb = LibStub("AceDB-3.0"):New("NysToDoListDB", database.defaults)
+	database:DBInit() -- initialization for some elements of the current acedb
 
 	-- callbacks for database changes
-	NysTDL.db.RegisterCallback(database, "OnProfileChanged", "ProfileChanged")
-	NysTDL.db.RegisterCallback(database, "OnProfileCopied", "ProfileChanged")
-	NysTDL.db.RegisterCallback(database, "OnProfileReset", "ProfileChanged")
-	NysTDL.db.RegisterCallback(database, "OnDatabaseReset", "ProfileChanged")
+	database.acedb.RegisterCallback(database, "OnProfileChanged", "ProfileChanged")
+	database.acedb.RegisterCallback(database, "OnProfileCopied", "ProfileChanged")
+	database.acedb.RegisterCallback(database, "OnProfileReset", "ProfileChanged")
+	database.acedb.RegisterCallback(database, "OnDatabaseReset", "ProfileChanged")
 end

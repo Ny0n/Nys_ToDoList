@@ -2,6 +2,7 @@
 local addonName, addonTable = ...
 
 -- addonTable aliases
+local libs = addonTable.libs
 local core = addonTable.core
 local utils = addonTable.utils
 local enums = addonTable.enums
@@ -15,8 +16,8 @@ local dataManager = addonTable.dataManager
 local tutorialsManager = addonTable.tutorialsManager
 
 -- Variables
-local L = core.L
-local LibQTip = core.LibQTip
+local L = libs.L
+local LibQTip = libs.LibQTip
 
 widgets.frame = CreateFrame("Frame", nil, UIParent) -- utility frame
 local widgetsFrame = widgets.frame
@@ -81,12 +82,12 @@ end
 
 function widgets:SetDescFramesAlpha(alpha)
 	-- first we update (or not) the saved variable
-	if NysTDL.db.profile.affectDesc then
-		NysTDL.db.profile.descFrameAlpha = alpha
+	if database.acedb.profile.affectDesc then
+		database.acedb.profile.descFrameAlpha = alpha
 	end
 
 	-- and then we update the alpha
-	alpha = NysTDL.db.profile.descFrameAlpha/100
+	alpha = database.acedb.profile.descFrameAlpha/100
 	for _, descFrame in pairs(descFrames) do -- we go through every desc frame
 		descFrame:SetBackdropColor(0, 0, 0, alpha)
 		descFrame:SetBackdropBorderColor(1, 1, 1, alpha)
@@ -106,12 +107,12 @@ end
 
 function widgets:SetDescFramesContentAlpha(alpha)
 	-- first we update (or not) the saved variable
-	if NysTDL.db.profile.affectDesc then
-		NysTDL.db.profile.descFrameContentAlpha = alpha
+	if database.acedb.profile.affectDesc then
+		database.acedb.profile.descFrameContentAlpha = alpha
 	end
 
 	-- and then we update the alpha
-	alpha = NysTDL.db.profile.descFrameContentAlpha/100
+	alpha = database.acedb.profile.descFrameContentAlpha/100
 	for _, descFrame in pairs(descFrames) do -- we go through every desc frame
 		descFrame.title:SetAlpha(alpha)
 		descFrame.closeButton:SetAlpha(alpha)
@@ -130,7 +131,7 @@ function widgets:UpdateDescFramesTitle()
 		if contentWidgets[descFrame.itemID] then -- if the corresponding item still exists (i'm not sure if it's necessary, but it's just there in case it is)
 			descFrame.title:SetText(descFrame.itemData.name)
 			descFrame.title:SetTextColor(contentWidgets[descFrame.itemID].interactiveLabel.Text:GetTextColor())
-			descFrame.title:SetAlpha(NysTDL.db.profile.descFrameContentAlpha/100)
+			descFrame.title:SetAlpha(database.acedb.profile.descFrameContentAlpha/100)
 
 			local w = widgets:GetWidth(descFrame.itemData.name)
 			descFrame:SetMinResize(math.max(180+75, w+75), 110)
@@ -220,7 +221,7 @@ function widgets:DescriptionFrame(itemWidget)
 		-- we update non-stop the width of the description edit box to match that of the frame if we resize it, and when the scrollbar kicks in. (this is the secret to make it work)
 		self.descriptionEditBox.EditBox:SetWidth(self.descriptionEditBox:GetWidth() - (self.descriptionEditBox.ScrollBar:IsShown() and 15 or 0))
 
-		if self.opening < 5 then -- doing this only on the 5 first updates after creating the frame, i won't go into the details but updating the vertical scroll of this template is a real fucker :D
+		if self.opening < 5 then -- doing this only on the 5 first updates after creating the frame, I won't go into the details but updating the vertical scroll of this template is a real fucker :D
 			self.descriptionEditBox:SetVerticalScroll(0)
 			self.opening = self.opening + 1
 		end
@@ -302,8 +303,8 @@ function widgets:DescriptionFrame(itemWidget)
 	-- // finished creating the frame
 
 	-- we update the alpha if it needs to be
-	mainFrame:Event_FrameAlphaSlider_OnValueChanged(NysTDL.db.profile.frameAlpha)
-	mainFrame:Event_FrameContentAlphaSlider_OnValueChanged(NysTDL.db.profile.frameContentAlpha)
+	mainFrame:Event_FrameAlphaSlider_OnValueChanged(database.acedb.profile.frameAlpha)
+	mainFrame:Event_FrameContentAlphaSlider_OnValueChanged(database.acedb.profile.frameContentAlpha)
 end
 
 -- // tdl button
@@ -312,10 +313,10 @@ function widgets:RefreshTDLButton()
 	-- // to refresh everything concerbing the tdl button
 
 	-- updating its position and shown state in accordance to the saved variables
-	local points = NysTDL.db.profile.tdlButton.points
+	local points = database.acedb.profile.tdlButton.points
 	tdlButton:ClearAllPoints()
 	tdlButton:SetPoint(points.point, nil, points.relativePoint, points.xOffset, points.yOffset) -- relativeFrame = nil -> entire screen
-	tdlButton:SetShown(NysTDL.db.profile.tdlButton.show)
+	tdlButton:SetShown(database.acedb.profile.tdlButton.show)
 
 	-- and updating its color
 	widgets:UpdateTDLButtonColor()
@@ -326,7 +327,7 @@ function widgets:UpdateTDLButtonColor()
 	-- and also has unchecked items, we color in red the text of the tdl button
 
 	tdlButton:SetNormalFontObject("GameFontNormalLarge") -- by default, we reset the color of the TDL button to yellow
-	if NysTDL.db.profile.tdlButton.red then -- if the option is checked
+	if database.acedb.profile.tdlButton.red then -- if the option is checked
 		local maxTime = time() + 86400
 		dataManager:DoIfFoundTabMatch(maxTime, "totalUnchecked", function()
 			-- we color the button in red
@@ -341,7 +342,7 @@ end
 
 function widgets:SetFocusEditBox(editBox, forceHighlight) -- DRY
 	editBox:SetFocus()
-	if forceHighlight or NysTDL.db.profile.highlightOnFocus then
+	if forceHighlight or database.acedb.profile.highlightOnFocus then
 		editBox:HighlightText()
 	else
 		editBox:HighlightText(0, 0)
@@ -511,13 +512,13 @@ function widgets:CreateTDLButton()
 	-- drag
 	tdlButton:RegisterForDrag("LeftButton")
 	tdlButton:SetScript("OnDragStart", function()
-		if not NysTDL.db.profile.lockButton then
+		if not database.acedb.profile.lockButton then
 			tdlButton:StartMoving()
 		end
 	end)
 	tdlButton:SetScript("OnDragStop", function() -- we save its position
 		tdlButton:StopMovingOrSizing()
-		local points, _ = NysTDL.db.profile.tdlButton.points, nil
+		local points, _ = database.acedb.profile.tdlButton.points, nil
 		points.point, _, points.relativePoint, points.xOffset, points.yOffset = tdlButton:GetPoint()
 	end)
 
@@ -673,7 +674,7 @@ function widgets:DescButton(widget, parent)
 	btn:HookScript("OnEnter", function(self)
 		-- we don't do anything in 3 cases
 		-- if we unchecked the option in the addon options
-		if not NysTDL.db.profile.descriptionTooltip then
+		if not database.acedb.profile.descriptionTooltip then
 			return
 		end
 
@@ -903,7 +904,7 @@ function widgets:CategoryWidget(catID, parentFrame)
 		self:Hide()
 	end)
 	categoryWidget.addEditBox:HookScript("OnEditFocusLost", function(self)
-		if not NysTDL.db.profile.migrationData.failed then
+		if not database.acedb.profile.migrationData.failed then
 			self:GetScript("OnEscapePressed")(self)
 		end
 	end)
@@ -1189,7 +1190,7 @@ local function OnUpdate(self, elapsed)
 		-- // every 0.05 sec // -- (instead of every frame which is every 1/144 (0.007) sec for a 144hz display... optimization :D)
 
 		-- rainbow update
-		if NysTDL.db.profile.rainbow then
+		if database.acedb.profile.rainbow then
 			if next(descFrames) or mainFrame:GetFrame():IsShown() then -- we don't really need to update the color at all times
 				mainFrame:ApplyNewRainbowColor()
 			end
@@ -1231,7 +1232,7 @@ end
 function widgets:ProfileChanged()
 	-- visual updates to match the new profile
 	widgets:RefreshTDLButton()
-	databroker:SetMode(NysTDL.db.profile.databrokerMode)
+	databroker:SetMode(database.acedb.profile.databrokerMode)
 	-- TDLATER ici ligne pr refresh tooltip frame de databroker
 	databroker:RefreshMinimapButton()
 

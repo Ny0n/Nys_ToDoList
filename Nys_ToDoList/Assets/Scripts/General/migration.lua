@@ -2,6 +2,7 @@
 local addonName, addonTable = ...
 
 -- addonTable aliases
+local libs = addonTable.libs
 local core = addonTable.core
 local enums = addonTable.enums
 local utils = addonTable.utils
@@ -12,8 +13,8 @@ local mainFrame = addonTable.mainFrame
 local dataManager = addonTable.dataManager
 
 -- Variables
-local L = core.L
-local LibQTip = core.LibQTip
+local L = libs.L
+local LibQTip = libs.LibQTip
 
 -- // **************************** // --
 
@@ -40,21 +41,21 @@ local migrationData = {
 function migration:Migrate()
     -- this is for doing specific things ONLY when the addon gets updated and its version changes
 
-    if NysTDL.db.profile.migrationData.failed then -- the migration was not completed last session, so we recreate the recovery list
+    if database.acedb.profile.migrationData.failed then -- the migration was not completed last session, so we recreate the recovery list
         private:Failed()
     end
 
     -- checking for an addon update, globally
-    if NysTDL.db.global.latestVersion ~= core.toc.version then
+    if database.acedb.global.latestVersion ~= core.toc.version then
         private:GlobalNewVersion()
-        NysTDL.db.global.latestVersion = core.toc.version
+        database.acedb.global.latestVersion = core.toc.version
         core.addonUpdated = true
     end
 
     -- checking for an addon update, for the profile that was just loaded
-    if NysTDL.db.profile.latestVersion ~= core.toc.version then
+    if database.acedb.profile.latestVersion ~= core.toc.version then
         private:ProfileNewVersion()
-        NysTDL.db.profile.latestVersion = core.toc.version
+        database.acedb.profile.latestVersion = core.toc.version
     end
 end
 
@@ -64,10 +65,10 @@ end
 function private:GlobalNewVersion()
     -- // updates the global saved variables once after an update
 
-    if utils:IsVersionOlderThan(NysTDL.db.global.latestVersion, "6.0") then -- if we come from before 6.0
-        if NysTDL.db.global.tuto_progression > 5 then -- if we already completed the tutorial
+    if utils:IsVersionOlderThan(database.acedb.global.latestVersion, "6.0") then -- if we come from before 6.0
+        if database.acedb.global.tuto_progression > 5 then -- if we already completed the tutorial
             -- we go to the new part of the edit mode button
-            NysTDL.db.global.tuto_progression = 5
+            database.acedb.global.tuto_progression = 5
         end
     end
 end
@@ -76,7 +77,7 @@ function private:ProfileNewVersion()
     -- // updates each profile saved variables once after an update
 
     -- by default after each update, we empty the undo table
-    wipe(NysTDL.db.profile.undoTable)
+    wipe(database.acedb.profile.undoTable)
 
     -- var version migration
     private:CheckVarsMigration()
@@ -107,7 +108,7 @@ end
 
 function private:TryToMigrate(toVersion)
     -- this func will only call the right migrations, depending on the current and last version of the addon
-    if utils:IsVersionOlderThan(NysTDL.db.profile.latestVersion, toVersion) then
+    if utils:IsVersionOlderThan(database.acedb.profile.latestVersion, toVersion) then
         -- the safeguard, second part is at the start of each migration code (saving the data)
         migrationData.failed.version = toVersion
 
@@ -134,7 +135,7 @@ function private:TryToMigrate(toVersion)
         ]]
         migrationData.codes[toVersion]() -- <err?>
 
-        NysTDL.db.profile.latestVersion = toVersion -- success, onto the next one
+        database.acedb.profile.latestVersion = toVersion -- success, onto the next one
     end
 end
 
@@ -169,7 +170,7 @@ end
 
 -- / migration from 2.0+ to 4.0+
 migrationData.codes["4.0"] = function()
-    local profile = NysTDL.db.profile
+    local profile = database.acedb.profile
 
     -- saved variables in 2.0+ : ToDoListSV
     -- saved variables in 4.0+ : NysToDoListDB (AceDB)
@@ -194,9 +195,9 @@ end
 
 -- / migration from 4.0+ to 5.0+
 migrationData.codes["5.0"] = function()
-    local profile = NysTDL.db.profile
+    local profile = database.acedb.profile
 
-    -- this test may not be bulletproof, but it's the closest safeguard i could think of
+    -- this test may not be bulletproof, but it's the closest safeguard I could think of
     -- 5.5+ format
     local nextFormat = false -- // double check
     local catName = next(profile.itemsList) -- catName, itemNames
@@ -227,7 +228,7 @@ end
 
 -- / migration from 5.0+ to 5.5+
 migrationData.codes["5.5"] = function()
-    local profile = NysTDL.db.profile
+    local profile = database.acedb.profile
 
     -- every var here will be transfered INSIDE the items data
     if profile.itemsDaily or profile.itemsWeekly or profile.itemsFavorite or profile.itemsDesc or profile.checkedButtons then -- // double check
@@ -252,7 +253,7 @@ migrationData.codes["5.5"] = function()
                 -- first we get the previous data elements from the item
 
                 -- / tabName
-                -- no need for the locale here, i actually DID force-use the english names in my previous code,
+                -- no need for the locale here, I actually DID force-use the english names in my previous code,
                 -- the shown names being the only ones different
                 local tabName = enums.mainTabs.all
                 if (utils:HasValue(profile.itemsDaily, itemName)) then
@@ -298,7 +299,7 @@ end
 -- / migration from 5.5+ to 6.0+
 -- !! IMPORTANT !! profile.latestVersion was introduced in 5.6, so every migration from further on won't need double checks
 migrationData.codes["6.0"] = function()
-    local profile = NysTDL.db.profile
+    local profile = database.acedb.profile
     migrationData.failed.saved = utils:Deepcopy(profile.itemsList)
 
     -- // == start migration == // --
@@ -443,13 +444,13 @@ local recoveryList = {
 
 function private:CheckSaved()
     -- returns false if migrationData or migrationData.saved are empty
-    return not (not next(NysTDL.db.profile.migrationData) or type(NysTDL.db.profile.migrationData.saved) ~= "table" or not next(NysTDL.db.profile.migrationData.saved))
+    return not (not next(database.acedb.profile.migrationData) or type(database.acedb.profile.migrationData.saved) ~= "table" or not next(database.acedb.profile.migrationData.saved))
 end
 
 function private:Failed(errmsg, original)
     if original then
         -- we save the fail data to the database so that we can keep it between sessions
-        local migrationDataSV = NysTDL.db.profile.migrationData
+        local migrationDataSV = database.acedb.profile.migrationData
         migrationDataSV.failed = true
         migrationDataSV.saved = migrationData.failed.saved
         migrationDataSV.version = migrationData.failed.version
@@ -459,8 +460,8 @@ function private:Failed(errmsg, original)
 
         -- and then, we reset once the list, the catList, and the tabs content, just so that we start with a clean state,
         -- this is in case the error created corrupted data (unusable/wrong/incomplete)
-        NysTDL.db.profile.itemsList = {}
-        NysTDL.db.profile.categoriesList = {}
+        database.acedb.profile.itemsList = {}
+        database.acedb.profile.categoriesList = {}
         for _,tabData in dataManager:ForEach(enums.tab) do
             tabData.orderedCatIDs = {}
         end
@@ -468,7 +469,7 @@ function private:Failed(errmsg, original)
 
     private:CreateRecoveryList()
     private:CreateWarning()
-    if NysTDL.db.profile.migrationData.warning then
+    if database.acedb.profile.migrationData.warning then
         recoveryList.frame:Hide()
     else
         recoveryList.warningFrame:Hide()
@@ -479,11 +480,11 @@ function private:Failed(errmsg, original)
         -- I reset the main frame's size and pos to the default values, just one time.
 
         -- size
-        NysTDL.db.profile.frameSize.width = enums.tdlFrameDefaultWidth
-        NysTDL.db.profile.frameSize.height = enums.tdlFrameDefaultHeight
+        database.acedb.profile.frameSize.width = enums.tdlFrameDefaultWidth
+        database.acedb.profile.frameSize.height = enums.tdlFrameDefaultHeight
 
         -- pos
-        local points, _ = NysTDL.db.profile.framePos, nil
+        local points, _ = database.acedb.profile.framePos, nil
         points.point, _, points.relativePoint, points.xOffset, points.yOffset = "CENTER", nil, "CENTER", 0, 0
 
         --we only need to update the saved avrs, so that when the tdlFrame initializes, it uses them and updates accordingly.
@@ -501,12 +502,12 @@ function private:CreateRecoveryList()
     local frame = recoveryList.frame
 
     -- as well as the tuto frame
-    if NysTDL.db.profile.migrationData.tuto then
+    if database.acedb.profile.migrationData.tuto then
         recoveryList.tutoFrame = widgets:TutorialFrame("NysTDL_recoveryList_tutoFrame", true, "DOWN", "You can click on any name to put it in the input field below, you can then Ctrl+C/Ctrl+V", 200, 50)
         recoveryList.tutoFrame.closeButton:SetScript("OnClick", function()
             recoveryList.tutoFrame:Hide()
             recoveryList.tutoFrame:ClearAllPoints()
-            NysTDL.db.profile.migrationData.tuto = nil
+            database.acedb.profile.migrationData.tuto = nil
         end)
 
         recoveryList.tutoFrame:SetParent(frame)
@@ -575,9 +576,9 @@ function private:CreateRecoveryList()
     header.clearButton:RegisterForClicks("RightButtonUp") -- only responds to right-clicks
     header.clearButton:SetScript("OnDoubleClick", function(self, button)
         if button == "RightButton" then
-            if type(NysTDL.db.profile.migrationData) == "table" and type(NysTDL.db.profile.migrationData.saved) == "table" then
-                wipe(NysTDL.db.profile.migrationData.saved)
-                NysTDL.db.profile.migrationData.saved = nil
+            if type(database.acedb.profile.migrationData) == "table" and type(database.acedb.profile.migrationData.saved) == "table" then
+                wipe(database.acedb.profile.migrationData.saved)
+                database.acedb.profile.migrationData.saved = nil
             end
             private:Refresh()
         end
@@ -592,7 +593,7 @@ function private:CreateRecoveryList()
     header.warningButton:SetScript("OnClick", function()
         recoveryList.frame:Hide()
         recoveryList.warningFrame:Show()
-        NysTDL.db.profile.migrationData.warning = true
+        database.acedb.profile.migrationData.warning = true
     end)
 
     -- // part 2: the body
@@ -664,7 +665,7 @@ function private:CreateRecoveryList()
     end)
 
     -- // finishing: displaying the data to manually migrate
-    private:Refresh(NysTDL.db.profile.migrationData.version) -- migrationData.failed.codes call
+    private:Refresh(database.acedb.profile.migrationData.version) -- migrationData.failed.codes call
 end
 
 function private:Event_ScrollFrame_OnMouseWheel(delta)
@@ -683,7 +684,7 @@ function private:Event_ScrollFrame_OnMouseWheel(delta)
 end
 
 function private:Event_recoveryFrame_OnUpdate()
-	if not next(NysTDL.db.profile.migrationData) then
+	if not next(database.acedb.profile.migrationData) then
         recoveryList.frame:Hide()
         recoveryList.frame:ClearAllPoints()
         return
@@ -797,7 +798,7 @@ function private:CreateWarning()
     content.errMsgResetBtn:SetSize(32, 32)
     content.errMsgResetBtn:SetPoint("LEFT", content.errMsgCopyBtn, "RIGHT", -2, 0)
     content.errMsgResetBtn:SetScript("OnClick", function()
-        content.errMsgField:SetText(NysTDL.db.profile.migrationData.errmsg or "")
+        content.errMsgField:SetText(database.acedb.profile.migrationData.errmsg or "")
         content.errMsgField:SetCursorPosition(0)
         content.errMsgCopyBtn:GetScript("OnClick")()
     end)
@@ -813,7 +814,7 @@ function private:CreateWarning()
     content.openListBtn:SetScript("OnClick", function()
         frame:Hide()
         recoveryList.frame:Show()
-        NysTDL.db.profile.migrationData.warning = false
+        database.acedb.profile.migrationData.warning = false
     end)
 
     frame.content:SetHeight(-openListBtnPos + content.openListBtn:GetHeight() + 25)
@@ -842,7 +843,7 @@ function private:Refresh(version)
 
     if not private:CheckSaved() then -- if there are no items left to migrate
         -- we're done, so we clear every migration data
-        wipe(NysTDL.db.profile.migrationData)
+        wipe(database.acedb.profile.migrationData)
 
         -- and we hide the recovery list once and for all
         recoveryList.frame:Hide()
@@ -1031,7 +1032,7 @@ migrationData.failed.codes["2.0"] = function()
         -- ===================== --
 
         local catName, itemName = self:GetParent().i.catName, self:GetParent().i.itemName
-        local list = NysTDL.db.profile.migrationData.saved.itemsList
+        local list = database.acedb.profile.migrationData.saved.itemsList
 
         if list[catName] then
             table.remove(list[catName], (select(2, utils:HasValue(list[catName], itemName))))
@@ -1049,15 +1050,15 @@ migrationData.failed.codes["2.0"] = function()
         end
 
         if finished then
-            NysTDL.db.profile.migrationData.saved = nil
+            database.acedb.profile.migrationData.saved = nil
         end
 
         -- ===================== --
 
-        private:Refresh(NysTDL.db.profile.migrationData.version)
+        private:Refresh(database.acedb.profile.migrationData.version)
     end
 
-    local saved = NysTDL.db.profile.migrationData.saved
+    local saved = database.acedb.profile.migrationData.saved
     for catName,items in pairs(saved.itemsList) do
         if catName ~= "Daily" and catName ~= "Weekly" then -- oh yea
 
@@ -1118,7 +1119,7 @@ migrationData.failed.codes["5.5"] = function()
         -- ===================== --
 
         local catName, itemName = self:GetParent().i.catName, self:GetParent().i.itemName
-        local list = NysTDL.db.profile.migrationData.saved.itemsList
+        local list = database.acedb.profile.migrationData.saved.itemsList
 
         if list[catName] then
             table.remove(list[catName], (select(2, utils:HasValue(list[catName], itemName))))
@@ -1128,15 +1129,15 @@ migrationData.failed.codes["5.5"] = function()
         end
 
         if not next(list) then
-            NysTDL.db.profile.migrationData.saved = nil
+            database.acedb.profile.migrationData.saved = nil
         end
 
         -- ===================== --
 
-        private:Refresh(NysTDL.db.profile.migrationData.version)
+        private:Refresh(database.acedb.profile.migrationData.version)
     end
 
-    local saved = NysTDL.db.profile.migrationData.saved
+    local saved = database.acedb.profile.migrationData.saved
     for catName,items in pairs(saved.itemsList) do
 
         -- == cat == --
@@ -1187,7 +1188,7 @@ migrationData.failed.codes["6.0"] = function()
         -- ===================== --
 
         local catName, itemName = self:GetParent().i.catName, self:GetParent().i.itemName
-        local list = NysTDL.db.profile.migrationData.saved
+        local list = database.acedb.profile.migrationData.saved
 
         if list[catName] then
             list[catName][itemName] = nil
@@ -1198,10 +1199,10 @@ migrationData.failed.codes["6.0"] = function()
 
         -- ===================== --
 
-        private:Refresh(NysTDL.db.profile.migrationData.version)
+        private:Refresh(database.acedb.profile.migrationData.version)
     end
 
-    for catName,items in pairs(NysTDL.db.profile.migrationData.saved) do -- categories
+    for catName,items in pairs(database.acedb.profile.migrationData.saved) do -- categories
 
         -- == cat == --
         local catWidget = private:NewCategoryWidget(catName)
@@ -1238,7 +1239,7 @@ end
 -- // **************************** // --
 
 function migration:TestFunc()
-    local migrationDataSV = NysTDL.db.profile.migrationData
+    local migrationDataSV = database.acedb.profile.migrationData
     migrationDataSV.failed = true
     migrationDataSV.saved = {["Cat1"] = {["Item1"] = {["tabName"] = "Daily"}}}
     migrationDataSV.version = "6.0"

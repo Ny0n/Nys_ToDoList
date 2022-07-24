@@ -2,7 +2,7 @@
 local addonName, addonTable = ...
 
 -- addonTable aliases
-local core = addonTable.core
+local libs = addonTable.libs
 local chat = addonTable.chat
 local enums = addonTable.enums
 local utils = addonTable.utils
@@ -39,7 +39,8 @@ local tabsFrame = setmetatable({}, {
 })
 
 -- Variables
-local L = core.L
+local L = libs.L
+local AceConfigRegistry = libs.AceConfigRegistry
 
 local undoing = false
 local clearing = false
@@ -54,7 +55,7 @@ local tinsert, tremove = table.insert, table.remove
 
 local keyID_SetRefresh
 function dataManager:SetRefresh(state, refreshID)
-	-- this is pure optimization, this func allows me to englobe any code i want with these two lines:
+	-- this is pure optimization, this func allows me to englobe any code I want with these two lines:
 	-- local refreshID = dataManager:SetRefresh(false)
 	-- code...
 	-- dataManager:SetRefresh(true, refreshID)
@@ -77,8 +78,8 @@ local keyID_SetUndoing
 function dataManager:SetUndoing(state, undoingID)
 	-- this func, very similar to SetRefresh,
 	-- allows me to merge multiple clear undos as one print in the end
-	-- (this may be overkill, but i know that this works,
-	-- and i don't want to find an other way since the Undo func is a recursive nightmare)
+	-- (this may be overkill, but I know that this works,
+	-- and I don't want to find an other way since the Undo func is a recursive nightmare)
 
 	if undoing == state then return end
 	if state then -- undoing start
@@ -95,11 +96,11 @@ end
 -- id func
 function dataManager:NewID()
 	--[[
-		This function returns the global saved variable "NysTDL.db.global.nextID" as it is,
+		This function returns the global saved variable "database.acedb.global.nextID" as it is,
 		then increments it by one, using the hexadecimal base.
 
 		! the benefit of this func over using an integer with string.format("%x", ...) is that no numbers are used !
-		-- I'm incrementing NysTDL.db.global.nextID hexadecimally using only strings --
+		-- I'm incrementing database.acedb.global.nextID hexadecimally using only strings --
 		-> this means that I am not bound to the limits of lua numbers,
 			but to the limit of lua strings, which in hex terms, is infinitely bigger.
 	]]
@@ -110,7 +111,7 @@ function dataManager:NewID()
 
 	-- // script start
 
-	local g = NysTDL.db.global
+	local g = database.acedb.global
 
 	-- safeguard
 	local sg = function()
@@ -196,7 +197,7 @@ function dataManager:GetData(isGlobal, tableMode)
 	-- returns itemsList, categoriesList, and tabsList located either in the global or profile SV
 	-- as a table if asked so
 
-	local loc = isGlobal and NysTDL.db.global or NysTDL.db.profile
+	local loc = isGlobal and database.acedb.global or database.acedb.profile
 	if tableMode then
 		wipe(T_GetData)
 		T_GetData[enums.item] = loc.itemsList
@@ -556,7 +557,7 @@ local function addTab(tabID, tabData, isGlobal)
 
 	-- AND refresh the tabsFrame & tab options
 	tabsFrame:UpdateTab(tabID)
-	LibStub("AceConfigRegistry-3.0"):NotifyChange(addonName)
+	AceConfigRegistry:NotifyChange(addonName)
 
 	enums.quantities[enums.tab] = enums.quantities[enums.tab] + 1
 
@@ -848,7 +849,7 @@ function dataManager:DeleteCat(catID)
 
 	-- we delete everything inside the category, even sub-categories recursively
 	-- IMPORTANT: the use of a copy to iterate on is necessary, because in the loop,
-	-- i'm going to delete elements in the very table i would be looping on
+	-- I'm going to delete elements in the very table I would be looping on
 	local copy = utils:Deepcopy(catData.orderedContentIDs)
 	local nbToUndo = 0
 
@@ -993,13 +994,13 @@ function dataManager:AddUndo(undoData)
 	-- this is so we can add undos at the right time, and possibly not at creation
 	-- because the table data / orders can be modified in between the two actions.
 	-- undoData can also be a pure number, to keep track of how many undos to undo after a clear
-	tinsert(NysTDL.db.profile.undoTable, undoData)
+	tinsert(database.acedb.profile.undoTable, undoData)
 end
 
 function dataManager:Undo()
 	-- when undoing, there are 4 possible cases:
 	-- undoing a clear, an item deletion, a category deletion, or a tab deletion
-	if #NysTDL.db.profile.undoTable == 0 then
+	if #database.acedb.profile.undoTable == 0 then
 		chat:PrintForced(L["Nothing to undo"])
 		return
 	end
@@ -1007,7 +1008,7 @@ function dataManager:Undo()
 	local refreshID = dataManager:SetRefresh(false)
 
 	local success
-	local toUndo = tremove(NysTDL.db.profile.undoTable) -- remove last
+	local toUndo = tremove(database.acedb.profile.undoTable) -- remove last
 	if toUndo then -- if we got something to undo
 		if type(toUndo) == "number" then -- clear
 			if toUndo > 0 then -- undoing a clear
@@ -1016,7 +1017,7 @@ function dataManager:Undo()
 				for i=1, toUndo do
 					success = not not dataManager:Undo()
 					if not success then
-						tinsert(NysTDL.db.profile.undoTable, toUndo-(i-1))
+						tinsert(database.acedb.profile.undoTable, toUndo-(i-1))
 						chat:PrintForced(L["Undo interrupted"])
 						break
 					end
@@ -1039,7 +1040,7 @@ function dataManager:Undo()
 				success = not not addTab(toUndo.ID, toUndo.data, toUndo.isGlobal)
 			end
 			if not success then -- cancel
-				tinsert(NysTDL.db.profile.undoTable, toUndo)
+				tinsert(database.acedb.profile.undoTable, toUndo)
 			else
 				if not undoing then
 					local type = ((toUndo.enum == enums.item) and L["Item"]:lower())
@@ -1069,7 +1070,7 @@ local function updateCatShownTabID(catID, catData, tabID, tabData, shownTabID, m
 		if not catData.parentCatID then -- if it's not a sub-category, we edit it in its tab orders
 			if modif and not utils:HasValue(tabData.orderedCatIDs, catID) then
 				-- we add it ordered in the tab if it wasn't here already
-				tinsert(tabData.orderedCatIDs, 1, catID) -- TDLATER, IF i ever do cat fav it's not pos 1
+				tinsert(tabData.orderedCatIDs, 1, catID) -- TDLATER, IF I ever do cat fav it's not pos 1
 			elseif not modif and utils:HasValue(tabData.orderedCatIDs, catID) then
 				tremove(tabData.orderedCatIDs, select(2, utils:HasValue(tabData.orderedCatIDs, catID)))
 			end
@@ -1189,7 +1190,7 @@ function dataManager:ToggleChecked(itemID, state)
 	end
 
 	-- refresh the mainFrame
-	if NysTDL.db.profile.instantRefresh then
+	if database.acedb.profile.instantRefresh then
 		mainFrame:Refresh()
 	else
 		mainFrame:UpdateVisuals()
@@ -1408,9 +1409,11 @@ function dataManager:DeleteCheckedItems(tabID)
 
 	local nbToUndo = 0
 	for itemID,itemData in pairs(T_DeleteCheckedItems) do -- for each item in the tab
+		itemData.checked = false -- so that if we undo it, it doesn't get deleted right away
 		if dataManager:DeleteItem(itemID) then
 			nbToUndo = nbToUndo + 1
-			itemData.checked = false -- so that if we undo it, it doesn't get deleted right away
+		else
+			itemData.checked = true
 		end
 	end
 

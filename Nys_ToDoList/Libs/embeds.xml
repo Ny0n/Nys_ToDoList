@@ -6,8 +6,6 @@
 	<!-- General -->
 	<Script file="LibStub\LibStub.lua"/>
 	<Include file="CallbackHandler-1.0\CallbackHandler-1.0.xml"/>
-	<Include file="LibQTip-1.0\lib.xml"/>
-	<!-- <Include file="!LibUIDropDownMenu\LibUIDropDownMenu\LibUIDropDownMenu.xml"/> -->
 
 	<!-- Ace3 -->
 	<Include file="AceAddon-3.0\AceAddon-3.0.xml"/>
@@ -22,5 +20,9 @@
 	<!-- Data broker -->
 	<Script file="LibDataBroker-1.1\LibDataBroker-1.1.lua"/>
 	<Include file="LibDBIcon-1.0\lib.xml"/>
+
+	<!-- Other -->
+	<Include file="LibQTip-1.0\lib.xml"/>
+	<!-- <Include file="!LibUIDropDownMenu\LibUIDropDownMenu\LibUIDropDownMenu.xml"/> -->
 
 </Ui>

@@ -231,9 +231,9 @@ function dragndrop:UpdateDropFrames()
 
 	-- // this is basically the same loop as the one in mainFrame,
 	-- but instead of adding drag&drop code in that file,
-	-- i prefer to put everything here
+	-- I prefer to put everything here
 
-	-- i am looping on every widget in order,
+	-- I am looping on every widget in order,
 	-- while figuring out every drop point, their data (pos), and UI positioning
 
 	for catOrder,catID in ipairs(tabData.orderedCatIDs) do -- for every base category
@@ -295,7 +295,7 @@ end
 
 function dragndrop:SetDropFrameData(frame, tabID, catID, pos)
 	-- each drop frame has all the data necessary to understand where it is,
-	-- so that i don't have to find out the drop pos again at drop time
+	-- so that I don't have to find out the drop pos again at drop time
 	if not frame or not frame.dropData then return end
 
 	frame.dropData.tabID = tabID
@@ -459,10 +459,10 @@ local function dragMouseStart()
 	-- where the widget was first clicked on before the drag, and we start moving it
 	-- (it is a dummy widget, perfect duplicate just for a visual feedback, but it doesn't actually do anything)
 
-	-- !! i am using this custom snapping and NOT using the default drag's StartMoving and StopMovingOrSizing snap because
+	-- !! I am using this custom snapping and NOT using the default drag's StartMoving and StopMovingOrSizing snap because
 	-- !! it simply doesn't work for different frames. when dragging we are clicking on the button of the interactiveLabel of the widget,
 	-- !! but the drag needs to be moving the entire widget --> it simply doesn't know where the original click was since it was on a sub-frame
-	-- (maaaaybe there was an other solution that i don't know of, but whatever :D)
+	-- (maaaaybe there was an other solution that I don't know of, but whatever :D)
 
 	draggingWidget:SetParent(UIParent) -- PARENT SWITCH !! IMPORTANT TO TAKE THIS INTO ACCOUNT FOR THE SCALE (LIST CS | UIPARENT CS) (CS = Coordinate Space)
 	draggingWidget:SetScale(listScale) -- since switching parents changed the scale, we set it again to copy the list's widgets

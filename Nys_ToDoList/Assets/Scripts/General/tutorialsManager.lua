@@ -2,14 +2,16 @@
 local addonName, addonTable = ...
 
 -- addonTable aliases
-local core = addonTable.core
+local libs = addonTable.libs
+local chat = addonTable.chat
 local utils = addonTable.utils
 local widgets = addonTable.widgets
+local database = addonTable.database
 local mainFrame = addonTable.mainFrame
 local tutorialsManager = addonTable.tutorialsManager
 
 -- Variables
-local L = core.L
+local L = libs.L
 
 -- tutorial
 local tutorialFrames = {}
@@ -39,7 +41,7 @@ local tutorialOrder = {
 local tutorials = {
 	["introduction"] = {
 		IsEnabled = function()
-			return not NysTDL.db.global.tutorials_progression["introduction"]
+			return not database.acedb.global.tutorials_progression["introduction"]
 		end,
 		tutosOrdered = {
 			"TM_introduction_addNewCat",
@@ -50,13 +52,13 @@ local tutorials = {
 		},
 		progress = 0,
 		OnFinish = function()
-			NysTDL.db.global.tutorials_progression["introduction"] = true
+			database.acedb.global.tutorials_progression["introduction"] = true
 		end
 	},
 	["editmode"] = {
 		IsEnabled = function()
-			return NysTDL.db.global.tutorials_progression["introduction"]
-			and not NysTDL.db.global.tutorials_progression["editmode"]
+			return database.acedb.global.tutorials_progression["introduction"]
+			and not database.acedb.global.tutorials_progression["editmode"]
 		end,
 		tutosOrdered = {
 			"TM_editmode_editmodeBtn",
@@ -70,7 +72,7 @@ local tutorials = {
 		},
 		progress = 0,
 		OnFinish = function()
-			NysTDL.db.global.tutorials_progression["editmode"] = true
+			database.acedb.global.tutorials_progression["editmode"] = true
 		end
 	},
 }
@@ -87,7 +89,7 @@ function tutorialsManager:CreateTutoFrames()
 	tutorialFrames.TM_introduction_accessOptions = widgets:TutorialFrame("TM_introduction_accessOptions", false, "DOWN", L["You can access the options from here"], 220, 50)
 	tutorialFrames.TM_introduction_getMoreInfo = widgets:TutorialFrame("TM_introduction_getMoreInfo", false, "LEFT", L["If you're having any problems or you just want more information, you can always click here to print help in the chat!"], 275, 50)
 	tutorialFrames.TM_introduction_editmode = widgets:TutorialFrame("TM_introduction_editmode", false, "DOWN", L["To delete items and do a lot more, you can right-click anywhere on the list or click on this button to toggle the edit mode"], 275, 50)
-	tutorialFrames.TM_introduction_editmodeChat = widgets:TutorialFrame("TM_introduction_editmodeChat", true, "RIGHT", utils:SafeStringFormat(L["Please type %s and read the chat message for more information about this mode"], "\""..core.slashCommand..' '..L["editmode"].."\""), 275, 50)
+	tutorialFrames.TM_introduction_editmodeChat = widgets:TutorialFrame("TM_introduction_editmodeChat", true, "RIGHT", utils:SafeStringFormat(L["Please type %s and read the chat message for more information about this mode"], "\""..chat.slashCommand..' '..L["editmode"].."\""), 275, 50)
 
 	-- tutorialFrames.TM_editmode_editmodeBtn = widgets:TutorialFrame("TM_editmode_editmodeBtn", false, "DOWN", L["To delete items and do a lot more, you can right-click anywhere on the list or click on this button to toggle the edit mode"], 275, 50)
 	-- tutorialFrames.TM_editmode_delete = widgets:TutorialFrame("TM_editmode_delete", true, "RIGHT", L["Delete items and categories"], 275, 50)
@@ -125,11 +127,11 @@ function tutorialsManager:UpdateFramesVisibility()
 --     end
 --   end
 
-	if NysTDL.db.global.tuto_progression < #tutorialOrder then
+	if database.acedb.global.tuto_progression < #tutorialOrder then
 		for i, v in pairs(tutorialOrder) do
 			local isShown = false
-			if NysTDL.db.global.tuto_progression < i then -- if the current loop tutorial has not already been done
-				if NysTDL.db.global.tuto_progression == i-1 then -- and the previous one has been done
+			if database.acedb.global.tuto_progression < i then -- if the current loop tutorial has not already been done
+				if database.acedb.global.tuto_progression == i-1 then -- and the previous one has been done
 					if tutorialFramesTarget[v] ~= nil and tutorialFramesTarget[v]:IsVisible() then -- and his corresponding target frame is currently visible
 						isShown = true -- then we can show the tutorial frame
 					end
@@ -137,7 +139,7 @@ function tutorialsManager:UpdateFramesVisibility()
 			end
 			tutorialFrames[v]:SetShown(isShown)
 		end
-	elseif NysTDL.db.global.tuto_progression == #tutorialOrder then -- we completed the last tutorial
+	elseif database.acedb.global.tuto_progression == #tutorialOrder then -- we completed the last tutorial
 		tutorialFrames[tutorialOrder[#tutorialOrder]]:SetShown(false) -- we don't need to do the big loop above, we just need to hide the last tutorial frame (it's just optimization)
 		tutorialsManager:Next() -- and we also add a step of progression, just so that we never enter this 'if' again. (optimization too :D)
 		-- mainFrame:Event_TDLFrame_OnVisibilityUpdate() -- and finally, we reset the menu openings of the list at the end of the tutorial, for more visibility
@@ -149,8 +151,8 @@ end
 function tutorialsManager:Validate(tuto_name)
 	-- completes the "tuto_name" tutorial, only if it was active
 	local i = utils:GetKeyFromValue(tutorialOrder, tuto_name)
-	if NysTDL.db.global.tuto_progression < i then
-		if NysTDL.db.global.tuto_progression == i-1 then
+	if database.acedb.global.tuto_progression < i then
+		if database.acedb.global.tuto_progression == i-1 then
 			tutorialsManager:Next() -- we validate the tutorial by going to the next one
 			return true
 		end
@@ -158,19 +160,19 @@ function tutorialsManager:Validate(tuto_name)
 end
 
 function tutorialsManager:Next()
-	NysTDL.db.global.tuto_progression = NysTDL.db.global.tuto_progression + 1
+	database.acedb.global.tuto_progression = database.acedb.global.tuto_progression + 1
 end
 
 function tutorialsManager:Previous()
-	NysTDL.db.global.tuto_progression = NysTDL.db.global.tuto_progression - 1
-	if NysTDL.db.global.tuto_progression < 0 then
-		NysTDL.db.global.tuto_progression = 0
+	database.acedb.global.tuto_progression = database.acedb.global.tuto_progression - 1
+	if database.acedb.global.tuto_progression < 0 then
+		database.acedb.global.tuto_progression = 0
 	end
 end
 
 function tutorialsManager:Reset()
-	NysTDL.db.global.tuto_progression = 0
-	-- wipe(NysTDL.db.global.tutorials_progression) TDLATER
+	database.acedb.global.tuto_progression = 0
+	-- wipe(database.acedb.global.tutorials_progression) TDLATER
 	mainFrame:Event_TDLFrame_OnVisibilityUpdate()
 	mainFrame:GetFrame().ScrollFrame:SetVerticalScroll(0)
 end

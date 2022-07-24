@@ -23,7 +23,7 @@ ignore = {
 	"611", -- Line contains only whitespace
 }
 globals = {
-	-- Addon globals
+	-- addon globals
 	"NysTDL",
 
 	-- old saved variables

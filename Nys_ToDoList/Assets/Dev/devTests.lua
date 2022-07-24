@@ -4,31 +4,22 @@
 local addonName, addonTable = ...
 
 -- addonTable aliases
-local chat = addonTable.chat
-local database = addonTable.database
+local libs = addonTable.libs
+local core = addonTable.core
 local enums = addonTable.enums
-local events = addonTable.events
-local migration = addonTable.migration
-local optionsManager = addonTable.optionsManager
-local resetManager = addonTable.resetManager
-local utils = addonTable.utils
-local databroker = addonTable.databroker
 local dataManager = addonTable.dataManager
 local mainFrame = addonTable.mainFrame
-local tabsFrame = addonTable.tabsFrame
-local tutorialsManager = addonTable.tutorialsManager
-local widgets = addonTable.widgets
-local core = addonTable.core
 
 -- Variables
-local L = core.L
+local L = libs.L
+local AceConfigDialog = libs.AceConfigDialog
 
 -- ============================================ --
 
 -- Tests function (for me :p) (callable with macros in-game)
 function Nys_Tests(nb, ...)
 	if nb == 1 then
-		LibStub("AceConfigDialog-3.0"):Open(addonName)
+		AceConfigDialog:Open(addonName)
 	elseif nb == 2 then
 		mainFrame:Toggle()
 		-- UIFrameFadeOut(tdlFrame, 2)
@@ -38,7 +29,7 @@ function Nys_Tests(nb, ...)
 		-- end
 		-- print(tdlFrame.fadeInfo.finishedFunc)
 	elseif nb == 3 then
-		NysTDL:AddonUpdated()
+		core:AddonUpdated()
 		-- migration:TestFunc()
 		-- for tabID, tabData in dataManager:ForEach(enums.tab, false) do
 		--   if next(tabData.reset.days) then

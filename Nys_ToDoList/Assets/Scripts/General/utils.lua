@@ -2,12 +2,12 @@
 local addonName, addonTable = ...
 
 -- addonTable aliases
-local core = addonTable.core
+local libs = addonTable.libs
 local enums = addonTable.enums
 local utils = addonTable.utils
 
 -- Variables
-local L = core.L
+local L = libs.L
 
 --/*******************/ COMMON (utils) FUNCTIONS /*************************/--
 
@@ -173,7 +173,7 @@ end
 
 function utils:HasHyperlink(s)
 	if s ~= nil then
-		-- a hyperlink pattern has at least one '|H' and two '|h', so this is the closest test i can think of
+		-- a hyperlink pattern has at least one '|H' and two '|h', so this is the closest test I can think of
 		-- TDLATER replace with a regex match
 		if (select(2, string.gsub(s, "|H", "")) >= 1) and (select(2, string.gsub(s, "|h", "")) >= 2) then
 			return true
