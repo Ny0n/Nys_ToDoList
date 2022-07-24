@@ -1,14 +1,14 @@
 -- Namespaces
-local addonName, addonTable = ...
+local addonName = ...
 
--- addonTable aliases
-local libs = addonTable.libs
-local enums = addonTable.enums
-local widgets = addonTable.widgets
-local database = addonTable.database
-local migration = addonTable.migration
-local dataManager = addonTable.dataManager
-local resetManager = addonTable.resetManager
+-- NysTDL aliases
+local libs = NysTDL.libs
+local enums = NysTDL.enums
+local widgets = NysTDL.widgets
+local database = NysTDL.database
+local migration = NysTDL.migration
+local dataManager = NysTDL.dataManager
+local resetManager = NysTDL.resetManager
 
 -- Variables
 local L = libs.L
@@ -161,8 +161,8 @@ function database:DBInit()
 	-- // initialization of elements that need to be updated correctly when the profile changes
 
 	-- remember undos
-	if not database.acedb.profile.rememberUndo then
-		wipe(database.acedb.profile.undoTable)
+	if not NysTDL.acedb.profile.rememberUndo then
+		wipe(NysTDL.acedb.profile.undoTable)
 	end
 
 	-- data quantities
@@ -193,9 +193,9 @@ end
 function database.ctab(newTabID) -- easy access to that specific database variable
 	-- sets or gets the currently selected tab ID
 	if dataManager:IsID(newTabID) then
-		database.acedb.profile.currentTab = newTabID
+		NysTDL.acedb.profile.currentTab = newTabID
 	end
-	return database.acedb.profile.currentTab
+	return NysTDL.acedb.profile.currentTab
 end
 
 function database:CreateDefaultTabs()
@@ -238,12 +238,12 @@ end
 
 function database:Initialize()
 	-- Saved variable database
-	database.acedb = LibStub("AceDB-3.0"):New("NysToDoListDB", database.defaults)
+	NysTDL.acedb = LibStub("AceDB-3.0"):New("NysToDoListDB", database.defaults)
 	database:DBInit() -- initialization for some elements of the current acedb
 
 	-- callbacks for database changes
-	database.acedb.RegisterCallback(database, "OnProfileChanged", "ProfileChanged")
-	database.acedb.RegisterCallback(database, "OnProfileCopied", "ProfileChanged")
-	database.acedb.RegisterCallback(database, "OnProfileReset", "ProfileChanged")
-	database.acedb.RegisterCallback(database, "OnDatabaseReset", "ProfileChanged")
+	NysTDL.acedb.RegisterCallback(database, "OnProfileChanged", "ProfileChanged")
+	NysTDL.acedb.RegisterCallback(database, "OnProfileCopied", "ProfileChanged")
+	NysTDL.acedb.RegisterCallback(database, "OnProfileReset", "ProfileChanged")
+	NysTDL.acedb.RegisterCallback(database, "OnDatabaseReset", "ProfileChanged")
 end

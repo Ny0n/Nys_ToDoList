@@ -1,15 +1,15 @@
 -- Namespaces
-local addonName, addonTable = ...
+local addonName = ...
 
--- addonTable aliases
-local libs = addonTable.libs
-local core = addonTable.core
-local utils = addonTable.utils
-local enums = addonTable.enums
-local database = addonTable.database
-local mainFrame = addonTable.mainFrame
-local databroker = addonTable.databroker
-local optionsManager = addonTable.optionsManager
+-- NysTDL aliases
+local libs = NysTDL.libs
+local core = NysTDL.core
+local utils = NysTDL.utils
+local enums = NysTDL.enums
+local database = NysTDL.database
+local mainFrame = NysTDL.mainFrame
+local databroker = NysTDL.databroker
+local optionsManager = NysTDL.optionsManager
 
 -- Variables
 local L = libs.L
@@ -22,7 +22,7 @@ local AceTimer = libs.AceTimer
 -- // SIMPLE
 
 function databroker:DrawSimpleTooltip(tooltip)
-	if not database.acedb.profile.minimap.tooltip then
+	if not NysTDL.acedb.profile.minimap.tooltip then
 		tooltip:Hide()
 		return
 	end
@@ -36,7 +36,7 @@ function databroker:DrawSimpleTooltip(tooltip)
 		tooltip:AddDoubleLine(core.toc.title, core.toc.version)
 		tooltip:AddLine(string.format("|cff%s%s|r", hex, L["Click"]).." - "..string.format("|cff%s%s|r", "FFFFFF", L["Toggle the list"]))
 		tooltip:AddLine(string.format("|cff%s%s|r", hex, L["Shift-Click"]).." - "..string.format("|cff%s%s|r", "FFFFFF", L["Open addon options"]))
-		tooltip:AddLine(string.format("|cff%s%s|r", hex, L["Ctrl-Click"]).." - "..string.format("|cff%s%s|r", "FFFFFF", database.acedb.profile.minimap.lock and L["Unlock minimap button"] or L["Lock minimap button"]))
+		tooltip:AddLine(string.format("|cff%s%s|r", hex, L["Ctrl-Click"]).." - "..string.format("|cff%s%s|r", "FFFFFF", NysTDL.acedb.profile.minimap.lock and L["Unlock minimap button"] or L["Lock minimap button"]))
 		tooltip:Show()
 	end
 end
@@ -52,7 +52,7 @@ function databroker:SetSimpleMode()
 	function o.OnClick()
 		if IsControlKeyDown() then
 			-- lock minimap button
-			if not database.acedb.profile.minimap.lock then
+			if not NysTDL.acedb.profile.minimap.lock then
 				LDBIcon:Lock(addonName)
 			else
 				LDBIcon:Unlock(addonName)
@@ -75,7 +75,7 @@ end
 -- // ADVANCED
 
 function databroker:DrawAdvancedTooltip(tooltip)
-	if not database.acedb.profile.minimap.tooltip then -- TDLATER remove duplicates
+	if not NysTDL.acedb.profile.minimap.tooltip then -- TDLATER remove duplicates
 		tooltip:Hide()
 		return
 	end
@@ -103,7 +103,7 @@ function databroker:SetAdvancedMode()
 	function o.OnClick()
 		if IsControlKeyDown() then
 			-- lock minimap button
-			if not database.acedb.profile.minimap.lock then
+			if not NysTDL.acedb.profile.minimap.lock then
 				LDBIcon:Lock(addonName)
 			else
 				LDBIcon:Unlock(addonName)
@@ -150,19 +150,19 @@ function databroker:SetMode(mode)
 	elseif mode == enums.databrokerModes.frame then
 		self:SetFrameMode()
 	end
-	database.acedb.profile.databrokerMode = mode
+	NysTDL.acedb.profile.databrokerMode = mode
 end
 
 function databroker:CreateDatabrokerObject()
 	self.object = LDB:NewDataObject(addonName)
-	databroker:SetMode(database.acedb.profile.databrokerMode)
+	databroker:SetMode(NysTDL.acedb.profile.databrokerMode)
 end
 
 -- minimap button
 
 function databroker:CreateMinimapButton()
 	-- Registering the data broker and creating the button
-	LDBIcon:Register(addonName, self.object, database.acedb.profile.minimap)
+	LDBIcon:Register(addonName, self.object, NysTDL.acedb.profile.minimap)
 
 	-- this is the secret to correctly update the button position, (since we can't update it in the init code)
 	-- so that the first time that we click on it, it doesn't go somewhere else like so many do,
@@ -186,5 +186,5 @@ function databroker:CreateMinimapButton()
 end
 
 function databroker:RefreshMinimapButton()
-	LDBIcon:Refresh(addonName, database.acedb.profile.minimap)
+	LDBIcon:Refresh(addonName, NysTDL.acedb.profile.minimap)
 end

@@ -1,10 +1,10 @@
 -- Namespaces
-local addonName, addonTable = ...
+local addonName = ...
 
--- addonTable aliases
-local libs = addonTable.libs
-local enums = addonTable.enums
-local utils = addonTable.utils
+-- NysTDL aliases
+local libs = NysTDL.libs
+local enums = NysTDL.enums
+local utils = NysTDL.utils
 
 -- Variables
 local L = libs.L
@@ -218,3 +218,5 @@ function utils:ColorText(colorTable, text)
 	-- alpha is 1
 	return string.format("|cff%s%s|r", utils:RGBToHex(colorTable), text)
 end
+
+NysTDL.utils = utils

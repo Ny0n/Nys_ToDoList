@@ -1,18 +1,18 @@
 -- Namespaces
-local addonName, addonTable = ...
+local addonName = ...
 
 --/*******************/ ADDON LIBS AND DATA HANDLER /*************************/--
 
 -- declaring the different addon tables, one for each file
--- (that way everything is private and inaccessible in-game)
 
 local LibStub = LibStub
 
--- addon object
-NysTDL = LibStub("AceAddon-3.0"):NewAddon(addonName)
+-- data
+NysTDL = LibStub("AceAddon-3.0"):NewAddon(addonName) -- addon object
+NysTDL.acedb = nil -- defined in database.lua
 
 -- libs
-addonTable.libs = {
+NysTDL.libs = {
 	AceConfig = LibStub("AceConfig-3.0"),
 	AceConfigCmd = LibStub("AceConfigCmd-3.0"),
 	AceConfigDialog = LibStub("AceConfigDialog-3.0"),
@@ -33,35 +33,35 @@ addonTable.libs = {
 }
 
 -- files
-addonTable.chat = {}
-addonTable.database = {}
-addonTable.dataManager = {}
-addonTable.enums = {}
-addonTable.events = {}
-addonTable.migration = {}
-addonTable.optionsManager = {}
-addonTable.resetManager = {}
-addonTable.tutorialsManager = {}
-addonTable.utils = {}
-addonTable.databroker = {}
-addonTable.dragndrop = {}
-addonTable.mainFrame = {}
-addonTable.tabsFrame = {}
-addonTable.widgets = {}
-addonTable.core = {}
+NysTDL.chat = {}
+NysTDL.database = {}
+NysTDL.dataManager = {}
+NysTDL.enums = {}
+NysTDL.events = {}
+NysTDL.migration = {}
+NysTDL.optionsManager = {}
+NysTDL.resetManager = {}
+NysTDL.tutorialsManager = {}
+NysTDL.utils = {}
+NysTDL.databroker = {}
+NysTDL.dragndrop = {}
+NysTDL.mainFrame = {}
+NysTDL.tabsFrame = {}
+NysTDL.widgets = {}
+NysTDL.core = {}
 
 --/***************************************************************************/--
 
--- addonTable aliases
-local libs = addonTable.libs
-local core = addonTable.core
-local chat = addonTable.chat
-local utils = addonTable.utils
-local events = addonTable.events
-local widgets = addonTable.widgets
-local database = addonTable.database
-local resetManager = addonTable.resetManager
-local optionsManager = addonTable.optionsManager
+-- NysTDL aliases
+local libs = NysTDL.libs
+local core = NysTDL.core
+local chat = NysTDL.chat
+local utils = NysTDL.utils
+local events = NysTDL.events
+local widgets = NysTDL.widgets
+local database = NysTDL.database
+local resetManager = NysTDL.resetManager
+local optionsManager = NysTDL.optionsManager
 
 -- // LOCALE CHECK //
 

@@ -1,15 +1,15 @@
 -- Namespaces
-local addonName, addonTable = ...
+local addonName = ...
 
--- addonTable aliases
-local libs = addonTable.libs
-local chat = addonTable.chat
-local enums = addonTable.enums
-local utils = addonTable.utils
-local widgets = addonTable.widgets
-local database = addonTable.database
-local dataManager = addonTable.dataManager
-local resetManager = addonTable.resetManager
+-- NysTDL aliases
+local libs = NysTDL.libs
+local chat = NysTDL.chat
+local enums = NysTDL.enums
+local utils = NysTDL.utils
+local widgets = NysTDL.widgets
+local database = NysTDL.database
+local dataManager = NysTDL.dataManager
+local resetManager = NysTDL.resetManager
 
 -- the access to mainFrame is controlled:
 -- this file can only call mainFrame funcs if it is specifically authorized to do so,
@@ -21,7 +21,7 @@ dataManager.authorized = true
 local refreshAuthorized = true
 local dummyFunc = function()end
 
-local _mainFrame = addonTable.mainFrame
+local _mainFrame = NysTDL.mainFrame
 local mainFrame = setmetatable({}, {
 	__index = function(t,k)
 		if not dataManager.authorized then return dummyFunc end
@@ -30,7 +30,7 @@ local mainFrame = setmetatable({}, {
 	end,
 })
 
-local _tabsFrame = addonTable.tabsFrame
+local _tabsFrame = NysTDL.tabsFrame
 local tabsFrame = setmetatable({}, {
 	__index = function(t,k)
 		if not dataManager.authorized then return dummyFunc end
@@ -96,11 +96,11 @@ end
 -- id func
 function dataManager:NewID()
 	--[[
-		This function returns the global saved variable "database.acedb.global.nextID" as it is,
+		This function returns the global saved variable "NysTDL.acedb.global.nextID" as it is,
 		then increments it by one, using the hexadecimal base.
 
 		! the benefit of this func over using an integer with string.format("%x", ...) is that no numbers are used !
-		-- I'm incrementing database.acedb.global.nextID hexadecimally using only strings --
+		-- I'm incrementing NysTDL.acedb.global.nextID hexadecimally using only strings --
 		-> this means that I am not bound to the limits of lua numbers,
 			but to the limit of lua strings, which in hex terms, is infinitely bigger.
 	]]
@@ -111,7 +111,7 @@ function dataManager:NewID()
 
 	-- // script start
 
-	local g = database.acedb.global
+	local g = NysTDL.acedb.global
 
 	-- safeguard
 	local sg = function()
@@ -197,7 +197,7 @@ function dataManager:GetData(isGlobal, tableMode)
 	-- returns itemsList, categoriesList, and tabsList located either in the global or profile SV
 	-- as a table if asked so
 
-	local loc = isGlobal and database.acedb.global or database.acedb.profile
+	local loc = isGlobal and NysTDL.acedb.global or NysTDL.acedb.profile
 	if tableMode then
 		wipe(T_GetData)
 		T_GetData[enums.item] = loc.itemsList
@@ -994,13 +994,13 @@ function dataManager:AddUndo(undoData)
 	-- this is so we can add undos at the right time, and possibly not at creation
 	-- because the table data / orders can be modified in between the two actions.
 	-- undoData can also be a pure number, to keep track of how many undos to undo after a clear
-	tinsert(database.acedb.profile.undoTable, undoData)
+	tinsert(NysTDL.acedb.profile.undoTable, undoData)
 end
 
 function dataManager:Undo()
 	-- when undoing, there are 4 possible cases:
 	-- undoing a clear, an item deletion, a category deletion, or a tab deletion
-	if #database.acedb.profile.undoTable == 0 then
+	if #NysTDL.acedb.profile.undoTable == 0 then
 		chat:PrintForced(L["Nothing to undo"])
 		return
 	end
@@ -1008,7 +1008,7 @@ function dataManager:Undo()
 	local refreshID = dataManager:SetRefresh(false)
 
 	local success
-	local toUndo = tremove(database.acedb.profile.undoTable) -- remove last
+	local toUndo = tremove(NysTDL.acedb.profile.undoTable) -- remove last
 	if toUndo then -- if we got something to undo
 		if type(toUndo) == "number" then -- clear
 			if toUndo > 0 then -- undoing a clear
@@ -1017,7 +1017,7 @@ function dataManager:Undo()
 				for i=1, toUndo do
 					success = not not dataManager:Undo()
 					if not success then
-						tinsert(database.acedb.profile.undoTable, toUndo-(i-1))
+						tinsert(NysTDL.acedb.profile.undoTable, toUndo-(i-1))
 						chat:PrintForced(L["Undo interrupted"])
 						break
 					end
@@ -1040,7 +1040,7 @@ function dataManager:Undo()
 				success = not not addTab(toUndo.ID, toUndo.data, toUndo.isGlobal)
 			end
 			if not success then -- cancel
-				tinsert(database.acedb.profile.undoTable, toUndo)
+				tinsert(NysTDL.acedb.profile.undoTable, toUndo)
 			else
 				if not undoing then
 					local type = ((toUndo.enum == enums.item) and L["Item"]:lower())
@@ -1190,7 +1190,7 @@ function dataManager:ToggleChecked(itemID, state)
 	end
 
 	-- refresh the mainFrame
-	if database.acedb.profile.instantRefresh then
+	if NysTDL.acedb.profile.instantRefresh then
 		mainFrame:Refresh()
 	else
 		mainFrame:UpdateVisuals()

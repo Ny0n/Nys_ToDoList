@@ -1,13 +1,13 @@
 -- Namespaces
-local addonName, addonTable = ...
+local addonName = ...
 
--- addonTable aliases
-local libs = addonTable.libs
-local chat = addonTable.chat
-local utils = addonTable.utils
-local enums = addonTable.enums
-local dataManager = addonTable.dataManager
-local resetManager = addonTable.resetManager
+-- NysTDL aliases
+local libs = NysTDL.libs
+local chat = NysTDL.chat
+local utils = NysTDL.utils
+local enums = NysTDL.enums
+local dataManager = NysTDL.dataManager
+local resetManager = NysTDL.resetManager
 
 -- Variables
 local L = libs.L
@@ -474,3 +474,5 @@ end
 
 -- luacheck: pop
 --@end-do-not-package@
+
+NysTDL.resetManager = resetManager

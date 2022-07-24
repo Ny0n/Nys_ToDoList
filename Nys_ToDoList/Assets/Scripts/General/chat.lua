@@ -1,17 +1,17 @@
 -- Namespaces
-local addonName, addonTable = ...
+local addonName = ...
 
--- addonTable aliases
-local libs = addonTable.libs
-local core = addonTable.core
-local chat = addonTable.chat
-local enums = addonTable.enums
-local utils = addonTable.utils
-local database = addonTable.database
-local mainFrame = addonTable.mainFrame
-local dataManager = addonTable.dataManager
-local resetManager = addonTable.resetManager
-local tutorialsManager = addonTable.tutorialsManager
+-- NysTDL aliases
+local libs = NysTDL.libs
+local core = NysTDL.core
+local chat = NysTDL.chat
+local enums = NysTDL.enums
+local utils = NysTDL.utils
+local database = NysTDL.database
+local mainFrame = NysTDL.mainFrame
+local dataManager = NysTDL.dataManager
+local resetManager = NysTDL.resetManager
+local tutorialsManager = NysTDL.tutorialsManager
 
 -- Variables
 local L = libs.L
@@ -19,7 +19,7 @@ local L = libs.L
 --/*******************/ CHAT RELATED FUNCTIONS /*************************/--
 
 function chat:Print(...)
-	if not database.acedb.profile.showChatMessages then return end -- we don't print anything if the user chose to deactivate this
+	if not NysTDL.acedb.profile.showChatMessages then return end -- we don't print anything if the user chose to deactivate this
 	self:PrintForced(...)
 end
 
@@ -65,12 +65,12 @@ end
 
 -- Warning function
 function chat:Warn()
-	if database.acedb.profile.showWarnings then -- if the option is checked
+	if NysTDL.acedb.profile.showWarnings then -- if the option is checked
 		if not resetManager:autoResetedThisSessionGET() then -- we don't want to show this warning if it's the first log in of the day, only if it is the next ones
 			local haveWarned = false
 			local warn = "--------------| |cffff0000"..L["Warning"]:upper().."|r |--------------"
 
-			if database.acedb.profile.favoritesWarning then -- and the user allowed this functionnality
+			if NysTDL.acedb.profile.favoritesWarning then -- and the user allowed this functionnality
 				local uncheckedFav = dataManager:GetRemainingNumbers().uncheckedFav
 				if uncheckedFav > 0 then
 					local msg = ""
@@ -86,7 +86,7 @@ function chat:Warn()
 					end, true)
 
 					if msg ~= "" then
-						local hex = utils:RGBToHex({ database.acedb.profile.favoritesColor[1]*255, database.acedb.profile.favoritesColor[2]*255, database.acedb.profile.favoritesColor[3]*255} )
+						local hex = utils:RGBToHex({ NysTDL.acedb.profile.favoritesColor[1]*255, NysTDL.acedb.profile.favoritesColor[2]*255, NysTDL.acedb.profile.favoritesColor[3]*255} )
 						msg = string.format("|cff%s%s|r", hex, msg)
 						if not haveWarned then chat:PrintForced(warn) haveWarned = true end
 						chat:PrintForced(utils:SafeStringFormat(L["You still have %s favorite item(s) to do before the next reset"]..".", msg))
@@ -94,7 +94,7 @@ function chat:Warn()
 				end
 			end
 
-			if database.acedb.profile.normalWarning then
+			if NysTDL.acedb.profile.normalWarning then
 				local totalUnchecked = dataManager:GetRemainingNumbers().totalUnchecked
 				if totalUnchecked > 0 then
 					local total = 0

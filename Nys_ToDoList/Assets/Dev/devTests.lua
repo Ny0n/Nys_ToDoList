@@ -1,14 +1,14 @@
 -- luacheck: ignore 111 211 212
 
 -- Namespaces
-local addonName, addonTable = ...
+local addonName = ...
 
--- addonTable aliases
-local libs = addonTable.libs
-local core = addonTable.core
-local enums = addonTable.enums
-local dataManager = addonTable.dataManager
-local mainFrame = addonTable.mainFrame
+-- NysTDL aliases
+local libs = NysTDL.libs
+local core = NysTDL.core
+local enums = NysTDL.enums
+local dataManager = NysTDL.dataManager
+local mainFrame = NysTDL.mainFrame
 
 -- Variables
 local L = libs.L

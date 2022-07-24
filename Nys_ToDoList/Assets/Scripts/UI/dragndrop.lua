@@ -1,13 +1,13 @@
 -- Namespaces
-local addonName, addonTable = ...
+local addonName = ...
 
--- addonTable aliases
-local enums = addonTable.enums
-local utils = addonTable.utils
-local database = addonTable.database
-local dragndrop = addonTable.dragndrop
-local mainFrame = addonTable.mainFrame
-local dataManager = addonTable.dataManager
+-- NysTDL aliases
+local enums = NysTDL.enums
+local utils = NysTDL.utils
+local database = NysTDL.database
+local dragndrop = NysTDL.dragndrop
+local mainFrame = NysTDL.mainFrame
+local dataManager = NysTDL.dataManager
 
 -- // Variables
 

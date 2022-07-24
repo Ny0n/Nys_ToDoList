@@ -1,14 +1,14 @@
 -- Namespaces
-local addonName, addonTable = ...
+local addonName = ...
 
--- addonTable aliases
-local libs = addonTable.libs
-local enums = addonTable.enums
-local utils = addonTable.utils
-local database = addonTable.database
-local mainFrame = addonTable.mainFrame
-local tabsFrame = addonTable.tabsFrame
-local dataManager = addonTable.dataManager
+-- NysTDL aliases
+local libs = NysTDL.libs
+local enums = NysTDL.enums
+local utils = NysTDL.utils
+local database = NysTDL.database
+local mainFrame = NysTDL.mainFrame
+local tabsFrame = NysTDL.tabsFrame
+local dataManager = NysTDL.dataManager
 
 -- // Variables
 local L = libs.L
@@ -137,7 +137,7 @@ function private:ScrollTo(pos) -- replacement for scrollFrame:SetHorizontalScrol
 	scrollFrame:SetHorizontalScroll(pos)
 	private:OnTabsMoving()
 	if scrollFrame:IsMouseOver() then -- custom (if we hover during the anim)
-		private:SetTabWidgetsContentAlpha(database.acedb.profile.frameContentAlpha/100, true)
+		private:SetTabWidgetsContentAlpha(NysTDL.acedb.profile.frameContentAlpha/100, true)
 	end
 end
 
@@ -360,7 +360,7 @@ function private:ListButtonWidget(tabID, parentFrame)
 	listButtonWidget:SetSize(parentFrame:GetWidth()-12, listButtonWidgetHeight)
 	listButtonWidget:SetScript("OnClick", function(self)
 		tabWidgets[self.tabID]:Click()
-		private:SetTabWidgetsContentAlpha(database.acedb.profile.frameContentAlpha/100, true) -- I hate this alpha problem, but whatever, this fixes it
+		private:SetTabWidgetsContentAlpha(NysTDL.acedb.profile.frameContentAlpha/100, true) -- I hate this alpha problem, but whatever, this fixes it
 		private:IncludeTab(self.tabID) -- TDLATER redo for anim
 	end)
 
@@ -462,8 +462,8 @@ function tabsFrame:UpdateTab(tabID)
 	listButtonWidgets[tabID] = private:ListButtonWidget(tabID, overflowList.content)
 
 	-- we update the alpha for the new tab (and for everything else)
-	tabsFrame:SetAlpha(database.acedb.profile.frameAlpha/100)
-	tabsFrame:SetContentAlpha(database.acedb.profile.frameContentAlpha/100)
+	tabsFrame:SetAlpha(NysTDL.acedb.profile.frameAlpha/100)
+	tabsFrame:SetContentAlpha(NysTDL.acedb.profile.frameContentAlpha/100)
 
 	tabsFrame:Refresh() -- refresh
 end
@@ -510,7 +510,7 @@ function tabsFrame:Refresh()
 	private:IncludeTab(database.ctab())
 
 	-- there we update the alpha of everyone (bc maybe we're not hovering the scrollFrame, so any refresh does it as well, thanks WoW API ;)
-	private:SetTabWidgetsContentAlpha(database.acedb.profile.frameContentAlpha/100, true)
+	private:SetTabWidgetsContentAlpha(NysTDL.acedb.profile.frameContentAlpha/100, true)
 end
 
 --/*******************/ INITIALIZATION /*************************/--
@@ -537,11 +537,11 @@ function tabsFrame:CreateTabsFrame()
 		if self:IsMouseOver() then
 			wasMouseOver = true
 			-- only go through the shown tab widgets for optimization
-			private:SetTabWidgetsContentAlpha(database.acedb.profile.frameContentAlpha/100)
+			private:SetTabWidgetsContentAlpha(NysTDL.acedb.profile.frameContentAlpha/100)
 		elseif wasMouseOver then
 			wasMouseOver = false
 			-- this backup update is to counter the bug that happends when we pass at high speed over the tabs
-			private:SetTabWidgetsContentAlpha(database.acedb.profile.frameContentAlpha/100)
+			private:SetTabWidgetsContentAlpha(NysTDL.acedb.profile.frameContentAlpha/100)
 		end
 	end)
 

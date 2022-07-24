@@ -1,9 +1,9 @@
 -- Namespaces
-local addonName, addonTable = ...
+local addonName = ...
 
--- addonTable aliases
-local libs = addonTable.libs
-local enums = addonTable.enums
+-- NysTDL aliases
+local libs = NysTDL.libs
+local enums = NysTDL.enums
 
 local L = libs.L
 

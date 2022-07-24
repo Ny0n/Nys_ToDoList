@@ -1,19 +1,19 @@
 -- Namespaces
-local addonName, addonTable = ...
+local addonName = ...
 
--- addonTable aliases
-local libs = addonTable.libs
-local core = addonTable.core
-local enums = addonTable.enums
-local utils = addonTable.utils
-local widgets = addonTable.widgets
-local database = addonTable.database
-local mainFrame = addonTable.mainFrame
-local tabsFrame = addonTable.tabsFrame
-local databroker = addonTable.databroker
-local dataManager = addonTable.dataManager
-local resetManager = addonTable.resetManager
-local optionsManager = addonTable.optionsManager
+-- NysTDL aliases
+local libs = NysTDL.libs
+local core = NysTDL.core
+local enums = NysTDL.enums
+local utils = NysTDL.utils
+local widgets = NysTDL.widgets
+local database = NysTDL.database
+local mainFrame = NysTDL.mainFrame
+local tabsFrame = NysTDL.tabsFrame
+local databroker = NysTDL.databroker
+local dataManager = NysTDL.dataManager
+local resetManager = NysTDL.resetManager
+local optionsManager = NysTDL.optionsManager
 
 -- Variables
 local L = libs.L
@@ -104,10 +104,10 @@ local tabManagementTable = {
 				name = L["Instant refresh"],
 				desc = L["Delete/Hide items instantly when checking them"].."\n("..L["Applies to all tabs"]..")",
 				get = function()
-					return database.acedb.profile.instantRefresh
+					return NysTDL.acedb.profile.instantRefresh
 				end,
 				set = function(_, state)
-					database.acedb.profile.instantRefresh = state
+					NysTDL.acedb.profile.instantRefresh = state
 					mainFrame:Refresh()
 				end,
 			},
@@ -505,11 +505,11 @@ local function createAddonOptionsTable()
 		type = "group",
 		name = core.toc.title.." ("..core.toc.version..")",
 		get = function(info)
-			return database.acedb.profile[info[#info]]
+			return NysTDL.acedb.profile[info[#info]]
 		end,
 		set = function(info, ...)
-			if database.acedb.profile[info[#info]] ~= nil then
-				database.acedb.profile[info[#info]] = ...
+			if NysTDL.acedb.profile[info[#info]] ~= nil then
+				NysTDL.acedb.profile[info[#info]] = ...
 			end
 		end,
 		args = {
@@ -532,13 +532,13 @@ local function createAddonOptionsTable()
 								type = "toggle",
 								name = L["Stay opened"],
 								desc = L["Keeps the list opened if it was during last session"],
-								disabled = function() return database.acedb.profile.openByDefault end,
+								disabled = function() return NysTDL.acedb.profile.openByDefault end,
 							}, -- keepOpen
 							openByDefault = {
 								order = 1.3,
 								type = "toggle",
 								name = L["Open by default"],
-								hidden = function() return not database.acedb.profile.keepOpen end
+								hidden = function() return not NysTDL.acedb.profile.keepOpen end
 							}, -- openByDefault
 							rememberUndo = {
 								order = 3.6,
@@ -564,14 +564,14 @@ local function createAddonOptionsTable()
 								name = L["Favorites color"],
 								desc = L["Change the color for the favorite items"],
 								get = function()
-									return unpack(database.acedb.profile.favoritesColor)
+									return unpack(NysTDL.acedb.profile.favoritesColor)
 								end,
 								set = function(_, ...)
-									database.acedb.profile.favoritesColor = { ... }
+									NysTDL.acedb.profile.favoritesColor = { ... }
 									mainFrame:UpdateVisuals()
 								end,
 								disabled = function()
-									return database.acedb.profile.rainbow
+									return NysTDL.acedb.profile.rainbow
 								end,
 							}, -- favoritesColor
 							rainbow = {
@@ -588,7 +588,7 @@ local function createAddonOptionsTable()
 								min = 1,
 								max = 6,
 								step = 1,
-								hidden = function() return not database.acedb.profile.rainbow end,
+								hidden = function() return not NysTDL.acedb.profile.rainbow end,
 							}, -- rainbowSpeed
 							tdlButtonShow = {
 								order = 2.3,
@@ -596,10 +596,10 @@ local function createAddonOptionsTable()
 								name = L["Show movable button"],
 								desc = utils:SafeStringFormat(L["Toggles the display of the %s button"], "\""..core.simpleAddonName.."\""),
 								get = function()
-									return database.acedb.profile.tdlButton.show
+									return NysTDL.acedb.profile.tdlButton.show
 								end,
 								set = function(_, value)
-									database.acedb.profile.tdlButton.show = value
+									NysTDL.acedb.profile.tdlButton.show = value
 									widgets:RefreshTDLButton()
 								end,
 							}, -- tdlButtonShow
@@ -609,14 +609,14 @@ local function createAddonOptionsTable()
 								name = L["Red"],
 								desc = L["Changes the color of the movable button if there are items left to do before tomorrow"],
 								get = function()
-									return database.acedb.profile.tdlButton.red
+									return NysTDL.acedb.profile.tdlButton.red
 								end,
 								set = function(_, value)
-									database.acedb.profile.tdlButton.red = value
+									NysTDL.acedb.profile.tdlButton.red = value
 									widgets:UpdateTDLButtonColor()
 								end,
 								hidden = function()
-									return not database.acedb.profile.tdlButton.show
+									return not NysTDL.acedb.profile.tdlButton.show
 								end
 							}, -- tdlButtonShow
 							minimapButtonHide = {
@@ -624,10 +624,10 @@ local function createAddonOptionsTable()
 								type = "toggle",
 								name = L["Show minimap button"],
 								get = function()
-									return not database.acedb.profile.minimap.hide
+									return not NysTDL.acedb.profile.minimap.hide
 								end,
 								set = function(_, value)
-									database.acedb.profile.minimap.hide = not value
+									NysTDL.acedb.profile.minimap.hide = not value
 									databroker:RefreshMinimapButton()
 								end,
 							}, -- minimapButtonHide
@@ -637,14 +637,14 @@ local function createAddonOptionsTable()
 								name = L["Show tooltip"],
 								desc = L["Show the tooltip of the minimap/databroker button"],
 								get = function()
-									return database.acedb.profile.minimap.tooltip
+									return NysTDL.acedb.profile.minimap.tooltip
 								end,
 								set = function(_, value)
-									database.acedb.profile.minimap.tooltip = value
+									NysTDL.acedb.profile.minimap.tooltip = value
 									databroker:RefreshMinimapButton()
 								end,
 								-- disabled = function()
-								-- 	return database.acedb.profile.minimap.hide
+								-- 	return NysTDL.acedb.profile.minimap.hide
 								-- end,
 							}, -- minimapButtonTooltip
 							keyBind = {
@@ -808,7 +808,7 @@ local function createAddonOptionsTable()
 								type = "group",
 								name = L["Warnings"]..":",
 								inline = true,
-								hidden = function() return not database.acedb.profile.showWarnings end,
+								hidden = function() return not NysTDL.acedb.profile.showWarnings end,
 								args = {
 									favoritesWarning = {
 										order = 1.1,
@@ -828,7 +828,7 @@ local function createAddonOptionsTable()
 										name = L["Hourly reminder"],
 										desc = L["Show warnings every 60 min following your log-in time"],
 										disabled = function()
-											return not (database.acedb.profile.favoritesWarning or database.acedb.profile.normalWarning)
+											return not (NysTDL.acedb.profile.favoritesWarning or NysTDL.acedb.profile.normalWarning)
 										end,
 									}, -- hourlyReminder
 								}
@@ -940,7 +940,7 @@ function optionsManager:Initialize()
 	AceConfig:RegisterOptionsTable(addonName, optionsManager.optionsTable)
 
 	-- then we add the profiles management, using AceDBOptions
-	optionsManager.optionsTable.args.child_profiles.args.profiles = AceDBOptions:GetOptionsTable(database.acedb)
+	optionsManager.optionsTable.args.child_profiles.args.profiles = AceDBOptions:GetOptionsTable(NysTDL.acedb)
 	-- we also modify it a bit to better fit our needs (by adding some confirm pop-ups)
 	local args = utils:Deepcopy(optionsManager.optionsTable.args.child_profiles.args.profiles.args)
 	args.reset.confirm = true
