@@ -2,7 +2,7 @@ local addonTable = (select(2, ...))
 local L = {}
 addonTable.devLocale = L
 
--- ============================================ --
+--/************************************************/--
 
 --[[
     LOCALES RULES:
@@ -16,6 +16,8 @@ addonTable.devLocale = L
 ]]
 
 -- "방탄소년단" test locale (:D)
+
+--/************************************************/--
 
 L["Description tooltip"] = true
 L["Show the item's description in a tooltip when hovering the icon"] = true

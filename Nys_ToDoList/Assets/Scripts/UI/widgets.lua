@@ -1,12 +1,14 @@
--- Namespaces
-local addonName = ...
+--/*******************/ IMPORTS /*************************/--
 
--- NysTDL aliases
+-- File init
+local widgets = NysTDL.widgets
+NysTDL.widgets = widgets -- for IntelliSense
+
+-- Primary aliases
 local libs = NysTDL.libs
 local core = NysTDL.core
 local utils = NysTDL.utils
 local enums = NysTDL.enums
-local widgets = NysTDL.widgets
 local database = NysTDL.database
 local dragndrop = NysTDL.dragndrop
 local mainFrame = NysTDL.mainFrame
@@ -15,9 +17,11 @@ local databroker = NysTDL.databroker
 local dataManager = NysTDL.dataManager
 local tutorialsManager = NysTDL.tutorialsManager
 
--- Variables
+-- Secondary aliases
 local L = libs.L
 local LibQTip = libs.LibQTip
+
+--/*******************************************************/--
 
 widgets.frame = CreateFrame("Frame", nil, UIParent) -- utility frame
 local widgetsFrame = widgets.frame

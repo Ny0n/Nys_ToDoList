@@ -1,17 +1,23 @@
--- Namespaces
-local addonName = ...
+--/*******************/ IMPORTS /*************************/--
 
--- NysTDL aliases
+-- File init
+local tabsFrame = NysTDL.tabsFrame
+NysTDL.tabsFrame = tabsFrame -- for IntelliSense
+
+-- Primary aliases
 local libs = NysTDL.libs
 local enums = NysTDL.enums
 local utils = NysTDL.utils
 local database = NysTDL.database
 local mainFrame = NysTDL.mainFrame
-local tabsFrame = NysTDL.tabsFrame
 local dataManager = NysTDL.dataManager
 
--- // Variables
+-- Secondary aliases
 local L = libs.L
+
+--/*******************************************************/--
+
+-- // Variables
 local private = {}
 tabsFrame.authorized = true -- can it call Refresh() ? (just there for optimization)
 

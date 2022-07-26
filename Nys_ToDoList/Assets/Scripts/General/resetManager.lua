@@ -1,17 +1,24 @@
--- Namespaces
-local addonName = ...
+--/*******************/ IMPORTS /*************************/--
 
--- NysTDL aliases
+-- File init
+local resetManager = NysTDL.resetManager
+NysTDL.resetManager = resetManager -- for IntelliSense
+
+-- Primary aliases
 local libs = NysTDL.libs
 local chat = NysTDL.chat
 local utils = NysTDL.utils
 local enums = NysTDL.enums
 local dataManager = NysTDL.dataManager
-local resetManager = NysTDL.resetManager
 
--- Variables
+-- Secondary aliases
 local L = libs.L
 local AceTimer = libs.AceTimer
+
+--/*******************************************************/--
+
+-- Variables
+
 local private = {}
 
 local autoResetedThisSession = false
@@ -474,5 +481,3 @@ end
 
 -- luacheck: pop
 --@end-do-not-package@
-
-NysTDL.resetManager = resetManager

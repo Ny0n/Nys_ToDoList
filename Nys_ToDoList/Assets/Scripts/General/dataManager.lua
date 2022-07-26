@@ -1,15 +1,25 @@
--- Namespaces
-local addonName = ...
+--/*******************/ IMPORTS /*************************/--
 
--- NysTDL aliases
+-- File init
+local dataManager = NysTDL.dataManager
+NysTDL.dataManager = dataManager -- for IntelliSense
+
+-- Primary aliases
 local libs = NysTDL.libs
+local core = NysTDL.core
 local chat = NysTDL.chat
 local enums = NysTDL.enums
 local utils = NysTDL.utils
 local widgets = NysTDL.widgets
 local database = NysTDL.database
-local dataManager = NysTDL.dataManager
 local resetManager = NysTDL.resetManager
+
+-- Secondary aliases
+local L = libs.L
+local AceConfigRegistry = libs.AceConfigRegistry
+local addonName = core.addonName
+
+--/*******************************************************/--
 
 -- the access to mainFrame is controlled:
 -- this file can only call mainFrame funcs if it is specifically authorized to do so,
@@ -39,8 +49,6 @@ local tabsFrame = setmetatable({}, {
 })
 
 -- Variables
-local L = libs.L
-local AceConfigRegistry = libs.AceConfigRegistry
 
 local undoing = false
 local clearing = false

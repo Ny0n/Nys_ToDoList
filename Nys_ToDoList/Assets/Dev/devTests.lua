@@ -1,18 +1,20 @@
 -- luacheck: ignore 111 211 212
 
--- Namespaces
-local addonName = ...
+--/*******************/ IMPORTS /*************************/--
 
--- NysTDL aliases
+-- Primary aliases
 local libs = NysTDL.libs
 local core = NysTDL.core
 local enums = NysTDL.enums
 local dataManager = NysTDL.dataManager
 local mainFrame = NysTDL.mainFrame
 
--- Variables
+-- Secondary aliases
 local L = libs.L
 local AceConfigDialog = libs.AceConfigDialog
+local addonName = core.addonName
+
+--/*******************************************************/--
 
 -- ============================================ --
 

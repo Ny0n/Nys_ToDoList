@@ -1,21 +1,26 @@
--- Namespaces
-local addonName = ...
+--/*******************/ IMPORTS /*************************/--
 
--- NysTDL aliases
+-- File init
+local databroker = NysTDL.databroker
+NysTDL.databroker = databroker -- for IntelliSense
+
+-- Primary aliases
 local libs = NysTDL.libs
 local core = NysTDL.core
 local utils = NysTDL.utils
 local enums = NysTDL.enums
 local database = NysTDL.database
 local mainFrame = NysTDL.mainFrame
-local databroker = NysTDL.databroker
 local optionsManager = NysTDL.optionsManager
 
--- Variables
+-- Secondary aliases
 local L = libs.L
 local LDB = libs.LDB
 local LDBIcon = libs.LDBIcon
 local AceTimer = libs.AceTimer
+local addonName = core.addonName
+
+--/*******************************************************/--
 
 --/***************/ TOOLTIPS /*****************/--
 

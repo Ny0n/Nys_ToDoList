@@ -1,20 +1,25 @@
--- Namespaces
-local addonName = ...
+--/*******************/ IMPORTS /*************************/--
 
--- NysTDL aliases
+-- File init
+local events = NysTDL.events
+NysTDL.events = events -- for IntelliSense
+
+-- Primary aliases
 local libs = NysTDL.libs
 local core = NysTDL.core
 local chat = NysTDL.chat
-local events = NysTDL.events
 local widgets = NysTDL.widgets
-local database = NysTDL.database
 local tabsFrame = NysTDL.tabsFrame
 local optionsManager = NysTDL.optionsManager
 
--- Variables
+-- Secondary aliases
 local L = libs.L
 local AceTimer = libs.AceTimer
 local AceEvent = libs.AceEvent
+
+--/*******************************************************/--
+
+-- Variables
 
 local private = {}
 

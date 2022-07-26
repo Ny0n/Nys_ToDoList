@@ -1,26 +1,32 @@
--- Namespaces
-local addonName = ...
+--/*******************/ IMPORTS /*************************/--
 
--- NysTDL aliases
+-- File init
+local optionsManager = NysTDL.optionsManager
+NysTDL.optionsManager = optionsManager -- for IntelliSense
+
+-- Primary aliases
 local libs = NysTDL.libs
 local core = NysTDL.core
 local enums = NysTDL.enums
 local utils = NysTDL.utils
 local widgets = NysTDL.widgets
-local database = NysTDL.database
 local mainFrame = NysTDL.mainFrame
 local tabsFrame = NysTDL.tabsFrame
 local databroker = NysTDL.databroker
 local dataManager = NysTDL.dataManager
 local resetManager = NysTDL.resetManager
-local optionsManager = NysTDL.optionsManager
 
--- Variables
+-- Secondary aliases
 local L = libs.L
 local AceConfig = libs.AceConfig
 local AceConfigDialog = libs.AceConfigDialog
 local AceConfigRegistry = libs.AceConfigRegistry
 local AceDBOptions = libs.AceDBOptions
+local addonName = core.addonName
+
+--/*******************************************************/--
+
+-- Variables
 
 local wDef = { toggle = 160, select = 265, range = 200, execute = 180, keybinding = 200, color = 180 } -- the min width (this is for the locales)
 

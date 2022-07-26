@@ -1,17 +1,20 @@
--- Namespaces
-local addonName = ...
+--/*******************/ IMPORTS /*************************/--
 
--- NysTDL aliases
+-- File init
+local tutorialsManager = NysTDL.tutorialsManager
+NysTDL.tutorialsManager = tutorialsManager -- for IntelliSense
+
+-- Primary aliases
 local libs = NysTDL.libs
 local chat = NysTDL.chat
 local utils = NysTDL.utils
 local widgets = NysTDL.widgets
-local database = NysTDL.database
 local mainFrame = NysTDL.mainFrame
-local tutorialsManager = NysTDL.tutorialsManager
 
--- Variables
+-- Secondary aliases
 local L = libs.L
+
+--/*******************************************************/--
 
 -- tutorial
 local tutorialFrames = {}

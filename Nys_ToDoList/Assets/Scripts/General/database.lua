@@ -1,18 +1,24 @@
--- Namespaces
-local addonName = ...
+--/*******************/ IMPORTS /*************************/--
 
--- NysTDL aliases
+-- File init
+local database = NysTDL.database
+NysTDL.database = database -- for IntelliSense
+
+-- Primary aliases
 local libs = NysTDL.libs
+local core = NysTDL.core
 local enums = NysTDL.enums
 local widgets = NysTDL.widgets
-local database = NysTDL.database
 local migration = NysTDL.migration
 local dataManager = NysTDL.dataManager
 local resetManager = NysTDL.resetManager
 
--- Variables
+-- Secondary aliases
 local L = libs.L
 local AceConfigRegistry = libs.AceConfigRegistry
+local addonName = core.addonName
+
+--/*******************************************************/--
 
 --/*******************/ TABLES /*************************/--
 

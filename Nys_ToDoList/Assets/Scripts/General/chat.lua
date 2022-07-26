@@ -1,10 +1,12 @@
--- Namespaces
-local addonName = ...
+--/*******************/ IMPORTS /*************************/--
 
--- NysTDL aliases
+-- File init
+local chat = NysTDL.chat
+NysTDL.chat = chat -- for IntelliSense
+
+-- Primary aliases
 local libs = NysTDL.libs
 local core = NysTDL.core
-local chat = NysTDL.chat
 local enums = NysTDL.enums
 local utils = NysTDL.utils
 local database = NysTDL.database
@@ -13,8 +15,10 @@ local dataManager = NysTDL.dataManager
 local resetManager = NysTDL.resetManager
 local tutorialsManager = NysTDL.tutorialsManager
 
--- Variables
+-- Secondary aliases
 local L = libs.L
+
+--/*******************************************************/--
 
 --/*******************/ CHAT RELATED FUNCTIONS /*************************/--
 

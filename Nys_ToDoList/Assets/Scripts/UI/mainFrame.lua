@@ -1,7 +1,10 @@
--- Namespaces
-local addonName = ...
+--/*******************/ IMPORTS /*************************/--
 
--- NysTDL aliases
+-- File init
+local mainFrame = NysTDL.mainFrame
+NysTDL.mainFrame = mainFrame -- for IntelliSense
+
+-- Primary aliases
 local libs = NysTDL.libs
 local core = NysTDL.core
 local enums = NysTDL.enums
@@ -9,16 +12,18 @@ local utils = NysTDL.utils
 local widgets = NysTDL.widgets
 local database = NysTDL.database
 local dragndrop = NysTDL.dragndrop
-local mainFrame = NysTDL.mainFrame
 local tabsFrame = NysTDL.tabsFrame
 local dataManager = NysTDL.dataManager
 local optionsManager = NysTDL.optionsManager
 local tutorialsManager = NysTDL.tutorialsManager
 
--- // Variables
-
+-- Secondary aliases
 local L = libs.L
 -- local LDD = libs.LDD
+
+--/*******************************************************/--
+
+-- // Variables
 
 -- THE frame
 mainFrame.tdlFrame = CreateFrame("Frame", nil, UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil)

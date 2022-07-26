@@ -1,22 +1,24 @@
--- Namespaces
-local addonName = ...
+--/*******************/ IMPORTS /*************************/--
 
--- NysTDL aliases
+-- File init
+local migration = NysTDL.migration
+NysTDL.migration = migration -- for IntelliSense
+
+-- Primary aliases
 local libs = NysTDL.libs
 local core = NysTDL.core
 local enums = NysTDL.enums
 local utils = NysTDL.utils
 local widgets = NysTDL.widgets
 local database = NysTDL.database
-local migration = NysTDL.migration
 local mainFrame = NysTDL.mainFrame
 local dataManager = NysTDL.dataManager
 
--- Variables
+-- Secondary aliases
 local L = libs.L
 local LibQTip = libs.LibQTip
 
--- // **************************** // --
+--/*******************************************************/--
 
 local private = {}
 

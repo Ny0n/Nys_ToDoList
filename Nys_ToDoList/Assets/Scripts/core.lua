@@ -1,4 +1,4 @@
--- Namespaces
+-- Namespace
 local addonName = ...
 
 --/*******************/ ADDON LIBS AND DATA HANDLER /*************************/--
@@ -52,9 +52,14 @@ NysTDL.core = {}
 
 --/***************************************************************************/--
 
--- NysTDL aliases
-local libs = NysTDL.libs
+--/*******************/ IMPORTS /*************************/--
+
+-- File init
 local core = NysTDL.core
+NysTDL.core = core -- for IntelliSense
+
+-- Primary aliases
+local libs = NysTDL.libs
 local chat = NysTDL.chat
 local utils = NysTDL.utils
 local events = NysTDL.events
@@ -62,6 +67,11 @@ local widgets = NysTDL.widgets
 local database = NysTDL.database
 local resetManager = NysTDL.resetManager
 local optionsManager = NysTDL.optionsManager
+
+-- Secondary aliases
+local L = libs.L
+
+--/*******************************************************/--
 
 -- // LOCALE CHECK //
 
@@ -122,8 +132,6 @@ end
 
 -- //~ LOCALE CHECK ~//
 
-local L = libs.L
-
 -- data (from toc file)
 core.toc = {}
 core.toc.title = GetAddOnMetadata(addonName, "Title") -- better than "Nys_ToDoList"
@@ -132,6 +140,7 @@ core.toc.version = GetAddOnMetadata(addonName, "Version")
 -- Variables
 core.loaded = false
 core.addonUpdated = false
+core.addonName = addonName
 core.simpleAddonName = string.gsub(core.toc.title, "Ny's ", "")
 
 -- Bindings.xml globals

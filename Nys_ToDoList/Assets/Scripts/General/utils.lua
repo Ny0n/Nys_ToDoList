@@ -1,13 +1,17 @@
--- Namespaces
-local addonName = ...
+--/*******************/ IMPORTS /*************************/--
 
--- NysTDL aliases
+-- File init
+local utils = NysTDL.utils
+NysTDL.utils = utils -- for IntelliSense
+
+-- Primary aliases
 local libs = NysTDL.libs
 local enums = NysTDL.enums
-local utils = NysTDL.utils
 
--- Variables
+-- Secondary aliases
 local L = libs.L
+
+--/*******************************************************/--
 
 --/*******************/ COMMON (utils) FUNCTIONS /*************************/--
 
@@ -218,5 +222,3 @@ function utils:ColorText(colorTable, text)
 	-- alpha is 1
 	return string.format("|cff%s%s|r", utils:RGBToHex(colorTable), text)
 end
-
-NysTDL.utils = utils

@@ -1,11 +1,16 @@
--- Namespaces
-local addonName = ...
+--/*******************/ IMPORTS /*************************/--
 
--- NysTDL aliases
-local libs = NysTDL.libs
+-- File init
 local enums = NysTDL.enums
+NysTDL.enums = enums -- for IntelliSense
 
+-- Primary aliases
+local libs = NysTDL.libs
+
+-- Secondary aliases
 local L = libs.L
+
+--/*******************************************************/--
 
 -- unique enums (the value NEVER changes, but I can change the left name if I want to)
 

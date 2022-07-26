@@ -1,13 +1,17 @@
--- Namespaces
-local addonName = ...
+--/*******************/ IMPORTS /*************************/--
 
--- NysTDL aliases
+-- File init
+local dragndrop = NysTDL.dragndrop
+NysTDL.dragndrop = dragndrop -- for IntelliSense
+
+-- Primary aliases
 local enums = NysTDL.enums
 local utils = NysTDL.utils
 local database = NysTDL.database
-local dragndrop = NysTDL.dragndrop
 local mainFrame = NysTDL.mainFrame
 local dataManager = NysTDL.dataManager
+
+--/*******************************************************/--
 
 -- // Variables
 
