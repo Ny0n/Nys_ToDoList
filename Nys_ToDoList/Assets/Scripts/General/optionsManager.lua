@@ -889,11 +889,6 @@ end
 
 --/*******************/ GENERAL FUNCTIONS /*************************/--
 
--- Bindings.xml access
-function NysTDL:ToggleFrame()
-	mainFrame:Toggle()
-end
-
 function optionsManager:ToggleOptions(fromFrame)
 	if InterfaceOptionsFrame:IsShown() then -- if the interface options frame is currently opened
 		if InterfaceOptionsFrameAddOns.selection ~= nil then -- then we check if we're currently in the AddOns tab and if we are currently selecting an addon

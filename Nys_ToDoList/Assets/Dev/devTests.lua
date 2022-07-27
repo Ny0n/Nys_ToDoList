@@ -4,10 +4,22 @@
 
 -- Primary aliases
 local libs = NysTDL.libs
-local core = NysTDL.core
-local enums = NysTDL.enums
+local chat = NysTDL.chat
+local database = NysTDL.database
 local dataManager = NysTDL.dataManager
+local enums = NysTDL.enums
+local events = NysTDL.events
+local migration = NysTDL.migration
+local optionsManager = NysTDL.optionsManager
+local resetManager = NysTDL.resetManager
+local tutorialsManager = NysTDL.tutorialsManager
+local utils = NysTDL.utils
+local databroker = NysTDL.databroker
+local dragndrop = NysTDL.dragndrop
 local mainFrame = NysTDL.mainFrame
+local tabsFrame = NysTDL.tabsFrame
+local widgets = NysTDL.widgets
+local core = NysTDL.core
 
 -- Secondary aliases
 local L = libs.L
@@ -16,10 +28,11 @@ local addonName = core.addonName
 
 --/*******************************************************/--
 
--- ============================================ --
-
 -- Tests function (for me :p) (callable with macros in-game)
-function Nys_Tests(nb, ...)
+function NysTDL:Tests(nb, ...)
+
+	-- NysTDL.dataManager:Find()
+
 	if nb == 1 then
 		AceConfigDialog:Open(addonName)
 	elseif nb == 2 then

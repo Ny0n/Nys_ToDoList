@@ -20,6 +20,8 @@ local addonName = core.addonName
 
 --/*******************************************************/--
 
+local private = {}
+
 --/*******************/ TABLES /*************************/--
 
 -- addon themes
@@ -136,14 +138,14 @@ database.defaults = {
 
 -- this func is called once in initialize, on the addon load
 -- and also everytime we switch profiles
-function database:DBInit()
+function private:DBInit()
 	dataManager.authorized = false -- there's no calling mainFrame funcs while we're tampering with the database!
 
 	local noTabs = not dataManager:IsID(database.ctab())
 
 	-- default tabs creation
 	if noTabs then
-		database:CreateDefaultTabs()
+		private:CreateDefaultTabs()
 	end
 
 	migration:Migrate() -- trying to migrate the old vars
@@ -177,12 +179,12 @@ function database:DBInit()
 	dataManager.authorized = true
 end
 
-function database:ProfileChanged(_, profile)
+function private:ProfileChanged(_, profile)
 	-- // here we update (basically in the same order as the core init) everything
 	-- that needs an update after a database change
 
 	-- #1 - database (always init a database)
-	database:DBInit()
+	private:DBInit()
 
 	-- #2 - options
 	AceConfigRegistry:NotifyChange(addonName)
@@ -194,17 +196,7 @@ function database:ProfileChanged(_, profile)
 	resetManager:Initialize(true)
 end
 
--- // specific functions
-
-function database.ctab(newTabID) -- easy access to that specific database variable
-	-- sets or gets the currently selected tab ID
-	if dataManager:IsID(newTabID) then
-		NysTDL.acedb.profile.currentTab = newTabID
-	end
-	return NysTDL.acedb.profile.currentTab
-end
-
-function database:CreateDefaultTabs()
+function private:CreateDefaultTabs()
 	-- once per profile, we create the default addon tabs (All, Daily, Weekly)
 	local selectedtabID
 
@@ -240,16 +232,29 @@ function database:CreateDefaultTabs()
 	database.ctab(selectedtabID)
 end
 
+-- // specific functions
+
+---Easy access to that specific database variable.
+---@param newTabID string|nil
+---@return string ctab
+function database.ctab(newTabID)
+	-- sets or gets the currently selected tab ID
+	if dataManager:IsID(newTabID) then
+		NysTDL.acedb.profile.currentTab = newTabID
+	end
+	return NysTDL.acedb.profile.currentTab
+end
+
 --/*******************/ INITIALIZATION /*************************/--
 
 function database:Initialize()
 	-- Saved variable database
 	NysTDL.acedb = LibStub("AceDB-3.0"):New("NysToDoListDB", database.defaults)
-	database:DBInit() -- initialization for some elements of the current acedb
+	private:DBInit() -- initialization for some elements of the current acedb
 
 	-- callbacks for database changes
-	NysTDL.acedb.RegisterCallback(database, "OnProfileChanged", "ProfileChanged")
-	NysTDL.acedb.RegisterCallback(database, "OnProfileCopied", "ProfileChanged")
-	NysTDL.acedb.RegisterCallback(database, "OnProfileReset", "ProfileChanged")
-	NysTDL.acedb.RegisterCallback(database, "OnDatabaseReset", "ProfileChanged")
+	NysTDL.acedb.RegisterCallback(private, "OnProfileChanged", "ProfileChanged")
+	NysTDL.acedb.RegisterCallback(private, "OnProfileCopied", "ProfileChanged")
+	NysTDL.acedb.RegisterCallback(private, "OnProfileReset", "ProfileChanged")
+	NysTDL.acedb.RegisterCallback(private, "OnDatabaseReset", "ProfileChanged")
 end

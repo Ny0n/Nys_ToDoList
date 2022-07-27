@@ -3,6 +3,6 @@
 <Bindings>
 	<!-- Show/Hide the list binding -->
 	<Binding name="NysTDL_ToggleFrame" header="NysTDL" category="ADDONS">
-		NysTDL:ToggleFrame()
+		NysTDL.mainFrame:Toggle()
 	</Binding>
 </Bindings>
