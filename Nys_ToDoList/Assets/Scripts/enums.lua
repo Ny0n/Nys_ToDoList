@@ -17,22 +17,32 @@ local L = libs.L
 
 -- unique enums (the value NEVER changes, but I can change the left name if I want to)
 
-enums.item = "ENUMS_ITEM" -- item type enum
-enums.category = "ENUMS_CATEGORY" -- category type enum
-enums.tab = "ENUMS_TAB" -- tab type enum
+---@alias enumObject enums.item | enums.category | enums.tab
 
+---@class enums.item
+enums.item = "ENUMS_ITEM"
+
+---@class enums.category
+enums.category = "ENUMS_CATEGORY"
+
+---@class enums.tab
+enums.tab = "ENUMS_TAB"
+
+---@class enums.menus
 enums.menus = {
 	addcat = "ENUMS_MENUS_1", -- addcat menu
 	frameopt = "ENUMS_MENUS_2", -- frameopt menu
 	tabact = "ENUMS_MENUS_3", -- tabactions menu
 }
 
+---@class enums.databrokerModes
 enums.databrokerModes = {
 	simple = "ENUMS_DATABROKERMODES_1", -- simple databroker mode
 	advanced = "ENUMS_DATABROKERMODES_2", -- advanced databroker mode
 	frame = "ENUMS_DATABROKERMODES_3", -- frame databroker mode
 }
 
+---@class enums.mainTabs
 enums.mainTabs = {
 	all = "All",
 	daily = "Daily",

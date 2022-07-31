@@ -27,6 +27,9 @@ local addonName = core.addonName
 
 local private = {}
 
+local ldbObject -- initialized in databroker:CreateDatabrokerObject
+local tooltipFrame -- initialized in databroker:CreateTooltipFrame
+
 --/***************/ TOOLTIPS /*****************/--
 
 -- // SIMPLE
@@ -52,7 +55,7 @@ function private:DrawSimpleTooltip(tooltip)
 end
 
 function private:SetSimpleMode()
-	local o = self.object
+	local o = ldbObject
 	--table.wipe(o)
 
 	local tooltipObject -- we get the tooltip frame on the first private:DrawSimpleTooltip call from OnTooltipShow
@@ -103,7 +106,7 @@ function private:DrawAdvancedTooltip(tooltip)
 end
 
 function private:SetAdvancedMode()
-	local o = self.object
+	local o = ldbObject
 	table.wipe(o)
 
 	local tooltipObject -- we get the tooltip frame on the first private:DrawSimpleTooltip call from OnTooltipShow
@@ -133,16 +136,15 @@ function private:SetAdvancedMode()
 	end
 end
 
-
 -- // FRAME
 
 function databroker:CreateTooltipFrame()
-	self.tooltipFrame = CreateFrame("Frame")
-	self.tooltipFrame:Hide()
+	tooltipFrame = CreateFrame("Frame")
+	tooltipFrame:Hide()
 end
 
 function private:SetFrameMode()
-	local o = self.object
+	local o = ldbObject
 	table.wipe(o)
 
 	o.type = "launcher"
@@ -153,10 +155,6 @@ end
 --/***************/ DATAOBJECT /*****************/--
 
 ---Changes the current databroker mode.
----@alias enums.databrokerModes
----| "enums.databrokerModes.simple"
----| "enums.databrokerModes.advanced"
----| "enums.databrokerModes.frame"
 ---@param mode enums.databrokerModes
 function databroker:SetMode(mode)
 	if mode == enums.databrokerModes.simple then
@@ -170,7 +168,7 @@ function databroker:SetMode(mode)
 end
 
 function databroker:CreateDatabrokerObject()
-	self.object = LDB:NewDataObject(addonName)
+	ldbObject = LDB:NewDataObject(addonName)
 	databroker:SetMode(NysTDL.acedb.profile.databrokerMode)
 end
 
@@ -178,7 +176,7 @@ end
 
 function databroker:CreateMinimapButton()
 	-- Registering the data broker and creating the button
-	LDBIcon:Register(addonName, self.object, NysTDL.acedb.profile.minimap)
+	LDBIcon:Register(addonName, ldbObject, NysTDL.acedb.profile.minimap)
 
 	-- this is the secret to correctly update the button position, (since we can't update it in the init code)
 	-- so that the first time that we click on it, it doesn't go somewhere else like so many do,

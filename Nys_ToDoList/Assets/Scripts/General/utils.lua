@@ -89,11 +89,18 @@ function utils:IsVersionOlderThan(v1, v2)
     end
 end
 
+---Clamps the given value between min and max.
+---@param number number
+---@param min number
+---@param max number
+---@return number clampedNumber
 function utils:Clamp(number, min, max)
 	return math.min(math.max(number, min), max)
 end
 
 ---Takes in a rgb index table ({r, g, b}), and returns the hexadecimal value ("ff00ff").
+---@param rgb table
+---@return string hex
 function utils:RGBToHex(rgb)
 	-- from marceloCodget/gist:3862929 on GitHub
 
@@ -121,7 +128,9 @@ function utils:RGBToHex(rgb)
 end
 
 local T_ThemeDownTo01 = {}
----Takes in a rgb index table ({r, g, b}), and downgrades it from 0-255 to 0-1
+---Takes in a rgb index table ({r, g, b}), and downgrades it from 0-255 to 0-1.
+---@param theme table
+---@return table theme01
 function utils:ThemeDownTo01(theme)
 	local r, g, b = unpack(theme)
 
@@ -135,6 +144,9 @@ end
 
 local T_DimTheme = {}
 ---Takes in a rgb index table ({r, g, b}), and dims it by `dim`.
+---@param theme table
+---@param dim number
+---@return table themeDimmed
 function utils:DimTheme(theme, dim)
 	local r, g, b = unpack(theme)
 
@@ -147,6 +159,9 @@ function utils:DimTheme(theme, dim)
 end
 
 ---To copy any table.
+---@param orig table
+---@param copies any Do not use
+---@return table copy
 function utils:Deepcopy(orig, copies)
 	copies = copies or {}
 	local orig_type = type(orig)
@@ -171,6 +186,9 @@ end
 ---Safe format, in case there is an error in the localization (happened once).
 ---We check if there are the necessary %x in the string, corresponding to the content of `...`.
 ---Only accepting %i and %s, it's enough for my use.
+---@param str string
+---@param ... any
+---@return string formattedString
 function utils:SafeStringFormat(str, ...)
 	local dup = str
 	for i=1, select("#", ...) do
@@ -187,6 +205,9 @@ function utils:SafeStringFormat(str, ...)
 	return str:format(...) -- it should be good
 end
 
+---Helper to test if a string contains a wow hyperlink.
+---@param s string
+---@return boolean
 function utils:HasHyperlink(s)
 	if s ~= nil then
 		-- a hyperlink pattern has at least one '|H' and two '|h', so this is the closest test I can think of
@@ -198,6 +219,11 @@ function utils:HasHyperlink(s)
 	return false
 end
 
+---Helper to test if a table contains a given value.
+---@param tbl table
+---@param value any
+---@return boolean isPresent
+---@return string|number key
 function utils:HasValue(tbl, value)
 	local isPresent, key = false, 0
 	if type(tbl) == "table" then -- just in case
@@ -212,6 +238,10 @@ function utils:HasValue(tbl, value)
 	return isPresent, key
 end
 
+---Helper to test if a table contains a given key.
+---@param tbl table
+---@param key any
+---@return boolean isPresent
 function utils:HasKey(tbl, key)
 	if type(tbl) == "table" then -- just in case
 		for k in pairs(tbl) do
@@ -223,6 +253,10 @@ function utils:HasKey(tbl, key)
 	return false
 end
 
+---Returns the first key matching the given value in the table.
+---@param tabSource table
+---@param value any
+---@return string|number|nil key
 function utils:GetKeyFromValue(tabSource, value)
 	for k, v in pairs(tabSource) do
 		if v == value then return k end
@@ -230,6 +264,10 @@ function utils:GetKeyFromValue(tabSource, value)
 	return nil
 end
 
+---Returns the given text colored with the given color table ({r,g,b}).
+---@param colorTable table
+---@param text string
+---@return string
 function utils:ColorText(colorTable, text)
 	-- alpha is 1
 	return string.format("|cff%s%s|r", utils:RGBToHex(colorTable), text)

@@ -214,10 +214,10 @@ local activeTimerIDs = {
 	-- ...
 }
 
-local function getDiff(max, current, target)
+function private:GetDiff(max, current, target)
 	-- time is looping (each 60 sec or 60 min or 24 hours or 7 days we loop back)
 	-- so this is to get the pure distance between two of those
-	-- ex: getDiff between hour (current) 22 and hour (target) 7 is not 22-7, but 22h TO 7h, which is 9h
+	-- ex: GetDiff between hour (current) 22 and hour (target) 7 is not 22-7, but 22h TO 7h, which is 9h
 
 	if target > current then
 		return target - current
@@ -228,60 +228,60 @@ local function getDiff(max, current, target)
 	end
 end
 
-local function removeOne(timeUntil, type, max)
+function private:RemoveOne(timeUntil, type, max)
 	-- removes one hour/min/sec to the timeUntil data
 	timeUntil[type] = timeUntil[type] - 1
 	if timeUntil[type] == -1 then timeUntil[type] = max-1 end
 end
 
-local T_getSecondsUntil = {}
-local function getSecondsUntil(currentDate, targetDay, resetTime)
+local T_GetSecondsUntil = {}
+function private:GetSecondsUntil(currentDate, targetDay, resetTime)
 	-- returns the number of seconds between the currentDate and the targetDate (wday, hour, min, sec)
 	-- FORWARD TIME, meaning not the pure distance between the two dates, but the distance looping at weeks!
 	-- (sunday -> monday = 1 day, monday -> sunday = 6 days)
 	-- (without loops! :D)
 
-	local timeUntil = T_getSecondsUntil
+	local timeUntil = T_GetSecondsUntil
 	wipe(timeUntil)
 
-	-- // the big scary code below is the "simplification" of this commented out one
+	-- // the commented-out code below is the "simplification" of the one underneath.
 	-- if resetTime.hour < currentDate.hour then
-	-- 	removeOne(timeUntil, "days", 7)
+	-- 	private:RemoveOne(timeUntil, "days", 7)
 	-- elseif resetTime.hour == currentDate.hour then
 	-- 	if resetTime.min < currentDate.min then
-	-- 		removeOne(timeUntil, "days", 7)
+	-- 		private:RemoveOne(timeUntil, "days", 7)
 	-- 	elseif resetTime.min == currentDate.min then
 	-- 		if resetTime.sec < currentDate.sec then
-	-- 			removeOne(timeUntil, "days", 7)
+	-- 			private:RemoveOne(timeUntil, "days", 7)
 	-- 		end
 	-- 	end
 	-- end
 
-	timeUntil.days = getDiff(7, currentDate.wday, targetDay)
+	timeUntil.days = private:GetDiff(7, currentDate.wday, targetDay)
 	if resetTime.hour < currentDate.hour
 	or resetTime.hour == currentDate.hour
 		and (resetTime.min < currentDate.min
 		or resetTime.min == currentDate.min
 			and (resetTime.sec < currentDate.sec))
 	then
-		removeOne(timeUntil, "days", 7)
+		private:RemoveOne(timeUntil, "days", 7)
 	end
 
-	timeUntil.hours = getDiff(24, currentDate.hour, resetTime.hour)
+	timeUntil.hours = private:GetDiff(24, currentDate.hour, resetTime.hour)
 	if resetTime.min < currentDate.min
 	or resetTime.min == currentDate.min
 		and (resetTime.sec < currentDate.sec)
 	then
-		removeOne(timeUntil, "hours", 24)
+		private:RemoveOne(timeUntil, "hours", 24)
 	end
 
-	timeUntil.mins = getDiff(60, currentDate.min, resetTime.min)
+	timeUntil.mins = private:GetDiff(60, currentDate.min, resetTime.min)
 	if resetTime.sec < currentDate.sec
 	then
-		removeOne(timeUntil, "mins", 60)
+		private:RemoveOne(timeUntil, "mins", 60)
 	end
 
-	timeUntil.secs = getDiff(60, currentDate.sec, resetTime.sec)
+	timeUntil.secs = private:GetDiff(60, currentDate.sec, resetTime.sec)
 
 	local secondsUntil = timeUntil.days * 24 * 60 * 60
 		+ timeUntil.hours * 60 * 60
@@ -318,7 +318,7 @@ function private:StartNextTimers(tabID)
 		if reset.days[targetDay] then
 			local foundOne = false
 			for name,resetTime in pairs(reset.days[currentDate.wday].resetTimes) do -- for each of them
-				local secondsUntil = getSecondsUntil(currentDate, targetDay, resetTime)
+				local secondsUntil = private:GetSecondsUntil(currentDate, targetDay, resetTime)
 				if secondsUntil <= 86400 and secondsUntil > 0 then
 					-- if the targeted reset time is still ahead of us
 					-- then we start a timer for it
@@ -337,7 +337,7 @@ function private:StartNextTimers(tabID)
 
 		-- then we start every timer for the targeted day (can be one week later at maximum)
 		for name,resetTime in pairs(reset.days[targetDay].resetTimes) do -- for each of them
-			local secondsUntil = getSecondsUntil(currentDate, targetDay, resetTime)
+			local secondsUntil = private:GetSecondsUntil(currentDate, targetDay, resetTime)
 			if secondsUntil == 0 then secondsUntil = 604800 end
 			private:StartTimer(tabID, currentTime, secondsUntil)
 		end

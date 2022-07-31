@@ -31,13 +31,13 @@ local addonName = core.addonName
 
 -- Variables
 
-local wDef = { toggle = 160, select = 265, range = 200, execute = 180, keybinding = 200, color = 180 } -- the min width (this is for the locales)
-
 local private = {}
+
+local wDef = { toggle = 160, select = 265, range = 200, execute = 180, keybinding = 200, color = 180 } -- the min width (this is for the locales)
 
 --/*******************/ OPTIONS TABLES /*************************/--
 
-local function getLeaf(info, x)
+function private:GetLeaf(info, x)
 	local tbl = optionsManager.optionsTable
 
 	for i=1,x do
@@ -47,8 +47,8 @@ local function getLeaf(info, x)
 	return tbl
 end
 
-local function getTabInfo(info)
-	local tabID = getLeaf(info, 4).arg
+function private:GetTabInfo(info)
+	local tabID = private:GetLeaf(info, 4).arg
 	local tabData = select(3, dataManager:Find(tabID))
 
 	local resetData
@@ -76,12 +76,12 @@ local tabManagementTable = {
 				confirm = true,
 				confirmText = L["Deleting this tab will delete everything that was created in it"]..".\n"..L["Are you sure?"],
 				func = function(info)
-					local tabID = getTabInfo(info)
+					local tabID = private:GetTabInfo(info)
 					dataManager:DeleteTab(tabID)
 					private:RefreshTabManagement()
 				end,
 				disabled = function(info)
-					local tabID = getTabInfo(info)
+					local tabID = private:GetTabInfo(info)
 					return dataManager:IsProtected(tabID)
 				end,
 			},
@@ -90,7 +90,7 @@ local tabManagementTable = {
 				type = "description",
 				name = L["Cannot remove this tab"].."\n("..L["There must be at least one left"]..")",
 				hidden = function(info)
-					local tabID = getTabInfo(info)
+					local tabID = private:GetTabInfo(info)
 					return not dataManager:IsProtected(tabID)
 				end,
 			},
@@ -99,11 +99,11 @@ local tabManagementTable = {
 				type = "input",
 				name = L["Rename"],
 				get = function(info)
-					local _, tabData = getTabInfo(info)
+					local _, tabData = private:GetTabInfo(info)
 					return tabData.name
 				end,
 				set = function(info, newName)
-					local tabID = getTabInfo(info)
+					local tabID = private:GetTabInfo(info)
 					dataManager:Rename(tabID, newName)
 				end,
 			},
@@ -125,11 +125,11 @@ local tabManagementTable = {
 				type = "toggle",
 				name = L["Delete checked items"],
 				get = function(info)
-					local _, tabData = getTabInfo(info)
+					local _, tabData = private:GetTabInfo(info)
 					return tabData.deleteCheckedItems
 				end,
 				set = function(info, state)
-					local _, tabData = getTabInfo(info)
+					local _, tabData = private:GetTabInfo(info)
 					-- SAME CODE in var migrations
 					tabData.deleteCheckedItems = state
 					if state then
@@ -138,7 +138,7 @@ local tabManagementTable = {
 					mainFrame:Refresh()
 				end,
 				disabled = function(info)
-					local _, tabData = getTabInfo(info)
+					local _, tabData = private:GetTabInfo(info)
 					return tabData.hideCheckedItems
 				end,
 			},
@@ -147,11 +147,11 @@ local tabManagementTable = {
 				type = "toggle",
 				name = L["Hide checked items"],
 				get = function(info)
-					local _, tabData = getTabInfo(info)
+					local _, tabData = private:GetTabInfo(info)
 					return tabData.hideCheckedItems
 				end,
 				set = function(info, state)
-					local _, tabData = getTabInfo(info)
+					local _, tabData = private:GetTabInfo(info)
 					-- SAME CODE in var migrations
 					tabData.hideCheckedItems = state
 					if state then
@@ -160,7 +160,7 @@ local tabManagementTable = {
 					mainFrame:Refresh()
 				end,
 				disabled = function(info)
-					local _, tabData = getTabInfo(info)
+					local _, tabData = private:GetTabInfo(info)
 					return tabData.deleteCheckedItems
 				end,
 			},
@@ -170,9 +170,9 @@ local tabManagementTable = {
 				name = L["Shown tabs"],
 				width = "full",
 				values = function(info)
-					local originalTabID = getTabInfo(info)
+					local originalTabID = private:GetTabInfo(info)
 					local shownIDs = {}
-					for tabID,tabData in dataManager:ForEach(enums.tab, getLeaf(info, 3).arg) do
+					for tabID,tabData in dataManager:ForEach(enums.tab, private:GetLeaf(info, 3).arg) do
 						if tabID ~= originalTabID then
 							shownIDs[tabID] = tabData.name
 						end
@@ -180,11 +180,11 @@ local tabManagementTable = {
 					return shownIDs
 				end,
 				get = function(info, key)
-					local _, tabData = getTabInfo(info)
+					local _, tabData = private:GetTabInfo(info)
 					return not not tabData.shownIDs[key]
 				end,
 				set = function(info, key, state)
-					local tabID = getTabInfo(info)
+					local tabID = private:GetTabInfo(info)
 					dataManager:UpdateShownTabID(tabID, key, state)
 				end,
 			},
@@ -241,11 +241,11 @@ local tabManagementTable = {
 					return enums.days
 				end,
 				get = function(info, key)
-					local _, tabData = getTabInfo(info)
+					local _, tabData = private:GetTabInfo(info)
 					return not not tabData.reset.days[key]
 				end,
 				set = function(info, key, state)
-					local tabID = getTabInfo(info)
+					local tabID = private:GetTabInfo(info)
 					resetManager:UpdateResetDay(tabID, key, state)
 				end,
 			},
@@ -260,11 +260,11 @@ local tabManagementTable = {
 						type = "toggle",
 						name = L["Same each day"],
 						get = function(info)
-							local _, tabData = getTabInfo(info)
+							local _, tabData = private:GetTabInfo(info)
 							return tabData.reset.isSameEachDay
 						end,
 						set = function(info, state)
-							local tabID = getTabInfo(info)
+							local tabID = private:GetTabInfo(info)
 							resetManager:UpdateIsSameEachDay(tabID, state)
 						end,
 					},
@@ -273,7 +273,7 @@ local tabManagementTable = {
 						type = "select",
 						name = L["Configure day"],
 						values = function(info)
-							local _, tabData = getTabInfo(info)
+							local _, tabData = private:GetTabInfo(info)
 							local days = {}
 							for day in pairs(tabData.reset.days) do
 								days[day] = enums.days[day]
@@ -284,15 +284,15 @@ local tabManagementTable = {
 							return days
 						end,
 						get = function(info)
-							local _, tabData = getTabInfo(info)
+							local _, tabData = private:GetTabInfo(info)
 							return tabData.reset.configureDay
 						end,
 						set = function(info, value)
-							local _, tabData = getTabInfo(info)
+							local _, tabData = private:GetTabInfo(info)
 							tabData.reset.configureDay = value
 						end,
 						hidden = function(info)
-							local _, tabData = getTabInfo(info)
+							local _, tabData = private:GetTabInfo(info)
 							return tabData.reset.isSameEachDay
 						end,
 					},
@@ -301,7 +301,7 @@ local tabManagementTable = {
 						type = "execute",
 						name = L["Add new reset"],
 						func = function(info)
-							local tabID, _, resetData = getTabInfo(info)
+							local tabID, _, resetData = private:GetTabInfo(info)
 							resetManager:AddResetTime(tabID, resetData)
 						end,
 					},
@@ -310,11 +310,11 @@ local tabManagementTable = {
 						type = "execute",
 						name = L["Remove reset"],
 						func = function(info)
-							local tabID, tabData, resetData = getTabInfo(info)
+							local tabID, tabData, resetData = private:GetTabInfo(info)
 							resetManager:RemoveResetTime(tabID, resetData, tabData.reset.configureResetTime)
 						end,
 						hidden = function(info)
-							local _, _, resetData = getTabInfo(info)
+							local _, _, resetData = private:GetTabInfo(info)
 							return not resetManager:CanRemoveResetTime(resetData)
 						end
 					},
@@ -323,7 +323,7 @@ local tabManagementTable = {
 						type = "select",
 						name = L["Configure reset"],
 						values = function(info)
-							local _, tabData, resetData = getTabInfo(info)
+							local _, tabData, resetData = private:GetTabInfo(info)
 							local resets = {}
 							for resetTimeName in pairs(resetData.resetTimes) do
 								resets[resetTimeName] = resetTimeName
@@ -334,11 +334,11 @@ local tabManagementTable = {
 							return resets
 						end,
 						get = function(info)
-							local _, tabData = getTabInfo(info)
+							local _, tabData = private:GetTabInfo(info)
 							return tabData.reset.configureResetTime
 						end,
 						set = function(info, value)
-							local _, tabData = getTabInfo(info)
+							local _, tabData = private:GetTabInfo(info)
 							tabData.reset.configureResetTime = value
 						end,
 					},
@@ -347,11 +347,11 @@ local tabManagementTable = {
 						type = "input",
 						name = L["Rename"],
 						get = function(info)
-							local _, tabData = getTabInfo(info)
+							local _, tabData = private:GetTabInfo(info)
 							return tabData.reset.configureResetTime
 						end,
 						set = function(info, newName)
-							local tabID, tabData, resetData = getTabInfo(info)
+							local tabID, tabData, resetData = private:GetTabInfo(info)
 							resetManager:RenameResetTime(tabID, resetData, tabData.reset.configureResetTime, newName)
 						end,
 					},
@@ -364,11 +364,11 @@ local tabManagementTable = {
 						max = 23,
 						step = 1,
 						get = function(info)
-							local _, tabData, resetData = getTabInfo(info)
+							local _, tabData, resetData = private:GetTabInfo(info)
 							return resetData.resetTimes[tabData.reset.configureResetTime].hour
 						end,
 						set = function(info, value)
-							local tabID, tabData, resetData = getTabInfo(info)
+							local tabID, tabData, resetData = private:GetTabInfo(info)
 							local timeData = resetData.resetTimes[tabData.reset.configureResetTime]
 							resetManager:UpdateTimeData(tabID, timeData, value)
 						end,
@@ -382,11 +382,11 @@ local tabManagementTable = {
 						max = 59,
 						step = 1,
 						get = function(info)
-							local _, tabData, resetData = getTabInfo(info)
+							local _, tabData, resetData = private:GetTabInfo(info)
 							return resetData.resetTimes[tabData.reset.configureResetTime].min
 						end,
 						set = function(info, value)
-							local tabID, tabData, resetData = getTabInfo(info)
+							local tabID, tabData, resetData = private:GetTabInfo(info)
 							local timeData = resetData.resetTimes[tabData.reset.configureResetTime]
 							resetManager:UpdateTimeData(tabID, timeData, nil, value)
 						end,
@@ -400,11 +400,11 @@ local tabManagementTable = {
 						max = 59,
 						step = 1,
 						get = function(info)
-							local _, tabData, resetData = getTabInfo(info)
+							local _, tabData, resetData = private:GetTabInfo(info)
 							return resetData.resetTimes[tabData.reset.configureResetTime].sec
 						end,
 						set = function(info, value)
-							local tabID, tabData, resetData = getTabInfo(info)
+							local tabID, tabData, resetData = private:GetTabInfo(info)
 							local timeData = resetData.resetTimes[tabData.reset.configureResetTime]
 							resetManager:UpdateTimeData(tabID, timeData, nil, nil, value)
 						end,
@@ -444,7 +444,7 @@ local tabManagementTable = {
 					},
 				},
 				hidden = function(info)
-					local _, tabData = getTabInfo(info)
+					local _, tabData = private:GetTabInfo(info)
 					return not next(tabData.reset.days) -- the configure group only appears if there is at least one day selected
 				end,
 			},
@@ -461,7 +461,7 @@ local tabAddTable = {
 			return ""
 		end,
 		set = function(info, tabName)
-			dataManager:CreateTab(tabName, getLeaf(info, 3).arg)
+			dataManager:CreateTab(tabName, private:GetLeaf(info, 3).arg)
 		end,
 	},
 
@@ -477,7 +477,7 @@ local tabAddTable = {
 }
 
 function private:UpdateTabsInOptions(options)
-	-- local options = getLeaf(info, 3)
+	-- local options = private:GetLeaf(info, 3)
 	local arg, args = options.arg, options.args
 
 	for k,v in pairs(args) do
