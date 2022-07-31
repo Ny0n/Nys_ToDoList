@@ -1,10 +1,12 @@
 --/*******************/ IMPORTS /*************************/--
 
 -- File init
+
 local widgets = NysTDL.widgets
-NysTDL.widgets = widgets -- for IntelliSense
+NysTDL.widgets = widgets
 
 -- Primary aliases
+
 local libs = NysTDL.libs
 local core = NysTDL.core
 local utils = NysTDL.utils
@@ -18,6 +20,7 @@ local dataManager = NysTDL.dataManager
 local tutorialsManager = NysTDL.tutorialsManager
 
 -- Secondary aliases
+
 local L = libs.L
 local LibQTip = libs.LibQTip
 
@@ -25,6 +28,8 @@ local LibQTip = libs.LibQTip
 
 widgets.frame = CreateFrame("Frame", nil, UIParent) -- utility frame
 local widgetsFrame = widgets.frame
+
+local private = {}
 
 local tdlButton
 local hyperlinkEditBoxes = {}
@@ -783,7 +788,7 @@ contentWidgets = {
 
 ]]
 
-local function category_setEditMode(self, state)
+function private:Category_SetEditMode(state)
 	if state then
 		self.editModeFrame:Show()
 		self.interactiveLabel:SetPoint("LEFT", self.editModeFrame, "RIGHT", 0, 0)
@@ -962,7 +967,7 @@ function widgets:CategoryWidget(catID, parentFrame)
 	dragndrop:RegisterForDrag(categoryWidget)
 
 	-- / edit mode
-	categoryWidget.SetEditMode = category_setEditMode
+	categoryWidget.SetEditMode = private.Category_SetEditMode
 	categoryWidget:SetEditMode(mainFrame.editMode)
 
 	return categoryWidget
@@ -992,7 +997,7 @@ contentWidgets = {
 
 ]]
 
-local function item_setCheckBtnExtended(self, state)
+function private:Item_SetCheckBtnExtended(state)
 	if state then
 		if not utils:HasHyperlink(self.itemData.name) then -- so that we can actually click on the hyperlinks
 			-- self.checkBtn:SetHitRectInsets(0, -enums.maxNameWidth[enums.item], 0, 0)
@@ -1003,7 +1008,7 @@ local function item_setCheckBtnExtended(self, state)
 	end
 end
 
-local function item_setEditMode(self, state)
+function private:Item_SetEditMode(state)
 	if state then
 		self.editModeFrame:Show()
 
@@ -1027,7 +1032,7 @@ local function item_setEditMode(self, state)
 
 		self.interactiveLabel.Button:Hide()
 	end
-	item_setCheckBtnExtended(self, not state)
+	private.Item_SetCheckBtnExtended(self, not state)
 	mainFrame:UpdateItemButtons(self.itemID)
 end
 
@@ -1051,7 +1056,7 @@ function widgets:ItemWidget(itemID, parentFrame)
 	itemWidget.checkBtn:SetScript("OnClick", function() dataManager:ToggleChecked(itemID) end)
 	-- itemWidget.checkBtn:SetPoint("LEFT", itemWidget, "LEFT", 0, 0)
 	-- itemWidget.checkBtn:SetSize(28, 28)
-	itemWidget.SetCheckBtnExtended = item_setCheckBtnExtended
+	itemWidget.SetCheckBtnExtended = private.Item_SetCheckBtnExtended
 	itemWidget:SetCheckBtnExtended(true)
 
 	-- / interactiveLabel
@@ -1119,7 +1124,7 @@ function widgets:ItemWidget(itemID, parentFrame)
 	dragndrop:RegisterForDrag(itemWidget)
 
 	-- / edit mode
-	itemWidget.SetEditMode = item_setEditMode
+	itemWidget.SetEditMode = private.Item_SetEditMode
 	itemWidget:SetEditMode(mainFrame.editMode)
 
 	return itemWidget
@@ -1177,7 +1182,7 @@ end
 
 --/*******************/ INITIALIZATION /*************************/--
 
-local function OnUpdate(self, elapsed)
+function private:Event_widgetsFrame_OnUpdate(elapsed)
 	widgetsFrame.timeSinceLastUpdate = widgetsFrame.timeSinceLastUpdate + elapsed
 	widgetsFrame.timeSinceLastRefresh = widgetsFrame.timeSinceLastRefresh + elapsed
 
@@ -1227,7 +1232,7 @@ function widgets:Initialize()
 	-- then we manage the widgetsFrame
 	widgetsFrame.timeSinceLastUpdate = 0
 	widgetsFrame.timeSinceLastRefresh = 0
-	widgetsFrame:SetScript("OnUpdate", OnUpdate)
+	widgetsFrame:SetScript("OnUpdate", private.Event_widgetsFrame_OnUpdate)
 
 	-- and finally, we can refresh everything
 	widgets:ProfileChanged()

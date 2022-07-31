@@ -1,10 +1,12 @@
 --/*******************/ IMPORTS /*************************/--
 
 -- File init
+
 local dragndrop = NysTDL.dragndrop
-NysTDL.dragndrop = dragndrop -- for IntelliSense
+NysTDL.dragndrop = dragndrop
 
 -- Primary aliases
+
 local enums = NysTDL.enums
 local utils = NysTDL.utils
 local database = NysTDL.database
@@ -14,6 +16,8 @@ local dataManager = NysTDL.dataManager
 --/*******************************************************/--
 
 -- // Variables
+
+local private = {}
 
 dragndrop.dragging = false -- ez access
 dragndrop.cancelling = false
@@ -55,7 +59,7 @@ local categoryDropFrames = {}
 local favsDropFrames = {}
 local itemsDropFrames = {}
 
--- dragUpdateFunc vars
+-- private:dragUpdateFunc vars
 
 local dropFrames
 local lastCursorPosX, lastCursorPosY
@@ -71,12 +75,12 @@ local UIParent = UIParent
 
 --/***************/ MISC /*****************/--
 
-local function GetCursorScaledPosition()
+function private:GetCursorScaledPosition()
 	local scale, x, y = UIParent:GetScale(), GetCursorPosition()
 	return x/scale, y/scale
 end
 
-local function testDist(dropFrame, cursorY)
+function private:TestDist(dropFrame, cursorY)
 	-- we get the distance between the given drop frame and the cursor,
 	-- to determine which one is the closest to it
 
@@ -89,7 +93,7 @@ local function testDist(dropFrame, cursorY)
 	end
 end
 
-local function createDuplicate(enum, ID)
+function private:CreateDuplicate(enum, ID)
 	-- first in each drag, since we are stealing the widget we are dragging from the frame,
 	-- we create a new one to replace it
 
@@ -102,7 +106,7 @@ local function createDuplicate(enum, ID)
 	-- we start the real dragging work
 end
 
-local function dragUpdateFunc()
+function private:DragUpdateFunc()
 	-- // THE OnUpdate func that determines the drop point depending on the cursor's Y position
 
 	if not tdlFrame:IsMouseOver() then
@@ -123,7 +127,7 @@ local function dragUpdateFunc()
 	minDist = 10000 -- we reset the dist to find the closest drop point each frame
 	for _,dropFrame in pairs(dropFrames) do
 		if dropFrame:IsVisible() then -- we only care about a drop point if we can see it
-			testDist(dropFrame, cursorY)
+			private:TestDist(dropFrame, cursorY)
 		end
 	end
 
@@ -136,7 +140,7 @@ local function dragUpdateFunc()
 	newPos = targetDropFrame.dropData.pos
 end
 
-local function isCatDropValid(targetCatID)
+function private:IsCatDropValid(targetCatID)
 	do return false end -- TDLATER sub-cat drag&drop (fix (add) missing drop points (under sub-cats) & verify tab switch)
 
 	-- returns false if:
@@ -159,14 +163,14 @@ local function isCatDropValid(targetCatID)
 	return true
 end
 
+---To update the scale the dragndrop file.
 function dragndrop:SetScale(scale)
-	-- to update the scale in this file
 	listScale = scale
 end
 
 --/***************/ DROP FRAMES /*****************/--
 
-local function recursiveUpdate(catWidget, w)
+function private:RecursiveUpdate(catWidget, w)
 	local catID, catData, newDropFrame = catWidget.catID, catWidget.catData
 	local contentWidgets = mainFrame:GetContentWidgets()
 
@@ -177,7 +181,7 @@ local function recursiveUpdate(catWidget, w)
 		if dataManager:GetNextFavPos(catID) == 1 then
 			tinsert(itemsDropFrames, newDropFrame) -- and normal items only if there are no favs
 		end
-		if isCatDropValid(catID) then
+		if private:IsCatDropValid(catID) then
 			tinsert(categoryDropFrames, newDropFrame)
 		end
 
@@ -188,7 +192,7 @@ local function recursiveUpdate(catWidget, w)
 
 			if not dataManager:IsHidden(contentID, currentTab) then -- if it's not hidden, we show the corresponding widget
 				if contentWidget.enum == enums.category then -- sub-category
-					recursiveUpdate(contentWidget, w)
+					private:RecursiveUpdate(contentWidget, w)
 				elseif contentWidget.enum == enums.item then -- item
 					newDropFrame = dragndrop:CreateDropFrame(contentWidget, unpack(itemPos)) -- /*item/*cat/ under each item/cat
 					dragndrop:SetDropFrameData(newDropFrame, currentTab, catID, contentOrder+1)
@@ -201,7 +205,7 @@ local function recursiveUpdate(catWidget, w)
 						tinsert(itemsDropFrames, newDropFrame) -- we can always place a normal item below a normal item
 					end
 
-					if isCatDropValid(catID) then
+					if private:IsCatDropValid(catID) then
 						tinsert(categoryDropFrames, newDropFrame) -- we can place a category as a sub-cat anywhere, considering it's not inside itself
 					end
 				end
@@ -250,7 +254,7 @@ function dragndrop:UpdateDropFrames()
 		tinsert(categoryDropFrames, newDropFrame)
 
 		-- // content
-		recursiveUpdate(catWidget, w)
+		private:RecursiveUpdate(catWidget, w)
 	end
 
 	-- this part is specifically for the last category drop point (under the last shown item/cat)
@@ -309,11 +313,11 @@ end
 
 --/***************/ DRAGGING /*****************/--
 
-local function initCategoryDrag()
+function private:InitCategoryDrag()
 	if not dragndrop.dragging then return end
 
 	-- creating the duplicate, and getting the dragging's widget current position
-	createDuplicate(enums.category, draggingWidget.catID)
+	private:CreateDuplicate(enums.category, draggingWidget.catID)
 
 	-- when we are dragging a category, we dim every place we can't drag it to (for a visual feedback)
 	local contentWidgets = mainFrame:GetContentWidgets()
@@ -328,11 +332,11 @@ local function initCategoryDrag()
 	dropFrames = categoryDropFrames
 end
 
-local function initItemDrag()
+function private:InitItemDrag()
 	if not dragndrop.dragging then return end
 
 	-- creating the duplicate, and getting the dragging's widget current position
-	createDuplicate(enums.item, draggingWidget.itemID)
+	private:CreateDuplicate(enums.item, draggingWidget.itemID)
 
 	-- hiding the buttons on the left of the dragging widget
 	draggingWidget.editModeFrame:Hide()
@@ -369,7 +373,7 @@ end
 
 --/***************/ DROPPING /*****************/--
 
-local function dropCategory()
+function private:DropCategory()
 	-- the drop data is constantly updated while dragging,
 	-- now we do the actual dropping
 	if not dragndrop.dragging or dragndrop.cancelling then return end
@@ -381,7 +385,7 @@ local function dropCategory()
 	dataManager:MoveCategory(draggingWidget.catID, newPos, newParentID, startingTab, currentTab)
 end
 
-local function dropItem()
+function private:DropItem()
 	-- the drop data is constantly updated while dragging,
 	-- now we do the actual dropping
 	if not dragndrop.dragging or dragndrop.cancelling then return end
@@ -395,8 +399,8 @@ end
 
 --/***************/ START&STOP /*****************/--
 
-local function dragStart(dragFrame)
-	local widget = dragFrame:GetParent():GetParent()
+function private:DragStart()
+	local widget = self:GetParent():GetParent()
 
 	if widget.enum == enums.category then
 		if not mainFrame.editMode then return end
@@ -418,7 +422,7 @@ local function dragStart(dragFrame)
 	dropLine:Show()
 end
 
-local function dragStop()
+function private:DragStop()
 	if not dragndrop.dragging then return end
 
 	dragndrop.dragging = false
@@ -451,12 +455,12 @@ local function dragStop()
 	mainFrame:Refresh()
 end
 
-local function dragMouseDown(dragFrame)
+function private:DragMouseDown()
 	-- this is for snapping the widget on the cursor, where we started to drag it
-	clickX, clickY = GetCursorScaledPosition() -- UIPARENT CS
+	clickX, clickY = private:GetCursorScaledPosition() -- UIPARENT CS
 end
 
-local function dragMouseStart()
+function private:DragMouseStart()
 	if not dragndrop.dragging then return end
 
 	-- we snap the one we are dragging to the current cursor position,
@@ -474,7 +478,7 @@ local function dragMouseStart()
 	local widgetX, widgetY = draggingWidget:GetCenter() -- UIPARENT CS
 	local ofsx, ofsy = clickX - widgetX, clickY - widgetY -- here we take the offset between the original click's pos (dragMouseDown) and the widget's center
 
-	local cursorX, cursorY = GetCursorScaledPosition() -- UIPARENT CS
+	local cursorX, cursorY = private:GetCursorScaledPosition() -- UIPARENT CS
 	draggingWidget:ClearAllPoints()
 	draggingWidget:SetPoint("CENTER", UIParent, "BOTTOMLEFT", cursorX-ofsx, cursorY-ofsy) -- so we can snap the widget to the cursor at the same place that we clicked on (like a typical drag&drop)
 
@@ -498,27 +502,27 @@ function dragndrop:RegisterForDrag(widget)
 	dragFrame:RegisterForDrag("LeftButton")
 
 	-- / start
-	dragFrame:SetScript("OnDragStart", dragStart)
-	dragFrame:HookScript("OnMouseDown", dragMouseDown)
-	dragFrame:HookScript("OnDragStart", dragMouseStart)
+	dragFrame:SetScript("OnDragStart", private.DragStart)
+	dragFrame:HookScript("OnMouseDown", private.DragMouseDown)
+	dragFrame:HookScript("OnDragStart", private.DragMouseStart)
 
 	-- specific
 	if widget.enum == enums.category then
-		dragFrame:HookScript("OnDragStart", initCategoryDrag)
-		dragFrame:SetScript("OnDragStop", dropCategory)
+		dragFrame:HookScript("OnDragStart", private.InitCategoryDrag)
+		dragFrame:SetScript("OnDragStop", private.DropCategory)
 	elseif widget.enum == enums.item then
-		dragFrame:HookScript("OnDragStart", initItemDrag)
-		dragFrame:SetScript("OnDragStop", dropItem)
+		dragFrame:HookScript("OnDragStart", private.InitItemDrag)
+		dragFrame:SetScript("OnDragStop", private.DropItem)
 	end
 
 	dragFrame:HookScript("OnDragStart", function()
 		if not dragndrop.dragging then return end
 		-- and finally, when everything is set up, we start the drop update managment
-		dragUpdate:SetScript("OnUpdate", dragUpdateFunc)
+		dragUpdate:SetScript("OnUpdate", private.DragUpdateFunc)
 	end)
 
 	-- / stop
-	dragFrame:HookScript("OnDragStop", dragStop)
+	dragFrame:HookScript("OnDragStop", private.DragStop)
 end
 
 function dragndrop:CancelDragging()

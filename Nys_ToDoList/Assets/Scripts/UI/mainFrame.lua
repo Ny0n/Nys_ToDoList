@@ -1,10 +1,12 @@
 --/*******************/ IMPORTS /*************************/--
 
 -- File init
+
 local mainFrame = NysTDL.mainFrame
-NysTDL.mainFrame = mainFrame -- for IntelliSense
+NysTDL.mainFrame = mainFrame
 
 -- Primary aliases
+
 local libs = NysTDL.libs
 local core = NysTDL.core
 local enums = NysTDL.enums
@@ -18,12 +20,15 @@ local optionsManager = NysTDL.optionsManager
 local tutorialsManager = NysTDL.tutorialsManager
 
 -- Secondary aliases
+
 local L = libs.L
 -- local LDD = libs.LDD
 
 --/*******************************************************/--
 
 -- // Variables
+
+local private = {}
 
 -- THE frame
 mainFrame.tdlFrame = CreateFrame("Frame", nil, UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil)
@@ -87,7 +92,7 @@ local GetCursorPosition = GetCursorPosition
 
 -- // Local functions
 
-local function menuClick(menuEnum)
+function private:MenuClick(menuEnum)
 	-- controls what should be done when we click on menu buttons
 	local menuFrames = tdlFrame.content.menuFrames
 
@@ -121,7 +126,7 @@ local function menuClick(menuEnum)
 	end
 end
 
-local function setDoubleLinePoints(lineLeft, lineRight, l, y)
+function private:SetDoubleLinePoints(lineLeft, lineRight, l, y)
 	local lineMinWidth = 5
 	local semiLength = l/2 + 10
 
@@ -139,7 +144,7 @@ local function setDoubleLinePoints(lineLeft, lineRight, l, y)
 	lineRight:Show()
 end
 
-local function subMenuNameFormat(name)
+function private:SubMenuNameFormat(name)
 	return "/ " .. (name or "") .. " \\"
 end
 
@@ -436,7 +441,7 @@ function mainFrame:ToggleEditMode(state, forceUpdate)
 	end
 
 	-- // refresh
-	menuClick() -- to close any opened menu and refresh the list
+	private:MenuClick() -- to close any opened menu and refresh the list
 end
 
 --/*******************/ EVENTS /*************************/--
@@ -486,7 +491,7 @@ end
 
 function mainFrame:Event_TDLFrame_OnVisibilityUpdate()
 	-- things to do when we hide/show the list
-	menuClick() -- to close any opened menu and refresh the list
+	private:MenuClick() -- to close any opened menu and refresh the list
 	NysTDL.acedb.profile.lastListVisibility = tdlFrame:IsShown()
 	if dragndrop.dragging then dragndrop:CancelDragging() end
 	mainFrame:ToggleEditMode(false)
@@ -550,7 +555,7 @@ function mainFrame:DeleteWidget(ID)
 	end
 end
 
-local function loadWidgets()
+function private:LoadWidgets()
 	-- // creating every category and item widget for the list
 	-- called at load time / when changing profiles to crunch every creation at the same time
 
@@ -567,7 +572,7 @@ end
 
 -- // Content loading
 
-local function loadContent()
+function private:LoadContent()
 	-- // reloading of elements that need updates
 
 	-- // we show the good sub-menu (add a category, frame options, tab actions, ...)
@@ -596,7 +601,7 @@ local function loadContent()
 	end
 end
 
-local function recursiveLoad(tabID, tabData, catWidget, p)
+function private:RecursiveLoad(tabID, tabData, catWidget, p)
 	local catData = catWidget.catData
 	catWidget.addEditBox:Hide() -- we always hide every addEditBox on list Refresh
 	catWidget.emptyLabel:Hide()
@@ -633,7 +638,7 @@ local function recursiveLoad(tabID, tabData, catWidget, p)
 					contentWidget:Show()
 
 					if contentWidget.enum == enums.category then -- sub-category
-						recursiveLoad(tabID, tabData, contentWidget, p)
+						private:RecursiveLoad(tabID, tabData, contentWidget, p)
 					elseif contentWidget.enum == enums.item then -- item
 						p.newY = p.newY - enums.ofsyContent
 					end
@@ -646,7 +651,7 @@ local function recursiveLoad(tabID, tabData, catWidget, p)
 	end
 end
 
-local function loadList()
+function private:LoadList()
 	-- // generating all of the content (items, checkboxes, editboxes, category labels...)
 	-- it's the big big important generation loop (oof)
 
@@ -687,7 +692,7 @@ local function loadList()
 			catWidget.originalTabLabel:Show()
 		end
 
-		recursiveLoad(tabID, tabData, catWidget, p)
+		private:RecursiveLoad(tabID, tabData, catWidget, p)
 	end
 
 	tdlFrame.content.dummyBottomFrame:SetPoint("TOPLEFT", tdlFrame.content.loadOrigin, "TOPLEFT", p.newX, p.newY)
@@ -743,8 +748,8 @@ function mainFrame:Refresh()
 
 	-- // ************************************************************* // --
 
-	loadContent() -- content reloading (menus, buttons, ...)
-	loadList() -- list reloading (categories, items, ...)
+	private:LoadContent() -- content reloading (menus, buttons, ...)
+	private:LoadList() -- list reloading (categories, items, ...)
 	mainFrame:UpdateVisuals() -- coloring...
 end
 
@@ -752,7 +757,7 @@ end
 
 -- // Content generation
 
-local function generateMenuAddACategory()
+function private:GenerateMenuAddACategory()
 	local menuframe = tdlFrame.content.menuFrames[enums.menus.addcat]
 
 	local function addCat() -- DRY
@@ -766,12 +771,12 @@ local function generateMenuAddACategory()
 	--/************************************************/--
 
 	-- title
-	menuframe.menuTitle = widgets:NoPointsLabel(menuframe, nil, string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), subMenuNameFormat(L["Add a category"])))
+	menuframe.menuTitle = widgets:NoPointsLabel(menuframe, nil, string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), private:SubMenuNameFormat(L["Add a category"])))
 	menuframe.menuTitle:SetPoint("CENTER", menuframe, "TOPLEFT", centerXOffset, 0)
 	-- left/right lines
 	menuframe.menuTitleLL = widgets:ThemeLine(menuframe, database.themes.theme, 0.7)
 	menuframe.menuTitleLR = widgets:ThemeLine(menuframe, database.themes.theme, 0.7)
-	setDoubleLinePoints(menuframe.menuTitleLL, menuframe.menuTitleLR, menuframe.menuTitle:GetWidth(), 0)
+	private:SetDoubleLinePoints(menuframe.menuTitleLL, menuframe.menuTitleLR, menuframe.menuTitle:GetWidth(), 0)
 
 	--/************************************************/--
 
@@ -802,18 +807,18 @@ local function generateMenuAddACategory()
 	tutorialsManager:SetPoint("TM_introduction_addCat", "TOP", menuframe.addBtn, "BOTTOM", 0, -22)
 end
 
-local function generateMenuFrameOptions()
+function private:GenerateMenuFrameOptions()
 	local menuframe = tdlFrame.content.menuFrames[enums.menus.frameopt]
 
 	--/************************************************/--
 
 	-- title
-	menuframe.menuTitle = widgets:NoPointsLabel(menuframe, nil, string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), subMenuNameFormat(L["Frame options"])))
+	menuframe.menuTitle = widgets:NoPointsLabel(menuframe, nil, string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), private:SubMenuNameFormat(L["Frame options"])))
 	menuframe.menuTitle:SetPoint("CENTER", menuframe, "TOPLEFT", centerXOffset, 0)
 	-- left/right lines
 	menuframe.menuTitleLL = widgets:ThemeLine(menuframe, database.themes.theme, 0.7)
 	menuframe.menuTitleLR = widgets:ThemeLine(menuframe, database.themes.theme, 0.7)
-	setDoubleLinePoints(menuframe.menuTitleLL, menuframe.menuTitleLR, menuframe.menuTitle:GetWidth(), 0)
+	private:SetDoubleLinePoints(menuframe.menuTitleLL, menuframe.menuTitleLR, menuframe.menuTitle:GetWidth(), 0)
 
 	--/************************************************/--
 
@@ -888,18 +893,18 @@ local function generateMenuFrameOptions()
 	menuframe.btnAddonOptions:SetScript("OnClick", function() if not optionsManager:ToggleOptions(true) then tdlFrame:Hide() end end)
 end
 
-local function generateMenuTabActions()
+function private:GenerateMenuTabActions()
 	local menuframe = tdlFrame.content.menuFrames[enums.menus.tabact]
 
 	--/************************************************/--
 
 	-- title
-	menuframe.menuTitle = widgets:NoPointsLabel(menuframe, nil, string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), subMenuNameFormat(L["Tab actions"])))
+	menuframe.menuTitle = widgets:NoPointsLabel(menuframe, nil, string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), private:SubMenuNameFormat(L["Tab actions"])))
 	menuframe.menuTitle:SetPoint("CENTER", menuframe, "TOPLEFT", centerXOffset, 0)
 	-- left/right lines
 	menuframe.menuTitleLL = widgets:ThemeLine(menuframe, database.themes.theme, 0.7)
 	menuframe.menuTitleLR = widgets:ThemeLine(menuframe, database.themes.theme, 0.7)
-	setDoubleLinePoints(menuframe.menuTitleLL, menuframe.menuTitleLR, menuframe.menuTitle:GetWidth(), 0)
+	private:SetDoubleLinePoints(menuframe.menuTitleLL, menuframe.menuTitleLR, menuframe.menuTitle:GetWidth(), 0)
 
 	--/************************************************/--
 
@@ -924,7 +929,7 @@ local function generateMenuTabActions()
 	menuframe.btnClear:SetScript("OnClick", function() dataManager:ClearTab(database.ctab()) end)
 end
 
-local function generateFrameContent()
+function private:GenerateFrameContent()
 	-- // generating the content (top to bottom)
 
 	-- creating content, scroll child of ScrollFrame (everything will be inside of it)
@@ -940,7 +945,7 @@ local function generateFrameContent()
 	-- left/right lines
 	content.titleLL = widgets:ThemeLine(content, database.themes.theme_yellow, 0.8)
 	content.titleLR = widgets:ThemeLine(content, database.themes.theme_yellow, 0.8)
-	setDoubleLinePoints(content.titleLL, content.titleLR, content.title:GetWidth(), -20)
+	private:SetDoubleLinePoints(content.titleLL, content.titleLR, content.title:GetWidth(), -20)
 
 	-- remaining numbers labels
 	content.remaining = widgets:NoPointsLabel(content, nil, L["Remaining"]..":")
@@ -976,7 +981,7 @@ local function generateFrameContent()
 	content.frameOptionsButton = widgets:IconTooltipButton(content, "NysTDL_FrameOptionsButton", L["Frame options"])
 	content.frameOptionsButton:SetPoint("RIGHT", content.editModeButton, "LEFT", 2, 0)
 	content.frameOptionsButton:SetScript("OnClick", function()
-		menuClick(enums.menus.frameopt)
+		private:MenuClick(enums.menus.frameopt)
 	end)
 	tutorialsManager:SetPoint("TM_introduction_accessOptions", "BOTTOM", content.frameOptionsButton, "TOP", 0, 18)
 
@@ -984,7 +989,7 @@ local function generateFrameContent()
 	content.categoryButton = widgets:IconTooltipButton(content, "NysTDL_CategoryButton", L["Add a category"])
 	content.categoryButton:SetPoint("RIGHT", content.frameOptionsButton, "LEFT", 2, 0)
 	content.categoryButton:SetScript("OnClick", function()
-		menuClick(enums.menus.addcat)
+		private:MenuClick(enums.menus.addcat)
 	end)
 	tutorialsManager:SetPoint("TM_introduction_addNewCat", "TOP", content.categoryButton, "BOTTOM", 0, -18)
 
@@ -992,7 +997,7 @@ local function generateFrameContent()
 	content.tabActionsButton = widgets:IconTooltipButton(content, "NysTDL_TabActionsButton", L["Tab actions"])
 	content.tabActionsButton:SetPoint("RIGHT", content.editModeButton, "LEFT", 2, 0)
 	content.tabActionsButton:SetScript("OnClick", function()
-		menuClick(enums.menus.tabact)
+		private:MenuClick(enums.menus.tabact)
 	end)
 	content.tabActionsButton:Hide()
 
@@ -1021,7 +1026,7 @@ local function generateFrameContent()
 	content.menuFrames[menuEnum] = CreateFrame("Frame", nil, tdlFrame.content)
 	content.menuFrames[menuEnum]:SetPoint("TOPLEFT", tdlFrame.content, "TOPLEFT", 0, lineBottomY)
 	content.menuFrames[menuEnum]:SetSize(contentWidth, 110) -- CVAL (coded value, non automatic)
-	generateMenuAddACategory()
+	private:GenerateMenuAddACategory()
 
 	-- / frame options sub-menu
 
@@ -1029,7 +1034,7 @@ local function generateFrameContent()
 	content.menuFrames[menuEnum] = CreateFrame("Frame", nil, tdlFrame.content)
 	content.menuFrames[menuEnum]:SetPoint("TOPLEFT", tdlFrame.content, "TOPLEFT", 0, lineBottomY)
 	content.menuFrames[menuEnum]:SetSize(contentWidth, 235) -- CVAL
-	generateMenuFrameOptions()
+	private:GenerateMenuFrameOptions()
 
 	-- / tab actions sub-menu
 
@@ -1037,7 +1042,7 @@ local function generateFrameContent()
 	content.menuFrames[menuEnum] = CreateFrame("Frame", nil, tdlFrame.content)
 	content.menuFrames[menuEnum]:SetPoint("TOPLEFT", tdlFrame.content, "TOPLEFT", 0, lineBottomY)
 	content.menuFrames[menuEnum]:SetSize(contentWidth, 240) -- CVAL
-	generateMenuTabActions()
+	private:GenerateMenuTabActions()
 
 	-- below the menus
 	content.lineBottom = widgets:ThemeLine(content, database.themes.theme, 0.7)
@@ -1110,7 +1115,7 @@ function mainFrame:CreateTDLFrame()
 
 	-- // CREATING THE CONTENT OF THE FRAME // --
 
-	-- // scroll frame (almost everything will be inside of it using a scroll child frame, see generateFrameContent())
+	-- // scroll frame (almost everything will be inside of it using a scroll child frame, see private:GenerateFrameContent())
 
 	tdlFrame.ScrollFrame = CreateFrame("ScrollFrame", nil, tdlFrame, "UIPanelScrollFrameTemplate")
 	tdlFrame.ScrollFrame:SetPoint("TOPLEFT", tdlFrame, "TOPLEFT", 4, - 4)
@@ -1159,7 +1164,7 @@ function mainFrame:CreateTDLFrame()
 
 	-- // inside the scroll frame
 
-	generateFrameContent()
+	private:GenerateFrameContent()
 end
 
 -- // Profile init & change
@@ -1198,7 +1203,7 @@ function mainFrame:Init()
 	frameopt.affectDesc:SetChecked(NysTDL.acedb.profile.affectDesc)
 
 	-- we generate the widgets once
-	loadWidgets()
+	private:LoadWidgets()
 
 	-- we reset the edit mode state
 	mainFrame:ToggleEditMode(false, true)

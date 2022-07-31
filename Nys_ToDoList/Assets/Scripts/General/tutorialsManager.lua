@@ -1,10 +1,12 @@
 --/*******************/ IMPORTS /*************************/--
 
 -- File init
+
 local tutorialsManager = NysTDL.tutorialsManager
-NysTDL.tutorialsManager = tutorialsManager -- for IntelliSense
+NysTDL.tutorialsManager = tutorialsManager
 
 -- Primary aliases
+
 local libs = NysTDL.libs
 local chat = NysTDL.chat
 local utils = NysTDL.utils
@@ -12,6 +14,7 @@ local widgets = NysTDL.widgets
 local mainFrame = NysTDL.mainFrame
 
 -- Secondary aliases
+
 local L = libs.L
 
 --/*******************************************************/--
@@ -124,11 +127,11 @@ function tutorialsManager:UpdateFramesVisibility()
 	-- their tuto has not been completed (false) and the previous one is true.
 	-- this is called by the OnUpdate event of the tdlFrame
 
---   for _,tuto in ipairs(tutorials) do
---     if tuto:IsEnabled() then
--- 		-- TDLATER
---     end
---   end
+	-- for _,tuto in ipairs(tutorials) do
+	-- 	if tuto:IsEnabled() then
+	-- 		-- TDLATER
+	-- 	end
+	-- end
 
 	if NysTDL.acedb.global.tuto_progression < #tutorialOrder then
 		for i, v in pairs(tutorialOrder) do
@@ -151,6 +154,8 @@ end
 
 --/*******************/ MANAGMENT /*************************/--
 
+---Tries to validate the given tutorial if it hasn't already been validated.
+---@param tuto_name string
 function tutorialsManager:Validate(tuto_name)
 	-- completes the "tuto_name" tutorial, only if it was active
 	local i = utils:GetKeyFromValue(tutorialOrder, tuto_name)

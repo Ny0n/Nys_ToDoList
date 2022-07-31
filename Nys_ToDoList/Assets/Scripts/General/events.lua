@@ -1,10 +1,12 @@
 --/*******************/ IMPORTS /*************************/--
 
 -- File init
+
 local events = NysTDL.events
-NysTDL.events = events -- for IntelliSense
+NysTDL.events = events
 
 -- Primary aliases
+
 local libs = NysTDL.libs
 local core = NysTDL.core
 local chat = NysTDL.chat
@@ -13,6 +15,7 @@ local tabsFrame = NysTDL.tabsFrame
 local optionsManager = NysTDL.optionsManager
 
 -- Secondary aliases
+
 local L = libs.L
 local AceTimer = libs.AceTimer
 local AceEvent = libs.AceEvent
@@ -21,9 +24,8 @@ local AceEvent = libs.AceEvent
 
 -- Variables
 
-local private = {}
-
 local warnTimerTime = 3600 -- in seconds (1 hour)
+local warnTimer
 
 --/*******************/ EVENT HANDLERS /*************************/--
 
@@ -33,11 +35,11 @@ function events:PLAYER_LOGIN()
 		NysTDL.acedb.global.UI_reloading = false
 
 		if NysTDL.acedb.global.warnTimerRemaining > 0 then -- this is for the special case where we logged in, but reloaded before the 20 sec timer activated, so we just try it again
-			private.warnTimer = AceTimer:ScheduleTimer(function() -- after reloading, we restart the warn timer from where we left off before the reload
+			warnTimer = AceTimer:ScheduleTimer(function() -- after reloading, we restart the warn timer from where we left off before the reload
 				if NysTDL.acedb.profile.hourlyReminder and not disabled() then -- without forgetting that it's the hourly reminder timer this time
 					chat:Warn()
 				end
-				private.warnTimer = AceTimer:ScheduleRepeatingTimer(function()
+				warnTimer = AceTimer:ScheduleRepeatingTimer(function()
 					if NysTDL.acedb.profile.hourlyReminder and not disabled() then
 						chat:Warn()
 					end
@@ -51,7 +53,7 @@ function events:PLAYER_LOGIN()
 	AceTimer:ScheduleTimer(function() -- 20 secs after the player logs in, we check if we need to warn him about the remaining items
 		if core.loaded then -- just to be sure
 			chat:Warn()
-			private.warnTimer = AceTimer:ScheduleRepeatingTimer(function()
+			warnTimer = AceTimer:ScheduleRepeatingTimer(function()
 				if NysTDL.acedb.profile.hourlyReminder and not disabled() then
 					chat:Warn()
 				end
@@ -79,7 +81,7 @@ function events:Initialize()
 	-- hooks
 	hooksecurefunc("ReloadUI", function()
 		NysTDL.acedb.global.UI_reloading = true
-		NysTDL.acedb.global.warnTimerRemaining = AceTimer:TimeLeft(private.warnTimer) -- if we are reloading, we keep in mind how much time there was left to our repeating warn timer
+		NysTDL.acedb.global.warnTimerRemaining = AceTimer:TimeLeft(warnTimer) -- if we are reloading, we keep in mind how much time there was left to our repeating warn timer
 	end) -- this is for knowing when the addon is loading, if it was a UI reload or the player logging in
 
 	local canInsertLink = true

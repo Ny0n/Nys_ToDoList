@@ -1,10 +1,12 @@
 --/*******************/ IMPORTS /*************************/--
 
 -- File init
+
 local optionsManager = NysTDL.optionsManager
-NysTDL.optionsManager = optionsManager -- for IntelliSense
+NysTDL.optionsManager = optionsManager
 
 -- Primary aliases
+
 local libs = NysTDL.libs
 local core = NysTDL.core
 local enums = NysTDL.enums
@@ -17,6 +19,7 @@ local dataManager = NysTDL.dataManager
 local resetManager = NysTDL.resetManager
 
 -- Secondary aliases
+
 local L = libs.L
 local AceConfig = libs.AceConfig
 local AceConfigDialog = libs.AceConfigDialog
@@ -505,7 +508,7 @@ function private:RefreshTabManagement()
 	private:UpdateTabsInOptions(global)
 end
 
-local function createAddonOptionsTable()
+function private:CreateAddonOptionsTable()
 	optionsManager.optionsTable = {
 		handler = optionsManager,
 		type = "group",
@@ -887,8 +890,31 @@ local function createAddonOptionsTable()
 	}
 end
 
+---This is a helper used to update the `width` field of everything in the given options table.
+---If the actual locale width is larger than the standard width (@see wDef), it updates it to match the locale width.
+---@param tbl table The options table.
+---@param wDef table The standard width table.
+function private:InitializeOptionsWidthRecursive(tbl, wDef)
+	for _,v in pairs(tbl) do
+		if v.type == "group" then
+			private:InitializeOptionsWidthRecursive(v.args, wDef)
+		elseif v.type ~= "description" and v.type ~= "header" then -- for every widget (except the descriptions and the headers), we keep their min normal width, we change it only if their name is bigger than the default width
+			local w = widgets:GetWidth(v.name)
+			if wDef[v.type] then
+				-- print (v.name.."_"..w)
+				w = tonumber(string.format("%.3f", w/wDef[v.type]))
+				if w > 1 then
+					v.width = w -- w is a factor
+				end
+			end
+		end
+	end
+end
+
 --/*******************/ GENERAL FUNCTIONS /*************************/--
 
+---Toggles the interface addon frame.
+---@param fromFrame boolean Did we call this func from the mainFrame?
 function optionsManager:ToggleOptions(fromFrame)
 	if InterfaceOptionsFrame:IsShown() then -- if the interface options frame is currently opened
 		if InterfaceOptionsFrameAddOns.selection ~= nil then -- then we check if we're currently in the AddOns tab and if we are currently selecting an addon
@@ -907,34 +933,17 @@ function optionsManager:ToggleOptions(fromFrame)
 	end
 end
 
-function optionsManager:InitializeOptionsWidthRecursive(tbl, wDef)
-	for _,v in pairs(tbl) do
-		if v.type == "group" then
-			optionsManager:InitializeOptionsWidthRecursive(v.args, wDef)
-		elseif v.type ~= "description" and v.type ~= "header" then -- for every widget (except the descriptions and the headers), we keep their min normal width, we change it only if their name is bigger than the default width
-			local w = widgets:GetWidth(v.name)
-			if wDef[v.type] then
-				-- print (v.name.."_"..w)
-				w = tonumber(string.format("%.3f", w/wDef[v.type]))
-				if w > 1 then
-					v.width = w -- w is a factor
-				end
-			end
-		end
-	end
-end
-
 --/*******************/ INITIALIZATION /*************************/--
 
 function optionsManager:Initialize()
 	-- first things first, we create the addon's options table
 	-- we do that here so that we have access to other files's functions and data
-	createAddonOptionsTable()
+	private:CreateAddonOptionsTable()
 
 	-- this is for adapting the width of the widgets to the length of their respective names (that can change with the locale)
-	optionsManager:InitializeOptionsWidthRecursive(optionsManager.optionsTable.args.main.args, wDef)
-	optionsManager:InitializeOptionsWidthRecursive(tabManagementTable, wDef)
-	optionsManager:InitializeOptionsWidthRecursive(tabAddTable, wDef)
+	private:InitializeOptionsWidthRecursive(optionsManager.optionsTable.args.main.args, wDef)
+	private:InitializeOptionsWidthRecursive(tabManagementTable, wDef)
+	private:InitializeOptionsWidthRecursive(tabAddTable, wDef)
 
 	-- we register our options table for AceConfig
 	AceConfigRegistry:ValidateOptionsTable(optionsManager.optionsTable, addonName)

@@ -1,10 +1,12 @@
 --/*******************/ IMPORTS /*************************/--
 
 -- File init
+
 local migration = NysTDL.migration
-NysTDL.migration = migration -- for IntelliSense
+NysTDL.migration = migration
 
 -- Primary aliases
+
 local libs = NysTDL.libs
 local core = NysTDL.core
 local enums = NysTDL.enums
@@ -15,6 +17,7 @@ local mainFrame = NysTDL.mainFrame
 local dataManager = NysTDL.dataManager
 
 -- Secondary aliases
+
 local L = libs.L
 local LibQTip = libs.LibQTip
 
@@ -40,6 +43,8 @@ local migrationData = {
 
 -- // **************************** // --
 
+---Checks if the addon got an update, and if so (and depending on the update version),
+---it will apply the changes and try to migrate the saved variables to the new ones.
 function migration:Migrate()
     -- this is for doing specific things ONLY when the addon gets updated and its version changes
 
@@ -87,16 +92,9 @@ end
 
 -- // **************************** // --
 
-local xpcall = xpcall
-
-local function errorhandler(err)
-	return "Message: \"" .. err .. "\"\n"
-		.. "Stack: \"" .. debugstack() .. "\""
-end
-
 function private:CheckVarsMigration()
     -- // VAR VERSIONS MIGRATION
-    local success, errmsg = xpcall(private.ExecVarsMigration, errorhandler) -- xpcall(<err?>)
+    local success, errmsg = xpcall(private.ExecVarsMigration, core.errorhandler) -- xpcall(<err?>)
     if not success then -- oh boy
         private:Failed(errmsg, true)
     end

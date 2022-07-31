@@ -3,6 +3,7 @@
 --/*******************/ IMPORTS /*************************/--
 
 -- Primary aliases
+
 local libs = NysTDL.libs
 local chat = NysTDL.chat
 local database = NysTDL.database
@@ -22,13 +23,16 @@ local widgets = NysTDL.widgets
 local core = NysTDL.core
 
 -- Secondary aliases
+
 local L = libs.L
 local AceConfigDialog = libs.AceConfigDialog
 local addonName = core.addonName
 
 --/*******************************************************/--
 
--- Tests function (for me :p) (callable with macros in-game)
+---Tests function for me :p (callable with macros in-game)
+---@param nb number
+---@param ... any
 function NysTDL:Tests(nb, ...)
 
 	-- NysTDL.dataManager:Find()

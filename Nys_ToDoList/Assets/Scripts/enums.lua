@@ -1,13 +1,16 @@
 --/*******************/ IMPORTS /*************************/--
 
 -- File init
+
 local enums = NysTDL.enums
-NysTDL.enums = enums -- for IntelliSense
+NysTDL.enums = enums
 
 -- Primary aliases
+
 local libs = NysTDL.libs
 
 -- Secondary aliases
+
 local L = libs.L
 
 --/*******************************************************/--

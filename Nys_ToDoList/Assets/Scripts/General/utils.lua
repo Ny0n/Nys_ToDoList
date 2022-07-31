@@ -1,22 +1,28 @@
 --/*******************/ IMPORTS /*************************/--
 
 -- File init
+
 local utils = NysTDL.utils
-NysTDL.utils = utils -- for IntelliSense
+NysTDL.utils = utils
 
 -- Primary aliases
+
 local libs = NysTDL.libs
 local enums = NysTDL.enums
 
 -- Secondary aliases
+
 local L = libs.L
 
 --/*******************************************************/--
 
 --/*******************/ COMMON (utils) FUNCTIONS /*************************/--
 
+---Compares the release type of both versions to figure out if v1's release type is older than v2.
+---@param v1 string
+---@param v2 string
+---@return boolean # v1 < v2
 function utils:IsReleaseTypeOlderThan(v1, v2)
-    -- Compares the release type of both versions to figure out if v1's release type is older than v2
     -- alpha < beta < release ("alpha" < "beta" < "")
     -- we first release alpha versions, then beta, then release
     -- (that's what I mean by "which release type is older", alpha is older than beta, which itself is older than release)
@@ -46,12 +52,14 @@ function utils:IsReleaseTypeOlderThan(v1, v2)
     return versions[v1] < versions[v2]
 end
 
+---This function can compare two addon version strings,
+---and tell if the first one is older than the second one
+---(meaning: was v1 a version released before v2?).
+---equivalent thing as testing v1 < v2
+---@param v1 string
+---@param v2 string
+---@return boolean # v1 < v2 (is v1 older than v2)
 function utils:IsVersionOlderThan(v1, v2)
-    -- This function can compare two addon version strings,
-    -- and tell if the first one is older than the second one
-    -- (meaning: was v1 a version released before v2?).
-    -- equivalent thing as testing v1 < v2
-
     if (not v1) or (v1 == "") then return true end -- old version (special case)
     if (not v2) or (v2 == "") then return false end -- should never happen
 
@@ -85,6 +93,7 @@ function utils:Clamp(number, min, max)
 	return math.min(math.max(number, min), max)
 end
 
+---Takes in a rgb index table ({r, g, b}), and returns the hexadecimal value ("ff00ff").
 function utils:RGBToHex(rgb)
 	-- from marceloCodget/gist:3862929 on GitHub
 
@@ -112,6 +121,7 @@ function utils:RGBToHex(rgb)
 end
 
 local T_ThemeDownTo01 = {}
+---Takes in a rgb index table ({r, g, b}), and downgrades it from 0-255 to 0-1
 function utils:ThemeDownTo01(theme)
 	local r, g, b = unpack(theme)
 
@@ -124,6 +134,7 @@ function utils:ThemeDownTo01(theme)
 end
 
 local T_DimTheme = {}
+---Takes in a rgb index table ({r, g, b}), and dims it by `dim`.
 function utils:DimTheme(theme, dim)
 	local r, g, b = unpack(theme)
 
@@ -135,6 +146,7 @@ function utils:DimTheme(theme, dim)
 	return T_DimTheme
 end
 
+---To copy any table.
 function utils:Deepcopy(orig, copies)
 	copies = copies or {}
 	local orig_type = type(orig)
@@ -156,10 +168,10 @@ function utils:Deepcopy(orig, copies)
 	return copy
 end
 
+---Safe format, in case there is an error in the localization (happened once).
+---We check if there are the necessary %x in the string, corresponding to the content of `...`.
+---Only accepting %i and %s, it's enough for my use.
 function utils:SafeStringFormat(str, ...)
-	-- safe format, in case there is an error in the localization (happened once)
-	-- (we check if there are the necessary %x in the string, corresponding to the content of ...)
-	-- only accepting %i and %s, it's enough for my use
 	local dup = str
 	for i=1, select("#", ...) do
 		local var = select(i, ...)

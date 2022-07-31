@@ -1,10 +1,12 @@
 --/*******************/ IMPORTS /*************************/--
 
 -- File init
+
 local resetManager = NysTDL.resetManager
-NysTDL.resetManager = resetManager -- for IntelliSense
+NysTDL.resetManager = resetManager
 
 -- Primary aliases
+
 local libs = NysTDL.libs
 local chat = NysTDL.chat
 local utils = NysTDL.utils
@@ -12,6 +14,7 @@ local enums = NysTDL.enums
 local dataManager = NysTDL.dataManager
 
 -- Secondary aliases
+
 local L = libs.L
 local AceTimer = libs.AceTimer
 

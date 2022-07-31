@@ -1,10 +1,12 @@
 --/*******************/ IMPORTS /*************************/--
 
 -- File init
+
 local tabsFrame = NysTDL.tabsFrame
-NysTDL.tabsFrame = tabsFrame -- for IntelliSense
+NysTDL.tabsFrame = tabsFrame
 
 -- Primary aliases
+
 local libs = NysTDL.libs
 local enums = NysTDL.enums
 local utils = NysTDL.utils
@@ -13,6 +15,7 @@ local mainFrame = NysTDL.mainFrame
 local dataManager = NysTDL.dataManager
 
 -- Secondary aliases
+
 local L = libs.L
 
 --/*******************************************************/--

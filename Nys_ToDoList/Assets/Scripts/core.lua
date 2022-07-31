@@ -7,11 +7,13 @@ local addonName = ...
 
 local LibStub = LibStub
 
--- data
-NysTDL = LibStub("AceAddon-3.0"):NewAddon(addonName) -- addon object
+-- //** data **//
+
+NysTDL = LibStub("AceAddon-3.0"):NewAddon(addonName) -- Addon object
 NysTDL.acedb = nil -- defined in database.lua
 
--- libs
+-- //** libraries **//
+
 NysTDL.libs = {
 	AceConfig = LibStub("AceConfig-3.0"),
 	AceConfigCmd = LibStub("AceConfigCmd-3.0"),
@@ -32,7 +34,8 @@ NysTDL.libs = {
 	LibQTip = LibStub('LibQTip-1.0'),
 }
 
--- files
+-- //** files **//
+
 NysTDL.chat = {}
 NysTDL.database = {}
 NysTDL.dataManager = {}
@@ -55,10 +58,12 @@ NysTDL.core = {}
 --/*******************/ IMPORTS /*************************/--
 
 -- File init
+
 local core = NysTDL.core
-NysTDL.core = core -- for IntelliSense
+NysTDL.core = core
 
 -- Primary aliases
+
 local libs = NysTDL.libs
 local chat = NysTDL.chat
 local utils = NysTDL.utils
@@ -69,6 +74,7 @@ local resetManager = NysTDL.resetManager
 local optionsManager = NysTDL.optionsManager
 
 -- Secondary aliases
+
 local L = libs.L
 
 --/*******************************************************/--
@@ -199,15 +205,15 @@ function NysTDL:OnDisable()
 	-- TDLATER
 end
 
---/*******************/ Addon Updated /*************************/--
+--/*******************/ core /*************************/--
 
+local changelog = {
+	-- index table (not key-value)
+}
+
+---Called once, when the addon gets an update.
+---Prints the changelog to the in-game chat. (@see local changelog table)
 function core:AddonUpdated()
-	-- called once, when the addon gets an update
-
-	local changelog = {
-		-- index table (not key-value)
-	}
-
 	if type(changelog) == "table" and #changelog > 0 then
 		chat:PrintForced("New in "..core.toc.version..":")
 		for _,v in ipairs(changelog) do
@@ -216,4 +222,10 @@ function core:AddonUpdated()
 			end
 		end
 	end
+end
+
+---The error handler to give as parameter to `xpcall`.
+function core.errorhandler(err)
+	return "Message: \"" .. tostring(err) .. "\"\n"
+		.. "Stack: \"" .. debugstack() .. "\""
 end

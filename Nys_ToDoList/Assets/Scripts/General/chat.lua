@@ -1,10 +1,12 @@
 --/*******************/ IMPORTS /*************************/--
 
 -- File init
+
 local chat = NysTDL.chat
-NysTDL.chat = chat -- for IntelliSense
+NysTDL.chat = chat
 
 -- Primary aliases
+
 local libs = NysTDL.libs
 local core = NysTDL.core
 local enums = NysTDL.enums
@@ -16,18 +18,24 @@ local resetManager = NysTDL.resetManager
 local tutorialsManager = NysTDL.tutorialsManager
 
 -- Secondary aliases
+
 local L = libs.L
 
 --/*******************************************************/--
 
 --/*******************/ CHAT RELATED FUNCTIONS /*************************/--
 
+---Prints the arguments only if `showChatMessages` is true.
+---@see chat:PrintForced(...)
+---@param ... any
 function chat:Print(...)
 	if not NysTDL.acedb.profile.showChatMessages then return end -- we don't print anything if the user chose to deactivate this
 	self:PrintForced(...)
 end
 
 local T_PrintForced = {}
+---Prints the given arguments to the `DEFAULT_CHAT_FRAME`.
+---@param ... any
 function chat:PrintForced(...)
 	if ... == nil then return end
 
@@ -50,9 +58,10 @@ function chat:PrintForced(...)
 	DEFAULT_CHAT_FRAME:AddMessage(string.join(' ', prefix, unpack(msg)))
 end
 
+---Controls wether or not we add the addon prefix to the message.
+---@param str string Can either be a string, or anything that is `tostring()`-able
+---@param noprefix boolean
 function chat:CustomPrintForced(str, noprefix)
-  -- to disable the prefix
-
   if str == nil then return end
   if not pcall(tostring, str) then return end
   str = tostring(str)
@@ -67,7 +76,7 @@ function chat:CustomPrintForced(str, noprefix)
   end
 end
 
--- Warning function
+---Warning function
 function chat:Warn()
 	if NysTDL.acedb.profile.showWarnings then -- if the option is checked
 		if not resetManager:autoResetedThisSessionGET() then -- we don't want to show this warning if it's the first log in of the day, only if it is the next ones
@@ -211,7 +220,7 @@ chat.commands = {
 	end,
 }
 
--- Command catcher
+---Command catcher
 function chat.HandleSlashCommands(str)
 	local path = chat.commands -- alias
 

@@ -1,10 +1,12 @@
 --/*******************/ IMPORTS /*************************/--
 
 -- File init
+
 local database = NysTDL.database
-NysTDL.database = database -- for IntelliSense
+NysTDL.database = database
 
 -- Primary aliases
+
 local libs = NysTDL.libs
 local core = NysTDL.core
 local enums = NysTDL.enums
@@ -14,6 +16,7 @@ local dataManager = NysTDL.dataManager
 local resetManager = NysTDL.resetManager
 
 -- Secondary aliases
+
 local L = libs.L
 local AceConfigRegistry = libs.AceConfigRegistry
 local addonName = core.addonName
@@ -234,8 +237,8 @@ end
 
 -- // specific functions
 
----Easy access to that specific database variable.
----@param newTabID string|nil
+---Gives an easy access to the `ctab` acedb variable, while acting as a getter and a setter.
+---@param newTabID string
 ---@return string ctab
 function database.ctab(newTabID)
 	-- sets or gets the currently selected tab ID

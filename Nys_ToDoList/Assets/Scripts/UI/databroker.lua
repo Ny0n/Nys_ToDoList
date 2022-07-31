@@ -1,10 +1,12 @@
 --/*******************/ IMPORTS /*************************/--
 
 -- File init
+
 local databroker = NysTDL.databroker
-NysTDL.databroker = databroker -- for IntelliSense
+NysTDL.databroker = databroker
 
 -- Primary aliases
+
 local libs = NysTDL.libs
 local core = NysTDL.core
 local utils = NysTDL.utils
@@ -14,6 +16,7 @@ local mainFrame = NysTDL.mainFrame
 local optionsManager = NysTDL.optionsManager
 
 -- Secondary aliases
+
 local L = libs.L
 local LDB = libs.LDB
 local LDBIcon = libs.LDBIcon
@@ -22,11 +25,13 @@ local addonName = core.addonName
 
 --/*******************************************************/--
 
+local private = {}
+
 --/***************/ TOOLTIPS /*****************/--
 
 -- // SIMPLE
 
-function databroker:DrawSimpleTooltip(tooltip)
+function private:DrawSimpleTooltip(tooltip)
 	if not NysTDL.acedb.profile.minimap.tooltip then
 		tooltip:Hide()
 		return
@@ -46,11 +51,11 @@ function databroker:DrawSimpleTooltip(tooltip)
 	end
 end
 
-function databroker:SetSimpleMode()
+function private:SetSimpleMode()
 	local o = self.object
 	--table.wipe(o)
 
-	local tooltipObject -- we get the tooltip frame on the first databroker:DrawSimpleTooltip call from OnTooltipShow
+	local tooltipObject -- we get the tooltip frame on the first private:DrawSimpleTooltip call from OnTooltipShow
 	o.type = "launcher"
 	o.label = core.toc.title
 	o.icon = "Interface\\AddOns\\"..addonName.."\\Assets\\Art\\minimap_icon"
@@ -62,7 +67,7 @@ function databroker:SetSimpleMode()
 			else
 				LDBIcon:Unlock(addonName)
 			end
-			databroker:DrawSimpleTooltip(tooltipObject) -- we redraw the tooltip to display the lock change
+			private:DrawSimpleTooltip(tooltipObject) -- we redraw the tooltip to display the lock change
 		elseif IsShiftKeyDown() then
 			-- toggle addon options
 			optionsManager:ToggleOptions()
@@ -73,13 +78,13 @@ function databroker:SetSimpleMode()
 	end
 	function o.OnTooltipShow(tooltip)
 		tooltipObject = tooltip
-		databroker:DrawSimpleTooltip(tooltip)
+		private:DrawSimpleTooltip(tooltip)
 	end
 end
 
 -- // ADVANCED
 
-function databroker:DrawAdvancedTooltip(tooltip)
+function private:DrawAdvancedTooltip(tooltip)
 	if not NysTDL.acedb.profile.minimap.tooltip then -- TDLATER remove duplicates
 		tooltip:Hide()
 		return
@@ -97,11 +102,11 @@ function databroker:DrawAdvancedTooltip(tooltip)
 	end
 end
 
-function databroker:SetAdvancedMode()
+function private:SetAdvancedMode()
 	local o = self.object
 	table.wipe(o)
 
-	local tooltipObject -- we get the tooltip frame on the first databroker:DrawSimpleTooltip call from OnTooltipShow
+	local tooltipObject -- we get the tooltip frame on the first private:DrawSimpleTooltip call from OnTooltipShow
 	o.type = "launcher"
 	o.label = core.toc.title.." ADVANCED"
 	o.icon = "Interface\\AddOns\\"..addonName.."\\Assets\\Art\\minimap_icon"
@@ -113,7 +118,7 @@ function databroker:SetAdvancedMode()
 			else
 				LDBIcon:Unlock(addonName)
 			end
-			databroker:DrawAdvancedTooltip(tooltipObject) -- we redraw the tooltip to display the lock change
+			private:DrawAdvancedTooltip(tooltipObject) -- we redraw the tooltip to display the lock change
 		elseif IsShiftKeyDown() then
 			-- toggle addon options
 			optionsManager:ToggleOptions()
@@ -124,7 +129,7 @@ function databroker:SetAdvancedMode()
 	end
 	function o.OnTooltipShow(tooltip)
 		tooltipObject = tooltip
-		databroker:DrawAdvancedTooltip(tooltip)
+		private:DrawAdvancedTooltip(tooltip)
 	end
 end
 
@@ -136,7 +141,7 @@ function databroker:CreateTooltipFrame()
 	self.tooltipFrame:Hide()
 end
 
-function databroker:SetFrameMode()
+function private:SetFrameMode()
 	local o = self.object
 	table.wipe(o)
 
@@ -147,13 +152,19 @@ end
 
 --/***************/ DATAOBJECT /*****************/--
 
+---Changes the current databroker mode.
+---@alias enums.databrokerModes
+---| "enums.databrokerModes.simple"
+---| "enums.databrokerModes.advanced"
+---| "enums.databrokerModes.frame"
+---@param mode enums.databrokerModes
 function databroker:SetMode(mode)
 	if mode == enums.databrokerModes.simple then
-		self:SetSimpleMode()
+		private:SetSimpleMode()
 	elseif mode == enums.databrokerModes.advanced then
-		self:SetAdvancedMode()
+		private:SetAdvancedMode()
 	elseif mode == enums.databrokerModes.frame then
-		self:SetFrameMode()
+		private:SetFrameMode()
 	end
 	NysTDL.acedb.profile.databrokerMode = mode
 end
