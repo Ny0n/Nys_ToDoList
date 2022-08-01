@@ -1,3 +1,9 @@
+#### **6.2**
+
+- Added the possibility to link anything from the Adventure Guide into the list (Bosses, Strats, Spells...)
+- Minor localization changes
+- Code cleanup & started adding documentation
+
 #### **6.1**
 
 - Added an option to enable a tooltip that displays the item's description when hovering the icon (ON by default)

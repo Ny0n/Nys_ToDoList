@@ -209,6 +209,7 @@ end
 
 local changelog = {
 	-- index table (not key-value)
+	"- Added the possibility to link anything from the Adventure Guide into the list (Bosses, Strats, Spells...)"
 }
 
 ---Called once, when the addon gets an update.

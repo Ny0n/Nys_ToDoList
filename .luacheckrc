@@ -43,6 +43,7 @@ globals = {
 	"bit",
 
 	-- FrameXML misc
+	"EncounterJournal",
 	"ChatFrame_OnHyperlinkShow",
 	"ChatFrame1",
 	"PanelTemplates_GetTabWidth",

@@ -96,4 +96,36 @@ function events:Initialize()
 		end
 		return true
 	end)
+
+	local LoadAddOn_Blizzard_EncounterJournal = false
+	hooksecurefunc("LoadAddOn", function(name)
+		if LoadAddOn_Blizzard_EncounterJournal then
+			return
+		end
+
+		if name ~= "Blizzard_EncounterJournal" then
+			return
+		end
+
+		if not EncounterJournal then
+			return
+		end
+
+		hooksecurefunc("EncounterJournal_OnClick", function(self)
+			if IsModifiedClick("CHATLINK") then -- basically IsShiftKeyDown()
+				if self.link then
+					widgets:EditBoxInsertLink(self.link)
+				end
+			end
+		end)
+		hooksecurefunc("EncounterJournalBossButton_OnClick", function(self)
+			if IsModifiedClick("CHATLINK") then -- basically IsShiftKeyDown()
+				if self.link then
+					widgets:EditBoxInsertLink(self.link)
+				end
+			end
+		end)
+
+		LoadAddOn_Blizzard_EncounterJournal = true
+	end)
 end
