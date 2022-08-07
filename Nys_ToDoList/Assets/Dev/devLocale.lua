@@ -19,6 +19,8 @@ addonTable.devLocale = L
 
 --/************************************************/--
 
+L["Everything hidden becomes visible"] = true
+L["Hide completed categories"] = true
 L["Description tooltip"] = true
 L["Show the item's description in a tooltip when hovering the icon"] = true
 L["Click to copy"] = true

@@ -657,6 +657,7 @@ function dataManager:CreateTab(tabName, isGlobal)
 		},
 		hideCheckedItems = false, -- user set
 		deleteCheckedItems = false, -- user set
+		hideCompletedCategories = true, -- user set
 	}
 
 	resetManager:InitTabData(tabData)
@@ -1473,14 +1474,24 @@ end
 ---@param catID string
 ---@return boolean
 function dataManager:IsParent(catID)
-
 	local catData = select(3, dataManager:Find(catID))
 	local contentWidgets = mainFrame:GetContentWidgets() -- to avoid using dataManager:Find() for each loop item (it's just for optimization)
+
 	for _,contentID in ipairs(catData.orderedContentIDs) do -- for everything that is in the cat
 		if contentWidgets[contentID].enum == enums.category then
 			return true
 		end
 	end
+
+	return false
+end
+
+---Returns true if the given cat is completed, aka "Is everything inside checked?" (recursively).
+---@param catID string
+---@return boolean
+function dataManager:IsCategoryCompleted(catID)
+	local total, checked = dataManager:GetCatCheckedNumbers(catID)
+	return total > 0 and total == checked
 end
 
 -- tabs
@@ -1644,7 +1655,7 @@ function dataManager:IsHidden(ID, tabID)
 	if enum == enums.item then
 		return tabData.hideCheckedItems and objectData.checked
 	elseif enum == enums.category then
-		--TDLATER hide categories
+		return tabData.hideCompletedCategories and dataManager:IsCategoryCompleted(ID)
 	end
 
 	return false

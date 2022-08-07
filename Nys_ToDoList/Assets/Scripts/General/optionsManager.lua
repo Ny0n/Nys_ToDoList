@@ -130,7 +130,7 @@ local tabManagementTable = {
 				end,
 				set = function(info, state)
 					local _, tabData = private:GetTabInfo(info)
-					-- SAME CODE in var migrations
+					-- SAME CODE in var migrations (migrationData.codes["6.0"])
 					tabData.deleteCheckedItems = state
 					if state then
 						tabData.hideCheckedItems = false
@@ -152,7 +152,7 @@ local tabManagementTable = {
 				end,
 				set = function(info, state)
 					local _, tabData = private:GetTabInfo(info)
-					-- SAME CODE in var migrations
+					-- SAME CODE in var migrations (migrationData.codes["6.0"])
 					tabData.hideCheckedItems = state
 					if state then
 						tabData.deleteCheckedItems = false
@@ -164,8 +164,22 @@ local tabManagementTable = {
 					return tabData.deleteCheckedItems
 				end,
 			},
-			shownTabsMultiSelect = {
+			hideCompletedCategoriesToggle = {
 				order = 1.7,
+				type = "toggle",
+				name = L["Hide completed categories"],
+				get = function(info)
+					local _, tabData = private:GetTabInfo(info)
+					return tabData.hideCompletedCategories
+				end,
+				set = function(info, state)
+					local _, tabData = private:GetTabInfo(info)
+					tabData.hideCompletedCategories = state
+					mainFrame:Refresh()
+				end,
+			},
+			shownTabsMultiSelect = {
+				order = 1.8,
 				type = "multiselect",
 				name = L["Shown tabs"],
 				width = "full",
@@ -218,6 +232,12 @@ local tabManagementTable = {
 			},
 			spacer161 = {
 				order = 1.61,
+				type = "description",
+				width = "full",
+				name = "",
+			},
+			spacer171 = {
+				order = 1.71,
 				type = "description",
 				width = "full",
 				name = "",

@@ -190,7 +190,7 @@ function private:RecursiveUpdate(catWidget, w)
 			local contentWidget = contentWidgets[contentID]
 			w.lastWidget = contentWidget
 
-			if not dataManager:IsHidden(contentID, currentTab) then -- if it's not hidden, we show the corresponding widget
+			if not dataManager:IsHidden(contentID, currentTab) then -- since we are in edit mode when drag & dropping, this line doesn't really matter
 				if contentWidget.enum == enums.category then -- sub-category
 					private:RecursiveUpdate(contentWidget, w)
 				elseif contentWidget.enum == enums.item then -- item
@@ -249,12 +249,14 @@ function dragndrop:UpdateDropFrames()
 		local catWidget = contentWidgets[catID]
 		w.lastWidget = catWidget
 
-		local newDropFrame = dragndrop:CreateDropFrame(catWidget, unpack(catTopPos)) -- /*cat/ over each cat
-		dragndrop:SetDropFrameData(newDropFrame, currentTab, nil, catOrder) -- no parent cat (base cat)
-		tinsert(categoryDropFrames, newDropFrame)
+		if not dataManager:IsHidden(catID, currentTab) then
+			local newDropFrame = dragndrop:CreateDropFrame(catWidget, unpack(catTopPos)) -- /*cat/ over each cat
+			dragndrop:SetDropFrameData(newDropFrame, currentTab, nil, catOrder) -- no parent cat (base cat)
+			tinsert(categoryDropFrames, newDropFrame)
 
-		-- // content
-		private:RecursiveUpdate(catWidget, w)
+			-- // content
+			private:RecursiveUpdate(catWidget, w)
+		end
 	end
 
 	-- this part is specifically for the last category drop point (under the last shown item/cat)

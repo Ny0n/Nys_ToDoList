@@ -766,6 +766,61 @@ end
 
 --/*******************/ ITEM/CATEGORY WIDGETS /*************************/--
 
+---DRY function to rename the widgets (OnDoubleClick).
+function private.Widget_OnDoubleClick(self, button)
+	-- first we check if we can rename right now
+	if not mainFrame.editMode then return end -- we can only rename in edit mode
+	if dragndrop.dragging then return end -- we can't rename if we are dragging something
+	if button ~= "LeftButton" then return end -- only double-left click
+
+	-- we get all the relevant data
+	local widget = self:GetParent():GetParent() -- self is the interactiveLabel's button (interactiveLabel.Button)
+
+	local ID, name, renameEditBoxWidth
+	if widget.enum == enums.item then
+		ID = widget.itemID
+		name = widget.itemData.name
+		renameEditBoxWidth = 0
+	elseif widget.enum == enums.category then
+		ID = widget.catID
+		name = widget.catData.name
+		renameEditBoxWidth = enums.maxNameWidth[enums.category]
+	end
+
+	-- we're ready, now we start by hiding the interactiveLabel
+	self:GetParent():Hide()
+
+	-- then, we can create the new edit box to rename the object, where the label was
+	local renameEditBox = widgets:NoPointsRenameEditBox(widget, name, renameEditBoxWidth, self:GetHeight())
+	renameEditBox:SetPoint("LEFT", widget.interactiveLabel, "LEFT", 5, 0)
+
+	if widget.enum == enums.item then
+		renameEditBox:SetPoint("RIGHT", widget:GetParent(), "RIGHT", -3, 0)
+		widgets:AddHyperlinkEditBox(renameEditBox) -- so that we can add hyperlinks in it
+		-- widgets:SetHyperlinksEnabled(renameEditBox, true) -- to click on hyperlinks inside the edit box
+	end
+
+	-- let's go!
+	renameEditBox:SetScript("OnEnterPressed", function(self)
+		dataManager:Rename(ID, self:GetText())
+	end)
+
+	-- cancelling
+	renameEditBox:SetScript("OnEscapePressed", function(self)
+		-- we hide the edit box and show the label
+		self:Hide()
+		self:ClearAllPoints()
+		widget.interactiveLabel:Show()
+
+		if widget.enum == enums.item then
+			widgets:RemoveHyperlinkEditBox(self)
+		end
+	end)
+	renameEditBox:HookScript("OnEditFocusLost", function(self)
+		self:GetScript("OnEscapePressed")(self)
+	end)
+end
+
 --[[
 
 -- // categoryWidget example:
@@ -843,33 +898,7 @@ function widgets:CategoryWidget(catID, parentFrame)
 			-- categoryWidget.addCatEditBox:SetShown(not categoryWidget.addCatEditBox:IsShown()) -- TDLATER sub-cats
 		end
 	end)
-	categoryWidget.interactiveLabel.Button:SetScript("OnDoubleClick", function(self)
-		-- we don't do any of the OnDoubleClick code if we're not in edit mode
-		if not mainFrame.editMode then return end
-
-		-- first, we hide the interactiveLabel
-		self:GetParent():Hide()
-
-		-- then, we can create the new edit box to rename the category, where the label was
-		local renameEditBox = widgets:NoPointsRenameEditBox(categoryWidget, catData.name, enums.maxNameWidth[enums.category], self:GetHeight())
-		renameEditBox:SetPoint("LEFT", categoryWidget.interactiveLabel, "LEFT", 5, 0)
-
-		-- let's go!
-		renameEditBox:SetScript("OnEnterPressed", function(self)
-			dataManager:Rename(catID, self:GetText())
-		end)
-
-		-- cancelling
-		renameEditBox:SetScript("OnEscapePressed", function(self)
-			-- we hide the edit box and show the label
-			self:Hide()
-			self:ClearAllPoints()
-			categoryWidget.interactiveLabel:Show()
-		end)
-		renameEditBox:HookScript("OnEditFocusLost", function(self)
-			self:GetScript("OnEscapePressed")(self)
-		end)
-	end)
+	categoryWidget.interactiveLabel.Button:SetScript("OnDoubleClick", private.Widget_OnDoubleClick)
 
 	-- / editModeFrame
 	categoryWidget.editModeFrame = CreateFrame("Frame", nil, categoryWidget, nil)
@@ -1062,44 +1091,18 @@ function widgets:ItemWidget(itemID, parentFrame)
 	-- / interactiveLabel
 	itemWidget.interactiveLabel = widgets:NoPointsInteractiveLabel(itemWidget, nil, itemData.name, "GameFontNormalLarge")
 	itemWidget.interactiveLabel:SetPoint("LEFT", itemWidget.checkBtn, "RIGHT", 0, 0)
+	widgets:SetHyperlinksEnabled(itemWidget.interactiveLabel, true)
 
-	itemWidget.interactiveLabel.Button:Hide() -- we are not in edit mode by default
-
+	-- / interactiveLabel.Text
 	if utils:HasHyperlink(itemData.name) then -- this is for making more space for items that have hyperlinks in them
 		if itemWidget.interactiveLabel.Text:GetWidth() > enums.maxNameWidth[enums.item] then
 			itemWidget.interactiveLabel.Text:SetFontObject("GameFontNormal")
 		end
 	end
 
-	widgets:SetHyperlinksEnabled(itemWidget.interactiveLabel, true)
-	itemWidget.interactiveLabel.Button:SetScript("OnDoubleClick", function(self)
-		-- first, we hide the interactiveLabel
-		self:GetParent():Hide()
-
-		-- then, we can create the new edit box to rename the item, where the label was
-		local renameEditBox = widgets:NoPointsRenameEditBox(itemWidget, itemData.name, 0, self:GetHeight())
-		renameEditBox:SetPoint("RIGHT", parentFrame, "RIGHT", -3, 0)
-		renameEditBox:SetPoint("LEFT", itemWidget.interactiveLabel, "LEFT", 5, 0)
-		widgets:AddHyperlinkEditBox(renameEditBox) -- so that we can add hyperlinks in it
-		-- widgets:SetHyperlinksEnabled(renameEditBox, true) -- to click on hyperlinks inside the edit box
-
-		-- let's go!
-		renameEditBox:SetScript("OnEnterPressed", function(self)
-			dataManager:Rename(itemID, self:GetText())
-		end)
-
-		-- cancelling
-		renameEditBox:SetScript("OnEscapePressed", function(self)
-			-- we hide the edit box and show the label
-			self:Hide()
-			self:ClearAllPoints()
-			itemWidget.interactiveLabel:Show()
-			widgets:RemoveHyperlinkEditBox(self)
-		end)
-		renameEditBox:HookScript("OnEditFocusLost", function(self)
-			self:GetScript("OnEscapePressed")(self)
-		end)
-	end)
+	-- / interactiveLabel.Button
+	itemWidget.interactiveLabel.Button:Hide() -- we are not in edit mode by default
+	itemWidget.interactiveLabel.Button:SetScript("OnDoubleClick", private.Widget_OnDoubleClick)
 
 	-- / editModeFrame
 	itemWidget.editModeFrame = CreateFrame("Frame", nil, itemWidget, nil)

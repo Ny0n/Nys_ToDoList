@@ -300,9 +300,7 @@ function mainFrame:UpdateCategoryNamesColor()
 	for _, contentWidget in pairs(contentWidgets) do
 		if contentWidget.enum == enums.category then -- for every category widget
 			-- we color in accordance to their content checked state
-			local total, checked = dataManager:GetCatCheckedNumbers(contentWidget.catID)
-
-			if total > 0 and total == checked then
+			if dataManager:IsCategoryCompleted(contentWidget.catID) then
 				contentWidget.color = { 0, 1, 0, 1 } -- green -- TDLATER table ref for memory usage optimization
 			else
 				contentWidget.color = { 1, 1, 1, 1 } -- white
@@ -607,48 +605,51 @@ function private:RecursiveLoad(tabID, tabData, catWidget, p)
 	catWidget.emptyLabel:Hide()
 	catWidget.hiddenLabel:Hide()
 
-	if catData.closedInTabIDs[tabID] then -- if the cat is closed
+	-- if the cat is closed
+	if catData.closedInTabIDs[tabID] then
 		p.newY = p.newY - enums.ofsyCat
-	else -- if the cat is opened, we display all of its content
-		p.newY = p.newY - enums.ofsyCatContent
+		return
+	end
 
-		if not next(catData.orderedContentIDs) then -- if there's nothing in the category, we show the empty label
-			catWidget.emptyLabel:Show()
-			p.newY = p.newY - enums.ofsyContentCat
-		else
-			-- !! hide checked items option
-			if not mainFrame.editMode then
-				if tabData.hideCheckedItems then
-					if not dataManager:IsParent(catWidget.catID) then
-						local total, checked = dataManager:GetCatCheckedNumbers(catWidget.catID)
-						if total > 0 and total == checked then
-							catWidget.hiddenLabel:Show()
-							p.newY = p.newY - enums.ofsyContentCat
-						end
-					end
+	-- if the cat is opened, we display all of its content
+	p.newY = p.newY - enums.ofsyCatContent
+
+	if not next(catData.orderedContentIDs) then -- if there's nothing in the category, we show the empty label
+		catWidget.emptyLabel:Show()
+		p.newY = p.newY - enums.ofsyContentCat
+		return
+	end
+
+	-- !! hide checked items option
+	if not mainFrame.editMode then
+		if tabData.hideCheckedItems then
+			if not dataManager:IsParent(catWidget.catID) then
+				if dataManager:IsCategoryCompleted(catWidget.catID) then
+					catWidget.hiddenLabel:Show()
+					p.newY = p.newY - enums.ofsyContentCat
 				end
 			end
-
-			-- item widgets loop
-			p.newX = p.newX + enums.ofsxContent
-			for contentOrder,contentID in ipairs(catData.orderedContentIDs) do -- for everything in a base category
-				local contentWidget = contentWidgets[contentID]
-				if not dataManager:IsHidden(contentID, tabID) then -- if it's not hidden, we show the corresponding widget
-					contentWidget:SetPoint("TOPLEFT", tdlFrame.content.loadOrigin, "TOPLEFT", p.newX, p.newY)
-					contentWidget:Show()
-
-					if contentWidget.enum == enums.category then -- sub-category
-						private:RecursiveLoad(tabID, tabData, contentWidget, p)
-					elseif contentWidget.enum == enums.item then -- item
-						p.newY = p.newY - enums.ofsyContent
-					end
-				end
-			end
-			p.newX = p.newX - enums.ofsxContent
-			p.newY = p.newY + enums.ofsyContent -- TDLATER take last used offset for sub-cats? (not sure of this comment tho)
-			p.newY = p.newY - enums.ofsyContentCat
 		end
 	end
+
+	-- item widgets loop
+	p.newX = p.newX + enums.ofsxContent
+	for contentOrder,contentID in ipairs(catData.orderedContentIDs) do -- for everything in a category
+		local contentWidget = contentWidgets[contentID]
+		if not dataManager:IsHidden(contentID, tabID) then -- if it's not hidden, we show the corresponding widget
+			contentWidget:SetPoint("TOPLEFT", tdlFrame.content.loadOrigin, "TOPLEFT", p.newX, p.newY)
+			contentWidget:Show()
+
+			if contentWidget.enum == enums.category then -- sub-category
+				private:RecursiveLoad(tabID, tabData, contentWidget, p)
+			elseif contentWidget.enum == enums.item then -- item
+				p.newY = p.newY - enums.ofsyContent
+			end
+		end
+	end
+	p.newX = p.newX - enums.ofsxContent
+	p.newY = p.newY + enums.ofsyContent -- TDLATER take last used offset for sub-cats? (not sure of this comment tho)
+	p.newY = p.newY - enums.ofsyContentCat
 end
 
 function private:LoadList()
@@ -673,26 +674,28 @@ function private:LoadList()
 	for catOrder,catID in ipairs(tabData.orderedCatIDs) do
 		local catWidget = contentWidgets[catID]
 
-		catWidget:SetPoint("TOPLEFT", tdlFrame.content.loadOrigin, "TOPLEFT", p.newX, p.newY)
-		catWidget:Show()
+		if not dataManager:IsHidden(catID, tabID) then
+			catWidget:SetPoint("TOPLEFT", tdlFrame.content.loadOrigin, "TOPLEFT", p.newX, p.newY)
+			catWidget:Show()
 
-		if catOrder == 1 then -- if it's the first loaded cat widget
-			tutorialsManager:SetPoint("TM_introduction_addItem", "RIGHT", catWidget, "LEFT", -23, 0) -- we put the corresponding tuto on it
-			-- local firstItemWidget = mainFrame:GetFirstShownItemWidget()
-			-- tutorialsManager:SetPoint("TM_editmode_delete", "RIGHT", firstItemWidget, "LEFT", 0, 0)
-			-- tutorialsManager:SetPoint("TM_editmode_favdesc", "RIGHT", firstItemWidget, "LEFT", math.abs(enums.ofsxItemIcons), 0)
-			-- tutorialsManager:SetPoint("TM_editmode_rename", "TOP", firstItemWidget.interactiveLabel, "BOTTOM", 0, 0)
-			-- tutorialsManager:SetPoint("TM_editmode_sort", "BOTTOM", firstItemWidget.interactiveLabel, "TOP", 0, 0)
+			if catOrder == 1 then -- if it's the first loaded cat widget
+				tutorialsManager:SetPoint("TM_introduction_addItem", "RIGHT", catWidget, "LEFT", -23, 0) -- we put the corresponding tuto on it
+				-- local firstItemWidget = mainFrame:GetFirstShownItemWidget()
+				-- tutorialsManager:SetPoint("TM_editmode_delete", "RIGHT", firstItemWidget, "LEFT", 0, 0)
+				-- tutorialsManager:SetPoint("TM_editmode_favdesc", "RIGHT", firstItemWidget, "LEFT", math.abs(enums.ofsxItemIcons), 0)
+				-- tutorialsManager:SetPoint("TM_editmode_rename", "TOP", firstItemWidget.interactiveLabel, "BOTTOM", 0, 0)
+				-- tutorialsManager:SetPoint("TM_editmode_sort", "BOTTOM", firstItemWidget.interactiveLabel, "TOP", 0, 0)
+			end
+
+			if catWidget.catData.originalTabID == tabID then
+				catWidget.originalTabLabel:Hide()
+			else -- if the tab is showing a cat that was not created here, we show the label specifying the cat's original tab
+				catWidget.originalTabLabel:SetText("("..dataManager:GetName(catWidget.catData.originalTabID)..")")
+				catWidget.originalTabLabel:Show()
+			end
+
+			private:RecursiveLoad(tabID, tabData, catWidget, p)
 		end
-
-		if catWidget.catData.originalTabID == tabID then
-			catWidget.originalTabLabel:Hide()
-		else -- if the tab is showing a cat that was not created here, we show the label specifying the cat's original tab
-			catWidget.originalTabLabel:SetText("("..dataManager:GetName(catWidget.catData.originalTabID)..")")
-			catWidget.originalTabLabel:Show()
-		end
-
-		private:RecursiveLoad(tabID, tabData, catWidget, p)
 	end
 
 	tdlFrame.content.dummyBottomFrame:SetPoint("TOPLEFT", tdlFrame.content.loadOrigin, "TOPLEFT", p.newX, p.newY)

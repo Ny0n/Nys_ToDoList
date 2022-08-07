@@ -205,6 +205,7 @@ chat.commands = {
 
 	[L["editmode"]] = function()
 		chat:CustomPrintForced(L["Either right-click anywhere on the list, or click on the dedicated button to toggle the edit mode"]..".")
+		chat:CustomPrintForced("- "..L["Everything hidden becomes visible"], true)
 		chat:CustomPrintForced("- "..L["Delete items and categories"], true)
 		chat:CustomPrintForced("- "..L["Favorite and add descriptions on items"], true)
 		chat:CustomPrintForced("- "..L["Rename items and categories"].." ("..L["Double-Click"]..")", true)

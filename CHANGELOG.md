@@ -1,8 +1,9 @@
 #### **6.2**
 
-- Added the possibility to link anything from the Adventure Guide into the list (Bosses, Strats, Spells...)
+- Added back the possibility to hide categories when everything inside is checked off (tab option)
+- You can now link anything from the Adventure Guide into the list (Bosses, Strats, Spells...)
 - Minor localization changes
-- Code cleanup & started adding documentation
+- Bugfix, Code cleanup & started adding documentation
 
 #### **6.1**
 

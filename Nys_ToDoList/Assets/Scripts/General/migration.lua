@@ -1240,12 +1240,14 @@ end
 
 function migration:TestFunc()
     local migrationDataSV = NysTDL.acedb.profile.migrationData
+	table.wipe(migrationDataSV)
+
     migrationDataSV.failed = true
-    migrationDataSV.saved = {["Cat1"] = {["Item1"] = {["tabName"] = "Daily"}}}
+    migrationDataSV.saved = {["Cat1"] = {["Item1"] = {["tabName"] = "Daily", ["favorite"] = true, ["description"] = "Hi there"}}}
     migrationDataSV.version = "6.0"
     migrationDataSV.errmsg = "Custom"
     migrationDataSV.warning = false
-    migrationDataSV.tuto = false
+    migrationDataSV.tuto = IsAltKeyDown()
 
     private:Failed(nil, false)
 end
