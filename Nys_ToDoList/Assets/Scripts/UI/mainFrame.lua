@@ -268,7 +268,7 @@ function mainFrame:UpdateRemainingNumberLabels()
 	end
 end
 
-function mainFrame:updateFavsRemainingNumbersColor()
+function mainFrame:UpdateFavsRemainingNumbersColor()
 	-- this updates the favorite color for every favorites remaining number label
 	tdlFrame.content.remainingFavsNumber:SetTextColor(unpack(NysTDL.acedb.profile.favoritesColor))
 	for _, contentWidget in pairs(contentWidgets) do
@@ -360,7 +360,7 @@ function mainFrame:ApplyNewRainbowColor()
 
 	-- we apply the new color where it needs to be
 	NysTDL.acedb.profile.favoritesColor = { r, g, b }
-	mainFrame:updateFavsRemainingNumbersColor()
+	mainFrame:UpdateFavsRemainingNumbersColor()
 	mainFrame:UpdateItemNamesColor()
 	widgets:UpdateDescFramesTitle()
 end
@@ -591,11 +591,25 @@ function private:LoadContent()
 		tdlFrame.content.lineBottom:SetEndPoint("TOPLEFT", centerXOffset+lineOffset, lineBottomY)
 	end
 
-	-- // nothing label
+	local tabID = database.ctab()
+	local tabData = (select(3, dataManager:Find(tabID)))
+
+	-- // nothingLabel
 	tdlFrame.content.nothingLabel:Hide() -- we hide it by default
-	local tabData = select(3, dataManager:Find(database.ctab()))
 	if not next(tabData.orderedCatIDs) then -- we show it if the tab has no categories
 		tdlFrame.content.nothingLabel:Show()
+	end
+
+	-- // hiddenLabel
+	tdlFrame.content.hiddenLabel:Hide() -- we hide it by default
+	if not tdlFrame.content.nothingLabel:IsShown() then
+		if not mainFrame.editMode then
+			if tabData.hideCompletedCategories then
+				if dataManager:IsTabCompleted(tabID) then
+					tdlFrame.content.hiddenLabel:Show()
+				end
+			end
+		end
 	end
 end
 
@@ -605,34 +619,35 @@ function private:RecursiveLoad(tabID, tabData, catWidget, p)
 	catWidget.emptyLabel:Hide()
 	catWidget.hiddenLabel:Hide()
 
-	-- if the cat is closed
+	-- if the cat is closed, ignore it
 	if catData.closedInTabIDs[tabID] then
 		p.newY = p.newY - enums.ofsyCat
 		return
 	end
 
-	-- if the cat is opened, we display all of its content
 	p.newY = p.newY - enums.ofsyCatContent
 
-	if not next(catData.orderedContentIDs) then -- if there's nothing in the category, we show the empty label
+	-- emptyLabel : we show it if there's nothing in the category
+	if not next(catData.orderedContentIDs) then
 		catWidget.emptyLabel:Show()
 		p.newY = p.newY - enums.ofsyContentCat
 		return
 	end
 
-	-- !! hide checked items option
+	-- hiddenLabel : we show it if the category is completed
 	if not mainFrame.editMode then
 		if tabData.hideCheckedItems then
 			if not dataManager:IsParent(catWidget.catID) then
 				if dataManager:IsCategoryCompleted(catWidget.catID) then
 					catWidget.hiddenLabel:Show()
 					p.newY = p.newY - enums.ofsyContentCat
+					return
 				end
 			end
 		end
 	end
 
-	-- item widgets loop
+	-- then we show everything there is to show in the category
 	p.newX = p.newX + enums.ofsxContent
 	for contentOrder,contentID in ipairs(catData.orderedContentIDs) do -- for everything in a category
 		local contentWidget = contentWidgets[contentID]
@@ -648,6 +663,7 @@ function private:RecursiveLoad(tabID, tabData, catWidget, p)
 		end
 	end
 	p.newX = p.newX - enums.ofsxContent
+
 	p.newY = p.newY + enums.ofsyContent -- TDLATER take last used offset for sub-cats? (not sure of this comment tho)
 	p.newY = p.newY - enums.ofsyContentCat
 end
@@ -713,7 +729,7 @@ function mainFrame:UpdateVisuals()
 	-- this func can be called on its own, it's a less-intensive version than calling Refresh
 	mainFrame:UpdateCheckedStates()
 	mainFrame:UpdateRemainingNumberLabels()
-	mainFrame:updateFavsRemainingNumbersColor()
+	mainFrame:UpdateFavsRemainingNumbersColor()
 	mainFrame:UpdateItemNamesColor()
 	-- mainFrame:UpdateCategoryNamesColor()
 	widgets:UpdateDescFramesTitle()
@@ -1053,6 +1069,10 @@ function private:GenerateFrameContent()
 	content.nothingLabel = widgets:HintLabel(content, nil, L["Empty tab"].."\n\n"..L["Start by adding a new category!"])
 	content.nothingLabel:SetPoint("TOP", content.lineBottom, "TOP", 0, -20)
 	content.nothingLabel:SetWidth(220)
+
+	content.hiddenLabel = widgets:HintLabel(content, nil, L["Completed tab"])
+	content.hiddenLabel:SetPoint("TOP", content.lineBottom, "TOP", 0, -20)
+	content.hiddenLabel:SetWidth(220)
 
 	content.loadOrigin = widgets:Dummy(content, content.lineBottom, 0, 0)
 	content.loadOrigin:SetPoint("TOPLEFT", content.lineBottom, "TOPLEFT", unpack(enums.loadOriginOffset))

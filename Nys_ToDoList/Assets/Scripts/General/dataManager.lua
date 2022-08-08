@@ -321,7 +321,7 @@ end
 ---See func details to understand how the params are used.
 ---
 ---@param enum enumObject
----@param location nil|false|true|number
+---@param location nil|false|true|string
 ---@return function
 function dataManager:ForEach(enum, location)
 	--[[
@@ -1314,6 +1314,25 @@ function dataManager:IsProtected(ID)
 	end
 end
 
+---Finds out if the given object is hidden in the given tab.
+---@param ID string
+---@param tabID string
+---@return boolean
+function dataManager:IsHidden(ID, tabID)
+	if mainFrame.editMode then return false end
+
+	local enum, _, objectData = dataManager:Find(ID)
+	local tabData = select(3, dataManager:Find(tabID))
+
+	if enum == enums.item then
+		return tabData.hideCheckedItems and objectData.checked
+	elseif enum == enums.category then
+		return tabData.hideCompletedCategories and dataManager:IsCategoryCompleted(ID)
+	end
+
+	return false
+end
+
 -- items
 
 ---Changes the checked state of the given item.
@@ -1642,23 +1661,16 @@ function dataManager:DoIfFoundTabMatch(maxTime, checkedType, callback, doAll)
 	end
 end
 
----Finds out if the given object is hidden in the given tab.
----@param ID string
+---Returns true if the given tab is completed, aka "Is every category inside completed?".
 ---@param tabID string
 ---@return boolean
-function dataManager:IsHidden(ID, tabID)
-	if mainFrame.editMode then return false end
-
-	local enum, _, objectData = dataManager:Find(ID)
-	local tabData = select(3, dataManager:Find(tabID))
-
-	if enum == enums.item then
-		return tabData.hideCheckedItems and objectData.checked
-	elseif enum == enums.category then
-		return tabData.hideCompletedCategories and dataManager:IsCategoryCompleted(ID)
+function dataManager:IsTabCompleted(tabID)
+	for catID in dataManager:ForEach(enums.category, tabID) do
+		if not dataManager:IsCategoryCompleted(catID) then
+			return false
+		end
 	end
-
-	return false
+	return true
 end
 
 --/*******************/ UTILS /*************************/--
@@ -1705,7 +1717,7 @@ function dataManager:GetRemainingNumbers(isGlobal, tabID, catID)
 	t.totalUnchecked = 0
 
 	local location = catID or tabID or isGlobal
-	for _,itemData in dataManager:ForEach(enums.item, location) do -- for each item that is in the cat
+	for _,itemData in dataManager:ForEach(enums.item, location) do -- for each item that is in the location
 		if not tabID or itemData.tabIDs[tabID] then
 			if itemData.checked then
 				t.totalChecked = t.totalChecked + 1
