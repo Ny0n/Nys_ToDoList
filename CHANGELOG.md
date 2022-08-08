@@ -3,7 +3,7 @@
 - Added back the possibility to hide categories when everything inside is checked off (tab option)
 - You can now link anything from the Adventure Guide into the list (Bosses, Strats, Spells...)
 - Minor localization changes
-- Bugfix, Code cleanup & started adding documentation
+- Bugfix & code cleanup
 
 #### **6.1**
 
