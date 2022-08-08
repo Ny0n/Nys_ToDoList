@@ -1,32 +1,44 @@
--- Namespaces
-local addonName, addonTable = ...
+-- luacheck: ignore 111 211 212
 
--- addonTable aliases
-local chat = addonTable.chat
-local database = addonTable.database
-local enums = addonTable.enums
-local events = addonTable.events
-local migration = addonTable.migration
-local optionsManager = addonTable.optionsManager
-local resetManager = addonTable.resetManager
-local utils = addonTable.utils
-local databroker = addonTable.databroker
-local dataManager = addonTable.dataManager
-local mainFrame = addonTable.mainFrame
-local tabsFrame = addonTable.tabsFrame
-local tutorialsManager = addonTable.tutorialsManager
-local widgets = addonTable.widgets
-local core = addonTable.core
+--/*******************/ IMPORTS /*************************/--
 
--- Variables
-local L = core.L
+-- Primary aliases
 
--- ============================================ --
+local libs = NysTDL.libs
+local chat = NysTDL.chat
+local database = NysTDL.database
+local dataManager = NysTDL.dataManager
+local enums = NysTDL.enums
+local events = NysTDL.events
+local migration = NysTDL.migration
+local optionsManager = NysTDL.optionsManager
+local resetManager = NysTDL.resetManager
+local tutorialsManager = NysTDL.tutorialsManager
+local utils = NysTDL.utils
+local databroker = NysTDL.databroker
+local dragndrop = NysTDL.dragndrop
+local mainFrame = NysTDL.mainFrame
+local tabsFrame = NysTDL.tabsFrame
+local widgets = NysTDL.widgets
+local core = NysTDL.core
 
--- Tests function (for me :p) (callable with macros in-game)
-function Nys_Tests(nb, ...)
+-- Secondary aliases
+
+local L = libs.L
+local AceConfigDialog = libs.AceConfigDialog
+local addonName = core.addonName
+
+--/*******************************************************/--
+
+---Tests function for me :p (callable with macros in-game)
+---@param nb number
+---@param ... any
+function NysTDL:Tests(nb, ...)
+
+	-- NysTDL.dataManager:Find()
+
 	if nb == 1 then
-		LibStub("AceConfigDialog-3.0"):Open(addonName)
+		AceConfigDialog:Open(addonName)
 	elseif nb == 2 then
 		mainFrame:Toggle()
 		-- UIFrameFadeOut(tdlFrame, 2)
@@ -36,7 +48,7 @@ function Nys_Tests(nb, ...)
 		-- end
 		-- print(tdlFrame.fadeInfo.finishedFunc)
 	elseif nb == 3 then
-		migration:TestFunc()
+		core:AddonUpdated()
 		-- for tabID, tabData in dataManager:ForEach(enums.tab, false) do
 		--   if next(tabData.reset.days) then
 		--     print(">================<")
@@ -69,6 +81,8 @@ function Nys_Tests(nb, ...)
 		dataManager:SetRefresh(true, refreshID)
 
 		mainFrame:Refresh()
+	elseif nb == 5 then
+		migration:TestFunc()
 	end
 	print("--Nys_Tests--")
 end

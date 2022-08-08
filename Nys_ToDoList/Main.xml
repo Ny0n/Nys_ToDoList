@@ -1,36 +1,36 @@
 <Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
 ..\FrameXML\UI.xsd">
 
-  <!-- Bindings.xml file loaded automatically by WoW -->
+	<!-- Bindings.xml file loaded automatically by WoW -->
 
-  <!-- **************** LIBS ************************* -->
-  <Include file="Libs\embeds.xml"/>
+	<!-- **************** LIBS ************************* -->
+	<Include file="Libs\embeds.xml"/>
 
-  <!-- **************** LOCALES ********************** -->
-  <Include file="Locales\locales.xml"/>
+	<!-- **************** LOCALES ********************** -->
+	<Include file="Locales\locales.xml"/>
 
-  <!-- **************** ASSETS *********************** -->
-  <Script file="Assets\Scripts\core.lua"/> <!-- #1 to be loaded -->
-  <Script file="Assets\Scripts\enums.lua"/> <!-- #2 to be loaded -->
-  <!--@do-not-package@-->
-  <Script file="Assets\Dev\devTests.lua"/>
-  <!--@end-do-not-package@-->
-  <!-- General -->
-  <Script file="Assets\Scripts\General\chat.lua"/>
-  <Script file="Assets\Scripts\General\database.lua"/>
-  <Script file="Assets\Scripts\General\dataManager.lua"/>
-  <Script file="Assets\Scripts\General\events.lua"/>
-  <Script file="Assets\Scripts\General\migration.lua"/>
-  <Script file="Assets\Scripts\General\optionsManager.lua"/>
-  <Script file="Assets\Scripts\General\resetManager.lua"/>
-  <Script file="Assets\Scripts\General\tutorialsManager.lua"/>
-  <Script file="Assets\Scripts\General\utils.lua"/>
-  <!-- UI -->
-  <Script file="Assets\Scripts\UI\databroker.lua"/>
-  <Script file="Assets\Scripts\UI\dragndrop.lua"/>
-  <Script file="Assets\Scripts\UI\mainFrame.lua"/>
-  <Script file="Assets\Scripts\UI\tabsFrame.lua"/>
-  <Include file="Assets\Scripts\UI\templates.xml"/>
-  <Script file="Assets\Scripts\UI\widgets.lua"/>
+	<!-- **************** ASSETS *********************** -->
+	<Script file="Assets\Scripts\core.lua"/> <!-- #1 to be loaded -->
+	<Script file="Assets\Scripts\enums.lua"/> <!-- #2 to be loaded -->
+	<!--@do-not-package@-->
+	<Script file="Assets\Dev\devTests.lua"/>
+	<!--@end-do-not-package@-->
+	<!-- General -->
+	<Script file="Assets\Scripts\General\chat.lua"/>
+	<Script file="Assets\Scripts\General\database.lua"/>
+	<Script file="Assets\Scripts\General\dataManager.lua"/>
+	<Script file="Assets\Scripts\General\events.lua"/>
+	<Script file="Assets\Scripts\General\migration.lua"/>
+	<Script file="Assets\Scripts\General\optionsManager.lua"/>
+	<Script file="Assets\Scripts\General\resetManager.lua"/>
+	<Script file="Assets\Scripts\General\tutorialsManager.lua"/>
+	<Script file="Assets\Scripts\General\utils.lua"/>
+	<!-- UI -->
+	<Script file="Assets\Scripts\UI\databroker.lua"/>
+	<Script file="Assets\Scripts\UI\dragndrop.lua"/>
+	<Script file="Assets\Scripts\UI\mainFrame.lua"/>
+	<Script file="Assets\Scripts\UI\tabsFrame.lua"/>
+	<Include file="Assets\Scripts\UI\templates.xml"/>
+	<Script file="Assets\Scripts\UI\widgets.lua"/>
 
 </Ui>

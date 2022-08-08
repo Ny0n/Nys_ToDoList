@@ -2,27 +2,28 @@ std = "lua51"
 max_line_length = false
 exclude_files = {
 	".luacheckrc",
+	".other/",
 	"Nys_ToDoList/Libs/",
 }
 ignore = {
 	"11./SLASH_.*", -- Setting an undefined (Slash handler) global variable
 	"11./BINDING_.*", -- Setting an undefined (Keybinding header) global variable
 	"11./NysTDL_.*", -- Setting an undefined (Addon custom) global variable
-	-- "211", -- Unused local variable
-	-- "211/L", -- Unused local variable "L"
-	-- "212", -- Unused argument
+	"211", -- Unused local variable
+	"211/L", -- Unused local variable "L"
+	"212", -- Unused argument
 	"212/self", -- Unused argument (self)
-	-- "213", -- Unused loop variable
+	"213", -- Unused loop variable
 	-- "231", -- Set but never accessed
 	"311", -- Value assigned to a local variable is unused
 	-- "314", -- Value of a field in a table literal is unused
-	-- "42.", -- Shadowing a local variable, an argument, a loop variable.
+	"42.", -- Shadowing a local variable, an argument, a loop variable.
 	"43.", -- Shadowing an upvalue, an upvalue argument, an upvalue loop variable.
-	-- "542", -- An empty if branch
+	"542", -- An empty if branch
 	"611", -- Line contains only whitespace
 }
 globals = {
-	-- Addon globals
+	-- addon globals
 	"NysTDL",
 
 	-- old saved variables
@@ -31,7 +32,7 @@ globals = {
 	"ToDoListSV_checkedButtons",
 	"ToDoListSV_autoReset",
 	"ToDoListSV_lastLoadedTab",
-	
+
 	-- Libs globals
 	"LibStub",
 
@@ -42,6 +43,16 @@ globals = {
 	"bit",
 
 	-- FrameXML misc
+	"EncounterJournal",
+	"ChatFrame_OnHyperlinkShow",
+	"ChatFrame1",
+	"PanelTemplates_GetTabWidth",
+	"PanelTemplates_SetNumTabs",
+	"PanelTemplates_SetTab",
+	"PanelTemplates_TabResize",
+	"InterfaceOptionsFrame",
+	"InterfaceOptionsFrameAddOns",
+	"InterfaceOptionsFrame_OpenToCategory",
 	"BackdropTemplateMixin",
 	"C_Timer",
 	"ChatFrame_AddMessageEventFilter",

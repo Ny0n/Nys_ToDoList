@@ -19,7 +19,7 @@ local L = LibStub("AceLocale-3.0"):NewLocale(addonName, "enUS", true)
 
 local addonTable = (select(2, ...))
 for k, v in pairs(addonTable.devLocale) do
-  L[k] = v
+	L[k] = v
 end
 
 --@end-do-not-package@
