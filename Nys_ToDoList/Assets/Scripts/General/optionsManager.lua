@@ -682,18 +682,18 @@ function private:CreateAddonOptionsTable()
 								desc = L["Bind a key to toggle the list"],
 								order = 1.1,
 								get = function()
-									return GetBindingKey("NysTDL_ToggleFrame")
+									return GetBindingKey(core.bindings.toggleList)
 								end,
 								set = function(_, newKey)
 									-- we only want one key to be ever bound to this
-									local key1, key2 = GetBindingKey("NysTDL_ToggleFrame") -- so first we get both keys associated to thsi addon (in case there are)
+									local key1, key2 = GetBindingKey(core.bindings.toggleList) -- so first we get both keys associated to thsi addon (in case there are)
 									-- then we delete their binding from this addon (we clear every binding from this addon)
 									if key1 then SetBinding(key1) end
 									if key2 then SetBinding(key2) end
 
 									-- and finally we set the new binding key
 									if newKey ~= '' then -- considering we pressed one (not ESC)
-										SetBinding(newKey, "NysTDL_ToggleFrame")
+										SetBinding(newKey, core.bindings.toggleList)
 									end
 
 									-- and save the changes

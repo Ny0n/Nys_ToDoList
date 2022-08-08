@@ -150,8 +150,13 @@ core.addonName = addonName
 core.simpleAddonName = string.gsub(core.toc.title, "Ny's ", "")
 
 -- Bindings.xml globals
-BINDING_HEADER_NysTDL = core.toc.title
-BINDING_NAME_NysTDL_ToggleFrame = L["Show/Hide the To-Do List"]
+core.bindings = {}
+
+core.bindings.header = "NysTDL"
+core.bindings.toggleList = "NysTDL_ToggleList"
+
+_G["BINDING_HEADER_"..core.bindings.header] = core.toc.title
+_G["BINDING_NAME_"..core.bindings.toggleList] = L["Show/Hide the To-Do List"]
 
 --@do-not-package@
 -- global variables

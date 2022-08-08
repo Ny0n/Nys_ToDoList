@@ -657,7 +657,7 @@ function dataManager:CreateTab(tabName, isGlobal)
 		},
 		hideCheckedItems = false, -- user set
 		deleteCheckedItems = false, -- user set
-		hideCompletedCategories = true, -- user set
+		hideCompletedCategories = false, -- user set
 	}
 
 	resetManager:InitTabData(tabData)
