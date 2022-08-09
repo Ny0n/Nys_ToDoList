@@ -214,8 +214,6 @@ end
 
 local changelog = {
 	-- index table (not key-value), only place here the important changes.
-	"- Added back the possibility to hide categories when everything inside is checked off (tab option)",
-	"- You can now link anything from the Adventure Guide into the list (Bosses, Strats, Spells...)",
 }
 
 ---Called once, when the addon gets an update.

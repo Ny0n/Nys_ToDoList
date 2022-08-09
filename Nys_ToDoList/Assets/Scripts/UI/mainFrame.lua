@@ -446,7 +446,9 @@ end
 
 function mainFrame:Event_ScrollFrame_OnMouseWheel(delta)
 	-- defines how fast we can scroll throught the frame (here: 30)
-	local newValue = tdlFrame.ScrollFrame:GetVerticalScroll() - (delta * 30)
+	delta = delta * 30
+
+	local newValue = tdlFrame.ScrollFrame:GetVerticalScroll() - delta
 
 	if newValue < 0 then
 		newValue = 0
@@ -475,8 +477,7 @@ function mainFrame:Event_FrameContentAlphaSlider_OnValueChanged(value)
 	-- itemsList frame part
 	NysTDL.acedb.profile.frameContentAlpha = value
 	tdlFrame.content.menuFrames[enums.menus.frameopt].frameContentAlphaSliderValue:SetText(value)
-	tdlFrame.content:SetAlpha(value/100) -- content
-	tdlFrame.ScrollFrame.ScrollBar:SetAlpha(value/100)
+	tdlFrame.ScrollFrame:SetAlpha(value/100)
 	tdlFrame.closeButton:SetAlpha(value/100)
 	tdlFrame.resizeButton:SetAlpha(value/100)
 
@@ -502,8 +503,7 @@ function mainFrame:Event_TDLFrame_OnSizeChanged(width, height)
 
 	-- scaling
 	local scale = width/enums.tdlFrameDefaultWidth
-	self.content:SetScale(scale) -- content
-	self.ScrollFrame.ScrollBar:SetScale(scale)
+	self.ScrollFrame:SetScale(scale)
 	self.closeButton:SetScale(scale)
 	self.resizeButton:SetScale(scale)
 	dragndrop:SetScale(scale)

@@ -1,3 +1,8 @@
+#### **6.2.1**
+
+- Bugfix (resizing the list sometimes made it impossible to scroll to the bottom)
+- Localization update
+
 #### **6.2**
 
 - Added back the possibility to hide categories when everything inside is checked off (tab option)
