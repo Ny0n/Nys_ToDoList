@@ -669,7 +669,7 @@ function private:CreateRecoveryList()
 end
 
 function private:Event_ScrollFrame_OnMouseWheel(delta)
-    -- defines how fast we can scroll throught the frame
+    -- defines how fast we can scroll through the frame
     local ScrollFrame, speed = self, 20
 
     local newValue = ScrollFrame:GetVerticalScroll() - (delta * speed)
