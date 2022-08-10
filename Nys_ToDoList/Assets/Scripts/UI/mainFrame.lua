@@ -445,7 +445,7 @@ end
 --/*******************/ EVENTS /*************************/--
 
 function mainFrame:Event_ScrollFrame_OnMouseWheel(delta)
-	-- defines how fast we can scroll throught the frame (here: 30)
+	-- defines how fast we can scroll through the frame (here: 30)
 	delta = delta * 30
 
 	local newValue = tdlFrame.ScrollFrame:GetVerticalScroll() - delta
