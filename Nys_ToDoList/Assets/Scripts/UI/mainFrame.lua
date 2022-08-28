@@ -604,8 +604,8 @@ function private:LoadContent()
 	tdlFrame.content.hiddenLabel:Hide() -- we hide it by default
 	if not tdlFrame.content.nothingLabel:IsShown() then
 		if not mainFrame.editMode then
-			if tabData.hideCompletedCategories then
-				if dataManager:IsTabCompleted(tabID) then
+			if tabData.hideCompletedCategories or tabData.hideEmptyCategories then -- only do the check if there is a point in doing it
+				if dataManager:IsTabContentHidden(tabID) then
 					tdlFrame.content.hiddenLabel:Show()
 				end
 			end

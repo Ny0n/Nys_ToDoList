@@ -19,6 +19,9 @@ addonTable.devLocale = L
 
 --/************************************************/--
 
+L["Items"] = true
+L["Categories"] = true
+L["Hide empty categories"] = true
 L["Completed tab"] = true
 L["Everything hidden becomes visible"] = true
 L["Hide completed categories"] = true

@@ -120,63 +120,93 @@ local tabManagementTable = {
 					mainFrame:Refresh()
 				end,
 			},
-			deleteCheckedItemsToggle = {
+			groupItemSettings = {
 				order = 1.5,
-				type = "toggle",
-				name = L["Delete checked items"],
-				get = function(info)
-					local _, tabData = private:GetTabInfo(info)
-					return tabData.deleteCheckedItems
-				end,
-				set = function(info, state)
-					local _, tabData = private:GetTabInfo(info)
-					-- SAME CODE in var migrations (migrationData.codes["6.0"])
-					tabData.deleteCheckedItems = state
-					if state then
-						tabData.hideCheckedItems = false
-					end
-					mainFrame:Refresh()
-				end,
-				disabled = function(info)
-					local _, tabData = private:GetTabInfo(info)
-					return tabData.hideCheckedItems
-				end,
+				type = "group",
+				name = L["Items"],
+				inline = true,
+				args = {
+					deleteCheckedItemsToggle = {
+						order = 1.1,
+						type = "toggle",
+						name = L["Delete checked items"],
+						get = function(info)
+							local _, tabData = private:GetTabInfo(info)
+							return tabData.deleteCheckedItems
+						end,
+						set = function(info, state)
+							local _, tabData = private:GetTabInfo(info)
+							-- SAME CODE in var migrations (migrationData.codes["6.0"])
+							tabData.deleteCheckedItems = state
+							if state then
+								tabData.hideCheckedItems = false
+							end
+							mainFrame:Refresh()
+						end,
+						disabled = function(info)
+							local _, tabData = private:GetTabInfo(info)
+							return tabData.hideCheckedItems
+						end,
+					},
+					hideCheckedItemsToggle = {
+						order = 1.2,
+						type = "toggle",
+						name = L["Hide checked items"],
+						get = function(info)
+							local _, tabData = private:GetTabInfo(info)
+							return tabData.hideCheckedItems
+						end,
+						set = function(info, state)
+							local _, tabData = private:GetTabInfo(info)
+							-- SAME CODE in var migrations (migrationData.codes["6.0"])
+							tabData.hideCheckedItems = state
+							if state then
+								tabData.deleteCheckedItems = false
+							end
+							mainFrame:Refresh()
+						end,
+						disabled = function(info)
+							local _, tabData = private:GetTabInfo(info)
+							return tabData.deleteCheckedItems
+						end,
+					},
+				},
 			},
-			hideCheckedItemsToggle = {
+			groupCategorySettings = {
 				order = 1.6,
-				type = "toggle",
-				name = L["Hide checked items"],
-				get = function(info)
-					local _, tabData = private:GetTabInfo(info)
-					return tabData.hideCheckedItems
-				end,
-				set = function(info, state)
-					local _, tabData = private:GetTabInfo(info)
-					-- SAME CODE in var migrations (migrationData.codes["6.0"])
-					tabData.hideCheckedItems = state
-					if state then
-						tabData.deleteCheckedItems = false
-					end
-					mainFrame:Refresh()
-				end,
-				disabled = function(info)
-					local _, tabData = private:GetTabInfo(info)
-					return tabData.deleteCheckedItems
-				end,
-			},
-			hideCompletedCategoriesToggle = {
-				order = 1.7,
-				type = "toggle",
-				name = L["Hide completed categories"],
-				get = function(info)
-					local _, tabData = private:GetTabInfo(info)
-					return tabData.hideCompletedCategories
-				end,
-				set = function(info, state)
-					local _, tabData = private:GetTabInfo(info)
-					tabData.hideCompletedCategories = state
-					mainFrame:Refresh()
-				end,
+				type = "group",
+				name = L["Categories"],
+				inline = true,
+				args = {
+					hideCompletedCategoriesToggle = {
+						order = 1.1,
+						type = "toggle",
+						name = L["Hide completed categories"],
+						get = function(info)
+							local _, tabData = private:GetTabInfo(info)
+							return tabData.hideCompletedCategories
+						end,
+						set = function(info, state)
+							local _, tabData = private:GetTabInfo(info)
+							tabData.hideCompletedCategories = state
+							mainFrame:Refresh()
+						end,
+					},
+					hideEmptyCategoriesToggle = {
+						order = 1.2,
+						type = "toggle",
+						name = L["Hide empty categories"],
+						get = function(info)
+							local _, tabData = private:GetTabInfo(info)
+							return tabData.hideEmptyCategories
+						end,
+						set = function(info, state)
+							local _, tabData = private:GetTabInfo(info)
+							tabData.hideEmptyCategories = state
+							mainFrame:Refresh()
+						end,
+					},
+				},
 			},
 			shownTabsMultiSelect = {
 				order = 1.8,
