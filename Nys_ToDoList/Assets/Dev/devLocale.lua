@@ -19,6 +19,7 @@ addonTable.devLocale = L
 
 --/************************************************/--
 
+L["Lock position"] = true
 L["Items"] = true
 L["Categories"] = true
 L["Hide empty categories"] = true

@@ -522,7 +522,7 @@ function widgets:CreateTDLButton()
 	-- drag
 	tdlButton:RegisterForDrag("LeftButton")
 	tdlButton:SetScript("OnDragStart", function()
-		if not NysTDL.acedb.profile.lockButton then
+		if not NysTDL.acedb.profile.lockTdlButton then
 			tdlButton:StartMoving()
 		end
 	end)

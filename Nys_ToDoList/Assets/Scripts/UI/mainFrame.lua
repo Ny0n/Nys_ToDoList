@@ -1181,7 +1181,13 @@ function mainFrame:CreateTDLFrame()
 	end)
 	tdlFrame.resizeButton:RegisterForClicks("RightButtonUp")
 	tdlFrame.resizeButton:HookScript("OnClick", function() -- reset size
+		-- we resize and scale the frame
 		tdlFrame:SetSize(enums.tdlFrameDefaultWidth, enums.tdlFrameDefaultHeight)
+
+		-- we reposition the frame, because SetSize can actually move it in some cases
+		local points = NysTDL.acedb.profile.framePos
+		tdlFrame:ClearAllPoints()
+		tdlFrame:SetPoint(points.point, nil, points.relativePoint, points.xOffset, points.yOffset) -- relativeFrame = nil -> entire screen
 	end)
 	tutorialsManager:SetPoint("TM_editmode_resize", "LEFT", tdlFrame.resizeButton, "RIGHT", 0, 0)
 

@@ -97,8 +97,8 @@ database.defaults = {
 		currentTab = "TOSET", -- currently selected tab ID, set when the default tabs are created
 		databrokerMode = enums.databrokerModes.simple,
 		lastListVisibility = false,
-		lockList = false, -- TDLATER
-		lockButton = false, -- TDLATER
+		lockList = false,
+		lockTdlButton = false,
 
 		-- // Frame Options
 		framePos = { point = "CENTER", relativePoint = "CENTER", xOffset = 0, yOffset = 0 },

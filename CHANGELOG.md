@@ -1,5 +1,6 @@
 #### **6.3**
 
+- Added options to lock the position of the list and that of the toggle button
 - Added an option to hide empty categories (tab option)
 - Adding items and opening/closing categories is now also possible in edit mode
 

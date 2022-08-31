@@ -586,15 +586,20 @@ function private:CreateAddonOptionsTable()
 
 							-- / options widgets / --
 
-							keepOpen = {
+							lockList = {
 								order = 1.2,
+								type = "toggle",
+								name = L["Lock position"],
+							}, -- lockList
+							keepOpen = {
+								order = 1.3,
 								type = "toggle",
 								name = L["Stay opened"],
 								desc = L["Keeps the list opened if it was during last session"],
 								disabled = function() return NysTDL.acedb.profile.openByDefault end,
 							}, -- keepOpen
 							openByDefault = {
-								order = 1.3,
+								order = 1.4,
 								type = "toggle",
 								name = L["Open by default"],
 								hidden = function() return not NysTDL.acedb.profile.keepOpen end
@@ -662,8 +667,16 @@ function private:CreateAddonOptionsTable()
 									widgets:RefreshTDLButton()
 								end,
 							}, -- tdlButtonShow
-							tdlButtonRed = {
+							lockTdlButton = {
 								order = 2.4,
+								type = "toggle",
+								name = L["Lock position"],
+								hidden = function()
+									return not NysTDL.acedb.profile.tdlButton.show
+								end
+							}, -- lockTdlButton
+							tdlButtonRed = {
+								order = 2.5,
 								type = "toggle",
 								name = L["Red"],
 								desc = L["Changes the color of the movable button if there are items left to do before tomorrow"],
@@ -741,6 +754,12 @@ function private:CreateAddonOptionsTable()
 							-- / layout widgets / --
 
 							-- spacers
+							spacer111 = {
+								order = 1.11,
+								type = "description",
+								width = "full",
+								name = "",
+							}, -- spacer199
 							spacer199 = {
 								order = 1.99,
 								type = "description",
