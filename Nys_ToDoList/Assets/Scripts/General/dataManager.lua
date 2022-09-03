@@ -658,6 +658,7 @@ function dataManager:CreateTab(tabName, isGlobal)
 		hideCheckedItems = false, -- user set
 		deleteCheckedItems = false, -- user set
 		hideCompletedCategories = false, -- user set
+		hideEmptyCategories = false, -- user set
 	}
 
 	resetManager:InitTabData(tabData)
@@ -1327,7 +1328,8 @@ function dataManager:IsHidden(ID, tabID)
 	if enum == enums.item then
 		return tabData.hideCheckedItems and objectData.checked
 	elseif enum == enums.category then
-		return tabData.hideCompletedCategories and dataManager:IsCategoryCompleted(ID)
+		return (tabData.hideCompletedCategories and dataManager:IsCategoryCompleted(ID))
+		or (tabData.hideEmptyCategories and not next(objectData.orderedContentIDs))
 	end
 
 	return false
@@ -1667,6 +1669,18 @@ end
 function dataManager:IsTabCompleted(tabID)
 	for catID in dataManager:ForEach(enums.category, tabID) do
 		if not dataManager:IsCategoryCompleted(catID) then
+			return false
+		end
+	end
+	return true
+end
+
+---Returns true if every category in the given tab is hidden.
+---@param tabID string
+---@return boolean
+function dataManager:IsTabContentHidden(tabID)
+	for catID in dataManager:ForEach(enums.category, tabID) do
+		if not dataManager:IsHidden(catID, tabID) then
 			return false
 		end
 	end

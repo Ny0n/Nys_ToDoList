@@ -214,6 +214,9 @@ end
 
 local changelog = {
 	-- index table (not key-value), only place here the important changes.
+	"- Added options to lock the position of the list and that of the toggle button",
+	"- Added an option to hide empty categories (tab option)",
+	"- Adding items and opening/closing categories is now also possible in edit mode"
 }
 
 ---Called once, when the addon gets an update.

@@ -604,8 +604,8 @@ function private:LoadContent()
 	tdlFrame.content.hiddenLabel:Hide() -- we hide it by default
 	if not tdlFrame.content.nothingLabel:IsShown() then
 		if not mainFrame.editMode then
-			if tabData.hideCompletedCategories then
-				if dataManager:IsTabCompleted(tabID) then
+			if tabData.hideCompletedCategories or tabData.hideEmptyCategories then -- only do the check if there is a point in doing it
+				if dataManager:IsTabContentHidden(tabID) then
 					tdlFrame.content.hiddenLabel:Show()
 				end
 			end
@@ -1181,7 +1181,13 @@ function mainFrame:CreateTDLFrame()
 	end)
 	tdlFrame.resizeButton:RegisterForClicks("RightButtonUp")
 	tdlFrame.resizeButton:HookScript("OnClick", function() -- reset size
+		-- we resize and scale the frame
 		tdlFrame:SetSize(enums.tdlFrameDefaultWidth, enums.tdlFrameDefaultHeight)
+
+		-- we reposition the frame, because SetSize can actually move it in some cases
+		local points = NysTDL.acedb.profile.framePos
+		tdlFrame:ClearAllPoints()
+		tdlFrame:SetPoint(points.point, nil, points.relativePoint, points.xOffset, points.yOffset) -- relativeFrame = nil -> entire screen
 	end)
 	tutorialsManager:SetPoint("TM_editmode_resize", "LEFT", tdlFrame.resizeButton, "RIGHT", 0, 0)
 

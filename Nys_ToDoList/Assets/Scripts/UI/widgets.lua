@@ -23,6 +23,7 @@ local tutorialsManager = NysTDL.tutorialsManager
 
 local L = libs.L
 local LibQTip = libs.LibQTip
+local AceTimer = libs.AceTimer
 
 --/*******************************************************/--
 
@@ -521,7 +522,7 @@ function widgets:CreateTDLButton()
 	-- drag
 	tdlButton:RegisterForDrag("LeftButton")
 	tdlButton:SetScript("OnDragStart", function()
-		if not NysTDL.acedb.profile.lockButton then
+		if not NysTDL.acedb.profile.lockTdlButton then
 			tdlButton:StartMoving()
 		end
 	end)
@@ -766,12 +767,16 @@ end
 
 --/*******************/ ITEM/CATEGORY WIDGETS /*************************/--
 
+local Widget_doubleClicked = false -- see CategoryWidget > interactiveLabel.Button > OnClick
+
 ---DRY function to rename the widgets (OnDoubleClick).
 function private.Widget_OnDoubleClick(self, button)
 	-- first we check if we can rename right now
 	if not mainFrame.editMode then return end -- we can only rename in edit mode
 	if dragndrop.dragging then return end -- we can't rename if we are dragging something
 	if button ~= "LeftButton" then return end -- only double-left click
+
+	Widget_doubleClicked = true
 
 	-- we get all the relevant data
 	local widget = self:GetParent():GetParent() -- self is the interactiveLabel's button (interactiveLabel.Button)
@@ -873,7 +878,7 @@ function widgets:CategoryWidget(catID, parentFrame)
 
 	-- / interactiveLabel.Button
 	categoryWidget.interactiveLabel.Button:SetScript("OnEnter", function(self)
-		if mainFrame.editMode then return end
+		if dragndrop.dragging then return end
 
 		local r, g, b = unpack(utils:ThemeDownTo01(database.themes.theme))
 		self:GetParent().Text:SetTextColor(r, g, b, 1) -- when we hover it, we color the label
@@ -881,13 +886,22 @@ function widgets:CategoryWidget(catID, parentFrame)
 	categoryWidget.interactiveLabel.Button:SetScript("OnLeave", function(self)
 		self:GetParent().Text:SetTextColor(unpack(categoryWidget.color)) -- back to the default color
 	end)
-	categoryWidget.interactiveLabel.Button:SetScript("OnClick", function(_, button)
-		-- we don't do any of the OnClick code if we are in edit mode
-		-- bc it means that we may want to rename the category by double clicking,
-		-- or just drag it
-		if mainFrame.editMode then return end
+	categoryWidget.interactiveLabel.Button:SetScript("OnClick", function(self, button, forced)
+		if dragndrop.dragging then return end
 
 		if button == "LeftButton" then -- we open/close the category
+			if mainFrame.editMode and not forced then
+				-- when in edit mode, since we can rename an object by double-clicking on it (only "LeftButton"),
+				-- the first click also opens/closes the category, which is something I don't want.
+				-- So I'm simply delaying the first click, and only doing it if we didn't meant to double-click.
+				Widget_doubleClicked = false
+				AceTimer:ScheduleTimer(function()
+					if Widget_doubleClicked then return end
+					categoryWidget.interactiveLabel.Button:GetScript("OnClick")(self, button, true)
+				end, 0.3)
+				return
+			end
+
 			dataManager:ToggleClosed(catID, database.ctab())
 		elseif button == "RightButton" then -- we try to toggle the addEditBox
 			-- if the cat we right clicked on is NOT a closed category

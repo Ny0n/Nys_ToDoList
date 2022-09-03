@@ -120,63 +120,93 @@ local tabManagementTable = {
 					mainFrame:Refresh()
 				end,
 			},
-			deleteCheckedItemsToggle = {
+			groupItemSettings = {
 				order = 1.5,
-				type = "toggle",
-				name = L["Delete checked items"],
-				get = function(info)
-					local _, tabData = private:GetTabInfo(info)
-					return tabData.deleteCheckedItems
-				end,
-				set = function(info, state)
-					local _, tabData = private:GetTabInfo(info)
-					-- SAME CODE in var migrations (migrationData.codes["6.0"])
-					tabData.deleteCheckedItems = state
-					if state then
-						tabData.hideCheckedItems = false
-					end
-					mainFrame:Refresh()
-				end,
-				disabled = function(info)
-					local _, tabData = private:GetTabInfo(info)
-					return tabData.hideCheckedItems
-				end,
+				type = "group",
+				name = L["Items"],
+				inline = true,
+				args = {
+					deleteCheckedItemsToggle = {
+						order = 1.1,
+						type = "toggle",
+						name = L["Delete checked items"],
+						get = function(info)
+							local _, tabData = private:GetTabInfo(info)
+							return tabData.deleteCheckedItems
+						end,
+						set = function(info, state)
+							local _, tabData = private:GetTabInfo(info)
+							-- SAME CODE in var migrations (migrationData.codes["6.0"])
+							tabData.deleteCheckedItems = state
+							if state then
+								tabData.hideCheckedItems = false
+							end
+							mainFrame:Refresh()
+						end,
+						disabled = function(info)
+							local _, tabData = private:GetTabInfo(info)
+							return tabData.hideCheckedItems
+						end,
+					},
+					hideCheckedItemsToggle = {
+						order = 1.2,
+						type = "toggle",
+						name = L["Hide checked items"],
+						get = function(info)
+							local _, tabData = private:GetTabInfo(info)
+							return tabData.hideCheckedItems
+						end,
+						set = function(info, state)
+							local _, tabData = private:GetTabInfo(info)
+							-- SAME CODE in var migrations (migrationData.codes["6.0"])
+							tabData.hideCheckedItems = state
+							if state then
+								tabData.deleteCheckedItems = false
+							end
+							mainFrame:Refresh()
+						end,
+						disabled = function(info)
+							local _, tabData = private:GetTabInfo(info)
+							return tabData.deleteCheckedItems
+						end,
+					},
+				},
 			},
-			hideCheckedItemsToggle = {
+			groupCategorySettings = {
 				order = 1.6,
-				type = "toggle",
-				name = L["Hide checked items"],
-				get = function(info)
-					local _, tabData = private:GetTabInfo(info)
-					return tabData.hideCheckedItems
-				end,
-				set = function(info, state)
-					local _, tabData = private:GetTabInfo(info)
-					-- SAME CODE in var migrations (migrationData.codes["6.0"])
-					tabData.hideCheckedItems = state
-					if state then
-						tabData.deleteCheckedItems = false
-					end
-					mainFrame:Refresh()
-				end,
-				disabled = function(info)
-					local _, tabData = private:GetTabInfo(info)
-					return tabData.deleteCheckedItems
-				end,
-			},
-			hideCompletedCategoriesToggle = {
-				order = 1.7,
-				type = "toggle",
-				name = L["Hide completed categories"],
-				get = function(info)
-					local _, tabData = private:GetTabInfo(info)
-					return tabData.hideCompletedCategories
-				end,
-				set = function(info, state)
-					local _, tabData = private:GetTabInfo(info)
-					tabData.hideCompletedCategories = state
-					mainFrame:Refresh()
-				end,
+				type = "group",
+				name = L["Categories"],
+				inline = true,
+				args = {
+					hideCompletedCategoriesToggle = {
+						order = 1.1,
+						type = "toggle",
+						name = L["Hide completed categories"],
+						get = function(info)
+							local _, tabData = private:GetTabInfo(info)
+							return tabData.hideCompletedCategories
+						end,
+						set = function(info, state)
+							local _, tabData = private:GetTabInfo(info)
+							tabData.hideCompletedCategories = state
+							mainFrame:Refresh()
+						end,
+					},
+					hideEmptyCategoriesToggle = {
+						order = 1.2,
+						type = "toggle",
+						name = L["Hide empty categories"],
+						get = function(info)
+							local _, tabData = private:GetTabInfo(info)
+							return tabData.hideEmptyCategories
+						end,
+						set = function(info, state)
+							local _, tabData = private:GetTabInfo(info)
+							tabData.hideEmptyCategories = state
+							mainFrame:Refresh()
+						end,
+					},
+				},
 			},
 			shownTabsMultiSelect = {
 				order = 1.8,
@@ -556,15 +586,20 @@ function private:CreateAddonOptionsTable()
 
 							-- / options widgets / --
 
-							keepOpen = {
+							lockList = {
 								order = 1.2,
+								type = "toggle",
+								name = L["Lock position"],
+							}, -- lockList
+							keepOpen = {
+								order = 1.3,
 								type = "toggle",
 								name = L["Stay opened"],
 								desc = L["Keeps the list opened if it was during last session"],
 								disabled = function() return NysTDL.acedb.profile.openByDefault end,
 							}, -- keepOpen
 							openByDefault = {
-								order = 1.3,
+								order = 1.4,
 								type = "toggle",
 								name = L["Open by default"],
 								hidden = function() return not NysTDL.acedb.profile.keepOpen end
@@ -632,8 +667,16 @@ function private:CreateAddonOptionsTable()
 									widgets:RefreshTDLButton()
 								end,
 							}, -- tdlButtonShow
-							tdlButtonRed = {
+							lockTdlButton = {
 								order = 2.4,
+								type = "toggle",
+								name = L["Lock position"],
+								hidden = function()
+									return not NysTDL.acedb.profile.tdlButton.show
+								end
+							}, -- lockTdlButton
+							tdlButtonRed = {
+								order = 2.5,
 								type = "toggle",
 								name = L["Red"],
 								desc = L["Changes the color of the movable button if there are items left to do before tomorrow"],
@@ -711,6 +754,12 @@ function private:CreateAddonOptionsTable()
 							-- / layout widgets / --
 
 							-- spacers
+							spacer111 = {
+								order = 1.11,
+								type = "description",
+								width = "full",
+								name = "",
+							}, -- spacer199
 							spacer199 = {
 								order = 1.99,
 								type = "description",
