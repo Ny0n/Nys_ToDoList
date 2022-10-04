@@ -144,7 +144,13 @@ function widgets:UpdateDescFramesTitle()
 			descFrame.title:SetAlpha(NysTDL.acedb.profile.descFrameContentAlpha/100)
 
 			local w = widgets:GetWidth(descFrame.itemData.name)
-			descFrame:SetMinResize(math.max(180+75, w+75), 110)
+
+			if descFrame.SetResizeBounds then
+				descFrame:SetResizeBounds(math.max(180+75, w+75), 110)
+			else
+				descFrame:SetMinResize(math.max(180+75, w+75), 110)
+			end
+
 			if descFrame:GetWidth() < w+75 then
 				descFrame:SetSize(w+75, 110)
 			end
@@ -211,7 +217,11 @@ function widgets:DescriptionFrame(itemWidget)
 	descFrame:SetMovable(true)
 	descFrame:SetClampedToScreen(true)
 	descFrame:SetResizable(true)
-	descFrame:SetMinResize(descFrame:GetWidth(), descFrame:GetHeight())
+	if descFrame.SetResizeBounds then
+		descFrame:SetResizeBounds(descFrame:GetWidth(), descFrame:GetHeight())
+	else
+		descFrame:SetMinResize(descFrame:GetWidth(), descFrame:GetHeight())
+	end
 	descFrame:SetToplevel(true)
 	widgets:SetHyperlinksEnabled(descFrame, true)
 
@@ -281,7 +291,7 @@ function widgets:DescriptionFrame(itemWidget)
 	descFrame.title:SetTextColor(itemWidget.interactiveLabel.Text:GetTextColor())
 
 	-- / description edit box
-	descFrame.descriptionEditBox = CreateFrame("ScrollFrame", nil, descFrame, "InputScrollFrameTemplate")
+	descFrame.descriptionEditBox = CreateFrame("ScrollFrame", nil, descFrame, "NysTDL_InputScrollFrameTemplate")
 	descFrame.descriptionEditBox:SetPoint("TOPLEFT", descFrame, "TOPLEFT", 10, -30)
 	descFrame.descriptionEditBox:SetPoint("BOTTOMRIGHT", descFrame, "BOTTOMRIGHT", -10, 10)
 	descFrame.descriptionEditBox.EditBox:SetFontObject(descFrameInfo.font)
@@ -341,9 +351,7 @@ function widgets:UpdateTDLButtonColor()
 		local maxTime = time() + 86400
 		dataManager:DoIfFoundTabMatch(maxTime, "totalUnchecked", function()
 			-- we color the button in red
-			local font = tdlButton:GetNormalFontObject()
-			font:SetTextColor(1, 0, 0, 1)
-			tdlButton:SetNormalFontObject(font)
+			tdlButton:SetNormalFontObject("NysTDL_GameFontNormalLarge_Red")
 		end)
 	end
 end

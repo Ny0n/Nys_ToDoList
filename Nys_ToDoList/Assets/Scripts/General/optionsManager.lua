@@ -985,20 +985,28 @@ end
 ---Toggles the interface addon frame.
 ---@param fromFrame boolean Did we call this func from the mainFrame?
 function optionsManager:ToggleOptions(fromFrame)
-	if InterfaceOptionsFrame:IsShown() then -- if the interface options frame is currently opened
-		if InterfaceOptionsFrameAddOns.selection ~= nil then -- then we check if we're currently in the AddOns tab and if we are currently selecting an addon
-			if InterfaceOptionsFrameAddOns.selection.name == core.toc.title then -- and if we are, we check if we're looking at this addon
-				if fromFrame then return true end
-					InterfaceOptionsFrame:Hide() -- and only if we are and we click again on the button, we close the interface options frame.
-				return
+	if InterfaceOptionsFrame then
+		if InterfaceOptionsFrame:IsShown() then -- if the interface options frame is currently opened
+			if InterfaceOptionsFrameAddOns.selection ~= nil then -- then we check if we're currently in the AddOns tab and if we are currently selecting an addon
+				if InterfaceOptionsFrameAddOns.selection.name == core.toc.title then -- and if we are, we check if we're looking at this addon
+					if fromFrame then return true end
+						InterfaceOptionsFrame:Hide() -- and only if we are and we click again on the button, we close the interface options frame.
+					return
+				end
+			end
+			InterfaceOptionsFrame_OpenToCategory(self.optionsFrame)
+		else
+			InterfaceOptionsFrame_OpenToCategory(self.optionsFrame)
+			if InterfaceOptionsFrameAddOns.selection == nil then -- for the first opening, we have to do it 2 time for it to correctly open our addon options page
+				InterfaceOptionsFrame_OpenToCategory(self.optionsFrame)
 			end
 		end
-		InterfaceOptionsFrame_OpenToCategory(self.optionsFrame)
-	else
-		InterfaceOptionsFrame_OpenToCategory(self.optionsFrame)
-		if InterfaceOptionsFrameAddOns.selection == nil then -- for the first opening, we have to do it 2 time for it to correctly open our addon options page
-			InterfaceOptionsFrame_OpenToCategory(self.optionsFrame)
-		end
+	elseif Settings then
+		-- if SettingsPanel:IsShown() then
+		-- 	SettingsPanel:Close(true)
+		-- 	return
+		-- end
+		Settings.OpenToCategory(optionsManager.optionsFrameID)
 	end
 end
 
@@ -1029,6 +1037,6 @@ function optionsManager:Initialize()
 	optionsManager.optionsTable.args.child_profiles.args.profiles.args = args
 
 	-- we add our frame to wow's interface options panel
-	optionsManager.optionsFrame = AceConfigDialog:AddToBlizOptions(addonName, core.toc.title, nil, "main")
+	optionsManager.optionsFrame, optionsManager.optionsFrameID = AceConfigDialog:AddToBlizOptions(addonName, core.toc.title, nil, "main")
 	AceConfigDialog:AddToBlizOptions(addonName, L["Profiles"], core.toc.title, "child_profiles")
 end

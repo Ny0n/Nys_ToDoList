@@ -1056,7 +1056,7 @@ function dataManager:DeleteTab(tabID)
 		enums.quantities[enums.tab] = enums.quantities[enums.tab] - 1
 
 		if database.ctab() == tabID then
-			database.ctab(loc[pos-1]) -- when deleting the tab we were on, we refocus a new one
+			database.ctab(loc[pos-1] or loc[1]) -- when deleting the tab we were on, we refocus a new one
 		end
 
 		-- AND refresh the tabsFrame

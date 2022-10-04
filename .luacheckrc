@@ -41,6 +41,7 @@ globals = {
 	-- misc
 	"_G",
 	"bit",
+	"Settings",
 
 	-- FrameXML misc
 	"EncounterJournal",
