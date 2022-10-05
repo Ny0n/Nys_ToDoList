@@ -26,11 +26,26 @@ local private = {}
 tabsFrame.authorized = true -- can it call Refresh() ? (just there for optimization)
 
 --** UI pos control **--
+local overflowButtonSize = 29
+local listButtonWidgetHeight = 12
+
 local inBetweenTabOffset = 5 -- POSITIVE, is part of the real tab size
 local sidesBonusOffset = 2 -- POSITIVE
 local MIN_TAB_SIZE, MAX_TAB_SIZE = 72, 90
-local overflowButtonSize = 29
-local listButtonWidgetHeight = 12
+local leftScrollFrameOffset = sidesBonusOffset + inBetweenTabOffset
+local rightScrollFrameOffset = sidesBonusOffset
+local overflowButtonRightOffsetX = rightScrollFrameOffset + inBetweenTabOffset
+local overflowButtonWidth = overflowButtonRightOffsetX + overflowButtonSize
+
+if not utils:IsDF() then
+	inBetweenTabOffset = -12
+	sidesBonusOffset = 10
+	MIN_TAB_SIZE, MAX_TAB_SIZE = 90, 110
+	leftScrollFrameOffset = sidesBonusOffset
+	rightScrollFrameOffset = sidesBonusOffset
+	overflowButtonRightOffsetX = rightScrollFrameOffset + 4
+	overflowButtonWidth = overflowButtonRightOffsetX + overflowButtonSize
+end
 --** ************** **--
 
 local _currentID = 0
@@ -38,13 +53,8 @@ local _currentState = false -- false == profile tabs, true == global tabs
 local _nbWholeTabsShown, _shownWholeTabs = 0, {}
 local _width = MAX_TAB_SIZE
 
-local leftScrollFrameOffset = sidesBonusOffset + inBetweenTabOffset
-local rightScrollFrameOffset = sidesBonusOffset
-local overflowButtonRightOffsetX = rightScrollFrameOffset + inBetweenTabOffset
-
 local scrollFrame, content, overflowButtonFrame, overflowList
 local tabWidgets, listButtonWidgets = {}, {}
-local overflowButtonWidth = overflowButtonRightOffsetX + overflowButtonSize
 local lastLeftTab
 
 -- // WoW & Lua APIs
@@ -66,6 +76,16 @@ local PanelTemplates_SetTab = PanelTemplates_SetTab
 
 MAX_TAB_SIZE = MAX_TAB_SIZE + inBetweenTabOffset
 MIN_TAB_SIZE = MIN_TAB_SIZE + inBetweenTabOffset
+
+local function getTabLeft(tabWidget)
+	local offset = utils:IsDF() and 0 or 6
+	return tabWidget:GetLeft() + offset
+end
+
+local function getTabRight(tabWidget)
+	local offset = utils:IsDF() and inBetweenTabOffset or -6
+	return tabWidget:GetRight() + offset
+end
 
 --/*******************/ ANIMATION /*************************/--
 
@@ -128,8 +148,8 @@ function private:GetScrollDistanceNeeded(targetTabID)
 		return 0, 1
 	end
 
-	local tLeft, sLeft = tabWidgets[targetTabID]:GetLeft(), scrollFrame:GetLeft()
-	local tRight, sRight = (tabWidgets[targetTabID]:GetRight() + inBetweenTabOffset), scrollFrame:GetRight()
+	local tLeft, sLeft = getTabLeft(tabWidgets[targetTabID]), scrollFrame:GetLeft()
+	local tRight, sRight = getTabRight(tabWidgets[targetTabID]), scrollFrame:GetRight()
 	if tLeft < sLeft then
 		-- the target tab is to the left, thus we have to scroll backwards until we match the LEFT position of the tab widget
 		return math.abs(tLeft - sLeft), -1
@@ -148,7 +168,7 @@ function private:GetLeftMostTab()
 	local tabsList = select(3, dataManager:GetData(_currentState))
 	for _,tabID in ipairs(tabsList.orderedTabIDs) do -- in order, we check which is the first to be ENTIRELY (whole tab) on the right of the scrollFrame's left
 		if tabWidgets[tabID] and tabWidgets[tabID]:GetLeft() then
-			if tabWidgets[tabID]:GetLeft()+15 > scrollFrameLeft then
+			if getTabLeft(tabWidgets[tabID])+15 > scrollFrameLeft then
 				return tabID
 			end
 		end
@@ -193,7 +213,7 @@ function private:SnapToTab(tabID)
 	if not tabWidgets[tabID] then return false end
 
 	private:ScrollTo(0)
-	local diff = tabWidgets[tabID]:GetLeft() - scrollFrame:GetLeft()
+	local diff = getTabLeft(tabWidgets[tabID]) - scrollFrame:GetLeft()
 	private:ScrollTo(math.max(diff, 0))
 end
 
@@ -211,9 +231,9 @@ function private:IncludeTab(tabID)
 
 	local diff
 	if targetPos < firstPos then -- if the tab is before the first shown one
-		diff = (tabWidgets[tabID]:GetLeft()) - scrollFrame:GetLeft() -- negative (go left)
+		diff = getTabLeft(tabWidgets[tabID]) - scrollFrame:GetLeft() -- negative (go left)
 	else -- if the tab is after the last one (bc it's not before the first one, and it's not currently shown)
-		diff = (tabWidgets[tabID]:GetRight() + inBetweenTabOffset) - scrollFrame:GetRight() -- positive (go right)
+		diff = getTabRight(tabWidgets[tabID]) - scrollFrame:GetRight() -- positive (go right)
 	end
 	private:ScrollTo(math.max(scrollFrame:GetHorizontalScroll() + diff, 0))
 end
@@ -234,7 +254,7 @@ function private:CalculateTabSize()
 
 	if scrollSize/MIN_TAB_SIZE < numTabs then
 		-- not everything fits, so we'll need room for the overflow button
-		scrollSize = scrollSize - overflowButtonWidth + rightScrollFrameOffset
+		scrollSize = scrollSize - overflowButtonWidth + rightScrollFrameOffset -- '+ rightScrollFrameOffset' to zero the '- rightScrollFrameOffset' above
 	end
 	if scrollSize == 0 then
 		return 1, numTabs > 0, 0
@@ -372,7 +392,7 @@ function private:TabWidget(tabID, parentFrame)
 
 	_currentID = _currentID + 1
 	local parentName = parentFrame:GetName()
-	local tabWidget = CreateFrame("Button", parentName.."Tab".._currentID, parentFrame, "CharacterFrameTabTemplate")
+	local tabWidget = CreateFrame("Button", parentName.."Tab".._currentID, parentFrame, utils:IsDF() and "CharacterFrameTabTemplate" or "CharacterFrameTabButtonTemplate")
 
 	-- // data
 

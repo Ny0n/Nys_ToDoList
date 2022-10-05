@@ -93,6 +93,8 @@ enums.days = {
 	[1] = L["Sunday"],
 }
 
+enums.interfaceNumber = tonumber(select(4, GetBuildInfo()))
+
 -- dynamic values (still, accessible by all files)
 
 enums.quantities = {
