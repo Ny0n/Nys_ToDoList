@@ -19,6 +19,9 @@ addonTable.devLocale = L
 
 --/************************************************/--
 
+L["Content"] = true
+L["Move up"] = true
+L["Move down"] = true
 L["Lock position"] = true
 L["Items"] = true
 L["Categories"] = true

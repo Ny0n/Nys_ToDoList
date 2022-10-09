@@ -874,10 +874,6 @@ function dataManager:MoveTab(tabID, newPos)
 		newPos = utils:Clamp(newPos, 1, #loc + 1)
 	end
 
-	if newPos > oldPos then
-		newPos = newPos - 1
-	end
-
 	tremove(loc, oldPos)
 	tinsert(loc, newPos, tabID)
 

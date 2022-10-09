@@ -317,13 +317,15 @@ function private:RefreshPoints()
 	-- updates the pos of each tab widget, depending on their order
 	local tabsList = select(3, dataManager:GetData(_currentState))
 
-	local lastWidget
+	local lastWidget = nil
 	for _,tabID in ipairs(tabsList.orderedTabIDs) do
 		if tabWidgets[tabID] then
 			if not lastWidget then
 				tabWidgets[tabID]:SetPoint("TOPLEFT", content, "TOPLEFT", 0, 1)
 			else
-				tabWidgets[tabID]:SetPoint("TOPLEFT", lastWidget, "TOPRIGHT", inBetweenTabOffset, 0)
+				if lastWidget ~= tabWidgets[tabID] then
+					tabWidgets[tabID]:SetPoint("TOPLEFT", lastWidget, "TOPRIGHT", inBetweenTabOffset, 0)
+				end
 			end
 			lastWidget = tabWidgets[tabID]
 		end
