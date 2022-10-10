@@ -1,3 +1,9 @@
+#### **6.4**
+
+- Added support for Dragonflight
+- Added the possibility to reorder tabs ("Move up" & "Move down" buttons in the tab settings)
+- Polished the tab switching by adding a scrolling animation
+
 #### **6.3**
 
 - Added options to lock the position of the list and that of the toggle button

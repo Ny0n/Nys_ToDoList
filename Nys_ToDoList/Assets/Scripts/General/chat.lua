@@ -220,6 +220,7 @@ chat.commands = {
 		chat:CustomPrintForced(L["The tutorial has been reset"])
 	end,
 
+	-- feature not fully tested, waiting for the next release to announce it
 	["add"] = function(...)
 		local input = string.join(" ", ...)
 		local tabName, catName, itemName = string.split("+", input)
