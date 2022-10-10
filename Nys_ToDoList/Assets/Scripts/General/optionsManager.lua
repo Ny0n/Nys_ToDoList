@@ -94,8 +94,37 @@ local tabManagementTable = {
 					return not dataManager:IsProtected(tabID)
 				end,
 			},
-			renameTabInput = {
+			moveTabUpExecute = {
 				order = 1.3,
+				type = "execute",
+				name = L["Move up"],
+				func = function(info)
+					local tabID = private:GetTabInfo(info)
+					local pos = dataManager:GetPosData(tabID, nil, true)
+					dataManager:MoveTab(tabID, pos-1)
+				end,
+				disabled = function(info)
+					local tabID = private:GetTabInfo(info)
+					return dataManager:GetPosData(tabID, nil, true) <= 1
+				end,
+			},
+			moveTabDownExecute = {
+				order = 1.4,
+				type = "execute",
+				name = L["Move down"],
+				func = function(info)
+					local tabID = private:GetTabInfo(info)
+					local pos = dataManager:GetPosData(tabID, nil, true)
+					dataManager:MoveTab(tabID, pos+1)
+				end,
+				disabled = function(info)
+					local tabID = private:GetTabInfo(info)
+					local loc, pos = dataManager:GetPosData(tabID)
+					return pos >= #loc
+				end,
+			},
+			renameTabInput = {
+				order = 1.5,
 				type = "input",
 				name = L["Rename"],
 				get = function(info)
@@ -108,7 +137,7 @@ local tabManagementTable = {
 				end,
 			},
 			instantRefreshToggle = {
-				order = 1.4,
+				order = 1.6,
 				type = "toggle",
 				name = L["Instant refresh"],
 				desc = L["Delete/Hide items instantly when checking them"].."\n("..L["Applies to all tabs"]..")",
@@ -121,7 +150,7 @@ local tabManagementTable = {
 				end,
 			},
 			groupItemSettings = {
-				order = 1.5,
+				order = 1.7,
 				type = "group",
 				name = L["Items"],
 				inline = true,
@@ -173,7 +202,7 @@ local tabManagementTable = {
 				},
 			},
 			groupCategorySettings = {
-				order = 1.6,
+				order = 1.8,
 				type = "group",
 				name = L["Categories"],
 				inline = true,
@@ -209,7 +238,7 @@ local tabManagementTable = {
 				},
 			},
 			shownTabsMultiSelect = {
-				order = 1.8,
+				order = 1.9,
 				type = "multiselect",
 				name = L["Shown tabs"],
 				width = "full",
@@ -240,7 +269,7 @@ local tabManagementTable = {
 				order = 1.21,
 				type = "description",
 				width = "full",
-				name = "",
+				name = "\n",
 			},
 			spacer131 = {
 				order = 1.31,
@@ -252,7 +281,7 @@ local tabManagementTable = {
 				order = 1.41,
 				type = "description",
 				width = "full",
-				name = "",
+				name = "\n",
 			},
 			spacer151 = {
 				order = 1.51,
@@ -271,6 +300,30 @@ local tabManagementTable = {
 				type = "description",
 				width = "full",
 				name = "",
+			},
+			spacer181 = {
+				order = 1.81,
+				type = "description",
+				width = "full",
+				name = "",
+			},
+			spacer191 = {
+				order = 1.91,
+				type = "description",
+				width = "full",
+				name = "",
+			},
+
+			-- headers
+			header1 = {
+				order = 1,
+				type = "header",
+				name = L["Settings"],
+			},
+			header159 = {
+				order = 1.59,
+				type = "header",
+				name = L["Content"],
 			},
 		},
 	},
@@ -985,20 +1038,28 @@ end
 ---Toggles the interface addon frame.
 ---@param fromFrame boolean Did we call this func from the mainFrame?
 function optionsManager:ToggleOptions(fromFrame)
-	if InterfaceOptionsFrame:IsShown() then -- if the interface options frame is currently opened
-		if InterfaceOptionsFrameAddOns.selection ~= nil then -- then we check if we're currently in the AddOns tab and if we are currently selecting an addon
-			if InterfaceOptionsFrameAddOns.selection.name == core.toc.title then -- and if we are, we check if we're looking at this addon
-				if fromFrame then return true end
-					InterfaceOptionsFrame:Hide() -- and only if we are and we click again on the button, we close the interface options frame.
-				return
+	if InterfaceOptionsFrame then
+		if InterfaceOptionsFrame:IsShown() then -- if the interface options frame is currently opened
+			if InterfaceOptionsFrameAddOns.selection ~= nil then -- then we check if we're currently in the AddOns tab and if we are currently selecting an addon
+				if InterfaceOptionsFrameAddOns.selection.name == core.toc.title then -- and if we are, we check if we're looking at this addon
+					if fromFrame then return true end
+						InterfaceOptionsFrame:Hide() -- and only if we are and we click again on the button, we close the interface options frame.
+					return
+				end
+			end
+			InterfaceOptionsFrame_OpenToCategory(self.optionsFrame)
+		else
+			InterfaceOptionsFrame_OpenToCategory(self.optionsFrame)
+			if InterfaceOptionsFrameAddOns.selection == nil then -- for the first opening, we have to do it 2 time for it to correctly open our addon options page
+				InterfaceOptionsFrame_OpenToCategory(self.optionsFrame)
 			end
 		end
-		InterfaceOptionsFrame_OpenToCategory(self.optionsFrame)
-	else
-		InterfaceOptionsFrame_OpenToCategory(self.optionsFrame)
-		if InterfaceOptionsFrameAddOns.selection == nil then -- for the first opening, we have to do it 2 time for it to correctly open our addon options page
-			InterfaceOptionsFrame_OpenToCategory(self.optionsFrame)
-		end
+	elseif Settings then
+		-- if SettingsPanel:IsShown() then
+		-- 	SettingsPanel:Close(true)
+		-- 	return
+		-- end
+		Settings.OpenToCategory(optionsManager.optionsFrameID)
 	end
 end
 
@@ -1029,6 +1090,6 @@ function optionsManager:Initialize()
 	optionsManager.optionsTable.args.child_profiles.args.profiles.args = args
 
 	-- we add our frame to wow's interface options panel
-	optionsManager.optionsFrame = AceConfigDialog:AddToBlizOptions(addonName, core.toc.title, nil, "main")
+	optionsManager.optionsFrame, optionsManager.optionsFrameID = AceConfigDialog:AddToBlizOptions(addonName, core.toc.title, nil, "main")
 	AceConfigDialog:AddToBlizOptions(addonName, L["Profiles"], core.toc.title, "child_profiles")
 end

@@ -630,7 +630,7 @@ function private:CreateRecoveryList()
     footer:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
 
     -- /-> copy edit box
-    footer.copyBox = CreateFrame("ScrollFrame", nil, frame, "InputScrollFrameTemplate")
+    footer.copyBox = CreateFrame("ScrollFrame", nil, frame, "NysTDL_InputScrollFrameTemplate")
     footer.copyBox:SetPoint("TOPLEFT", footer, "TOPLEFT", 10, -10)
     footer.copyBox:SetPoint("BOTTOMRIGHT", footer, "BOTTOMRIGHT", -10, 10)
     footer.copyBox.EditBox:SetFontObject("ChatFontNormal")

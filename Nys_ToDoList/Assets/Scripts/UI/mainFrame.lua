@@ -1098,8 +1098,12 @@ function mainFrame:CreateTDLFrame()
 	tdlFrame:SetMovable(true)
 	tdlFrame:SetClampedToScreen(true)
 	tdlFrame:SetResizable(true)
-	tdlFrame:SetMinResize(90, 180)
-	tdlFrame:SetMaxResize(600, 1000)
+	if tdlFrame.SetResizeBounds then
+		tdlFrame:SetResizeBounds(90, 180, 600, 1000)
+	else
+		tdlFrame:SetMinResize(90, 180)
+		tdlFrame:SetMaxResize(600, 1000)
+	end
 	tdlFrame:SetToplevel(true)
 
 	tdlFrame:HookScript("OnUpdate", mainFrame.Event_TDLFrame_OnUpdate)
@@ -1241,17 +1245,13 @@ function mainFrame:Init()
 
 	-- // and finally, we update the list's visibility
 
-	local oldShownState = tdlFrame:IsShown()
+	local lastListVisibility = NysTDL.acedb.profile.lastListVisibility
+
+	tdlFrame:Hide() -- WoW 10.0 now requires a frame visibility update? /shrug
 
 	if NysTDL.acedb.profile.openByDefault then
 		tdlFrame:Show()
 	elseif NysTDL.acedb.profile.keepOpen then
-		tdlFrame:SetShown(NysTDL.acedb.profile.lastListVisibility)
-	else
-		tdlFrame:Hide()
-	end
-
-	if oldShownState == tdlFrame:IsShown() then -- if we didn't change the list's shown state, we manually call Event_TDLFrame_OnVisibilityUpdate to refresh everything
-		mainFrame:Event_TDLFrame_OnVisibilityUpdate()
+		tdlFrame:SetShown(lastListVisibility)
 	end
 end

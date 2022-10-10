@@ -1,3 +1,4 @@
+-- luacheck: push ignore
 --/*******************/ IMPORTS /*************************/--
 
 -- File init
@@ -24,29 +25,42 @@ local L = libs.L
 local private = {}
 tabsFrame.authorized = true -- can it call Refresh() ? (just there for optimization)
 
--- UI pos control
-local inBetweenTabOffset = -12
-local overflowButtonRightOffsetX = -9
+--** UI pos control **--
 local overflowButtonSize = 29
 local listButtonWidgetHeight = 12
-local leftScrollFrameOffset = 7
-local rightScrollFrameOffset = -6
-local MIN_TAB_SIZE, MAX_TAB_SIZE = 70, 90
+
+local inBetweenTabOffset = 5 -- POSITIVE, is part of the real tab size
+local sidesBonusOffset = 2 -- POSITIVE
+local MIN_TAB_SIZE, MAX_TAB_SIZE = 72, 90
+local leftScrollFrameOffset = sidesBonusOffset + inBetweenTabOffset
+local rightScrollFrameOffset = sidesBonusOffset
+local overflowButtonRightOffsetX = rightScrollFrameOffset + inBetweenTabOffset
+local overflowButtonWidth = overflowButtonRightOffsetX + overflowButtonSize
+
+if not utils:IsDF() then
+	inBetweenTabOffset = -12
+	sidesBonusOffset = 10
+	MIN_TAB_SIZE, MAX_TAB_SIZE = 90, 110
+	leftScrollFrameOffset = sidesBonusOffset
+	rightScrollFrameOffset = sidesBonusOffset
+	overflowButtonRightOffsetX = rightScrollFrameOffset + 4
+	overflowButtonWidth = overflowButtonRightOffsetX + overflowButtonSize
+end
+--** ************** **--
 
 local _currentID = 0
 local _currentState = false -- false == profile tabs, true == global tabs
 local _nbWholeTabsShown, _shownWholeTabs = 0, {}
+local _width = MAX_TAB_SIZE
 
 local scrollFrame, content, overflowButtonFrame, overflowList
 local tabWidgets, listButtonWidgets = {}, {}
-local overflowButtonWidth = -overflowButtonRightOffsetX + overflowButtonSize - 3
 local lastLeftTab
 
 -- // WoW & Lua APIs
 
 local wipe, pairs, ipairs = wipe, pairs, ipairs
-local PanelTemplates_GetTabWidth = PanelTemplates_GetTabWidth
-local PanelTemplates_SetNumTabs = PanelTemplates_SetNumTabs
+local PanelTemplates_TabResize = PanelTemplates_TabResize
 local PanelTemplates_SetTab = PanelTemplates_SetTab
 -- local CreateFrame = CreateFrame
 
@@ -60,31 +74,48 @@ local PanelTemplates_SetTab = PanelTemplates_SetTab
 	toggles the <overflowList> that shows each of the tabs that are not currently shown in the <scrollFrame>.
 ]]
 
+MAX_TAB_SIZE = MAX_TAB_SIZE + inBetweenTabOffset
+MIN_TAB_SIZE = MIN_TAB_SIZE + inBetweenTabOffset
+
+local function getTabLeft(tabWidget)
+	local offset = utils:IsDF() and 0 or 6
+	return tabWidget:GetLeft() + offset
+end
+
+local function getTabRight(tabWidget)
+	local offset = utils:IsDF() and inBetweenTabOffset or -6
+	return tabWidget:GetRight() + offset
+end
+
 --/*******************/ ANIMATION /*************************/--
 
 local animFrame = CreateFrame("Frame", nil, UIParent) -- OnUpdate frame
-local ANIM_SPEED = 10
+local ANIM_SPEED = 5
 local animating = false
 local _targetTab
 
 function private:Event_AnimFrame_OnUpdate(elapsed)
-	local totalDistanceNeeded = 0
-	-- FCFDockScrollFrame_GetScrollDistanceNeeded(self, self.selectedDynIndex)
-	if math.abs(totalDistanceNeeded) < 1.0 then
-		private:IncludeTab(_targetTab) -- good snap
+	local totalDistanceNeeded, sign = private:GetScrollDistanceNeeded(_targetTab)
+
+	if totalDistanceNeeded < 1.0 then
 		private:StopAnim()
+		tabsFrame:Refresh()
 		return
 	end
 
-	local distanceNoCap = totalDistanceNeeded * ANIM_SPEED * elapsed
+	totalDistanceNeeded = totalDistanceNeeded + 5 -- the secret to make it look nice
+
+	local distanceNoCap = totalDistanceNeeded * elapsed * ANIM_SPEED
 	local distanceToMove = (totalDistanceNeeded > 0) and math.min(totalDistanceNeeded, distanceNoCap) or math.max(totalDistanceNeeded, distanceNoCap)
 
-	private:ScrollTo(math.max(scrollFrame:GetHorizontalScroll() + distanceToMove, 0))
+	private:ScrollTo(math.max(scrollFrame:GetHorizontalScroll() + distanceToMove*sign, 0))
 end
 
 function private:StartAnim()
-	animating = true
-	animFrame:SetScript("OnUpdate", private.Event_AnimFrame_OnUpdate)
+	if not animating then
+		animating = true
+		animFrame:SetScript("OnUpdate", private.Event_AnimFrame_OnUpdate)
+	end
 end
 
 function private:StopAnim()
@@ -94,14 +125,41 @@ function private:StopAnim()
 	end
 end
 
--- TDLATER animation
 function private:ScrollToTab(tabID)
 	private:StopAnim()
+
+	if private:GetScrollDistanceNeeded(tabID) < 1.0 then
+		tabsFrame:Refresh()
+		return
+	end
+
 	_targetTab = tabID
 	private:StartAnim()
 end
 
 --/*******************/ MISC /*************************/--
+
+function private:GetScrollDistanceNeeded(targetTabID)
+	-- returns the amount of scrolling we have to add to the current scroll of the scrollframe,
+	-- to INCLUDE the specified tab
+	-- @return distance, sign
+
+	if not tabWidgets[targetTabID] or not tabWidgets[targetTabID]:GetLeft() then
+		return 0, 1
+	end
+
+	local tLeft, sLeft = getTabLeft(tabWidgets[targetTabID]), scrollFrame:GetLeft()
+	local tRight, sRight = getTabRight(tabWidgets[targetTabID]), scrollFrame:GetRight()
+	if tLeft < sLeft then
+		-- the target tab is to the left, thus we have to scroll backwards until we match the LEFT position of the tab widget
+		return math.abs(tLeft - sLeft), -1
+	elseif tRight > sRight then
+		-- the target tab is to the right, thus we have to scroll forward until we match the RIGHT position of the tab widget
+		return math.abs(tRight - sRight), 1
+	else
+		return 0, 1
+	end
+end
 
 function private:GetLeftMostTab()
 	-- to know where we are in the scrollFrame
@@ -109,8 +167,8 @@ function private:GetLeftMostTab()
 	local scrollFrameLeft = scrollFrame:GetLeft()
 	local tabsList = select(3, dataManager:GetData(_currentState))
 	for _,tabID in ipairs(tabsList.orderedTabIDs) do -- in order, we check which is the first to be ENTIRELY (whole tab) on the right of the scrollFrame's left
-		if tabWidgets[tabID] then
-			if tabWidgets[tabID]:GetLeft()+15 > scrollFrameLeft then
+		if tabWidgets[tabID] and tabWidgets[tabID]:GetLeft() then
+			if getTabLeft(tabWidgets[tabID])+15 > scrollFrameLeft then
 				return tabID
 			end
 		end
@@ -155,8 +213,7 @@ function private:SnapToTab(tabID)
 	if not tabWidgets[tabID] then return false end
 
 	private:ScrollTo(0)
-	-- scrollFrame:SetHorizontalScroll(0)
-	local diff = (tabWidgets[tabID]:GetLeft()+leftScrollFrameOffset) - scrollFrame:GetLeft()
+	local diff = getTabLeft(tabWidgets[tabID]) - scrollFrame:GetLeft()
 	private:ScrollTo(math.max(diff, 0))
 end
 
@@ -174,29 +231,30 @@ function private:IncludeTab(tabID)
 
 	local diff
 	if targetPos < firstPos then -- if the tab is before the first shown one
-		diff = (tabWidgets[tabID]:GetLeft() + leftScrollFrameOffset) - scrollFrame:GetLeft() -- negative (go left)
+		diff = getTabLeft(tabWidgets[tabID]) - scrollFrame:GetLeft() -- negative (go left)
 	else -- if the tab is after the last one (bc it's not before the first one, and it's not currently shown)
-		diff = (tabWidgets[tabID]:GetRight() + rightScrollFrameOffset) - scrollFrame:GetRight() -- positive (go right)
+		diff = getTabRight(tabWidgets[tabID]) - scrollFrame:GetRight() -- positive (go right)
 	end
 	private:ScrollTo(math.max(scrollFrame:GetHorizontalScroll() + diff, 0))
 end
 
 function private:CalculateTabSize()
 	-- reused from wow's chat function (FCFDock_CalculateTabSize) for my purpose
-	-- returns tabSize, hasOverflow
+	-- returns tabSize, hasOverflow, numWholeTabs
 
 	local scrollSize = scrollFrame:GetParent():GetWidth() -- the default scroll size we're considering to use is the width of the tdlFrame (without considering the overflowButtonFrame)
+	scrollSize = scrollSize - leftScrollFrameOffset - rightScrollFrameOffset
 	local tabsList = select(3, dataManager:GetData(_currentState))
 	local numTabs = #tabsList.orderedTabIDs
 
 	-- first, we see if we can fit all the tabs at the maximum size
-	if numTabs*MAX_TAB_SIZE < scrollSize then
+	if numTabs*MAX_TAB_SIZE <= scrollSize then
 		return MAX_TAB_SIZE, false, numTabs
 	end
 
 	if scrollSize/MIN_TAB_SIZE < numTabs then
 		-- not everything fits, so we'll need room for the overflow button
-		scrollSize = scrollSize - overflowButtonWidth
+		scrollSize = scrollSize - overflowButtonWidth + rightScrollFrameOffset -- '+ rightScrollFrameOffset' to zero the '- rightScrollFrameOffset' above
 	end
 	if scrollSize == 0 then
 		return 1, numTabs > 0, 0
@@ -232,10 +290,10 @@ function private:RefreshSize()
 	end
 
 	local tabsList = select(3, dataManager:GetData(_currentState))
-	local bonus = ((numWholeTabs > 0) and (((numWholeTabs-1)*(-inBetweenTabOffset))/numWholeTabs) or 0) -- to counteract the tab offset
+	_width = tabSize-inBetweenTabOffset -- THE important line
 	for _,tabID in ipairs(tabsList.orderedTabIDs) do
 		if tabWidgets[tabID] then
-			PanelTemplates_TabResize(tabWidgets[tabID], 0, tabSize+bonus)
+			PanelTemplates_TabResize(tabWidgets[tabID], 0, _width)
 		end
 	end
 
@@ -243,11 +301,11 @@ function private:RefreshSize()
 	if hasOverflow then
 		overflowButtonFrame:SetShown(true)
 		scrollFrame:SetPoint("TOPLEFT", mainFrame.tdlFrame, "BOTTOMLEFT", leftScrollFrameOffset, 2)
-		scrollFrame:SetPoint("BOTTOMRIGHT", mainFrame.tdlFrame, "BOTTOMRIGHT", -overflowButtonWidth+rightScrollFrameOffset, -40)
+		scrollFrame:SetPoint("BOTTOMRIGHT", mainFrame.tdlFrame, "BOTTOMRIGHT", -overflowButtonWidth, -40)
 	else
 		overflowButtonFrame:SetShown(false)
 		scrollFrame:SetPoint("TOPLEFT", mainFrame.tdlFrame, "BOTTOMLEFT", leftScrollFrameOffset, 2)
-		scrollFrame:SetPoint("BOTTOMRIGHT", mainFrame.tdlFrame, "BOTTOMRIGHT", 0, -40)
+		scrollFrame:SetPoint("BOTTOMRIGHT", mainFrame.tdlFrame, "BOTTOMRIGHT", -rightScrollFrameOffset, -40)
 	end
 
 	private:SnapToTab(tabToSnapTo)
@@ -259,13 +317,15 @@ function private:RefreshPoints()
 	-- updates the pos of each tab widget, depending on their order
 	local tabsList = select(3, dataManager:GetData(_currentState))
 
-	local lastWidget
+	local lastWidget = nil
 	for _,tabID in ipairs(tabsList.orderedTabIDs) do
 		if tabWidgets[tabID] then
 			if not lastWidget then
-				tabWidgets[tabID]:SetPoint("TOPLEFT", content, "TOPLEFT", -leftScrollFrameOffset, 1)
+				tabWidgets[tabID]:SetPoint("TOPLEFT", content, "TOPLEFT", 0, 1)
 			else
-				tabWidgets[tabID]:SetPoint("TOPLEFT", lastWidget, "TOPRIGHT", inBetweenTabOffset, 0)
+				if lastWidget ~= tabWidgets[tabID] then
+					tabWidgets[tabID]:SetPoint("TOPLEFT", lastWidget, "TOPRIGHT", inBetweenTabOffset, 0)
+				end
 			end
 			lastWidget = tabWidgets[tabID]
 		end
@@ -334,7 +394,7 @@ function private:TabWidget(tabID, parentFrame)
 
 	_currentID = _currentID + 1
 	local parentName = parentFrame:GetName()
-	local tabWidget = CreateFrame("Button", parentName.."Tab".._currentID, parentFrame, "CharacterFrameTabButtonTemplate")
+	local tabWidget = CreateFrame("Button", parentName.."Tab".._currentID, parentFrame, utils:IsDF() and "CharacterFrameTabTemplate" or "CharacterFrameTabButtonTemplate")
 
 	-- // data
 
@@ -346,7 +406,8 @@ function private:TabWidget(tabID, parentFrame)
 	tabWidget:SetID(_currentID)
 	tabWidget:SetText(tabData.name)
 	tabWidget:SetScript("OnClick", function(self)
-		mainFrame:ChangeTab(self.tabID)
+		mainFrame:ChangeTab(self.tabID) -- changes ctab
+		private:ScrollToTab(self.tabID)
 		PanelTemplates_SetTab(self:GetParent(), self:GetID())
 	end)
 
@@ -370,7 +431,6 @@ function private:ListButtonWidget(tabID, parentFrame)
 	listButtonWidget:SetScript("OnClick", function(self)
 		tabWidgets[self.tabID]:Click()
 		private:SetTabWidgetsContentAlpha(NysTDL.acedb.profile.frameContentAlpha/100, true) -- I hate this alpha problem, but whatever, this fixes it
-		private:IncludeTab(self.tabID) -- TDLATER redo for anim
 	end)
 
 	return listButtonWidget
@@ -395,14 +455,26 @@ function tabsFrame:SetAlpha(alpha)
 
 	-- tabWidgets
 	for _,tabWidget in pairs(tabWidgets) do
-		local name = tabWidget:GetName()
-		_G[name.."Left"]:SetAlpha(alpha)
-		_G[name.."LeftDisabled"]:SetAlpha(alpha)
-		_G[name.."Middle"]:SetAlpha(alpha)
-		_G[name.."MiddleDisabled"]:SetAlpha(alpha)
-		_G[name.."Right"]:SetAlpha(alpha)
-		_G[name.."RightDisabled"]:SetAlpha(alpha)
-		_G[name.."HighlightTexture"]:SetAlpha(alpha)
+		if tabWidget.Left and tabWidget.Middle and tabWidget.Right then
+			tabWidget.Left:SetAlpha(alpha)
+			tabWidget.LeftActive:SetAlpha(alpha)
+			tabWidget.LeftHighlight:SetAlpha(alpha)
+			tabWidget.Middle:SetAlpha(alpha)
+			tabWidget.MiddleActive:SetAlpha(alpha)
+			tabWidget.MiddleHighlight:SetAlpha(alpha)
+			tabWidget.Right:SetAlpha(alpha)
+			tabWidget.RightActive:SetAlpha(alpha)
+			tabWidget.RightHighlight:SetAlpha(alpha)
+		else
+			local name = tabWidget:GetName()
+			_G[name.."Left"]:SetAlpha(alpha)
+			_G[name.."LeftDisabled"]:SetAlpha(alpha)
+			_G[name.."Middle"]:SetAlpha(alpha)
+			_G[name.."MiddleDisabled"]:SetAlpha(alpha)
+			_G[name.."Right"]:SetAlpha(alpha)
+			_G[name.."RightDisabled"]:SetAlpha(alpha)
+			_G[name.."HighlightTexture"]:SetAlpha(alpha)
+		end
 	end
 
 	-- overflowButtonFrame
@@ -421,19 +493,32 @@ end
 function private:SetTabWidgetsContentAlpha(alpha, forAll)
 	if forAll then
 		for _,tabWidget in pairs(tabWidgets) do
-			_G[tabWidget:GetName().."Text"]:SetAlpha(alpha)
+			if tabWidget.Text then
+				tabWidget.Text:SetAlpha(alpha)
+			else
+				_G[tabWidget:GetName().."Text"]:SetAlpha(alpha)
+			end
 		end
 	else -- doesn't go through ALL of the tab widgets, only through the shown ones
 		local ctab = database.ctab()
 		for _,tabID in pairs(_shownWholeTabs) do -- for each tab widget that is currently shown under the tdlFrame
 			if tabWidgets[tabID] then
 				if tabID ~= ctab then -- doing that one after
-					_G[tabWidgets[tabID]:GetName().."Text"]:SetAlpha(alpha)
+					if tabWidgets[tabID].Text then
+						tabWidgets[tabID].Text:SetAlpha(alpha)
+					else
+						_G[tabWidgets[tabID]:GetName().."Text"]:SetAlpha(alpha)
+					end
 				end
 			end
 		end
 		if tabWidgets[ctab] then
-			_G[tabWidgets[ctab]:GetName().."Text"]:SetAlpha(alpha) -- the ctab is ALWAYS shown, even when not whole
+			-- the ctab is ALWAYS shown, even when not whole
+			if tabWidgets[ctab].Text then
+				tabWidgets[ctab].Text:SetAlpha(alpha)
+			else
+				_G[tabWidgets[ctab]:GetName().."Text"]:SetAlpha(alpha)
+			end
 		end
 	end
 end
@@ -497,16 +582,13 @@ function tabsFrame:Refresh()
 	-- // we update the visuals of the buttons
 	if not tabsFrame.authorized then return end
 
-	-- we update the nb of tabs so that wow's API works
-	PanelTemplates_SetNumTabs(content, _currentID) -- (yea we're lying a bit, but it doesn't matter :D)
+	-- we update the nb of tabs so that wow's API works (PanelTemplates_SetTab)
+	content.numTabs = _currentID
 
 	-- we select the currently selected tab's button
 	local currentTabID = database.ctab()
-	for tabID,tabWidget in pairs(tabWidgets) do
-		if currentTabID == tabID then
-			PanelTemplates_SetTab(tabWidget:GetParent(), tabWidget:GetID())
-			break
-		end
+	if tabWidgets[currentTabID] then
+		PanelTemplates_SetTab(tabWidgets[currentTabID]:GetParent(), tabWidgets[currentTabID]:GetID())
 	end
 
 	-- refresh the pos
@@ -516,7 +598,7 @@ function tabsFrame:Refresh()
 	private:RefreshSize()
 
 	-- and we always focus ourserves on the currently selected tab
-	private:IncludeTab(database.ctab())
+	private:IncludeTab(currentTabID)
 
 	-- there we update the alpha of everyone (bc maybe we're not hovering the scrollFrame, so any refresh does it as well, thanks WoW API ;)
 	private:SetTabWidgetsContentAlpha(NysTDL.acedb.profile.frameContentAlpha/100, true)
@@ -527,8 +609,7 @@ end
 function tabsFrame:CreateTabsFrame()
 	-- // scrollFrame
 	scrollFrame = CreateFrame("ScrollFrame", nil, mainFrame.tdlFrame, "UIPanelScrollFrameTemplate")
-	scrollFrame:SetPoint("TOPLEFT", mainFrame.tdlFrame, "BOTTOMLEFT", leftScrollFrameOffset, 2)
-	scrollFrame:SetPoint("BOTTOMRIGHT", mainFrame.tdlFrame, "BOTTOMRIGHT", 0, -40)
+	-- for scrollFrame:SetPoints(), see private:RefreshSize()
 	scrollFrame:SetClipsChildren(true)
 	scrollFrame.ScrollBar:Hide()
 	scrollFrame.ScrollBar:ClearAllPoints()
@@ -554,6 +635,9 @@ function tabsFrame:CreateTabsFrame()
 		end
 	end)
 
+	-- // animFrame
+	animFrame:SetParent(mainFrame:GetFrame())
+
 	-- // content
 	content = CreateFrame("Frame", "NysTDL_tabsFrame_content", scrollFrame) -- NAME IS MANDATORY HERE (bc there are tabs)
 	content:SetSize(1, 1) -- just to show everything inside of it
@@ -563,7 +647,7 @@ function tabsFrame:CreateTabsFrame()
 	-- !! both overflowButtonFrame and overflowButtonFrame.backdrop are there only to beautify the button,
 	-- by creating a better backdrop and masking of the border
 	overflowButtonFrame = CreateFrame("Frame", nil, mainFrame.tdlFrame, nil)
-	overflowButtonFrame:SetPoint("TOPRIGHT", mainFrame.tdlFrame, "BOTTOMRIGHT", overflowButtonRightOffsetX, 2)
+	overflowButtonFrame:SetPoint("TOPRIGHT", mainFrame.tdlFrame, "BOTTOMRIGHT", -overflowButtonRightOffsetX, 2)
 	overflowButtonFrame:SetSize(overflowButtonSize, overflowButtonSize)
 	overflowButtonFrame:SetFrameStrata("LOW")
 	overflowButtonFrame:SetClipsChildren(true)

@@ -158,6 +158,12 @@ function utils:DimTheme(theme, dim)
 	return T_DimTheme
 end
 
+---Quick and easy check to know if we are currently running Dragonflight or not
+---@return boolean
+function utils:IsDF()
+	return enums.interfaceNumber >= 100000
+end
+
 ---To copy any table.
 ---@param orig table
 ---@param copies any Do not use

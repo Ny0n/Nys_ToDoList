@@ -210,6 +210,20 @@ function dataManager:Find(ID)
 	error("ID not found") -- KEEP
 end
 
+---Tries to find the first object that has the given name, in the given enum.
+---Returns nil if no object has that name.
+---@param name string
+---@param ... any The arguments to pass to datamanager:ForEach()
+---@return string|nil ID
+function dataManager:FindFirstIDByName(name, ...)
+	for ID in dataManager:ForEach(...) do
+		if dataManager:GetName(ID) == name then
+			return ID
+		end
+	end
+	return nil
+end
+
 ---Returns true if the ID is a global object, false if it's a profile one.
 ---@param ID string
 ---@return boolean isGlobal
@@ -323,7 +337,7 @@ end
 ---@param enum enumObject
 ---@param location nil|false|true|string
 ---@return function
-function dataManager:ForEach(enum, location)
+function dataManager:ForEach(enum, location, original)
 	--[[
 		* this func is used everywhere to loop through items, categories and tabs.
 		this is used in a for loop like pairs():
@@ -359,7 +373,11 @@ function dataManager:ForEach(enum, location)
 				end
 			elseif enum == enums.tab then
 				checkFunc = function(ID, data)
-					if not data.tabIDs[location] then return false end
+					if original then
+						if data.originalTabID ~= location then return false end
+					else
+						if not data.tabIDs[location] then return false end
+					end
 					return true
 				end
 			else
@@ -372,7 +390,11 @@ function dataManager:ForEach(enum, location)
 			enum, isGlobal = dataManager:Find(location)
 			if enum == enums.tab then
 				checkFunc = function(ID, data)
-					if not data.tabIDs[location] then return false end
+					if original then
+						if data.originalTabID ~= location then return false end
+					else
+						if not data.tabIDs[location] then return false end
+					end
 					return true
 				end
 			else
@@ -874,10 +896,6 @@ function dataManager:MoveTab(tabID, newPos)
 		newPos = utils:Clamp(newPos, 1, #loc + 1)
 	end
 
-	if newPos > oldPos then
-		newPos = newPos - 1
-	end
-
 	tremove(loc, oldPos)
 	tinsert(loc, newPos, tabID)
 
@@ -1056,7 +1074,7 @@ function dataManager:DeleteTab(tabID)
 		enums.quantities[enums.tab] = enums.quantities[enums.tab] - 1
 
 		if database.ctab() == tabID then
-			database.ctab(loc[pos-1]) -- when deleting the tab we were on, we refocus a new one
+			database.ctab(loc[pos-1] or loc[1]) -- when deleting the tab we were on, we refocus a new one
 		end
 
 		-- AND refresh the tabsFrame
