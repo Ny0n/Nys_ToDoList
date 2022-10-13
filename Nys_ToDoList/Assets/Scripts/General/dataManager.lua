@@ -20,6 +20,7 @@ local resetManager = NysTDL.resetManager
 
 local L = libs.L
 local AceConfigRegistry = libs.AceConfigRegistry
+local AceTimer = libs.AceTimer
 local addonName = core.addonName
 
 --/*******************************************************/--
@@ -688,6 +689,70 @@ function dataManager:CreateTab(tabName, isGlobal)
 	return private:AddTab(dataManager:NewID(), tabData, isGlobal)
 end
 
+-- misc
+
+---Creates a new tab and/or category and/or item using a command (string).
+---The string can either be in one part, or in multiple parts.
+---Format: "tab name+category name+new item name"
+---@param ... string All parameters will be converted to strings
+function dataManager:CreateByCommand(...)
+	local args = {...}
+	for i,v in ipairs(args) do
+		args[i] = tostring(v)
+	end
+
+	-- // input format
+	local input = string.join(" ", unpack(args))
+
+	local splitChar = '+' -- the delimitation character
+
+	local count = 0
+	for _ in string.gmatch(input, splitChar) do
+		count = count + 1
+	end
+
+	local tabName, catName, itemName = string.split(splitChar, input)
+	tabName = tabName or ""
+	catName = catName or ""
+	itemName = itemName or ""
+
+	-- // input check
+	if tabName == "" then
+	-- or count > 0 and catName == ""
+	-- or count > 1 and itemName == ""
+	-- then
+		local str = "- "..chat.slashCommand..' '..string.lower(L["Add"])..' '
+		chat:CustomPrintForced(L["Usage"]..":")
+		str = str..string.lower(L["Tab"])
+		chat:CustomPrintForced(str, true)
+		str = str..splitChar..string.lower(L["Category"])
+		chat:CustomPrintForced(str, true)
+		str = str..splitChar..string.lower(L["Item"])
+		chat:CustomPrintForced(str, true)
+		return
+	end
+
+	-- // we set refreshAuthorized = false here for optimisation, in case the player decided to add X things at once (with the Paste addon for example).
+	-- and then, we schedule a timer with 0 seconds, which means that it will execute the delegate on the very next available frame,
+	-- a.k.a precisely after everything has been added, so we can enable back refreshAuthorized and refresh once at this moment.
+	refreshAuthorized = false
+	AceTimer:CancelTimer(private.cmdRefreshTimerID)
+	private.cmdRefreshTimerID = AceTimer:ScheduleTimer(function() refreshAuthorized = true mainFrame:Refresh() end, 0.0)
+
+	-- // tab
+	local tabID = dataManager:FindFirstIDByName(tabName, enums.tab) or dataManager:CreateTab(tabName)
+	if not tabID then return end
+
+	-- // category
+	if catName == "" then return end
+	local catID = dataManager:FindFirstIDByName(catName, enums.category, tabID, true) or dataManager:CreateCategory(catName, tabID)
+	if not catID then return end
+
+	-- // new item
+	if itemName == "" then return end
+	dataManager:CreateItem(itemName, tabID, catID)
+end
+
 -- // moving functions
 
 -- item
@@ -1289,6 +1354,13 @@ function private:CheckName(name, enum)
 			chat:Print(L["Name is too large"]..string.format(" (%i/%i)", w, mw))
 			return false
 		end
+	end
+
+	-- TDLATER temp?
+	if (enum == enums.tab or enum == enums.category)
+	and utils:HasHyperlink(name) then
+		chat:Print(L["Invalid name"])
+		return false
 	end
 
 	return true

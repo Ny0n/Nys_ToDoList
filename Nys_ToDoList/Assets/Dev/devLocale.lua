@@ -19,6 +19,8 @@ addonTable.devLocale = L
 
 --/************************************************/--
 
+L["Usage"] = true
+L["Invalid name"] = true
 L["Content"] = true
 L["Move up"] = true
 L["Move down"] = true

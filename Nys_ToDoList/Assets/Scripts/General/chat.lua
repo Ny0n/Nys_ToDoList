@@ -157,6 +157,7 @@ chat.commands = {
 		str = str.." -- "..string.format("|cff%s%s|r", hex, slashCommand..L["favorites"])
 		str = str.." -- "..string.format("|cff%s%s|r", hex, slashCommand..L["descriptions"])
 		str = str.." -- "..string.format("|cff%s%s|r", hex, slashCommand..L["tutorial"])
+		str = str.." -- "..string.format("|cff%s%s|r", hex, slashCommand..string.lower(L["Add"]))
 		-- <!> When adding a new chat command, add its original (enUS) name in chat.commandLocales.list (in core.lua) <!>
 
 		str = str.." -- "
@@ -220,21 +221,8 @@ chat.commands = {
 		chat:CustomPrintForced(L["The tutorial has been reset"])
 	end,
 
-	-- feature not fully tested, waiting for the next release to announce it
-	["add"] = function(...)
-		local input = string.join(" ", ...)
-		local tabName, catName, itemName = string.split("+", input)
-		tabName = tabName or ""
-		catName = catName or ""
-		itemName = itemName or ""
-
-		local tabID = dataManager:FindFirstIDByName(tabName, enums.tab) or dataManager:CreateTab(tabName)
-		if not tabID then return end
-
-		local catID = dataManager:FindFirstIDByName(catName, enums.category, tabID, true) or dataManager:CreateCategory(catName, tabID)
-		if not catID then return end
-
-		dataManager:CreateItem(itemName, tabID, catID)
+	[string.lower(L["Add"])] = function(...)
+		dataManager:CreateByCommand(...)
 	end,
 }
 
