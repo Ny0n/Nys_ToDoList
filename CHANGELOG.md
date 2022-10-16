@@ -1,3 +1,7 @@
+#### **6.5.1**
+
+- Localization update
+
 #### **6.5**
 
 - Added the possibility to create tabs/categories/items using a slash command: "/tdl add"
