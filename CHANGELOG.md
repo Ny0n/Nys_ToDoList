@@ -1,7 +1,12 @@
+#### **6.5**
+
+- Added the possibility to create tabs/categories/items using a slash command: "/tdl add"
+- Localization update
+
 #### **6.4**
 
 - Added support for Dragonflight
-- Added the possibility to reorder tabs ("Move up" & "Move down" buttons in the tab settings)
+- You can now reorder tabs ("Move up" & "Move down" buttons in the tab settings)
 - Polished the tab switching by adding a scrolling animation
 
 #### **6.3**

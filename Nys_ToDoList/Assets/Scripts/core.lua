@@ -96,6 +96,7 @@ chat.commandLocales = {
 		["favorites"] = true,
 		["descriptions"] = true,
 		["tutorial"] = true,
+		["Add"] = true,
 	},
 	temp = {
 		-- checking if each chat command's locale is different, otherwise we won't be able to use them
@@ -214,9 +215,9 @@ end
 
 local changelog = {
 	-- index table (not key-value), only place here the important changes.
-	"- Added support for Dragonflight",
-	"- Added the possibility to reorder tabs (\"Move up\" & \"Move down\" buttons in the tab settings)",
-	"- Polished the tab switching by adding a scrolling animation",
+	"- Added the possibility to create tabs/categories/items using a slash command: \"/tdl add\"",
+	"- Localization update",
+	"- (6.4) You can now reorder tabs (\"Move up\" & \"Move down\" buttons in the tab settings)",
 }
 
 ---Called once, when the addon gets an update.
