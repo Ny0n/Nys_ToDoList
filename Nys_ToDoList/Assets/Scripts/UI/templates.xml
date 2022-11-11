@@ -692,7 +692,7 @@
 	<!-- Reused WoW template / $parentOverflowButton -->
 	<Button name="NysTDL_OverflowButton" virtual="true">
 		<!-- size and points and a lot of other things set in the code -->
-		<NormalTexture file="Interface\BUTTONS\Arrow-Down-Down">
+		<NormalTexture file="Interface\BUTTONS\Arrow-Down-Down" parentKey="Texture">
 			<TexCoords left="0" right="1" top="0" bottom="0.5"/>
 		</NormalTexture>
 		<HighlightTexture alpha="0.7" parentKey="Highlight" file="Interface\BUTTONS\UI-Common-MouseHilight" alphaMode="ADD" desaturated="true">

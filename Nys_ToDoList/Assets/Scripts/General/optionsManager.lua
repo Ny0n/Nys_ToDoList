@@ -896,7 +896,6 @@ function private:CreateAddonOptionsTable()
 								name = "Global tabs",
 								arg = true,
 								args = utils:Deepcopy(tabAddTable),
-								hidden = true, -- TDLATER remove to implement global tabs
 							}, -- groupGlobalTabManagement
 
 							-- / layout widgets / --

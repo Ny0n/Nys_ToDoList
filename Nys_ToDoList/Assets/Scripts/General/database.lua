@@ -95,6 +95,9 @@ database.defaults = {
 
 		-- // Misc
 		currentTab = "TOSET", -- currently selected tab ID, set when the default tabs are created
+		currentGlobalTab = "", -- updated each time we change tabs
+		currentProfileTab = "", -- updated each time we change tabs
+
 		databrokerMode = enums.databrokerModes.simple,
 		lastListVisibility = false,
 		lockList = false,
@@ -243,6 +246,11 @@ end
 function database.ctab(newTabID)
 	-- sets or gets the currently selected tab ID
 	if dataManager:IsID(newTabID) then
+		if dataManager:IsGlobal(newTabID) then
+			NysTDL.acedb.profile.currentGlobalTab = newTabID
+		else
+			NysTDL.acedb.profile.currentProfileTab = newTabID
+		end
 		NysTDL.acedb.profile.currentTab = newTabID
 	end
 	return NysTDL.acedb.profile.currentTab

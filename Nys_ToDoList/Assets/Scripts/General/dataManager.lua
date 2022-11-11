@@ -1425,6 +1425,12 @@ function dataManager:IsHidden(ID, tabID)
 	return false
 end
 
+---Finds out if there are any global list data (not profile).
+---@return boolean
+function dataManager:HasGlobalData()
+	return #select(3, dataManager:GetData(true)).orderedTabIDs > 0
+end
+
 -- items
 
 ---Changes the checked state of the given item.
