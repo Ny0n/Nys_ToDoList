@@ -1,3 +1,4 @@
+---@diagnostic disable: unused-function
 --/*******************/ IMPORTS /*************************/--
 
 -- File init
@@ -19,100 +20,278 @@ local L = libs.L
 
 --/*******************************************************/--
 
--- tutorial
+local private = {}
+
+-- tutorials
+tutorialsManager.tutorials = {}
+local tutorials = tutorialsManager.tutorials
+
 local tutorialFrames = {}
 local tutorialFramesTarget = {}
 
--- default ordered tutorial
-local tutorialOrder = {
-	"TM_introduction_addNewCat",
-	"TM_introduction_addCat",
-	"TM_introduction_addItem",
-	"TM_introduction_accessOptions",
-	"TM_introduction_getMoreInfo",
-	"TM_introduction_editmode",
-	"TM_introduction_editmodeChat",
-}
+--[[
 
---[[ -- TDLATER new tuto system
-
--- tutorials_progression how it works:
--- tutorials_progression = {
--- 	-- "tutoName" = true/nil,
--- 	-- "tutoName" = true/nil,
--- 	-- ...
--- },
-
--- tutorials (names are unique)
-local tutorials = {
-	["introduction"] = {
-		IsEnabled = function()
-			return not NysTDL.acedb.global.tutorials_progression["introduction"]
-		end,
-		tutosOrdered = {
-			"TM_introduction_addNewCat",
-			"TM_introduction_addCat",
-			"TM_introduction_addItem",
-			"TM_introduction_accessOptions",
-			"TM_introduction_getMoreInfo",
-		},
-		progress = 0,
-		OnFinish = function()
-			NysTDL.acedb.global.tutorials_progression["introduction"] = true
-		end
-	},
-	["editmode"] = {
-		IsEnabled = function()
-			return NysTDL.acedb.global.tutorials_progression["introduction"]
-			and not NysTDL.acedb.global.tutorials_progression["editmode"]
-		end,
-		tutosOrdered = {
-			"TM_editmode_editmodeBtn",
-			"TM_editmode_delete",
-			"TM_editmode_favdesc",
-			"TM_editmode_rename",
-			"TM_editmode_sort",
-			"TM_editmode_resize",
-			"TM_editmode_buttons",
-			"TM_editmode_undo",
-		},
-		progress = 0,
-		OnFinish = function()
-			NysTDL.acedb.global.tutorials_progression["editmode"] = true
-		end
-	},
+-- tutorials_progression how it works: (saved variable)
+tutorials_progression = {
+	"tutoCategory" = nil by default (non-existant), a number when in-progress (progress), true when finished
+	...
 }
 
 ]]
 
---/*******************/ FRAMES /*************************/--
+--/*******************************************************/--
 
-function tutorialsManager:CreateTutoFrames()
-	-- POLISH if text is bigger than width, ... by default but not right AND frame strata too high
-	tutorialFrames.TM_introduction_addNewCat = widgets:TutorialFrame("TM_introduction_addNewCat", false, "UP", L["Start by adding a new category!"], 190, 50)
-	tutorialFrames.TM_introduction_addCat = widgets:TutorialFrame("TM_introduction_addCat", true, "UP", L["This will add your category to the current tab"], 240, 50)
-	tutorialFrames.TM_introduction_addItem = widgets:TutorialFrame("TM_introduction_addItem", false, "RIGHT", L["To add new items to existing categories, just right-click the category names"], 220, 50)
-	tutorialFrames.TM_introduction_accessOptions = widgets:TutorialFrame("TM_introduction_accessOptions", false, "DOWN", L["You can access the options from here"], 220, 50)
-	tutorialFrames.TM_introduction_getMoreInfo = widgets:TutorialFrame("TM_introduction_getMoreInfo", false, "LEFT", L["If you're having any problems or you just want more information, you can always click here to print help in the chat!"], 275, 50)
-	tutorialFrames.TM_introduction_editmode = widgets:TutorialFrame("TM_introduction_editmode", false, "DOWN", L["To delete items and do a lot more, you can right-click anywhere on the list or click on this button to toggle the edit mode"], 275, 50)
-	tutorialFrames.TM_introduction_editmodeChat = widgets:TutorialFrame("TM_introduction_editmodeChat", true, "RIGHT", utils:SafeStringFormat(L["Please type %s and read the chat message for more information about this mode"], "\""..chat.slashCommand..' '..L["editmode"].."\""), 275, 50)
-
-	-- tutorialFrames.TM_editmode_editmodeBtn = widgets:TutorialFrame("TM_editmode_editmodeBtn", false, "DOWN", L["To delete items and do a lot more, you can right-click anywhere on the list or click on this button to toggle the edit mode"], 275, 50)
-	-- tutorialFrames.TM_editmode_delete = widgets:TutorialFrame("TM_editmode_delete", true, "RIGHT", L["Delete items and categories"], 275, 50)
-	-- tutorialFrames.TM_editmode_favdesc = widgets:TutorialFrame("TM_editmode_favdesc", true, "RIGHT", L["Favorite and add descriptions on items"], 275, 50)
-	-- tutorialFrames.TM_editmode_rename = widgets:TutorialFrame("TM_editmode_rename", false, "UP", L["Rename items and categories"].." ("..L["Double-Click"]..")", 275, 50)
-	-- tutorialFrames.TM_editmode_sort = widgets:TutorialFrame("TM_editmode_sort", false, "DOWN", L["Reorder/Sort the list"].." ("..L["Drag and Drop"]..")", 275, 50)
-	-- tutorialFrames.TM_editmode_resize = widgets:TutorialFrame("TM_editmode_resize", true, "LEFT", L["Resize the list"], 275, 50)
-	-- tutorialFrames.TM_editmode_buttons = widgets:TutorialFrame("TM_editmode_buttons", true, "DOWN", L["Undo what you deleted and access special actions for the tab"], 275, 50)
-	-- tutorialFrames.TM_editmode_undo = widgets:TutorialFrame("TM_editmode_undo", true, "DOWN", L["More specifically you can undo items, categories, and even tab deletions"], 275, 50)
+---Generate Name (gn), helper function.
+local function gn(tutoCategory, tutoName)
+	return "TM_"..tutoCategory.."_"..tutoName
 end
 
-function tutorialsManager:SetPoint(tutoName, point, relativeTo, relativePoint, ofsx, ofsy)
+local tp = {} -- a.k.a tutorials_progression, useful functions
+
+---Raw value.
+function tp:Value(tutoCategory)
+	if type(tutoCategory) ~= "string" then
+		error("tutoCategory must be a string") -- dev error
+		return
+	end
+
+	return NysTDL.acedb.global.tutorials_progression[tutoCategory]
+end
+
+---Raw value ~= nil ?
+function tp:Exists(tutoCategory)
+	return tp:Value(tutoCategory) ~= nil
+end
+
+---IsFinished?
+function tp:ValueBool(tutoCategory)
+	local value = tp:Value(tutoCategory)
+
+	if type(value) == "boolean" or type(value) == "nil" then
+		return not not value
+	end
+
+	return false
+end
+
+---Progression.
+function tp:ValueNumber(tutoCategory)
+	-- the number of tutos DONE in this category
+
+	local value = tp:Value(tutoCategory)
+
+	if type(value) == "number" then
+		return value
+	end
+
+	if type(value) == "nil" then
+		return 0
+	end
+
+	return tp:GetMaxProgress(tutoCategory)
+end
+
+---Helper function.
+function tp:GetMaxProgress(tutoCategory)
+	if type(tutoCategory) ~= "string" then
+		error("tutoCategory must be a string") -- dev error
+		return
+	end
+
+	return tutorials[tutoCategory]:GetMaxProgress()
+end
+
+---Helper function.
+function tp:IsProgressAtLeast(tutoCategory, minProgress)
+	if type(tutoCategory) ~= "string" then
+		error("tutoCategory must be a string") -- dev error
+		return
+	end
+
+	if type(minProgress) == "boolean" then
+		if minProgress then
+			return tp:Exists(tutoCategory) and (tp:ValueBool(tutoCategory) or tp:ValueNumber(tutoCategory) >= tp:GetMaxProgress(tutoCategory))
+		else
+			return true
+		end
+	end
+
+	if type(minProgress) == "number" then
+		return tp:Exists(tutoCategory) and (tp:ValueBool(tutoCategory) or tp:ValueNumber(tutoCategory) >= minProgress)
+	end
+
+	return false
+end
+
+---The tutorial tables generation.
+function tp:GenerateTutoTable(tutoCategory, defaultTable)
+	defaultTable = defaultTable or {}
+
+	if not defaultTable.tutoCategory then
+		defaultTable.tutoCategory = tutoCategory
+	end
+
+	if not defaultTable.IsEnabled then
+		defaultTable.IsEnabled = function(self)
+			return not tp:ValueBool(self.tutoCategory)
+		end
+	end
+
+	if not defaultTable.OnFinish then
+		defaultTable.OnFinish = function(self)
+			NysTDL.acedb.global.tutorials_progression[self.tutoCategory] = true
+			tutorialsManager:Refresh()
+		end
+	end
+
+	if not defaultTable.tutosOrdered then
+		defaultTable.tutosOrdered = {}
+	end
+
+	for i,name in pairs(defaultTable.tutosOrdered) do
+		defaultTable[i] = gn(tutoCategory, name)
+	end
+
+	if not defaultTable.GetCurrentTutoName then
+		defaultTable.GetCurrentTutoName = function(self) -- easy access
+			return defaultTable.tutosOrdered[defaultTable:GetProgress()+1]
+		end
+	end
+
+	if not defaultTable.GetMaxProgress then
+		defaultTable.GetMaxProgress = function(self) -- easy access
+			return #self.tutosOrdered
+		end
+	end
+
+	if not defaultTable.GetProgress then
+		defaultTable.GetProgress = function(self) -- easy access
+			return tp:ValueNumber(self.tutoCategory)
+		end
+	end
+
+	if not defaultTable.SetProgress then
+		defaultTable.SetProgress = function(self, newProgress)
+			newProgress = utils:Clamp(newProgress, 0, self:GetMaxProgress())
+			NysTDL.acedb.global.tutorials_progression[self.tutoCategory] = newProgress
+
+			if NysTDL.acedb.global.tutorials_progression[self.tutoCategory] <= 0 then
+				NysTDL.acedb.global.tutorials_progression[self.tutoCategory] = nil
+			end
+
+			if tp:IsProgressAtLeast(self.tutoCategory, true) then
+				self:OnFinish()
+			end
+
+			tutorialsManager:Refresh()
+		end
+	end
+
+	if not defaultTable.Progress then
+		defaultTable.Progress = function(self, count)
+			count = count or 1
+
+			local currentProgress = self:GetProgress()
+			self:SetProgress(currentProgress+count)
+		end
+	end
+
+	tutorials[tutoCategory] = defaultTable
+end
+
+--/*******************/ TUTORIALS /*************************/--
+
+-- // tutorials (names are unique) // --
+
+tp:GenerateTutoTable("introduction",
+	{
+		tutosOrdered = {
+			"addNewCat",
+			"addCat",
+			"addItem",
+			"accessOptions",
+			"getMoreInfo",
+			"editmode",
+			"editmodeChat",
+		},
+	}
+)
+
+tp:GenerateTutoTable("tabSwitchState",
+	{
+		tutosOrdered = {
+			"explainSwitchButton",
+		},
+	}
+)
+
+tp:GenerateTutoTable("migration",
+	{
+		tutosOrdered = {
+			"explainFrame",
+		},
+	}
+)
+
+-- tp:GenerateTutoTable("editmode",
+-- 	{
+-- 		IsEnabled = function(self)
+-- 			return tp:ValueBool("introduction")
+-- 			and not tp:ValueBool(self.tutoCategory)
+-- 		end,
+-- 		tutosOrdered = {
+-- 			"TM_editmode_editmodeBtn",
+-- 			"TM_editmode_delete",
+-- 			"TM_editmode_favdesc",
+-- 			"TM_editmode_rename",
+-- 			"TM_editmode_sort",
+-- 			"TM_editmode_resize",
+-- 			"TM_editmode_buttons",
+-- 			"TM_editmode_undo",
+-- 		},
+-- 	}
+-- )
+
+--/*******************/ FRAMES /*************************/--
+
+function private:CreateTutoFrame(tutoCategory, tutoName, showCloseButton, arrowSide, text, width, height)
+	tutorialFrames[gn(tutoCategory, tutoName)] = widgets:TutorialFrame(tutoCategory, tutoName, showCloseButton, arrowSide, text, width, height)
+end
+
+function tutorialsManager:CreateTutoFrames()
+	-- POLISH if text is bigger than width, ... by default but not right
+	local cat = ""
+
+	cat = "introduction"
+	private:CreateTutoFrame(cat, "addNewCat", false, "UP", L["Start by adding a new category!"], 190, 50)
+	private:CreateTutoFrame(cat, "addCat", true, "UP", L["This will add your category to the current tab"], 240, 50)
+	private:CreateTutoFrame(cat, "addItem", false, "RIGHT", L["To add new items to existing categories, just right-click the category names"], 220, 50)
+	private:CreateTutoFrame(cat, "accessOptions", false, "DOWN", L["You can access the options from here"], 220, 50)
+	private:CreateTutoFrame(cat, "getMoreInfo", false, "LEFT", L["If you're having any problems or you just want more information, you can always click here to print help in the chat!"], 275, 50)
+	private:CreateTutoFrame(cat, "editmode", false, "DOWN", L["To delete items and do a lot more, you can right-click anywhere on the list or click on this button to toggle the edit mode"], 275, 50)
+	private:CreateTutoFrame(cat, "editmodeChat", true, "RIGHT", utils:SafeStringFormat(L["Please type %s and read the chat message for more information about this mode"], "\""..chat.slashCommand..' '..L["editmode"].."\""), 275, 50)
+
+	cat = "tabSwitchState"
+	private:CreateTutoFrame(cat, "explainSwitchButton", true, "LEFT", "You can click on this button to switch between global and profile tabs", 275, 50)
+
+	-- cat = "editmode"
+	-- private:CreateTutoFrame(cat, "editmodeBtn", false, "DOWN", L["To delete items and do a lot more, you can right-click anywhere on the list or click on this button to toggle the edit mode"], 275, 50)
+	-- private:CreateTutoFrame(cat, "delete", true, "RIGHT", L["Delete items and categories"], 275, 50)
+	-- private:CreateTutoFrame(cat, "favdesc", true, "RIGHT", L["Favorite and add descriptions on items"], 275, 50)
+	-- private:CreateTutoFrame(cat, "rename", false, "UP", L["Rename items and categories"].." ("..L["Double-Click"]..")", 275, 50)
+	-- private:CreateTutoFrame(cat, "sort", false, "DOWN", L["Reorder/Sort the list"].." ("..L["Drag and Drop"]..")", 275, 50)
+	-- private:CreateTutoFrame(cat, "resize", true, "LEFT", L["Resize the list"], 275, 50)
+	-- private:CreateTutoFrame(cat, "buttons", true, "DOWN", L["Undo what you deleted and access special actions for the tab"], 275, 50)
+	-- private:CreateTutoFrame(cat, "undo", true, "DOWN", L["More specifically you can undo items, categories, and even tab deletions"], 275, 50)
+end
+
+function tutorialsManager:SetPoint(tutoCategory, tutoName, point, relativeTo, relativePoint, ofsx, ofsy)
 	-- sets the points and target frame of a given tutorial
-	if utils:HasValue(tutorialOrder, tutoName) then
-		tutorialFramesTarget[tutoName] = relativeTo
-		tutorialFrames[tutoName]:ClearAllPoints()
-		tutorialFrames[tutoName]:SetPoint(point, relativeTo, relativePoint, ofsx, ofsy)
+	local frameName = gn(tutoCategory, tutoName)
+	if tutorialFrames[frameName] then
+		tutorialFramesTarget[frameName] = relativeTo
+		tutorialFrames[frameName]:ClearAllPoints()
+		tutorialFrames[frameName]:SetPoint(point, relativeTo, relativePoint, ofsx, ofsy)
 	end
 end
 
@@ -123,64 +302,76 @@ function tutorialsManager:SetFramesScale(scale)
 end
 
 function tutorialsManager:UpdateFramesVisibility()
-	-- here we manage the visibility of the tutorial frames, showing them if their corresponding frames are shown,
-	-- their tuto has not been completed (false) and the previous one is true.
+	-- here we manage the visibility of the tutorial frames, showing them if their corresponding frames are shown
 	-- this is called by the OnUpdate event of the tdlFrame
 
-	-- for _,tuto in ipairs(tutorials) do
-	-- 	if tuto:IsEnabled() then
-	-- 		-- TDLATER
-	-- 	end
-	-- end
-
-	if NysTDL.acedb.global.tuto_progression < #tutorialOrder then
-		for i, v in pairs(tutorialOrder) do
-			local isShown = false
-			if NysTDL.acedb.global.tuto_progression < i then -- if the current loop tutorial has not already been done
-				if NysTDL.acedb.global.tuto_progression == i-1 then -- and the previous one has been done
-					if tutorialFramesTarget[v] ~= nil and tutorialFramesTarget[v]:IsVisible() then -- and his corresponding target frame is currently visible
-						isShown = true -- then we can show the tutorial frame
-					end
-				end
+	for frameName,frame in pairs(tutorialFrames) do
+		local newShownState = false
+		if frame.shouldBeShown then
+			if tutorialFramesTarget[frameName] ~= nil and tutorialFramesTarget[frameName]:IsVisible() then -- if the corresponding target frame is currently visible
+				newShownState = true -- then we can show the tutorial frame
 			end
-			tutorialFrames[v]:SetShown(isShown)
 		end
-	elseif NysTDL.acedb.global.tuto_progression == #tutorialOrder then -- we completed the last tutorial
-		tutorialFrames[tutorialOrder[#tutorialOrder]]:SetShown(false) -- we don't need to do the big loop above, we just need to hide the last tutorial frame (it's just optimization)
-		tutorialsManager:Next() -- and we also add a step of progression, just so that we never enter this 'if' again. (optimization too :D)
-		-- mainFrame:Event_TDLFrame_OnVisibilityUpdate() -- and finally, we reset the menu openings of the list at the end of the tutorial, for more visibility
+		if frame:IsShown() ~= newShownState then
+			frame:SetShown(newShownState)
+		end
 	end
 end
 
 --/*******************/ MANAGMENT /*************************/--
 
----Tries to validate the given tutorial if it hasn't already been validated.
----@param tuto_name string
-function tutorialsManager:Validate(tuto_name)
-	-- completes the "tuto_name" tutorial, only if it was active
-	local i = utils:GetKeyFromValue(tutorialOrder, tuto_name)
-	if NysTDL.acedb.global.tuto_progression < i then
-		if NysTDL.acedb.global.tuto_progression == i-1 then
-			tutorialsManager:Next() -- we validate the tutorial by going to the next one
-			return true
+function tutorialsManager:Refresh()
+	for frameName,frame in pairs(tutorialFrames) do
+		frame.shouldBeShown = false
+	end
+
+	for tutoCategory,tutoTable in pairs(tutorials) do
+		if tutoTable:IsEnabled() then
+			local currentName = tutoTable:GetCurrentTutoName()
+			local frameName = gn(tutoCategory, currentName)
+			if tutorialFrames[frameName] then
+				tutorialFrames[frameName].shouldBeShown = true
+			end
 		end
 	end
 end
 
-function tutorialsManager:Next()
-	NysTDL.acedb.global.tuto_progression = NysTDL.acedb.global.tuto_progression + 1
+---Tries to validate the given tutorial if it hasn't already been validated.
+---@param tutoCategory string
+---@param tutoName string
+function tutorialsManager:Validate(tutoCategory, tutoName)
+	-- completes the "tutoName" tutorial in the "tutoCategory" category, only if it was active
+	if tutorials[tutoCategory] then
+		if tutorials[tutoCategory]:GetCurrentTutoName() == tutoName then
+			tutorialsManager:Progress(tutoCategory)
+		end
+	end
 end
 
-function tutorialsManager:Previous()
-	NysTDL.acedb.global.tuto_progression = NysTDL.acedb.global.tuto_progression - 1
-	if NysTDL.acedb.global.tuto_progression < 0 then
-		NysTDL.acedb.global.tuto_progression = 0
+function tutorialsManager:Progress(tutoCategory, count)
+	if tutorials[tutoCategory] then
+		count = count or 1
+		tutorials[tutoCategory]:Progress(count)
+	end
+end
+
+function tutorialsManager:Previous(tutoCategory)
+	if tutorials[tutoCategory] then
+		tutorials[tutoCategory]:Progress(-1)
+	end
+end
+
+function tutorialsManager:SetProgress(tutoCategory, newProgress)
+	if tutorials[tutoCategory] then
+		newProgress = newProgress or tutorials[tutoCategory]:GetProgress()
+		tutorials[tutoCategory]:SetProgress(newProgress)
 	end
 end
 
 function tutorialsManager:Reset()
-	NysTDL.acedb.global.tuto_progression = 0
-	-- wipe(NysTDL.acedb.global.tutorials_progression) TDLATER
+	wipe(NysTDL.acedb.global.tutorials_progression)
+	tutorialsManager:Refresh()
+
 	mainFrame:Event_TDLFrame_OnVisibilityUpdate()
 	mainFrame:GetFrame().ScrollFrame:SetVerticalScroll(0)
 end

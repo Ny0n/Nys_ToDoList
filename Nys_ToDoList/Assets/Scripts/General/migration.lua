@@ -15,6 +15,7 @@ local widgets = NysTDL.widgets
 local database = NysTDL.database
 local mainFrame = NysTDL.mainFrame
 local dataManager = NysTDL.dataManager
+local tutorialsManager = NysTDL.tutorialsManager
 
 -- Secondary aliases
 
@@ -73,11 +74,20 @@ function private:GlobalNewVersion()
     -- // updates the global saved variables once after an update
 
     if utils:IsVersionOlderThan(NysTDL.acedb.global.latestVersion, "6.0") then -- if we come from before 6.0
-        if NysTDL.acedb.global.tuto_progression > 5 then -- if we already completed the tutorial
-            -- we go to the new part of the edit mode button
-            NysTDL.acedb.global.tuto_progression = 5
-        end
+        if NysTDL.acedb.global.tuto_progression then
+			if NysTDL.acedb.global.tuto_progression > 5 then -- if we already completed the tutorial
+				-- we go to the new part of the edit mode button
+				NysTDL.acedb.global.tuto_progression = 5
+			end
+		end
     end
+
+	-- new way to do it
+    -- if utils:IsVersionOlderThan(NysTDL.acedb.global.latestVersion, "6.4") then
+    --     if NysTDL.acedb.global.tutorials_progression["introduction"] == true then -- if we already completed the tutorial
+	-- 		NysTDL.acedb.global.tutorials_progression["introduction"] = 5
+	-- 	end
+    -- end
 end
 
 function private:ProfileNewVersion()
@@ -531,7 +541,7 @@ function private:CreateRecoveryList()
 
     -- properties
     frame:SetClampedToScreen(true)
-    frame:SetFrameStrata("HIGH")
+    frame:SetFrameStrata("MEDIUM")
 	frame:HookScript("OnUpdate", private.Event_recoveryFrame_OnUpdate)
 
     -- we resize the frame
@@ -714,7 +724,7 @@ function private:CreateWarning()
 
     -- properties
     frame:SetClampedToScreen(true)
-    frame:SetFrameStrata("HIGH")
+    frame:SetFrameStrata("MEDIUM")
     frame:EnableMouse(true)
 
     -- we resize the frame

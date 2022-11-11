@@ -62,8 +62,7 @@ database.defaults = {
 		nextID = "", -- forever increasing, defaults to the current time (time()) in hexadecimal
 
 		-- // Misc
-		tuto_progression = 0,
-		-- tutorials_progression = {}, TDLATER
+		tutorials_progression = {},
 		UI_reloading = false,
 		warnTimerRemaining = 0,
 	},

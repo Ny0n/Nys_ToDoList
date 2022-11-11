@@ -560,7 +560,7 @@
 	</Button>
 
 	<!-- Reused WoW template / HelpPlateTooltip -->
-	<Frame name="NysTDL_HelpPlateTooltip" inherits="GlowBoxTemplate" frameStrata="FULLSCREEN_DIALOG" frameLevel="2" virtual="true">
+	<Frame name="NysTDL_HelpPlateTooltip" inherits="GlowBoxTemplate" frameStrata="MEDIUM" frameLevel="200" virtual="true">
 		<Layers>
 			<Layer level="OVERLAY">
 				<FontString parentKey="Text" inherits="GameFontHighlightLeft">

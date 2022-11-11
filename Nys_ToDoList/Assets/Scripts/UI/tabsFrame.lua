@@ -15,6 +15,7 @@ local widgets = NysTDL.widgets
 local database = NysTDL.database
 local mainFrame = NysTDL.mainFrame
 local dataManager = NysTDL.dataManager
+local tutorialsManager = NysTDL.tutorialsManager
 
 -- Secondary aliases
 
@@ -726,7 +727,7 @@ function tabsFrame:CreateTabsFrame()
 	overflowButtonFrame = CreateFrame("Frame", nil, mainFrame.tdlFrame, nil)
 	overflowButtonFrame:SetPoint("TOPRIGHT", mainFrame.tdlFrame, "BOTTOMRIGHT", -overflowButtonRightOffsetX, 2)
 	overflowButtonFrame:SetSize(overflowButtonSize, overflowButtonSize)
-	overflowButtonFrame:SetFrameStrata("LOW")
+	overflowButtonFrame:SetFrameStrata("BACKGROUND")
 	overflowButtonFrame:SetClipsChildren(true)
 
 	overflowButtonFrame.backdrop = CreateFrame("Frame", nil, overflowButtonFrame, BackdropTemplateMixin and "BackdropTemplate" or nil)
@@ -757,7 +758,7 @@ function tabsFrame:CreateTabsFrame()
 		self:SetPoint("CENTER", self:GetParent(), "CENTER", 0, 0)
 	end)
 
-	overflowList = CreateFrame("Frame", nil, mainFrame.tdlFrame, BackdropTemplateMixin and "BackdropTemplate" or nil)
+	overflowList = CreateFrame("Frame", nil, UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil)
 	overflowList:SetBackdrop({
 		bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
 		edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
@@ -768,6 +769,7 @@ function tabsFrame:CreateTabsFrame()
 	overflowList:SetSize(150, 1) -- the height is updated dynamically
 	overflowList:EnableMouse(true)
 	overflowList:SetClampedToScreen(true)
+	overflowList:SetFrameStrata("TOOLTIP")
 	overflowList:SetToplevel(true)
 	overflowList:Hide()
 
@@ -792,7 +794,7 @@ function tabsFrame:CreateTabsFrame()
 	switchStateButtonFrame = CreateFrame("Frame", nil, mainFrame.tdlFrame, nil)
 	switchStateButtonFrame:SetPoint("TOPRIGHT", mainFrame.tdlFrame, "BOTTOMRIGHT", -overflowButtonRightOffsetX, 2)
 	switchStateButtonFrame:SetSize(overflowButtonSize, overflowButtonSize)
-	switchStateButtonFrame:SetFrameStrata("LOW")
+	switchStateButtonFrame:SetFrameStrata("BACKGROUND")
 	switchStateButtonFrame:SetClipsChildren(true)
 
 	switchStateButtonFrame.backdrop = CreateFrame("Frame", nil, switchStateButtonFrame, BackdropTemplateMixin and "BackdropTemplate" or nil)
@@ -837,6 +839,9 @@ function tabsFrame:CreateTabsFrame()
 		mainFrame:ChangeTab(tabToFocus)
 		tabsFrame:Refresh()
 	end)
+
+	-- tuto
+	tutorialsManager:SetPoint("tabSwitchState", "explainSwitchButton", "LEFT", switchStateButtonFrame, "RIGHT", 22, 0)
 end
 
 function tabsFrame:Init()

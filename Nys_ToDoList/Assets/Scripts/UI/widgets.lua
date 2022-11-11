@@ -395,8 +395,8 @@ end
 
 --/*******************/ FRAMES /*************************/--
 
-function widgets:TutorialFrame(tutoName, showCloseButton, arrowSide, text, width, height)
-	local tutoFrame = CreateFrame("Frame", "NysTDL_TutorialFrame_"..tutoName, UIParent, "NysTDL_HelpPlateTooltip") -- TDLATER POLISH check if name is mandatory, also checl ALL addon names for the same thing
+function widgets:TutorialFrame(tutoCategory, tutoName, showCloseButton, arrowSide, text, width, height)
+	local tutoFrame = CreateFrame("Frame", "NysTDL_TutorialFrame_"..tutoCategory.."_"..tutoName, UIParent, "NysTDL_HelpPlateTooltip") -- TDLATER POLISH check if name is mandatory, also checl ALL addon names for the same thing
 	tutoFrame:SetSize(width, height)
 
 	if arrowSide == "UP" then tutoFrame.ArrowDOWN:Show()
@@ -408,8 +408,9 @@ function widgets:TutorialFrame(tutoName, showCloseButton, arrowSide, text, width
 
 	if showCloseButton then
 		tutoFrame.closeButton = CreateFrame("Button", nil, tutoFrame, "UIPanelCloseButton")
+		tutoFrame.closeButton:SetFrameLevel(tutoFrame:GetFrameLevel()+1)
 		tutoFrame.closeButton:SetPoint("TOPRIGHT", tutoFrame, "TOPRIGHT", 4, 4)
-		tutoFrame.closeButton:SetScript("OnClick", function() tutorialsManager:Next() end) -- overridable
+		tutoFrame.closeButton:SetScript("OnClick", function() tutorialsManager:Validate(tutoCategory, tutoName) end)
 		tutoFrameRightDist = tutoFrame.closeButton:GetWidth() + 10
 	end
 
@@ -522,6 +523,7 @@ function widgets:CreateTDLButton()
 	tdlButton = widgets:Button("NysTDL_tdlButton", UIParent, core.simpleAddonName)
 
 	-- properties
+	tdlButton:SetFrameStrata("LOW")
 	tdlButton:EnableMouse(true)
 	tdlButton:SetMovable(true)
 	tdlButton:SetClampedToScreen(true)
@@ -977,7 +979,7 @@ function widgets:CategoryWidget(catID, parentFrame)
 
 		-- // we give it the focus
 		widgets:SetFocusEditBox(categoryWidget.addEditBox)
-		tutorialsManager:Validate("TM_introduction_addItem") -- tutorial
+		tutorialsManager:Validate("introduction", "addItem") -- tutorial
 
 		-- we hide the originalTabLabel so it doesn't overlap (we show it back when the edit box dissapears)
 		categoryWidget.originalTabLabel:Hide()
@@ -1273,4 +1275,5 @@ function widgets:ProfileChanged()
 	widgets:WipeDescFrames()
 	mainFrame:Init()
 	tabsFrame:Init()
+	tutorialsManager:Refresh()
 end

@@ -19,6 +19,7 @@ addonTable.devLocale = L
 
 --/************************************************/--
 
+L["All tutorials have been reset"] = true
 L["Usage"] = true
 L["Invalid name"] = true
 L["Content"] = true
@@ -213,7 +214,6 @@ L["Start by adding a new category!"] = true
 L["Sunday"] = true
 L["Tab actions"] = true
 L["The %s command"] = true
-L["The tutorial has been reset"] = true
 L["They are automatically saved"] = true
 L["This action will overwrite your settings, including the list"] = true
 L["This will add your category to the current tab"] = true
