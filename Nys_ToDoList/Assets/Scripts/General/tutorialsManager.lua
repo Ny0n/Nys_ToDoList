@@ -274,6 +274,9 @@ function tutorialsManager:CreateTutoFrames()
 	cat = "tabSwitchState"
 	private:CreateTutoFrame(cat, "explainSwitchButton", true, "LEFT", "You can click on this button to switch between global and profile tabs", 275, 50)
 
+	cat = "migration"
+	private:CreateTutoFrame(cat, "explainFrame", true, "DOWN", "You can click on any name to put it in the input field below, you can then Ctrl+C/Ctrl+V", 200, 50)
+
 	-- cat = "editmode"
 	-- private:CreateTutoFrame(cat, "editmodeBtn", false, "DOWN", L["To delete items and do a lot more, you can right-click anywhere on the list or click on this button to toggle the edit mode"], 275, 50)
 	-- private:CreateTutoFrame(cat, "delete", true, "RIGHT", L["Delete items and categories"], 275, 50)
@@ -366,6 +369,11 @@ function tutorialsManager:SetProgress(tutoCategory, newProgress)
 		newProgress = newProgress or tutorials[tutoCategory]:GetProgress()
 		tutorials[tutoCategory]:SetProgress(newProgress)
 	end
+end
+
+function tutorialsManager:ResetTuto(tutoCategory)
+	NysTDL.acedb.global.tutorials_progression[tutoCategory] = nil
+	tutorialsManager:Refresh()
 end
 
 function tutorialsManager:Reset()

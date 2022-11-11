@@ -466,7 +466,6 @@ function private:Failed(errmsg, original)
         migrationDataSV.version = migrationData.failed.version
         migrationDataSV.errmsg = errmsg
         migrationDataSV.warning = true
-        migrationDataSV.tuto = true
 
         -- and then, we reset once the list, the catList, and the tabs content, just so that we start with a clean state,
         -- this is in case the error created corrupted data (unusable/wrong/incomplete)
@@ -512,21 +511,7 @@ function private:CreateRecoveryList()
     local frame = recoveryList.frame
 
     -- as well as the tuto frame
-    if NysTDL.acedb.profile.migrationData.tuto then
-        recoveryList.tutoFrame = widgets:TutorialFrame("NysTDL_recoveryList_tutoFrame", true, "DOWN", "You can click on any name to put it in the input field below, you can then Ctrl+C/Ctrl+V", 200, 50)
-        recoveryList.tutoFrame.closeButton:SetScript("OnClick", function()
-            recoveryList.tutoFrame:Hide()
-            recoveryList.tutoFrame:ClearAllPoints()
-            NysTDL.acedb.profile.migrationData.tuto = nil
-        end)
-
-        recoveryList.tutoFrame:SetParent(frame)
-
-        recoveryList.tutoFrame:ClearAllPoints()
-        recoveryList.tutoFrame:SetPoint("BOTTOM", frame, "TOP", 0, 20)
-
-        recoveryList.tutoFrame:Show()
-    end
+	tutorialsManager:SetPoint("migration", "explainFrame", "BOTTOM", frame, "TOP", 0, 20)
 
     -- background
     frame:SetBackdrop({
@@ -1257,7 +1242,10 @@ function migration:TestFunc()
     migrationDataSV.version = "6.0"
     migrationDataSV.errmsg = "Custom"
     migrationDataSV.warning = false
-    migrationDataSV.tuto = IsAltKeyDown()
+
+    if IsAltKeyDown() then
+		tutorialsManager:ResetTuto("migration")
+	end
 
     private:Failed(nil, false)
 end

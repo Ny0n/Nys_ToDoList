@@ -89,7 +89,6 @@ database.defaults = {
 			version = nil,
 			errmsg = nil,
 			warning = nil,
-			tuto = nil,
 		},
 
 		-- // Misc
