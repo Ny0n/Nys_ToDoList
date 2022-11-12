@@ -564,7 +564,6 @@
 		<Layers>
 			<Layer level="OVERLAY">
 				<FontString parentKey="Text" inherits="GameFontHighlightLeft">
-					<Size x="200" y="0"/>
 					<Anchors>
 						<Anchor point="TOPLEFT" x="15" y="-15"/>
 					</Anchors>
@@ -631,9 +630,6 @@
 				SetClampedTextureRotation(self.ArrowGlowLEFT, 270)
 				SetClampedTextureRotation(self.ArrowGlowRIGHT, 90)
 			</OnLoad>
-			<OnShow>
-				self:SetHeight(self.Text:GetHeight()+30)
-			</OnShow>
 		</Scripts>
 	</Frame>
 

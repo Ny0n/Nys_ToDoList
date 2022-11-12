@@ -395,28 +395,32 @@ end
 
 --/*******************/ FRAMES /*************************/--
 
-function widgets:TutorialFrame(tutoCategory, tutoName, showCloseButton, arrowSide, text, width, height)
+function widgets:TutorialFrame(tutoCategory, tutoName, showCloseButton, arrowSide, text, width)
 	local tutoFrame = CreateFrame("Frame", "NysTDL_TutorialFrame_"..tutoCategory.."_"..tutoName, UIParent, "NysTDL_HelpPlateTooltip") -- TDLATER POLISH check if name is mandatory, also checl ALL addon names for the same thing
-	tutoFrame:SetSize(width, height)
+	tutoFrame.Text:SetText(text)
+	tutoFrame.Text:SetWidth(width-15-15)
 
 	if arrowSide == "UP" then tutoFrame.ArrowDOWN:Show()
 	elseif arrowSide == "DOWN" then tutoFrame.ArrowUP:Show()
 	elseif arrowSide == "LEFT" then tutoFrame.ArrowRIGHT:Show()
 	elseif arrowSide == "RIGHT" then tutoFrame.ArrowLEFT:Show() end
 
-	local tutoFrameRightDist = enums.tutoFramesRightSpace
-
 	if showCloseButton then
 		tutoFrame.closeButton = CreateFrame("Button", nil, tutoFrame, "UIPanelCloseButton")
 		tutoFrame.closeButton:SetFrameLevel(tutoFrame:GetFrameLevel()+1)
 		tutoFrame.closeButton:SetPoint("TOPRIGHT", tutoFrame, "TOPRIGHT", 4, 4)
 		tutoFrame.closeButton:SetScript("OnClick", function() tutorialsManager:Validate(tutoCategory, tutoName) end)
-		tutoFrameRightDist = tutoFrame.closeButton:GetWidth() + 10
+		tutoFrame.Text:SetWidth(width-15-25) -- we add an offset because of the close button
 	end
 
-	tutoFrame.Text:SetWidth(tutoFrame:GetWidth() - tutoFrameRightDist)
-	tutoFrame.Text:SetText(text)
+	tutoFrame:SetWidth(width)
 	tutoFrame:Hide() -- we hide them by default, we show them only when we need to
+
+	tutoFrame:SetScript("OnUpdate", function(self)
+		if not utils:Approximately(self:GetHeight(), self.Text:GetHeight()+30) then
+			self:SetHeight(self.Text:GetHeight()+30)
+		end
+	end)
 
 	return tutoFrame
 end

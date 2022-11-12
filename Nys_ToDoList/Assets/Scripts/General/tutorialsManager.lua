@@ -254,38 +254,37 @@ tp:GenerateTutoTable("migration",
 
 --/*******************/ FRAMES /*************************/--
 
-function private:CreateTutoFrame(tutoCategory, tutoName, showCloseButton, arrowSide, text, width, height)
-	tutorialFrames[gn(tutoCategory, tutoName)] = widgets:TutorialFrame(tutoCategory, tutoName, showCloseButton, arrowSide, text, width, height)
+function private:CreateTutoFrame(tutoCategory, tutoName, showCloseButton, arrowSide, text, width)
+	tutorialFrames[gn(tutoCategory, tutoName)] = widgets:TutorialFrame(tutoCategory, tutoName, showCloseButton, arrowSide, text, width)
 end
 
 function tutorialsManager:CreateTutoFrames()
-	-- POLISH if text is bigger than width, ... by default but not right
 	local cat = ""
 
 	cat = "introduction"
-	private:CreateTutoFrame(cat, "addNewCat", false, "UP", L["Start by adding a new category!"], 190, 50)
-	private:CreateTutoFrame(cat, "addCat", true, "UP", L["This will add your category to the current tab"], 240, 50)
-	private:CreateTutoFrame(cat, "addItem", false, "RIGHT", L["To add new items to existing categories, just right-click the category names"], 220, 50)
-	private:CreateTutoFrame(cat, "accessOptions", false, "DOWN", L["You can access the options from here"], 220, 50)
-	private:CreateTutoFrame(cat, "getMoreInfo", false, "LEFT", L["If you're having any problems or you just want more information, you can always click here to print help in the chat!"], 275, 50)
-	private:CreateTutoFrame(cat, "editmode", false, "DOWN", L["To delete items and do a lot more, you can right-click anywhere on the list or click on this button to toggle the edit mode"], 275, 50)
-	private:CreateTutoFrame(cat, "editmodeChat", true, "RIGHT", utils:SafeStringFormat(L["Please type %s and read the chat message for more information about this mode"], "\""..chat.slashCommand..' '..L["editmode"].."\""), 275, 50)
+	private:CreateTutoFrame(cat, "addNewCat", false, "UP", L["Start by adding a new category!"], 190)
+	private:CreateTutoFrame(cat, "addCat", true, "UP", L["This will add your category to the current tab"], 240)
+	private:CreateTutoFrame(cat, "addItem", false, "RIGHT", L["To add new items to existing categories, just right-click the category names"], 220)
+	private:CreateTutoFrame(cat, "accessOptions", false, "DOWN", L["You can access the options from here"], 220)
+	private:CreateTutoFrame(cat, "getMoreInfo", false, "LEFT", L["If you're having any problems or you just want more information, you can always click here to print help in the chat!"], 275)
+	private:CreateTutoFrame(cat, "editmode", false, "DOWN", L["To delete items and do a lot more, you can right-click anywhere on the list or click on this button to toggle the edit mode"], 275)
+	private:CreateTutoFrame(cat, "editmodeChat", true, "RIGHT", utils:SafeStringFormat(L["Please type %s and read the chat message for more information about this mode"], "\""..chat.slashCommand..' '..L["editmode"].."\""), 275)
 
 	cat = "tabSwitchState"
-	private:CreateTutoFrame(cat, "explainSwitchButton", true, "LEFT", "You can click on this button to switch between global and profile tabs", 275, 50)
+	private:CreateTutoFrame(cat, "explainSwitchButton", true, "LEFT", "You can click on this button to switch between global and profile tabs", 275)
 
 	cat = "migration"
-	private:CreateTutoFrame(cat, "explainFrame", true, "DOWN", "You can click on any name to put it in the input field below, you can then Ctrl+C/Ctrl+V", 200, 50)
+	private:CreateTutoFrame(cat, "explainFrame", true, "DOWN", "You can click on any name to put it in the input field below, you can then Ctrl+C/Ctrl+V", 200)
 
 	-- cat = "editmode"
-	-- private:CreateTutoFrame(cat, "editmodeBtn", false, "DOWN", L["To delete items and do a lot more, you can right-click anywhere on the list or click on this button to toggle the edit mode"], 275, 50)
-	-- private:CreateTutoFrame(cat, "delete", true, "RIGHT", L["Delete items and categories"], 275, 50)
-	-- private:CreateTutoFrame(cat, "favdesc", true, "RIGHT", L["Favorite and add descriptions on items"], 275, 50)
-	-- private:CreateTutoFrame(cat, "rename", false, "UP", L["Rename items and categories"].." ("..L["Double-Click"]..")", 275, 50)
-	-- private:CreateTutoFrame(cat, "sort", false, "DOWN", L["Reorder/Sort the list"].." ("..L["Drag and Drop"]..")", 275, 50)
-	-- private:CreateTutoFrame(cat, "resize", true, "LEFT", L["Resize the list"], 275, 50)
-	-- private:CreateTutoFrame(cat, "buttons", true, "DOWN", L["Undo what you deleted and access special actions for the tab"], 275, 50)
-	-- private:CreateTutoFrame(cat, "undo", true, "DOWN", L["More specifically you can undo items, categories, and even tab deletions"], 275, 50)
+	-- private:CreateTutoFrame(cat, "editmodeBtn", false, "DOWN", L["To delete items and do a lot more, you can right-click anywhere on the list or click on this button to toggle the edit mode"], 275)
+	-- private:CreateTutoFrame(cat, "delete", true, "RIGHT", L["Delete items and categories"], 275)
+	-- private:CreateTutoFrame(cat, "favdesc", true, "RIGHT", L["Favorite and add descriptions on items"], 275)
+	-- private:CreateTutoFrame(cat, "rename", false, "UP", L["Rename items and categories"].." ("..L["Double-Click"]..")", 275)
+	-- private:CreateTutoFrame(cat, "sort", false, "DOWN", L["Reorder/Sort the list"].." ("..L["Drag and Drop"]..")", 275)
+	-- private:CreateTutoFrame(cat, "resize", true, "LEFT", L["Resize the list"], 275)
+	-- private:CreateTutoFrame(cat, "buttons", true, "DOWN", L["Undo what you deleted and access special actions for the tab"], 275)
+	-- private:CreateTutoFrame(cat, "undo", true, "DOWN", L["More specifically you can undo items, categories, and even tab deletions"], 275)
 end
 
 function tutorialsManager:SetPoint(tutoCategory, tutoName, point, relativeTo, relativePoint, ofsx, ofsy)
@@ -306,7 +305,7 @@ end
 
 function tutorialsManager:UpdateFramesVisibility()
 	-- here we manage the visibility of the tutorial frames, showing them if their corresponding frames are shown
-	-- this is called by the OnUpdate event of the tdlFrame
+	-- this is called by the OnUpdate event of the widgetsFrame (private:Event_widgetsFrame_OnUpdate(elapsed) in widgets.lua)
 
 	for frameName,frame in pairs(tutorialFrames) do
 		local newShownState = false

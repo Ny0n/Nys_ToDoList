@@ -98,6 +98,16 @@ function utils:Clamp(number, min, max)
 	return math.min(math.max(number, min), max)
 end
 
+---Floating point almost equal test.
+---@param number1 number
+---@param number2 number
+---@param delta number default 0.01
+---@return boolean AlmostEqual
+function utils:Approximately(number1, number2, delta)
+	delta = delta or 0.01
+	return math.abs(number1-number2) <= delta
+end
+
 ---Takes in a rgb index table ({r, g, b}), and returns the hexadecimal value ("ff00ff").
 ---@param rgb table
 ---@return string hex

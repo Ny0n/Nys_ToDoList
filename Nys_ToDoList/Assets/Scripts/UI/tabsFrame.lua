@@ -327,7 +327,7 @@ function private:RefreshSize()
 		if _currentState then
 			-- global
 			switchStateButtonFrame.btn.Texture:SetTexCoord(0.33, 0.436, 0.0176, 0.072)
-			switchStateButtonFrame.btn:SetSize(15, 15)
+			switchStateButtonFrame.btn:SetSize(14.5, 14.5)
 		else
 			-- profile
 			switchStateButtonFrame.btn.Texture:SetTexCoord(0.33, 0.44, 0.43, 0.5)

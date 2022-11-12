@@ -55,7 +55,6 @@ enums.idtype = "string"
 enums.tdlFrameDefaultWidth = 340
 enums.tdlFrameDefaultHeight = 400
 enums.rightPointDistance = 297
-enums.tutoFramesRightSpace = 28
 
 enums.loadOriginOffset = { -34, -28 }
 enums.ofsxContent = 30
