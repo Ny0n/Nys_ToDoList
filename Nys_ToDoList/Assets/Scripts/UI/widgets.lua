@@ -1219,15 +1219,14 @@ function private:Event_widgetsFrame_OnUpdate(elapsed)
 
 	-- // every frame // --
 
-	-- tuto frames visibility
-	tutorialsManager:UpdateFramesVisibility()
+	-- ...
 
 	-- // ----------- // --
 
 	while widgetsFrame.timeSinceLastUpdate > updateRate do
 		widgetsFrame.timeSinceLastUpdate = widgetsFrame.timeSinceLastUpdate - updateRate
 
-		-- // every 0.05 sec // -- (instead of every frame which is every 1/144 (0.007) sec for a 144hz display... optimization :D)
+		-- // every 0.05 sec // -- (20 times per second, instead of every frame which is every 1/144 (0.007) sec for a 144hz display... optimization :D)
 
 		-- rainbow update
 		if NysTDL.acedb.profile.rainbow then
@@ -1235,6 +1234,9 @@ function private:Event_widgetsFrame_OnUpdate(elapsed)
 				mainFrame:ApplyNewRainbowColor()
 			end
 		end
+
+		-- tuto frames visibility
+		tutorialsManager:UpdateFramesVisibility()
 
 		-- // -------------- // --
 

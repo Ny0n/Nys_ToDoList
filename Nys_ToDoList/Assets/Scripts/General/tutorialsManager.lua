@@ -200,104 +200,6 @@ function tp:GenerateTutoTable(tutoCategory, defaultTable)
 	tutorials[tutoCategory] = defaultTable
 end
 
---/*******************/ TUTORIALS /*************************/--
-
-function tutorialsManager:CreateTutorials()
-	local cat = ""
-
-	-- // ******************** // --
-
-	cat = "introduction"
-
-	tp:GenerateTutoTable("introduction",
-		{
-			tutosOrdered = {
-				"addNewCat",
-				"addCat",
-				"addItem",
-				"accessOptions",
-				"getMoreInfo",
-				"editmode",
-				"editmodeChat",
-			},
-		}
-	)
-
-	private:CreateTutoFrame(cat, "addNewCat", false, "UP", L["Start by adding a new category!"], 190)
-	private:CreateTutoFrame(cat, "addCat", true, "UP", L["This will add your category to the current tab"], 240)
-	private:CreateTutoFrame(cat, "addItem", false, "RIGHT", L["To add new items to existing categories, just right-click the category names"], 220)
-	private:CreateTutoFrame(cat, "accessOptions", false, "DOWN", L["You can access the options from here"], 220)
-	private:CreateTutoFrame(cat, "getMoreInfo", false, "LEFT", L["If you're having any problems or you just want more information, you can always click here to print help in the chat!"], 275)
-	private:CreateTutoFrame(cat, "editmode", false, "DOWN", L["To delete items and do a lot more, you can right-click anywhere on the list or click on this button to toggle the edit mode"], 275)
-	private:CreateTutoFrame(cat, "editmodeChat", true, "RIGHT", utils:SafeStringFormat(L["Please type %s and read the chat message for more information about this mode"], "\""..chat.slashCommand..' '..L["editmode"].."\""), 275)
-
-	-- // ******************** // --
-
-	cat = "tabSwitchState"
-
-	tp:GenerateTutoTable(cat,
-		{
-			tutosOrdered = {
-				"explainSwitchButton",
-			},
-		}
-	)
-
-	private:CreateTutoFrame(cat, "explainSwitchButton", true, "LEFT", L["You can click on this button to switch between global and profile tabs"], 285)
-
-	-- // ******************** // --
-
-	cat = "migration"
-
-	tp:GenerateTutoTable(cat,
-		{
-			tutosOrdered = {
-				"explainFrame",
-			},
-		}
-	)
-
-	private:CreateTutoFrame(cat, "explainFrame", true, "DOWN", L["You can click on any name to put it in the input field below, you can then Ctrl+C/Ctrl+V"], 200)
-
-	-- // ******************** // --
-
-	-- cat = "editmode"
-
-	-- tp:GenerateTutoTable(cat,
-	-- 	{
-	-- 		IsEnabled = function(self)
-	-- 			return tp:ValueBool("introduction")
-	-- 			and not tp:ValueBool(self.tutoCategory)
-	-- 		end,
-	-- 		tutosOrdered = {
-	-- 			"TM_editmode_editmodeBtn",
-	-- 			"TM_editmode_delete",
-	-- 			"TM_editmode_favdesc",
-	-- 			"TM_editmode_rename",
-	-- 			"TM_editmode_sort",
-	-- 			"TM_editmode_resize",
-	-- 			"TM_editmode_buttons",
-	-- 			"TM_editmode_undo",
-	-- 		},
-	-- 	}
-	-- )
-
-	-- private:CreateTutoFrame(cat, "editmodeBtn", false, "DOWN", L["To delete items and do a lot more, you can right-click anywhere on the list or click on this button to toggle the edit mode"], 275)
-	-- private:CreateTutoFrame(cat, "delete", true, "RIGHT", L["Delete items and categories"], 275)
-	-- private:CreateTutoFrame(cat, "favdesc", true, "RIGHT", L["Favorite and add descriptions on items"], 275)
-	-- private:CreateTutoFrame(cat, "rename", false, "UP", L["Rename items and categories"].." ("..L["Double-Click"]..")", 275)
-	-- private:CreateTutoFrame(cat, "sort", false, "DOWN", L["Reorder/Sort the list"].." ("..L["Drag and Drop"]..")", 275)
-	-- private:CreateTutoFrame(cat, "resize", true, "LEFT", L["Resize the list"], 275)
-	-- private:CreateTutoFrame(cat, "buttons", true, "DOWN", L["Undo what you deleted and access special actions for the tab"], 275)
-	-- private:CreateTutoFrame(cat, "undo", true, "DOWN", L["More specifically you can undo items, categories, and even tab deletions"], 275)
-
-	-- // ******************** // --
-
-	-- ...
-end
-
-table.insert(core.Event_OnInitialize_Start, tutorialsManager.CreateTutorials) -- we wait for the addon's initialization (when every file is loaded) before creating the tutorial frames
-
 --/*******************/ FRAMES /*************************/--
 
 function private:CreateTutoFrame(tutoCategory, tutoName, showCloseButton, arrowSide, text, width)
@@ -399,3 +301,101 @@ function tutorialsManager:Reset()
 	mainFrame:Event_TDLFrame_OnVisibilityUpdate()
 	mainFrame:GetFrame().ScrollFrame:SetVerticalScroll(0)
 end
+
+--/*******************/ TUTORIALS /*************************/--
+
+function private:CreateTutorials()
+	local cat = ""
+
+	-- // ******************** // --
+
+	cat = "introduction"
+
+	tp:GenerateTutoTable("introduction",
+		{
+			tutosOrdered = {
+				"addNewCat",
+				"addCat",
+				"addItem",
+				"accessOptions",
+				"getMoreInfo",
+				"editmode",
+				"editmodeChat",
+			},
+		}
+	)
+
+	private:CreateTutoFrame(cat, "addNewCat", false, "UP", L["Start by adding a new category!"], 190)
+	private:CreateTutoFrame(cat, "addCat", true, "UP", L["This will add your category to the current tab"], 240)
+	private:CreateTutoFrame(cat, "addItem", false, "RIGHT", L["To add new items to existing categories, just right-click the category names"], 220)
+	private:CreateTutoFrame(cat, "accessOptions", false, "DOWN", L["You can access the options from here"], 220)
+	private:CreateTutoFrame(cat, "getMoreInfo", false, "LEFT", L["If you're having any problems or you just want more information, you can always click here to print help in the chat!"], 275)
+	private:CreateTutoFrame(cat, "editmode", false, "DOWN", L["To delete items and do a lot more, you can right-click anywhere on the list or click on this button to toggle the edit mode"], 275)
+	private:CreateTutoFrame(cat, "editmodeChat", true, "RIGHT", utils:SafeStringFormat(L["Please type %s and read the chat message for more information about this mode"], "\""..chat.slashCommand..' '..L["editmode"].."\""), 275)
+
+	-- // ******************** // --
+
+	cat = "tabSwitchState"
+
+	tp:GenerateTutoTable(cat,
+		{
+			tutosOrdered = {
+				"explainSwitchButton",
+			},
+		}
+	)
+
+	private:CreateTutoFrame(cat, "explainSwitchButton", true, "LEFT", L["You can click on this button to switch between global and profile tabs"], 285)
+
+	-- // ******************** // --
+
+	cat = "migration"
+
+	tp:GenerateTutoTable(cat,
+		{
+			tutosOrdered = {
+				"explainFrame",
+			},
+		}
+	)
+
+	private:CreateTutoFrame(cat, "explainFrame", true, "DOWN", L["You can click on any name to put it in the input field below, you can then Ctrl+C/Ctrl+V"], 200)
+
+	-- // ******************** // --
+
+	-- cat = "editmode"
+
+	-- tp:GenerateTutoTable(cat,
+	-- 	{
+	-- 		IsEnabled = function(self)
+	-- 			return tp:ValueBool("introduction")
+	-- 			and not tp:ValueBool(self.tutoCategory)
+	-- 		end,
+	-- 		tutosOrdered = {
+	-- 			"TM_editmode_editmodeBtn",
+	-- 			"TM_editmode_delete",
+	-- 			"TM_editmode_favdesc",
+	-- 			"TM_editmode_rename",
+	-- 			"TM_editmode_sort",
+	-- 			"TM_editmode_resize",
+	-- 			"TM_editmode_buttons",
+	-- 			"TM_editmode_undo",
+	-- 		},
+	-- 	}
+	-- )
+
+	-- private:CreateTutoFrame(cat, "editmodeBtn", false, "DOWN", L["To delete items and do a lot more, you can right-click anywhere on the list or click on this button to toggle the edit mode"], 275)
+	-- private:CreateTutoFrame(cat, "delete", true, "RIGHT", L["Delete items and categories"], 275)
+	-- private:CreateTutoFrame(cat, "favdesc", true, "RIGHT", L["Favorite and add descriptions on items"], 275)
+	-- private:CreateTutoFrame(cat, "rename", false, "UP", L["Rename items and categories"].." ("..L["Double-Click"]..")", 275)
+	-- private:CreateTutoFrame(cat, "sort", false, "DOWN", L["Reorder/Sort the list"].." ("..L["Drag and Drop"]..")", 275)
+	-- private:CreateTutoFrame(cat, "resize", true, "LEFT", L["Resize the list"], 275)
+	-- private:CreateTutoFrame(cat, "buttons", true, "DOWN", L["Undo what you deleted and access special actions for the tab"], 275)
+	-- private:CreateTutoFrame(cat, "undo", true, "DOWN", L["More specifically you can undo items, categories, and even tab deletions"], 275)
+
+	-- // ******************** // --
+
+	-- ...
+end
+
+table.insert(core.Event_OnInitialize_Start, private.CreateTutorials) -- we wait for the addon's initialization (when every file is loaded) before creating the tutorial frames
