@@ -496,7 +496,7 @@ function private:Failed(errmsg, original)
         local points, _ = NysTDL.acedb.profile.framePos, nil
         points.point, _, points.relativePoint, points.xOffset, points.yOffset = "CENTER", nil, "CENTER", 0, 0
 
-        --we only need to update the saved avrs, so that when the tdlFrame initializes, it uses them and updates accordingly.
+        -- we only need to update the saved vars, so that when the tdlFrame initializes, it uses them and updates accordingly.
     end
 end
 
@@ -510,7 +510,7 @@ function private:CreateRecoveryList()
     recoveryList.frame = CreateFrame("Frame", "NysTDL_recoveryList", mainFrame.tdlFrame, BackdropTemplateMixin and "BackdropTemplate" or nil)
     local frame = recoveryList.frame
 
-    -- as well as the tuto frame
+	-- tuto
 	tutorialsManager:SetPoint("migration", "explainFrame", "BOTTOM", frame, "TOP", 0, 20)
 
     -- background

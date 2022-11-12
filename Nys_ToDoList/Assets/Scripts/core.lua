@@ -169,10 +169,21 @@ NysTDL_BACKDROP_INFO = {
 }
 --@end-do-not-package@
 
+-- Events and callbacks
+core.Event_OnInitialize_Start = {}
+core.Event_OnInitialize_End = {}
+
 --/*******************/ AceAddon callbacks /*************************/--
 
 function NysTDL:OnInitialize()
     -- Called when the addon has finished loading
+
+	-- start initialization event
+	for _,callback in ipairs(core.Event_OnInitialize_Start) do
+		if type(callback) == "function" then
+			callback()
+		end
+	end
 
     -- #1 - database
     database:Initialize()
@@ -188,6 +199,13 @@ function NysTDL:OnInitialize()
 
     -- #last - tabs resets
     resetManager:Initialize()
+
+	-- end initialization event
+	for _,callback in ipairs(core.Event_OnInitialize_End) do
+		if type(callback) == "function" then
+			callback()
+		end
+	end
 
     -- // addon fully loaded!
 

@@ -8,6 +8,7 @@ NysTDL.tutorialsManager = tutorialsManager
 
 -- Primary aliases
 
+local core = NysTDL.core
 local libs = NysTDL.libs
 local chat = NysTDL.chat
 local utils = NysTDL.utils
@@ -201,67 +202,27 @@ end
 
 --/*******************/ TUTORIALS /*************************/--
 
--- // tutorials (names are unique) // --
-
-tp:GenerateTutoTable("introduction",
-	{
-		tutosOrdered = {
-			"addNewCat",
-			"addCat",
-			"addItem",
-			"accessOptions",
-			"getMoreInfo",
-			"editmode",
-			"editmodeChat",
-		},
-	}
-)
-
-tp:GenerateTutoTable("tabSwitchState",
-	{
-		tutosOrdered = {
-			"explainSwitchButton",
-		},
-	}
-)
-
-tp:GenerateTutoTable("migration",
-	{
-		tutosOrdered = {
-			"explainFrame",
-		},
-	}
-)
-
--- tp:GenerateTutoTable("editmode",
--- 	{
--- 		IsEnabled = function(self)
--- 			return tp:ValueBool("introduction")
--- 			and not tp:ValueBool(self.tutoCategory)
--- 		end,
--- 		tutosOrdered = {
--- 			"TM_editmode_editmodeBtn",
--- 			"TM_editmode_delete",
--- 			"TM_editmode_favdesc",
--- 			"TM_editmode_rename",
--- 			"TM_editmode_sort",
--- 			"TM_editmode_resize",
--- 			"TM_editmode_buttons",
--- 			"TM_editmode_undo",
--- 		},
--- 	}
--- )
-
---/*******************/ FRAMES /*************************/--
-
-function private:CreateTutoFrame(tutoCategory, tutoName, showCloseButton, arrowSide, text, width)
-	tutorialFrames[gn(tutoCategory, tutoName)] = widgets:TutorialFrame(tutoCategory, tutoName, showCloseButton, arrowSide, text, width)
-end
-
-function tutorialsManager:CreateTutoFrames()
+function tutorialsManager:CreateTutorials()
 	local cat = ""
 
+	-- // ******************** // --
+
 	cat = "introduction"
+
+	tp:GenerateTutoTable("introduction",
+		{
+			tutosOrdered = {
+				"addNewCat",
+				"addCat",
+				"addItem",
+				"accessOptions",
+				"getMoreInfo",
+				"editmode",
+				"editmodeChat",
+			},
+		}
+	)
+
 	private:CreateTutoFrame(cat, "addNewCat", false, "UP", L["Start by adding a new category!"], 190)
 	private:CreateTutoFrame(cat, "addCat", true, "UP", L["This will add your category to the current tab"], 240)
 	private:CreateTutoFrame(cat, "addItem", false, "RIGHT", L["To add new items to existing categories, just right-click the category names"], 220)
@@ -270,13 +231,57 @@ function tutorialsManager:CreateTutoFrames()
 	private:CreateTutoFrame(cat, "editmode", false, "DOWN", L["To delete items and do a lot more, you can right-click anywhere on the list or click on this button to toggle the edit mode"], 275)
 	private:CreateTutoFrame(cat, "editmodeChat", true, "RIGHT", utils:SafeStringFormat(L["Please type %s and read the chat message for more information about this mode"], "\""..chat.slashCommand..' '..L["editmode"].."\""), 275)
 
+	-- // ******************** // --
+
 	cat = "tabSwitchState"
-	private:CreateTutoFrame(cat, "explainSwitchButton", true, "LEFT", "You can click on this button to switch between global and profile tabs", 275)
+
+	tp:GenerateTutoTable(cat,
+		{
+			tutosOrdered = {
+				"explainSwitchButton",
+			},
+		}
+	)
+
+	private:CreateTutoFrame(cat, "explainSwitchButton", true, "LEFT", L["You can click on this button to switch between global and profile tabs"], 285)
+
+	-- // ******************** // --
 
 	cat = "migration"
-	private:CreateTutoFrame(cat, "explainFrame", true, "DOWN", "You can click on any name to put it in the input field below, you can then Ctrl+C/Ctrl+V", 200)
+
+	tp:GenerateTutoTable(cat,
+		{
+			tutosOrdered = {
+				"explainFrame",
+			},
+		}
+	)
+
+	private:CreateTutoFrame(cat, "explainFrame", true, "DOWN", L["You can click on any name to put it in the input field below, you can then Ctrl+C/Ctrl+V"], 200)
+
+	-- // ******************** // --
 
 	-- cat = "editmode"
+
+	-- tp:GenerateTutoTable(cat,
+	-- 	{
+	-- 		IsEnabled = function(self)
+	-- 			return tp:ValueBool("introduction")
+	-- 			and not tp:ValueBool(self.tutoCategory)
+	-- 		end,
+	-- 		tutosOrdered = {
+	-- 			"TM_editmode_editmodeBtn",
+	-- 			"TM_editmode_delete",
+	-- 			"TM_editmode_favdesc",
+	-- 			"TM_editmode_rename",
+	-- 			"TM_editmode_sort",
+	-- 			"TM_editmode_resize",
+	-- 			"TM_editmode_buttons",
+	-- 			"TM_editmode_undo",
+	-- 		},
+	-- 	}
+	-- )
+
 	-- private:CreateTutoFrame(cat, "editmodeBtn", false, "DOWN", L["To delete items and do a lot more, you can right-click anywhere on the list or click on this button to toggle the edit mode"], 275)
 	-- private:CreateTutoFrame(cat, "delete", true, "RIGHT", L["Delete items and categories"], 275)
 	-- private:CreateTutoFrame(cat, "favdesc", true, "RIGHT", L["Favorite and add descriptions on items"], 275)
@@ -285,6 +290,18 @@ function tutorialsManager:CreateTutoFrames()
 	-- private:CreateTutoFrame(cat, "resize", true, "LEFT", L["Resize the list"], 275)
 	-- private:CreateTutoFrame(cat, "buttons", true, "DOWN", L["Undo what you deleted and access special actions for the tab"], 275)
 	-- private:CreateTutoFrame(cat, "undo", true, "DOWN", L["More specifically you can undo items, categories, and even tab deletions"], 275)
+
+	-- // ******************** // --
+
+	-- ...
+end
+
+table.insert(core.Event_OnInitialize_Start, tutorialsManager.CreateTutorials) -- we wait for the addon's initialization (when every file is loaded) before creating the tutorial frames
+
+--/*******************/ FRAMES /*************************/--
+
+function private:CreateTutoFrame(tutoCategory, tutoName, showCloseButton, arrowSide, text, width)
+	tutorialFrames[gn(tutoCategory, tutoName)] = widgets:TutorialFrame(tutoCategory, tutoName, showCloseButton, arrowSide, text, width)
 end
 
 function tutorialsManager:SetPoint(tutoCategory, tutoName, point, relativeTo, relativePoint, ofsx, ofsy)

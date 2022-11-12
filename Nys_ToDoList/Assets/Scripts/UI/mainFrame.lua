@@ -1025,8 +1025,8 @@ function private:GenerateFrameContent()
 	content.undoButton:SetPoint("RIGHT", content.tabActionsButton, "LEFT", 2, 0)
 	content.undoButton:SetScript("OnClick", function() dataManager:Undo() end)
 	content.undoButton:Hide()
-	tutorialsManager:SetPoint("editmode", "buttons", "BOTTOM", content.undoButton, "TOP", -15, 18)
-	tutorialsManager:SetPoint("editmode", "undo", "BOTTOM", content.undoButton, "TOP", 0, 18)
+	-- tutorialsManager:SetPoint("editmode", "buttons", "BOTTOM", content.undoButton, "TOP", -15, 18)
+	-- tutorialsManager:SetPoint("editmode", "undo", "BOTTOM", content.undoButton, "TOP", 0, 18)
 
 	-- // menus
 	local contentWidth, menuEnum = content:GetWidth()
@@ -1194,7 +1194,7 @@ function mainFrame:CreateTDLFrame()
 		tdlFrame:ClearAllPoints()
 		tdlFrame:SetPoint(points.point, nil, points.relativePoint, points.xOffset, points.yOffset) -- relativeFrame = nil -> entire screen
 	end)
-	tutorialsManager:SetPoint("editmode", "resize", "LEFT", tdlFrame.resizeButton, "RIGHT", 0, 0)
+	-- tutorialsManager:SetPoint("editmode", "resize", "LEFT", tdlFrame.resizeButton, "RIGHT", 0, 0) TDLATER?
 
 	-- // inside the scroll frame
 

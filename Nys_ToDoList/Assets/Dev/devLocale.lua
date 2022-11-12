@@ -19,6 +19,8 @@ addonTable.devLocale = L
 
 --/************************************************/--
 
+L["You can click on any name to put it in the input field below, you can then Ctrl+C/Ctrl+V"] = true
+L["You can click on this button to switch between global and profile tabs"] = true
 L["All tutorials have been reset"] = true
 L["Usage"] = true
 L["Invalid name"] = true

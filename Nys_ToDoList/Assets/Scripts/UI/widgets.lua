@@ -1252,7 +1252,6 @@ end
 
 function widgets:Initialize()
 	-- first we create every visual widget of every file
-	tutorialsManager:CreateTutoFrames()
 	widgets:CreateTDLButton()
 	databroker:CreateDatabrokerObject()
 	-- databroker:CreateTooltipFrame() -- TDLATER
