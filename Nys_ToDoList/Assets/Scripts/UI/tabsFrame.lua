@@ -52,7 +52,6 @@ end
 --** ************** **--
 
 local _currentID = 0
-local _currentState = false -- false == profile tabs, true == global tabs
 local _nbWholeTabsShown, _shownWholeTabs = 0, {}
 local _width = MAX_TAB_SIZE
 
@@ -101,7 +100,6 @@ function private:Event_AnimFrame_OnUpdate(elapsed)
 	local totalDistanceNeeded, sign = private:GetScrollDistanceNeeded(_targetTab)
 
 	if totalDistanceNeeded < 1.0 then
-		private:StopAnim()
 		tabsFrame:Refresh()
 		return
 	end
@@ -168,7 +166,7 @@ function private:GetLeftMostTab()
 	-- to know where we are in the scrollFrame
 	-- returns the tabID of the found tab
 	local scrollFrameLeft = scrollFrame:GetLeft()
-	local tabsList = select(3, dataManager:GetData(_currentState))
+	local tabsList = select(3, dataManager:GetData(database.ctabstate()))
 	for _,tabID in ipairs(tabsList.orderedTabIDs) do -- in order, we check which is the first to be ENTIRELY (whole tab) on the right of the scrollFrame's left
 		if tabWidgets[tabID] and tabWidgets[tabID]:GetLeft() then
 			if getTabLeft(tabWidgets[tabID])+15 > scrollFrameLeft then
@@ -253,7 +251,7 @@ function private:CalculateTabSize()
 		scrollSize = scrollSize - overflowButtonWidth + rightScrollFrameOffset -- '+ rightScrollFrameOffset' to zero the '- rightScrollFrameOffset' above
 	end
 
-	local tabsList = select(3, dataManager:GetData(_currentState))
+	local tabsList = select(3, dataManager:GetData(database.ctabstate()))
 	local numTabs = #tabsList.orderedTabIDs
 
 	-- first, we see if we can fit all the tabs at the maximum size
@@ -298,7 +296,7 @@ function private:RefreshSize()
 		end
 	end
 
-	local tabsList = select(3, dataManager:GetData(_currentState))
+	local tabsList = select(3, dataManager:GetData(database.ctabstate()))
 	_width = tabSize-inBetweenTabOffset -- THE important line
 	for _,tabID in ipairs(tabsList.orderedTabIDs) do
 		if tabWidgets[tabID] then
@@ -324,13 +322,13 @@ function private:RefreshSize()
 		overflowButtonFrame:SetPoint("TOPRIGHT", mainFrame.tdlFrame, "BOTTOMRIGHT", -overflowButtonWidth-inBetweenButtonOffset, 2)
 		switchStateButtonFrame:SetShown(true)
 
-		if _currentState then
+		if database.ctabstate() then
 			-- global
-			switchStateButtonFrame.btn.Texture:SetTexCoord(0.33, 0.436, 0.0176, 0.072)
-			switchStateButtonFrame.btn:SetSize(14.5, 14.5)
+			switchStateButtonFrame.btn.Texture:SetTexCoord(0.328, 0.436, 0.015, 0.074)
+			switchStateButtonFrame.btn:SetSize(14.5, 15)
 		else
 			-- profile
-			switchStateButtonFrame.btn.Texture:SetTexCoord(0.33, 0.44, 0.43, 0.5)
+			switchStateButtonFrame.btn.Texture:SetTexCoord(0.328, 0.438, 0.43, 0.502)
 			switchStateButtonFrame.btn:SetSize(14, 18)
 		end
 
@@ -351,14 +349,14 @@ function private:RefreshSize()
 end
 
 function private:RefreshVisibility()
-	-- shows/hides tabs depending on _currentState (global/profile)
+	-- shows/hides tabs depending on ctabstate (global/profile)
 
-	local tabsToHide = select(3, dataManager:GetData(not _currentState))
+	local tabsToHide = select(3, dataManager:GetData(not database.ctabstate()))
 	for tabID in pairs(tabsToHide) do
 		if tabWidgets[tabID] then tabWidgets[tabID]:Hide() end
 	end
 
-	local tabsToShow = select(3, dataManager:GetData(_currentState))
+	local tabsToShow = select(3, dataManager:GetData(database.ctabstate()))
 	for tabID in pairs(tabsToShow) do
 		if tabWidgets[tabID] then tabWidgets[tabID]:Show() end
 	end
@@ -366,7 +364,7 @@ end
 
 function private:RefreshPoints()
 	-- updates the pos of each tab widget, depending on their order
-	local tabsList = select(3, dataManager:GetData(_currentState))
+	local tabsList = select(3, dataManager:GetData(database.ctabstate()))
 
 	local lastWidget = nil
 	for _,tabID in ipairs(tabsList.orderedTabIDs) do
@@ -394,7 +392,7 @@ function private:RefreshOverflowList()
 		listButton.ArrowRIGHT:Hide()
 	end
 
-	local tabsList = select(3, dataManager:GetData(_currentState))
+	local tabsList = select(3, dataManager:GetData(database.ctabstate()))
 	local lastWidget, rightSide
 	for _,tabID in ipairs(tabsList.orderedTabIDs) do
 		if listButtonWidgets[tabID] then
@@ -434,17 +432,6 @@ function private:OnTabsMoving()
 	private:RefreshShownWholeTabs()
 	if overflowList:IsShown() then -- if the overflow list is shown for some reason, we update it as well
 		private:RefreshOverflowList()
-	end
-end
-
-function private:SwitchState(state)
-	-- state: nil = switch, false = profile, true = global
-	if _currentState == state then return end
-
-	if state == nil then
-		_currentState = not _currentState
-	else
-		_currentState = not not state
 	end
 end
 
@@ -651,17 +638,36 @@ function tabsFrame:DeleteTab(tabID)
 	tabsFrame:Refresh() -- refresh
 end
 
+---THE function to switch tab state.
+---@param state nil|boolean nil = switch, false = profile, true = global
+function tabsFrame:SwitchState(state)
+	local originalState = database.ctabstate()
+
+	if state == nil then
+		database.ctabstate(not database.ctabstate())
+	else
+		database.ctabstate(state)
+	end
+
+	if originalState == database.ctabstate() then return end
+
+	mainFrame:ChangeTab(database.ctab())
+	tabsFrame:Refresh()
+end
+
 function tabsFrame:Refresh()
-	-- // we update the visuals of the buttons
+	-- // we refresh EVERYTHING
+
+	private:StopAnim()
+
 	if not tabsFrame.authorized then return end
 
 	-- we update the nb of tabs so that wow's API works (PanelTemplates_SetTab)
 	content.numTabs = _currentID
 
-	-- we select the currently selected tab's button
 	local currentTabID = database.ctab()
-	private:SwitchState(dataManager:IsGlobal(currentTabID))
 
+	-- we select the currently selected tab's button
 	if tabWidgets[currentTabID] then
 		PanelTemplates_SetTab(tabWidgets[currentTabID]:GetParent(), tabWidgets[currentTabID]:GetID())
 	end
@@ -829,15 +835,7 @@ function tabsFrame:CreateTabsFrame()
 
 	-- click
 	switchStateButtonFrame.btn:SetScript("OnClick", function()
-		local tabToFocus = database.ctab()
-		if _currentState then
-			tabToFocus = NysTDL.acedb.profile.currentProfileTab
-		else
-			tabToFocus = NysTDL.acedb.profile.currentGlobalTab
-		end
-		private:StopAnim()
-		mainFrame:ChangeTab(tabToFocus)
-		tabsFrame:Refresh()
+		tabsFrame:SwitchState(nil) -- toggle
 	end)
 
 	-- tuto

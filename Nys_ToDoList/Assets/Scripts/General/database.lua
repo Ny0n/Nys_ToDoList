@@ -62,6 +62,8 @@ database.defaults = {
 		nextID = "", -- forever increasing, defaults to the current time (time()) in hexadecimal
 
 		-- // Misc
+		currentGlobalTab = "", -- updated each time we change tabs
+
 		tutorials_progression = {},
 		UI_reloading = false,
 		warnTimerRemaining = 0,
@@ -92,8 +94,7 @@ database.defaults = {
 		},
 
 		-- // Misc
-		currentTab = "TOSET", -- currently selected tab ID, set when the default tabs are created
-		currentGlobalTab = "", -- updated each time we change tabs
+		currentTabState = false, -- false = profile, true = global
 		currentProfileTab = "", -- updated each time we change tabs
 
 		databrokerMode = enums.databrokerModes.simple,
@@ -145,6 +146,7 @@ database.defaults = {
 function private:DBInit()
 	dataManager.authorized = false -- there's no calling mainFrame funcs while we're tampering with the database!
 
+	database.ctabstate(database.ctabstate()) -- update the state, in case we were focused on global tabs that were deleted when connected on other characters
 	local noTabs = not dataManager:IsID(database.ctab())
 
 	-- default tabs creation
@@ -238,20 +240,42 @@ end
 
 -- // specific functions
 
----Gives an easy access to the `ctab` acedb variable, while acting as a getter and a setter.
+---Gives an easy access to the `currentProfileTab & currentGlobalTab` acedb variable, while acting as a getter and a setter.
 ---@param newTabID string
----@return string ctab
+---@return string currentTabID
 function database.ctab(newTabID)
 	-- sets or gets the currently selected tab ID
 	if dataManager:IsID(newTabID) then
 		if dataManager:IsGlobal(newTabID) then
-			NysTDL.acedb.profile.currentGlobalTab = newTabID
+			NysTDL.acedb.global.currentGlobalTab = newTabID
+			database.ctabstate(true)
 		else
 			NysTDL.acedb.profile.currentProfileTab = newTabID
+			database.ctabstate(false)
 		end
-		NysTDL.acedb.profile.currentTab = newTabID
 	end
-	return NysTDL.acedb.profile.currentTab
+
+	if database.ctabstate() then
+		return NysTDL.acedb.global.currentGlobalTab
+	else
+		return NysTDL.acedb.profile.currentProfileTab
+	end
+end
+
+---Same as database.ctab, but for `currentTabState`.
+---@param newTabState boolean
+---@return boolean currentTabState
+function database.ctabstate(newTabState)
+	-- sets or gets the currently selected tab state
+	if newTabState ~= nil then
+		newTabState = not not newTabState -- cast to boolean
+		if newTabState and not dataManager:HasGlobalData() then -- we can't be in a global state if we don't have global data
+			newTabState = false
+		end
+		NysTDL.acedb.profile.currentTabState = newTabState
+	end
+
+	return NysTDL.acedb.profile.currentTabState
 end
 
 --/*******************/ INITIALIZATION /*************************/--

@@ -299,10 +299,14 @@ end
 ---@param isGlobal boolean Unused
 ---@return number
 function dataManager:GetQuantity(enum, isGlobal)
-	if enum ~= enums.item and enum ~= enums.category and enum ~= enums.tab then return 0 end
+	if enum ~= enums.item and enum ~= enums.category and enum ~= enums.tab then
+		return 0
+	end
+
+	isGlobal = not not isGlobal -- cast to boolean
 
 	-- OPTIMIZED VERSION
-	return enums.quantities[enum]
+	return enums.quantities[isGlobal][enum]
 
 	-- LOOP VERSION (always true, doesn't require outside variables)
 	-- returns the quantity of the given enum, in the given global state
@@ -311,7 +315,7 @@ function dataManager:GetQuantity(enum, isGlobal)
 	-- --> false == profile
 	-- --> true == global
 
-	-- if isGlobal ~= nil and type(isGlobal) ~= "boolean" then isGlobal = true end
+	-- if isGlobal ~= nil then isGlobal = not not isGlobal end
 
 	-- local quantity = 0
 	-- for _ in dataManager:ForEach(enum, isGlobal) do
@@ -320,13 +324,48 @@ function dataManager:GetQuantity(enum, isGlobal)
 	-- return quantity
 end
 
+---Returns the maximum quantity of the given enum.
+---@param enum enumObject
+---@param isGlobal boolean Unused
+---@return number
+function dataManager:GetMaxQuantity(enum, isGlobal)
+	if enum ~= enums.item and enum ~= enums.category and enum ~= enums.tab then
+		return 0
+	end
+
+	isGlobal = not not isGlobal -- cast to boolean
+
+	return enums.maxQuantities[isGlobal][enum]
+end
+
+---Adds the given quantity to the given enum.
+---@param enum enumObject
+---@param isGlobal boolean Unused
+---@param count number default 1
+function dataManager:AddQuantity(enum, isGlobal, count)
+	if enum ~= enums.item and enum ~= enums.category and enum ~= enums.tab then
+		return
+	end
+
+	if type(count) ~= "number" then
+		count = 1
+	end
+	isGlobal = not not isGlobal -- cast to boolean
+
+	enums.quantities[isGlobal][enum] = enums.quantities[isGlobal][enum] + count
+end
+
 ---Updates the total number of each object in the database.
 function dataManager:UpdateQuantities()
+	local isGlobalTypes = { false, true }
 	local enumTypes = { enums.item, enums.category, enums.tab }
-	for _,enum in pairs(enumTypes) do
-		enums.quantities[enum] = 0
-		for _ in dataManager:ForEach(enum) do
-			enums.quantities[enum] = enums.quantities[enum] + 1
+	for _,isGlobal in ipairs(isGlobalTypes) do
+		local tbl = enums.quantities[isGlobal]
+		for _,enum in ipairs(enumTypes) do
+			tbl[enum] = 0
+			for _ in dataManager:ForEach(enum, isGlobal) do
+				tbl[enum] = tbl[enum] + 1
+			end
 		end
 	end
 end
@@ -460,16 +499,16 @@ end
 ---@return string|nil itemID
 ---@return table itemData
 function private:AddItem(itemID, itemData)
-	if dataManager:GetQuantity(enums.item) >= enums.maxQuantities[enums.item] then -- temp limit
+	-- we get where we are
+	local isGlobal, _, itemsList, categoriesList = select(2, dataManager:Find(itemData.originalTabID))
+
+	if dataManager:GetQuantity(enums.item, isGlobal) >= dataManager:GetMaxQuantity(enums.item, isGlobal) then -- temp limit
 		chat:Print(utils:SafeStringFormat(L["Cannot add %s"].." ("..L["Max quantity reached"]..")", L["Item"]:lower()))
 		return
 	end
 
 	wipe(itemData.tabIDs)
 	itemData.tabIDs[itemData.originalTabID] = true -- by default, an item/cat can only be added to one tab, the shownTabIDs do the rest after
-
-	-- we get where we are
-	local itemsList, categoriesList = select(4, dataManager:Find(itemData.originalTabID))
 
 	-- we add the item to the saved variables
 
@@ -485,7 +524,7 @@ function private:AddItem(itemID, itemData)
 	mainFrame:UpdateWidget(itemID, enums.item)
 	mainFrame:Refresh()
 
-	enums.quantities[enums.item] = enums.quantities[enums.item] + 1
+	dataManager:AddQuantity(enums.item, isGlobal, 1)
 
 	return itemID, itemData
 end
@@ -535,16 +574,16 @@ end
 ---@return string|nil catID
 ---@return table catData
 function private:AddCategory(catID, catData)
-	if dataManager:GetQuantity(enums.category) >= enums.maxQuantities[enums.category] then -- temp limit
+	-- we get where we are
+	local isGlobal, _, _, categoriesList = select(2, dataManager:Find(catData.originalTabID))
+
+	if dataManager:GetQuantity(enums.category, isGlobal) >= dataManager:GetMaxQuantity(enums.category, isGlobal) then -- temp limit
 		chat:Print(utils:SafeStringFormat(L["Cannot add %s"].." ("..L["Max quantity reached"]..")", L["Category"]:lower()))
 		return
 	end
 
 	wipe(catData.tabIDs)
 	catData.tabIDs[catData.originalTabID] = true -- by default, an item/cat can only be added to one tab, the shownTabIDs do the rest after
-
-	-- we get where we are
-	local categoriesList = select(5, dataManager:Find(catData.originalTabID))
 
 	-- we add the category to the saved variables
 
@@ -562,7 +601,7 @@ function private:AddCategory(catID, catData)
 	mainFrame:UpdateWidget(catID, enums.category)
 	mainFrame:Refresh()
 
-	enums.quantities[enums.category] = enums.quantities[enums.category] + 1
+	dataManager:AddQuantity(enums.category, isGlobal, 1)
 
 	return catID, catData
 end
@@ -621,13 +660,14 @@ end
 ---@return string|nil tabID
 ---@return table tabData
 function private:AddTab(tabID, tabData, isGlobal)
-	if dataManager:GetQuantity(enums.tab) >= enums.maxQuantities[enums.tab] then -- temp limit
+	-- we get where we are
+	isGlobal = not not isGlobal
+	local tabsList = select(3, dataManager:GetData(isGlobal))
+
+	if dataManager:GetQuantity(enums.tab, isGlobal) >= dataManager:GetMaxQuantity(enums.tab, isGlobal) then -- temp limit
 		chat:Print(utils:SafeStringFormat(L["Cannot add %s"].." ("..L["Max quantity reached"]..")", L["Tab"]:lower()))
 		return
 	end
-
-	-- we get where we are
-	local tabsList = select(3, dataManager:GetData(isGlobal))
 
 	-- we add the tab to the saved variables
 
@@ -648,7 +688,7 @@ function private:AddTab(tabID, tabData, isGlobal)
 	tabsFrame:UpdateTab(tabID)
 	AceConfigRegistry:NotifyChange(addonName)
 
-	enums.quantities[enums.tab] = enums.quantities[enums.tab] + 1
+	dataManager:AddQuantity(enums.tab, isGlobal, 1)
 
 	return tabID, tabData
 end
@@ -993,7 +1033,7 @@ end
 function dataManager:DeleteItem(itemID)
 	if dataManager:IsProtected(itemID) then return false end
 
-	local itemData, itemsList = select(3, dataManager:Find(itemID))
+	local isGlobal, itemData, itemsList = select(2, dataManager:Find(itemID))
 
 	-- // we delete the item and all its related data
 
@@ -1012,7 +1052,7 @@ function dataManager:DeleteItem(itemID)
 	mainFrame:DeleteWidget(itemID)
 	mainFrame:Refresh()
 
-	enums.quantities[enums.item] = enums.quantities[enums.item] - 1
+	dataManager:AddQuantity(enums.item, isGlobal, -1)
 
 	return true
 end
@@ -1027,7 +1067,7 @@ function dataManager:DeleteCat(catID)
 
 	local refreshID = dataManager:SetRefresh(false)
 
-	local catData, _, categoriesList = select(3, dataManager:Find(catID))
+	local isGlobal, catData, _, categoriesList = select(2, dataManager:Find(catID))
 
 	-- // we delete the category and all its related data
 
@@ -1060,7 +1100,7 @@ function dataManager:DeleteCat(catID)
 
 		mainFrame:DeleteWidget(catID)
 
-		enums.quantities[enums.category] = enums.quantities[enums.category] - 1
+		dataManager:AddQuantity(enums.category, isGlobal, -1)
 		result = true
 	else
 		if not clearing then
@@ -1136,10 +1176,14 @@ function dataManager:DeleteTab(tabID)
 		private:AddUndo(undoData)
 		tabsList[tabID] = nil -- delete action
 
-		enums.quantities[enums.tab] = enums.quantities[enums.tab] - 1
+		dataManager:AddQuantity(enums.tab, isGlobal, -1)
 
 		if database.ctab() == tabID then
-			database.ctab(loc[pos-1] or loc[1]) -- when deleting the tab we were on, we refocus a new one
+			if not loc[1] then -- we just deleted the last global tab
+				database.ctabstate(false) -- so we refocus a profile tab
+			else
+				database.ctab(loc[pos-1] or loc[1]) -- when deleting the tab we were on, we refocus a new one
+			end
 		end
 
 		-- AND refresh the tabsFrame
@@ -1393,7 +1437,7 @@ end
 ---@param ID string
 ---@return boolean isProtected
 function dataManager:IsProtected(ID)
-	local enum, _, _, _, _, tabsList = dataManager:Find(ID)
+	local enum, isGlobal, _, _, _, tabsList = dataManager:Find(ID)
 
 	if enum == enums.item then -- item
 		-- return dataTable.favorite or dataTable.description
@@ -1401,7 +1445,11 @@ function dataManager:IsProtected(ID)
 	elseif enum == enums.category then -- category
 		return false -- TDLATER IsProtected category
 	elseif enum == enums.tab then -- tab
-		return #tabsList.orderedTabIDs <= 1
+		if isGlobal then
+			return false
+		else
+			return #tabsList.orderedTabIDs <= 1
+		end
 	end
 end
 

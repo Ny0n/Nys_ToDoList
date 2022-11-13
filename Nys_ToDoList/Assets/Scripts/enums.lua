@@ -73,9 +73,16 @@ enums.maxNameWidth = {
 
 enums.maxDescriptionCharCount = 10000
 enums.maxQuantities = {
-	[enums.item] = 1000,
-	[enums.category] = 1000,
-	[enums.tab] = 20,
+	[false] = { -- profile
+		[enums.item] = 1000,
+		[enums.category] = 1000,
+		[enums.tab] = 20,
+	},
+	[true] = { -- global
+		[enums.item] = 1000,
+		[enums.category] = 1000,
+		[enums.tab] = 20,
+	},
 }
 
 enums.translationErrMsg = "|cffffff00".."Translation error".."|r".." ".."|cffffcc00".."("..libs.Locale..")".."|r"
@@ -97,7 +104,14 @@ enums.interfaceNumber = tonumber(select(4, GetBuildInfo()))
 -- dynamic values (still, accessible by all files)
 
 enums.quantities = {
-	[enums.item] = 0,
-	[enums.category] = 0,
-	[enums.tab] = 0,
+	[false] = { -- profile
+		[enums.item] = 0,
+		[enums.category] = 0,
+		[enums.tab] = 0,
+	},
+	[true] = { -- global
+		[enums.item] = 0,
+		[enums.category] = 0,
+		[enums.tab] = 0,
+	},
 }
