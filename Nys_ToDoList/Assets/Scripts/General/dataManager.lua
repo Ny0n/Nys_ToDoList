@@ -1273,22 +1273,29 @@ function dataManager:Undo()
 				success = not not dataManager:Undo()
 			end
 		else
-			if toUndo.enum == enums.item then -- item
-				success = not not private:AddItem(toUndo.ID, toUndo.data)
-			elseif toUndo.enum == enums.category then -- category
-				success = not not private:AddCategory(toUndo.ID, toUndo.data)
-			elseif toUndo.enum == enums.tab then -- tab
-				success = not not private:AddTab(toUndo.ID, toUndo.data, toUndo.isGlobal)
-			end
-			if not success then -- cancel
-				tinsert(NysTDL.acedb.profile.undoTable, toUndo)
-			else
-				if not undoing then
-					local type = ((toUndo.enum == enums.item) and L["Item"]:lower())
-					or ((toUndo.enum == enums.category) and L["Category"]:lower())
-					or ((toUndo.enum == enums.tab) and L["Tab"]:lower())
-					chat:Print(utils:SafeStringFormat(L["Added %s back"].." ("..type..")", "\""..dataManager:GetName(toUndo.ID).."\""))
+			local psuccess = pcall(function() -- we protect the code from potential "ID not found" errors
+				if toUndo.enum == enums.item then -- item
+					success = not not private:AddItem(toUndo.ID, toUndo.data)
+				elseif toUndo.enum == enums.category then -- category
+					success = not not private:AddCategory(toUndo.ID, toUndo.data)
+				elseif toUndo.enum == enums.tab then -- tab
+					success = not not private:AddTab(toUndo.ID, toUndo.data, toUndo.isGlobal)
 				end
+			end)
+
+			if psuccess then
+				if not success then -- cancel
+					tinsert(NysTDL.acedb.profile.undoTable, toUndo)
+				else
+					if not undoing then
+						local enum = ((toUndo.enum == enums.item) and L["Item"]:lower())
+						or ((toUndo.enum == enums.category) and L["Category"]:lower())
+						or ((toUndo.enum == enums.tab) and L["Tab"]:lower())
+						chat:Print(utils:SafeStringFormat(L["Added %s back"].." ("..enum..")", "\""..dataManager:GetName(toUndo.ID).."\""))
+					end
+				end
+			else
+				success = not not dataManager:Undo() -- skip the problematic object
 			end
 		end
 	end

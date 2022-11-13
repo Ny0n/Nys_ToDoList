@@ -146,12 +146,19 @@ database.defaults = {
 function private:DBInit()
 	dataManager.authorized = false -- there's no calling mainFrame funcs while we're tampering with the database!
 
+	-- data quantities
+	dataManager:UpdateQuantities()
+
 	database.ctabstate(database.ctabstate()) -- update the state, in case we were focused on global tabs that were deleted when connected on other characters
-	local noTabs = not dataManager:IsID(database.ctab())
 
 	-- default tabs creation
+	local noTabs = dataManager:GetQuantity(enums.tab, false) <= 0
 	if noTabs then
 		private:CreateDefaultTabs()
+	end
+
+	if not dataManager:IsID(database.ctab()) then
+		database.ctab((select(3, dataManager:GetData(false))).orderedTabIDs[1]) -- currentTab was replaced by currentProfileTab, this is a safeguard check that defaults ctab to the first available tab, if none was set
 	end
 
 	migration:Migrate() -- trying to migrate the old vars
@@ -178,9 +185,6 @@ function private:DBInit()
 	if not NysTDL.acedb.profile.rememberUndo then
 		wipe(NysTDL.acedb.profile.undoTable)
 	end
-
-	-- data quantities
-	dataManager:UpdateQuantities()
 
 	dataManager.authorized = true
 end

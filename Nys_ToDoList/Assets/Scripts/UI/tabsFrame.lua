@@ -57,7 +57,6 @@ local _width = MAX_TAB_SIZE
 
 local scrollFrame, content, overflowButtonFrame, overflowList, switchStateButtonFrame
 local tabWidgets, listButtonWidgets = {}, {}
-local lastLeftTab
 
 -- // WoW & Lua APIs
 
@@ -698,11 +697,7 @@ function tabsFrame:CreateTabsFrame()
 	scrollFrame.ScrollBar:Hide()
 	scrollFrame.ScrollBar:ClearAllPoints()
 	scrollFrame:SetScript("OnShow", function()
-		private:SnapToTab(lastLeftTab or private:GetLeftMostTab())
 		tabsFrame:Refresh()
-	end)
-	scrollFrame:SetScript("OnHide", function()
-		lastLeftTab = private:GetLeftMostTab()
 	end)
 	local wasMouseOver = false
 	scrollFrame:SetScript("OnUpdate", function(self)
