@@ -101,6 +101,17 @@ enums.days = {
 
 enums.interfaceNumber = tonumber(select(4, GetBuildInfo()))
 
+enums.icons = {
+	global = {
+		info = function() return "Interface\\HUD\\UIMicroMenu2x", 14.5, 15 end,
+		texCoords = { 0.328, 0.436, 0.015, 0.074 },
+	},
+	profile = {
+		info = function() return "Interface\\HUD\\UIMicroMenu2x", 14, 18 end,
+		texCoords = { 0.328, 0.438, 0.43, 0.502 },
+	},
+}
+
 -- dynamic values (still, accessible by all files)
 
 enums.quantities = {

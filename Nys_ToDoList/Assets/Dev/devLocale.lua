@@ -19,6 +19,9 @@ addonTable.devLocale = L
 
 --/************************************************/--
 
+L["Create a new global tab"] = true
+L["Create a new profile tab"] = true
+L["Global tabs"] = true
 L["You can click on any name to put it in the input field below, you can then Ctrl+C/Ctrl+V"] = true
 L["You can click on this button to switch between global and profile tabs"] = true
 L["All tutorials have been reset"] = true
@@ -82,7 +85,6 @@ L["Rename"] = true
 L["Delete tab"] = true
 L["Deleting this tab will delete everything that was created in it"] = true
 L["Profile tabs"] = true
-L["Create a new tab"] = true
 L["Tab Management"] = true
 L["List"] = true
 L["Open All"] = true

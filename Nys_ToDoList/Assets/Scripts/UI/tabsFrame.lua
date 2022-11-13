@@ -323,12 +323,12 @@ function private:RefreshSize()
 
 		if database.ctabstate() then
 			-- global
-			switchStateButtonFrame.btn.Texture:SetTexCoord(0.328, 0.436, 0.015, 0.074)
-			switchStateButtonFrame.btn:SetSize(14.5, 15)
+			switchStateButtonFrame.btn.Texture:SetTexCoord(unpack(enums.icons.global.texCoords))
+			switchStateButtonFrame.btn:SetSize(select(2, enums.icons.global.info()))
 		else
 			-- profile
-			switchStateButtonFrame.btn.Texture:SetTexCoord(0.328, 0.438, 0.43, 0.502)
-			switchStateButtonFrame.btn:SetSize(14, 18)
+			switchStateButtonFrame.btn.Texture:SetTexCoord(unpack(enums.icons.profile.texCoords))
+			switchStateButtonFrame.btn:SetSize(select(2, enums.icons.profile.info()))
 		end
 
 		rightOffset = -overflowButtonWidth
