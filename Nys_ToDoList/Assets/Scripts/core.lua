@@ -233,9 +233,7 @@ end
 
 local changelog = {
 	-- index table (not key-value), only place here the important changes.
-	"- Added the possibility to create tabs/categories/items using a slash command: \"/tdl add\"",
-	"- Localization update",
-	"- (6.4) You can now reorder tabs (\"Move up\" & \"Move down\" buttons in the tab settings)",
+	"- Global tabs are here! They are account-wide and work just like normal tabs. You can create them in the addon options",
 }
 
 ---Called once, when the addon gets an update.
