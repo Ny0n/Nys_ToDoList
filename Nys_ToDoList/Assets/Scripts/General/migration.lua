@@ -82,8 +82,14 @@ function private:GlobalNewVersion()
 		end
     end
 
+	if utils:IsVersionOlderThan(NysTDL.acedb.global.latestVersion, "6.6") then
+        if NysTDL.acedb.global.tuto_progression then
+			tutorialsManager:SetProgress("introduction", NysTDL.acedb.global.tuto_progression)
+		end
+    end
+
 	-- new way to do it
-    -- if utils:IsVersionOlderThan(NysTDL.acedb.global.latestVersion, "6.4") then
+    -- if utils:IsVersionOlderThan(NysTDL.acedb.global.latestVersion, "6.6") then
     --     if NysTDL.acedb.global.tutorials_progression["introduction"] == true then -- if we already completed the tutorial
 	-- 		NysTDL.acedb.global.tutorials_progression["introduction"] = 5
 	-- 	end

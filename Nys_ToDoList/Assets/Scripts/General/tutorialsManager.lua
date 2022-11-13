@@ -174,11 +174,13 @@ function tp:GenerateTutoTable(tutoCategory, defaultTable)
 	if not defaultTable.SetProgress then
 		defaultTable.SetProgress = function(self, newProgress)
 			newProgress = utils:Clamp(newProgress, 0, self:GetMaxProgress())
-			NysTDL.acedb.global.tutorials_progression[self.tutoCategory] = newProgress
 
-			if NysTDL.acedb.global.tutorials_progression[self.tutoCategory] <= 0 then
-				NysTDL.acedb.global.tutorials_progression[self.tutoCategory] = nil
+			if newProgress <= 0 then
+				tutorialsManager:ResetTuto(self.tutoCategory)
+				return
 			end
+
+			NysTDL.acedb.global.tutorials_progression[self.tutoCategory] = newProgress
 
 			if tp:IsProgressAtLeast(self.tutoCategory, true) then
 				self:OnFinish()
@@ -286,6 +288,13 @@ function tutorialsManager:SetProgress(tutoCategory, newProgress)
 	if tutorials[tutoCategory] then
 		newProgress = newProgress or tutorials[tutoCategory]:GetProgress()
 		tutorials[tutoCategory]:SetProgress(newProgress)
+	end
+end
+
+function tutorialsManager:CompleteTuto(tutoCategory)
+	if tutorials[tutoCategory] then
+		tutorials[tutoCategory]:SetProgress(tp:GetMaxProgress(tutoCategory))
+		tutorialsManager:Refresh()
 	end
 end
 
