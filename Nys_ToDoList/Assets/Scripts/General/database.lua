@@ -98,6 +98,7 @@ database.defaults = {
 		currentProfileTab = "", -- updated each time we change tabs
 
 		databrokerMode = enums.databrokerModes.simple,
+		isInMiniView = false,
 		lastListVisibility = false,
 		lockList = false,
 		lockTdlButton = false,
