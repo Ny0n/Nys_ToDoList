@@ -8,7 +8,7 @@
 ## Version: 6.6-beta
 
 ## Author: Nyony (on Twitch)
-## Title: Ny's To-Do List WIP
+## Title: Ny's To-Do List
 ## Notes: A simple interface to remember everything you need to do!
 ## Notes-frFR: Une interface simple pour se souvenir de tout ce que tu as à faire!
 ## Notes-deDE: Einfaches Interface, um dich an alles zu erinnern, was zu tun ist!
