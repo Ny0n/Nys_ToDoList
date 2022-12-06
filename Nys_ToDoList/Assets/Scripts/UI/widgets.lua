@@ -395,27 +395,32 @@ end
 
 --/*******************/ FRAMES /*************************/--
 
-function widgets:TutorialFrame(tutoName, showCloseButton, arrowSide, text, width, height)
-	local tutoFrame = CreateFrame("Frame", "NysTDL_TutorialFrame_"..tutoName, UIParent, "NysTDL_HelpPlateTooltip") -- TDLATER POLISH check if name is mandatory, also checl ALL addon names for the same thing
-	tutoFrame:SetSize(width, height)
+function widgets:TutorialFrame(tutoCategory, tutoName, showCloseButton, arrowSide, text, width)
+	local tutoFrame = CreateFrame("Frame", "NysTDL_TutorialFrame_"..tutoCategory.."_"..tutoName, UIParent, "NysTDL_HelpPlateTooltip") -- TDLATER POLISH check if name is mandatory, also checl ALL addon names for the same thing
+	tutoFrame.Text:SetText(text)
+	tutoFrame.Text:SetWidth(width-15-15)
 
 	if arrowSide == "UP" then tutoFrame.ArrowDOWN:Show()
 	elseif arrowSide == "DOWN" then tutoFrame.ArrowUP:Show()
 	elseif arrowSide == "LEFT" then tutoFrame.ArrowRIGHT:Show()
 	elseif arrowSide == "RIGHT" then tutoFrame.ArrowLEFT:Show() end
 
-	local tutoFrameRightDist = enums.tutoFramesRightSpace
-
 	if showCloseButton then
 		tutoFrame.closeButton = CreateFrame("Button", nil, tutoFrame, "UIPanelCloseButton")
+		tutoFrame.closeButton:SetFrameLevel(tutoFrame:GetFrameLevel()+1)
 		tutoFrame.closeButton:SetPoint("TOPRIGHT", tutoFrame, "TOPRIGHT", 4, 4)
-		tutoFrame.closeButton:SetScript("OnClick", function() tutorialsManager:Next() end) -- overridable
-		tutoFrameRightDist = tutoFrame.closeButton:GetWidth() + 10
+		tutoFrame.closeButton:SetScript("OnClick", function() tutorialsManager:Validate(tutoCategory, tutoName) end)
+		tutoFrame.Text:SetWidth(width-15-25) -- we add an offset because of the close button
 	end
 
-	tutoFrame.Text:SetWidth(tutoFrame:GetWidth() - tutoFrameRightDist)
-	tutoFrame.Text:SetText(text)
+	tutoFrame:SetWidth(width)
 	tutoFrame:Hide() -- we hide them by default, we show them only when we need to
+
+	tutoFrame:SetScript("OnUpdate", function(self)
+		if not utils:Approximately(self:GetHeight(), self.Text:GetHeight()+30) then
+			self:SetHeight(self.Text:GetHeight()+30)
+		end
+	end)
 
 	return tutoFrame
 end
@@ -522,6 +527,7 @@ function widgets:CreateTDLButton()
 	tdlButton = widgets:Button("NysTDL_tdlButton", UIParent, core.simpleAddonName)
 
 	-- properties
+	tdlButton:SetFrameStrata("LOW")
 	tdlButton:EnableMouse(true)
 	tdlButton:SetMovable(true)
 	tdlButton:SetClampedToScreen(true)
@@ -977,7 +983,7 @@ function widgets:CategoryWidget(catID, parentFrame)
 
 		-- // we give it the focus
 		widgets:SetFocusEditBox(categoryWidget.addEditBox)
-		tutorialsManager:Validate("TM_introduction_addItem") -- tutorial
+		tutorialsManager:Validate("introduction", "addItem") -- tutorial
 
 		-- we hide the originalTabLabel so it doesn't overlap (we show it back when the edit box dissapears)
 		categoryWidget.originalTabLabel:Hide()
@@ -1213,15 +1219,14 @@ function private:Event_widgetsFrame_OnUpdate(elapsed)
 
 	-- // every frame // --
 
-	-- tuto frames visibility
-	tutorialsManager:UpdateFramesVisibility()
+	-- ...
 
 	-- // ----------- // --
 
 	while widgetsFrame.timeSinceLastUpdate > updateRate do
 		widgetsFrame.timeSinceLastUpdate = widgetsFrame.timeSinceLastUpdate - updateRate
 
-		-- // every 0.05 sec // -- (instead of every frame which is every 1/144 (0.007) sec for a 144hz display... optimization :D)
+		-- // every 0.05 sec // -- (20 times per second, instead of every frame which is every 1/144 (0.007) sec for a 144hz display... optimization :D)
 
 		-- rainbow update
 		if NysTDL.acedb.profile.rainbow then
@@ -1246,7 +1251,6 @@ end
 
 function widgets:Initialize()
 	-- first we create every visual widget of every file
-	tutorialsManager:CreateTutoFrames()
 	widgets:CreateTDLButton()
 	databroker:CreateDatabrokerObject()
 	-- databroker:CreateTooltipFrame() -- TDLATER
@@ -1273,4 +1277,5 @@ function widgets:ProfileChanged()
 	widgets:WipeDescFrames()
 	mainFrame:Init()
 	tabsFrame:Init()
+	tutorialsManager:Refresh()
 end

@@ -556,27 +556,66 @@ local tabManagementTable = {
 }
 
 local tabAddTable = {
-	addInput = {
+	addGlobalInput = {
 		order = 1.1,
 		type = "input",
-		name = L["Create a new tab"],
+		name = L["Create a new global tab"],
 		get = function()
 			return ""
 		end,
 		set = function(info, tabName)
-			dataManager:CreateTab(tabName, private:GetLeaf(info, 3).arg)
+			dataManager:CreateTab(tabName, true)
+		end,
+	},
+	addProfileInput = {
+		order = 1.2,
+		type = "input",
+		name = L["Create a new profile tab"],
+		get = function()
+			return ""
+		end,
+		set = function(info, tabName)
+			dataManager:CreateTab(tabName, false)
 		end,
 	},
 
 	-- / layout widgets / --
 
 	-- spacers
-	-- spacer099 = {
-	-- 	order = 0.99,
-	-- 	type = "description",
-	-- 	width = "full",
-	-- 	name = "\n",
-	-- }, -- spacer099
+	spacer0 = {
+		order = 1.109,
+		type = "description",
+		width = 0.01,
+		name = "",
+	},
+	imageGlobal = {
+		order = 1.11,
+		type = "description",
+		width = 0.1,
+		name = "",
+		image = enums.icons.global.info,
+		imageCoords = enums.icons.global.texCoords,
+	},
+	spacer1 = {
+		order = 1.12,
+		type = "description",
+		width = "full",
+		name = "",
+	},
+	spacer2 = {
+		order = 1.209,
+		type = "description",
+		width = 0.01,
+		name = "",
+	},
+	imageProfile = {
+		order = 1.21,
+		type = "description",
+		width = 0.1,
+		name = "",
+		image = enums.icons.profile.info,
+		imageCoords = enums.icons.profile.texCoords,
+	},
 }
 
 function private:UpdateTabsInOptions(options)
@@ -883,38 +922,26 @@ function private:CreateAddonOptionsTable()
 									return true
 								end,
 							}, -- optionsUpdater
-							groupProfileTabManagement = {
+							groupTabManagement = {
+								order = 1,
+								type = "group",
+								name = L["Tab Management"],
+								args = tabAddTable,
+							},
+							groupGlobalTabManagement = {
 								order = 1.1,
+								type = "group",
+								name = L["Global tabs"],
+								arg = true,
+								args = {},
+							}, -- groupGlobalTabManagement
+							groupProfileTabManagement = {
+								order = 1.2,
 								type = "group",
 								name = L["Profile tabs"],
 								arg = false,
-								args = utils:Deepcopy(tabAddTable),
+								args = {},
 							}, -- groupProfileTabManagement
-							groupGlobalTabManagement = {
-								order = 1.2,
-								type = "group",
-								name = "Global tabs",
-								arg = true,
-								args = utils:Deepcopy(tabAddTable),
-								hidden = true, -- TDLATER remove to implement global tabs
-							}, -- groupGlobalTabManagement
-
-							-- / layout widgets / --
-
-							-- spacers
-							-- spacer111 = {
-							-- 	order = 1.11,
-							-- 	type = "description",
-							-- 	width = "full",
-							-- 	name = "\n",
-							-- }, -- spacer111
-
-							-- headers
-							header1 = {
-								order = 1,
-								type = "header",
-								name = L["Tab Management"],
-							}, -- header1
 						} -- args
 					}, -- tabs
 					chat = {

@@ -11,9 +11,11 @@ NysTDL.tabsFrame = tabsFrame
 local libs = NysTDL.libs
 local enums = NysTDL.enums
 local utils = NysTDL.utils
+local widgets = NysTDL.widgets
 local database = NysTDL.database
 local mainFrame = NysTDL.mainFrame
 local dataManager = NysTDL.dataManager
+local tutorialsManager = NysTDL.tutorialsManager
 
 -- Secondary aliases
 
@@ -36,6 +38,7 @@ local leftScrollFrameOffset = sidesBonusOffset + inBetweenTabOffset
 local rightScrollFrameOffset = sidesBonusOffset
 local overflowButtonRightOffsetX = rightScrollFrameOffset + inBetweenTabOffset
 local overflowButtonWidth = overflowButtonRightOffsetX + overflowButtonSize
+local inBetweenButtonOffset = 5
 
 if not utils:IsDF() then
 	inBetweenTabOffset = -12
@@ -49,13 +52,11 @@ end
 --** ************** **--
 
 local _currentID = 0
-local _currentState = false -- false == profile tabs, true == global tabs
 local _nbWholeTabsShown, _shownWholeTabs = 0, {}
 local _width = MAX_TAB_SIZE
 
-local scrollFrame, content, overflowButtonFrame, overflowList
+local scrollFrame, content, overflowButtonFrame, overflowList, switchStateButtonFrame
 local tabWidgets, listButtonWidgets = {}, {}
-local lastLeftTab
 
 -- // WoW & Lua APIs
 
@@ -98,7 +99,6 @@ function private:Event_AnimFrame_OnUpdate(elapsed)
 	local totalDistanceNeeded, sign = private:GetScrollDistanceNeeded(_targetTab)
 
 	if totalDistanceNeeded < 1.0 then
-		private:StopAnim()
 		tabsFrame:Refresh()
 		return
 	end
@@ -165,7 +165,7 @@ function private:GetLeftMostTab()
 	-- to know where we are in the scrollFrame
 	-- returns the tabID of the found tab
 	local scrollFrameLeft = scrollFrame:GetLeft()
-	local tabsList = select(3, dataManager:GetData(_currentState))
+	local tabsList = select(3, dataManager:GetData(database.ctabstate()))
 	for _,tabID in ipairs(tabsList.orderedTabIDs) do -- in order, we check which is the first to be ENTIRELY (whole tab) on the right of the scrollFrame's left
 		if tabWidgets[tabID] and tabWidgets[tabID]:GetLeft() then
 			if getTabLeft(tabWidgets[tabID])+15 > scrollFrameLeft then
@@ -244,7 +244,13 @@ function private:CalculateTabSize()
 
 	local scrollSize = scrollFrame:GetParent():GetWidth() -- the default scroll size we're considering to use is the width of the tdlFrame (without considering the overflowButtonFrame)
 	scrollSize = scrollSize - leftScrollFrameOffset - rightScrollFrameOffset
-	local tabsList = select(3, dataManager:GetData(_currentState))
+
+	local hasGlobalData = dataManager:HasGlobalData()
+	if hasGlobalData then
+		scrollSize = scrollSize - overflowButtonWidth + rightScrollFrameOffset -- '+ rightScrollFrameOffset' to zero the '- rightScrollFrameOffset' above
+	end
+
+	local tabsList = select(3, dataManager:GetData(database.ctabstate()))
 	local numTabs = #tabsList.orderedTabIDs
 
 	-- first, we see if we can fit all the tabs at the maximum size
@@ -254,7 +260,7 @@ function private:CalculateTabSize()
 
 	if scrollSize/MIN_TAB_SIZE < numTabs then
 		-- not everything fits, so we'll need room for the overflow button
-		scrollSize = scrollSize - overflowButtonWidth + rightScrollFrameOffset -- '+ rightScrollFrameOffset' to zero the '- rightScrollFrameOffset' above
+		scrollSize = scrollSize - overflowButtonWidth + (hasGlobalData and 0 or rightScrollFrameOffset) -- '+ rightScrollFrameOffset' to zero the '- rightScrollFrameOffset' above
 	end
 	if scrollSize == 0 then
 		return 1, numTabs > 0, 0
@@ -289,7 +295,7 @@ function private:RefreshSize()
 		end
 	end
 
-	local tabsList = select(3, dataManager:GetData(_currentState))
+	local tabsList = select(3, dataManager:GetData(database.ctabstate()))
 	_width = tabSize-inBetweenTabOffset -- THE important line
 	for _,tabID in ipairs(tabsList.orderedTabIDs) do
 		if tabWidgets[tabID] then
@@ -298,24 +304,66 @@ function private:RefreshSize()
 	end
 
 	scrollFrame:ClearAllPoints()
+	scrollFrame:SetPoint("TOPLEFT", mainFrame.tdlFrame, "BOTTOMLEFT", leftScrollFrameOffset, 2)
+
+	local rightOffset = -rightScrollFrameOffset
 	if hasOverflow then
+		overflowButtonFrame:SetPoint("TOPRIGHT", mainFrame.tdlFrame, "BOTTOMRIGHT", -overflowButtonRightOffsetX, 2)
 		overflowButtonFrame:SetShown(true)
-		scrollFrame:SetPoint("TOPLEFT", mainFrame.tdlFrame, "BOTTOMLEFT", leftScrollFrameOffset, 2)
-		scrollFrame:SetPoint("BOTTOMRIGHT", mainFrame.tdlFrame, "BOTTOMRIGHT", -overflowButtonWidth, -40)
+		rightOffset = -overflowButtonWidth
 	else
 		overflowButtonFrame:SetShown(false)
-		scrollFrame:SetPoint("TOPLEFT", mainFrame.tdlFrame, "BOTTOMLEFT", leftScrollFrameOffset, 2)
-		scrollFrame:SetPoint("BOTTOMRIGHT", mainFrame.tdlFrame, "BOTTOMRIGHT", -rightScrollFrameOffset, -40)
 	end
+
+	local hasGlobalData = dataManager:HasGlobalData()
+
+	if hasGlobalData then
+		overflowButtonFrame:SetPoint("TOPRIGHT", mainFrame.tdlFrame, "BOTTOMRIGHT", -overflowButtonWidth-inBetweenButtonOffset, 2)
+		switchStateButtonFrame:SetShown(true)
+
+		if database.ctabstate() then
+			-- global
+			switchStateButtonFrame.btn.Texture:SetTexCoord(unpack(enums.icons.global.texCoords))
+			switchStateButtonFrame.btn:SetSize(select(2, enums.icons.global.info()))
+		else
+			-- profile
+			switchStateButtonFrame.btn.Texture:SetTexCoord(unpack(enums.icons.profile.texCoords))
+			switchStateButtonFrame.btn:SetSize(select(2, enums.icons.profile.info()))
+		end
+
+		rightOffset = -overflowButtonWidth
+	else
+		switchStateButtonFrame:SetShown(false)
+	end
+
+	if hasGlobalData and hasOverflow then
+		rightOffset = -overflowButtonWidth*2
+	end
+
+	scrollFrame:SetPoint("BOTTOMRIGHT", mainFrame.tdlFrame, "BOTTOMRIGHT", rightOffset, -40)
 
 	private:SnapToTab(tabToSnapTo)
 
 	private:OnTabsMoving()
 end
 
+function private:RefreshVisibility()
+	-- shows/hides tabs depending on ctabstate (global/profile)
+
+	local tabsToHide = select(3, dataManager:GetData(not database.ctabstate()))
+	for tabID in pairs(tabsToHide) do
+		if tabWidgets[tabID] then tabWidgets[tabID]:Hide() end
+	end
+
+	local tabsToShow = select(3, dataManager:GetData(database.ctabstate()))
+	for tabID in pairs(tabsToShow) do
+		if tabWidgets[tabID] then tabWidgets[tabID]:Show() end
+	end
+end
+
 function private:RefreshPoints()
 	-- updates the pos of each tab widget, depending on their order
-	local tabsList = select(3, dataManager:GetData(_currentState))
+	local tabsList = select(3, dataManager:GetData(database.ctabstate()))
 
 	local lastWidget = nil
 	for _,tabID in ipairs(tabsList.orderedTabIDs) do
@@ -343,7 +391,7 @@ function private:RefreshOverflowList()
 		listButton.ArrowRIGHT:Hide()
 	end
 
-	local tabsList = select(3, dataManager:GetData(_currentState))
+	local tabsList = select(3, dataManager:GetData(database.ctabstate()))
 	local lastWidget, rightSide
 	for _,tabID in ipairs(tabsList.orderedTabIDs) do
 		if listButtonWidgets[tabID] then
@@ -483,6 +531,12 @@ function tabsFrame:SetAlpha(alpha)
 		overflowButtonFrame.backdrop:SetBackdropBorderColor(1, 1, 1, alpha)
 	end
 
+	-- switchStateButtonFrame
+	if switchStateButtonFrame then
+		switchStateButtonFrame.backdrop:SetBackdropColor(0, 0, 0, alpha)
+		switchStateButtonFrame.backdrop:SetBackdropBorderColor(1, 1, 1, alpha)
+	end
+
 	-- overflowList
 	if overflowList then
 		overflowList:SetBackdropColor(0, 0, 0, alpha)
@@ -534,6 +588,11 @@ function tabsFrame:SetContentAlpha(alpha)
 		overflowButtonFrame.btn:SetAlpha(alpha)
 	end
 
+	-- switchStateButtonFrame
+	if switchStateButtonFrame then
+		switchStateButtonFrame.btn:SetAlpha(alpha)
+	end
+
 	-- overflowList
 	if overflowList then
 		overflowList.content:SetAlpha(alpha)
@@ -578,18 +637,42 @@ function tabsFrame:DeleteTab(tabID)
 	tabsFrame:Refresh() -- refresh
 end
 
+---THE function to switch tab state.
+---@param state nil|boolean nil = switch, false = profile, true = global
+function tabsFrame:SwitchState(state)
+	local originalState = database.ctabstate()
+
+	if state == nil then
+		database.ctabstate(not database.ctabstate())
+	else
+		database.ctabstate(state)
+	end
+
+	if originalState == database.ctabstate() then return end
+
+	mainFrame:ChangeTab(database.ctab())
+	tabsFrame:Refresh()
+end
+
 function tabsFrame:Refresh()
-	-- // we update the visuals of the buttons
+	-- // we refresh EVERYTHING
+
+	private:StopAnim()
+
 	if not tabsFrame.authorized then return end
 
 	-- we update the nb of tabs so that wow's API works (PanelTemplates_SetTab)
 	content.numTabs = _currentID
 
-	-- we select the currently selected tab's button
 	local currentTabID = database.ctab()
+
+	-- we select the currently selected tab's button
 	if tabWidgets[currentTabID] then
 		PanelTemplates_SetTab(tabWidgets[currentTabID]:GetParent(), tabWidgets[currentTabID]:GetID())
 	end
+
+	-- refresh the shown/hidden state (global/profile)
+	private:RefreshVisibility()
 
 	-- refresh the pos
 	private:RefreshPoints()
@@ -614,11 +697,7 @@ function tabsFrame:CreateTabsFrame()
 	scrollFrame.ScrollBar:Hide()
 	scrollFrame.ScrollBar:ClearAllPoints()
 	scrollFrame:SetScript("OnShow", function()
-		private:SnapToTab(lastLeftTab or private:GetLeftMostTab())
 		tabsFrame:Refresh()
-	end)
-	scrollFrame:SetScript("OnHide", function()
-		lastLeftTab = private:GetLeftMostTab()
 	end)
 	local wasMouseOver = false
 	scrollFrame:SetScript("OnUpdate", function(self)
@@ -649,7 +728,7 @@ function tabsFrame:CreateTabsFrame()
 	overflowButtonFrame = CreateFrame("Frame", nil, mainFrame.tdlFrame, nil)
 	overflowButtonFrame:SetPoint("TOPRIGHT", mainFrame.tdlFrame, "BOTTOMRIGHT", -overflowButtonRightOffsetX, 2)
 	overflowButtonFrame:SetSize(overflowButtonSize, overflowButtonSize)
-	overflowButtonFrame:SetFrameStrata("LOW")
+	overflowButtonFrame:SetFrameStrata("BACKGROUND")
 	overflowButtonFrame:SetClipsChildren(true)
 
 	overflowButtonFrame.backdrop = CreateFrame("Frame", nil, overflowButtonFrame, BackdropTemplateMixin and "BackdropTemplate" or nil)
@@ -680,7 +759,7 @@ function tabsFrame:CreateTabsFrame()
 		self:SetPoint("CENTER", self:GetParent(), "CENTER", 0, 0)
 	end)
 
-	overflowList = CreateFrame("Frame", nil, mainFrame.tdlFrame, BackdropTemplateMixin and "BackdropTemplate" or nil)
+	overflowList = CreateFrame("Frame", nil, UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil)
 	overflowList:SetBackdrop({
 		bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
 		edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
@@ -691,6 +770,7 @@ function tabsFrame:CreateTabsFrame()
 	overflowList:SetSize(150, 1) -- the height is updated dynamically
 	overflowList:EnableMouse(true)
 	overflowList:SetClampedToScreen(true)
+	overflowList:SetFrameStrata("TOOLTIP")
 	overflowList:SetToplevel(true)
 	overflowList:Hide()
 
@@ -710,6 +790,51 @@ function tabsFrame:CreateTabsFrame()
 
 		overflowList:SetShown(not overflowList:IsShown()) -- toggles the overflowList
 	end)
+
+	-- // switchStateButton (switch global/profile)
+	switchStateButtonFrame = CreateFrame("Frame", nil, mainFrame.tdlFrame, nil)
+	switchStateButtonFrame:SetPoint("TOPRIGHT", mainFrame.tdlFrame, "BOTTOMRIGHT", -overflowButtonRightOffsetX, 2)
+	switchStateButtonFrame:SetSize(overflowButtonSize, overflowButtonSize)
+	switchStateButtonFrame:SetFrameStrata("BACKGROUND")
+	switchStateButtonFrame:SetClipsChildren(true)
+
+	switchStateButtonFrame.backdrop = CreateFrame("Frame", nil, switchStateButtonFrame, BackdropTemplateMixin and "BackdropTemplate" or nil)
+	switchStateButtonFrame.backdrop:SetBackdrop({
+		bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+		edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+		tile = false, tileSize = 1, edgeSize = 10,
+		insets = { left = 2, right = 2, top = 2, bottom = 2 }
+	})
+	switchStateButtonFrame.backdrop:SetPoint("TOPLEFT", switchStateButtonFrame, "TOPLEFT", 0, 4)
+	switchStateButtonFrame.backdrop:SetSize(switchStateButtonFrame:GetWidth(), switchStateButtonFrame:GetHeight()+2)
+	switchStateButtonFrame.backdrop:SetClipsChildren(true)
+
+	switchStateButtonFrame.btn = CreateFrame("Button", nil, switchStateButtonFrame.backdrop, "NysTDL_OverflowButton")
+	switchStateButtonFrame.btn:SetPoint("CENTER", switchStateButtonFrame.backdrop, "CENTER", 0, 0)
+	local btnIconScale = 0.65 -- value between 0 and 1
+	switchStateButtonFrame.btn:SetSize(switchStateButtonFrame:GetWidth()*btnIconScale, (switchStateButtonFrame:GetHeight()*btnIconScale)/2)
+	local inset = -switchStateButtonFrame:GetWidth()*(1-btnIconScale)
+	switchStateButtonFrame.btn:SetHitRectInsets(inset, inset, inset, inset)
+	switchStateButtonFrame.btn:SetNormalTexture("Interface\\HUD\\UIMicroMenu2x")
+	switchStateButtonFrame.btn.Texture:SetAlpha(0.9)
+	switchStateButtonFrame.btn.Highlight:SetPoint("TOPLEFT", switchStateButtonFrame.backdrop, "TOPLEFT", 2, -4)
+	switchStateButtonFrame.btn.Highlight:SetPoint("BOTTOMRIGHT", switchStateButtonFrame.backdrop, "BOTTOMRIGHT", -2, 2)
+	switchStateButtonFrame.btn:SetScript("OnMouseDown", function(self)
+		self:ClearAllPoints()
+		self:SetPoint("CENTER", self:GetParent(), "CENTER", 1, -2)
+	end)
+	switchStateButtonFrame.btn:SetScript("OnMouseUp", function(self)
+		self:ClearAllPoints()
+		self:SetPoint("CENTER", self:GetParent(), "CENTER", 0, 0)
+	end)
+
+	-- click
+	switchStateButtonFrame.btn:SetScript("OnClick", function()
+		tabsFrame:SwitchState(nil) -- toggle
+	end)
+
+	-- tuto
+	tutorialsManager:SetPoint("tabSwitchState", "explainSwitchButton", "LEFT", switchStateButtonFrame, "RIGHT", 22, 0)
 end
 
 function tabsFrame:Init()
@@ -724,7 +849,7 @@ function tabsFrame:Init()
 	wipe(listButtonWidgets)
 
 	-- before (re)creating them
-	for tabID,tabData in dataManager:ForEach(enums.tab, false) do -- TDLATER global too
+	for tabID in dataManager:ForEach(enums.tab) do
 		tabsFrame:UpdateTab(tabID)
 	end
 

@@ -213,12 +213,12 @@ chat.commands = {
 		chat:CustomPrintForced("- "..L["Reorder/Sort the list"].." ("..L["Drag and Drop"]..")", true)
 		chat:CustomPrintForced("- "..L["Resize the list"].." ("..L["Button in the bottom-right"]..")", true)
 		chat:CustomPrintForced("- "..utils:SafeStringFormat(L["Access new buttons: %s and %s"], "\""..L["Undo last remove"].."\"", "\""..L["Tab actions"].."\""), true)
-		tutorialsManager:Validate("TM_introduction_editmodeChat")
+		tutorialsManager:Validate("introduction", "editmodeChat")
 	end,
 
 	[L["tutorial"]] = function()
 		tutorialsManager:Reset()
-		chat:CustomPrintForced(L["The tutorial has been reset"])
+		chat:CustomPrintForced(L["All tutorials have been reset"])
 	end,
 
 	[string.lower(L["Add"])] = function(...)

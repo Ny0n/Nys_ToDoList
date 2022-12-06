@@ -55,13 +55,12 @@ enums.idtype = "string"
 enums.tdlFrameDefaultWidth = 340
 enums.tdlFrameDefaultHeight = 400
 enums.rightPointDistance = 297
-enums.tutoFramesRightSpace = 28
 
-enums.loadOriginOffset = { -34, -28 }
+enums.loadOriginOffset = { -32, -28 }
 enums.ofsxContent = 30
-enums.ofsyCatContent = 26
+enums.ofsyCatContent = 27
 enums.ofsyCat = 26
-enums.ofsyContentCat = 26
+enums.ofsyContentCat = 27
 enums.ofsyContent = 22
 enums.ofsxItemIcons = -18
 
@@ -74,9 +73,16 @@ enums.maxNameWidth = {
 
 enums.maxDescriptionCharCount = 10000
 enums.maxQuantities = {
-	[enums.item] = 1000,
-	[enums.category] = 1000,
-	[enums.tab] = 20,
+	[false] = { -- profile
+		[enums.item] = 1000,
+		[enums.category] = 1000,
+		[enums.tab] = 20,
+	},
+	[true] = { -- global
+		[enums.item] = 1000,
+		[enums.category] = 1000,
+		[enums.tab] = 20,
+	},
 }
 
 enums.translationErrMsg = "|cffffff00".."Translation error".."|r".." ".."|cffffcc00".."("..libs.Locale..")".."|r"
@@ -95,10 +101,28 @@ enums.days = {
 
 enums.interfaceNumber = tonumber(select(4, GetBuildInfo()))
 
+enums.icons = {
+	global = {
+		info = function() return "Interface\\HUD\\UIMicroMenu2x", 14.5, 15 end,
+		texCoords = { 0.328, 0.436, 0.015, 0.074 },
+	},
+	profile = {
+		info = function() return "Interface\\HUD\\UIMicroMenu2x", 14, 18 end,
+		texCoords = { 0.328, 0.438, 0.43, 0.502 },
+	},
+}
+
 -- dynamic values (still, accessible by all files)
 
 enums.quantities = {
-	[enums.item] = 0,
-	[enums.category] = 0,
-	[enums.tab] = 0,
+	[false] = { -- profile
+		[enums.item] = 0,
+		[enums.category] = 0,
+		[enums.tab] = 0,
+	},
+	[true] = { -- global
+		[enums.item] = 0,
+		[enums.category] = 0,
+		[enums.tab] = 0,
+	},
 }

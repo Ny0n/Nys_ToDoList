@@ -41,8 +41,10 @@ usage()
 }
 
 if [ -z "$1" ] || [ "$1" == "-c" ] || [ "$1" == "-a" ]; then # if we typed nothing or '-c' or '-a'
-	cp "$addondir"/*.toc "." # first we save the toc file
-	prepRelease # so that we can safely change the toc file to our needs
+	# first we prep the toc file
+	prepRelease
+	git add "$addondir"
+	git commit -m "temp"
 
 	if [ ! -d "$packagedir" ]; then # if the package dir doesn't exists
 		mkdir "$packagedir" # then we create it
@@ -52,11 +54,7 @@ if [ -z "$1" ] || [ "$1" == "-c" ] || [ "$1" == "-a" ]; then # if we typed nothi
 	rm -rf "./${packagedir:?}/${addonname:?}"*
 
 	# and we create (use) the packaging script from 'BigWigsMods/packager' on github
-	curl -s "https://raw.githubusercontent.com/BigWigsMods/packager/e29ee19573d8e5490572b67f006eb5337b5a4436/release.sh" > "$packagedir/package.sh"
-	# i voluntarily used a specific commit and not the latest master vesion,
-	# because i need to add a line of code inside the script at a specific point,
-	# and i need consistency to do that, so i'm sure that the curl always gives me the same script
-	sed -i '1380i\\t\t\t\tif [ $(basename "$file") == "Nys_ToDoList.toc" ]; then skip_copy=; fi' "$packagedir/package.sh"
+	curl -s "https://raw.githubusercontent.com/BigWigsMods/packager/master/release.sh" > "$packagedir/package.sh"
 
 	# here we get potential additionnal arguments to send to package.sh
 	args=""
@@ -82,9 +80,10 @@ if [ -z "$1" ] || [ "$1" == "-c" ] || [ "$1" == "-a" ]; then # if we typed nothi
 	# we're done packaging, so we can delete the 'package.sh' script inside the package folder
 	rm -f "$packagedir/package.sh"
 
-	# and finally, we put back the saved toc file where it belongs
-	rm -f "$addondir"/*.toc
-	mv ./*.toc "$addondir/"
+	# and finally, we reset the toc file
+	git reset --soft HEAD~1
+	git restore --staged "$addondir"
+	prepDev
 elif [ "$1" == "--release" ] || [ "$1" == "--dev" ]; then # prep functionnality
 	prepRelease
 	if [ "$1" == "--dev" ]; then # if we want to prep for dev, we put back the WIPs

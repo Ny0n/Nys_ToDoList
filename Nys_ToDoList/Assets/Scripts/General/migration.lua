@@ -15,6 +15,7 @@ local widgets = NysTDL.widgets
 local database = NysTDL.database
 local mainFrame = NysTDL.mainFrame
 local dataManager = NysTDL.dataManager
+local tutorialsManager = NysTDL.tutorialsManager
 
 -- Secondary aliases
 
@@ -73,11 +74,26 @@ function private:GlobalNewVersion()
     -- // updates the global saved variables once after an update
 
     if utils:IsVersionOlderThan(NysTDL.acedb.global.latestVersion, "6.0") then -- if we come from before 6.0
-        if NysTDL.acedb.global.tuto_progression > 5 then -- if we already completed the tutorial
-            -- we go to the new part of the edit mode button
-            NysTDL.acedb.global.tuto_progression = 5
-        end
+        if NysTDL.acedb.global.tuto_progression then
+			if NysTDL.acedb.global.tuto_progression > 5 then -- if we already completed the tutorial
+				-- we go to the new part of the edit mode button
+				NysTDL.acedb.global.tuto_progression = 5
+			end
+		end
     end
+
+	if utils:IsVersionOlderThan(NysTDL.acedb.global.latestVersion, "6.6") then
+        if NysTDL.acedb.global.tuto_progression then
+			tutorialsManager:SetProgress("introduction", NysTDL.acedb.global.tuto_progression)
+		end
+    end
+
+	-- new way to do it
+    -- if utils:IsVersionOlderThan(NysTDL.acedb.global.latestVersion, "6.6") then
+    --     if NysTDL.acedb.global.tutorials_progression["introduction"] == true then -- if we already completed the tutorial
+	-- 		NysTDL.acedb.global.tutorials_progression["introduction"] = 5
+	-- 	end
+    -- end
 end
 
 function private:ProfileNewVersion()
@@ -456,7 +472,6 @@ function private:Failed(errmsg, original)
         migrationDataSV.version = migrationData.failed.version
         migrationDataSV.errmsg = errmsg
         migrationDataSV.warning = true
-        migrationDataSV.tuto = true
 
         -- and then, we reset once the list, the catList, and the tabs content, just so that we start with a clean state,
         -- this is in case the error created corrupted data (unusable/wrong/incomplete)
@@ -487,7 +502,7 @@ function private:Failed(errmsg, original)
         local points, _ = NysTDL.acedb.profile.framePos, nil
         points.point, _, points.relativePoint, points.xOffset, points.yOffset = "CENTER", nil, "CENTER", 0, 0
 
-        --we only need to update the saved avrs, so that when the tdlFrame initializes, it uses them and updates accordingly.
+        -- we only need to update the saved vars, so that when the tdlFrame initializes, it uses them and updates accordingly.
     end
 end
 
@@ -501,22 +516,8 @@ function private:CreateRecoveryList()
     recoveryList.frame = CreateFrame("Frame", "NysTDL_recoveryList", mainFrame.tdlFrame, BackdropTemplateMixin and "BackdropTemplate" or nil)
     local frame = recoveryList.frame
 
-    -- as well as the tuto frame
-    if NysTDL.acedb.profile.migrationData.tuto then
-        recoveryList.tutoFrame = widgets:TutorialFrame("NysTDL_recoveryList_tutoFrame", true, "DOWN", "You can click on any name to put it in the input field below, you can then Ctrl+C/Ctrl+V", 200, 50)
-        recoveryList.tutoFrame.closeButton:SetScript("OnClick", function()
-            recoveryList.tutoFrame:Hide()
-            recoveryList.tutoFrame:ClearAllPoints()
-            NysTDL.acedb.profile.migrationData.tuto = nil
-        end)
-
-        recoveryList.tutoFrame:SetParent(frame)
-
-        recoveryList.tutoFrame:ClearAllPoints()
-        recoveryList.tutoFrame:SetPoint("BOTTOM", frame, "TOP", 0, 20)
-
-        recoveryList.tutoFrame:Show()
-    end
+	-- tuto
+	tutorialsManager:SetPoint("migration", "explainFrame", "BOTTOM", frame, "TOP", 0, 20)
 
     -- background
     frame:SetBackdrop({
@@ -531,7 +532,7 @@ function private:CreateRecoveryList()
 
     -- properties
     frame:SetClampedToScreen(true)
-    frame:SetFrameStrata("HIGH")
+    frame:SetFrameStrata("MEDIUM")
 	frame:HookScript("OnUpdate", private.Event_recoveryFrame_OnUpdate)
 
     -- we resize the frame
@@ -714,7 +715,7 @@ function private:CreateWarning()
 
     -- properties
     frame:SetClampedToScreen(true)
-    frame:SetFrameStrata("HIGH")
+    frame:SetFrameStrata("MEDIUM")
     frame:EnableMouse(true)
 
     -- we resize the frame
@@ -1247,7 +1248,10 @@ function migration:TestFunc()
     migrationDataSV.version = "6.0"
     migrationDataSV.errmsg = "Custom"
     migrationDataSV.warning = false
-    migrationDataSV.tuto = IsAltKeyDown()
+
+    if IsAltKeyDown() then
+		tutorialsManager:ResetTuto("migration")
+	end
 
     private:Failed(nil, false)
 end
