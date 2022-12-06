@@ -211,33 +211,35 @@ end
 function tutorialsManager:SetPoint(tutoCategory, tutoName, point, relativeTo, relativePoint, ofsx, ofsy)
 	-- sets the points and target frame of a given tutorial
 	local frameName = gn(tutoCategory, tutoName)
-	if tutorialFrames[frameName] then
+	local tutoFrame = tutorialFrames[frameName]
+	if tutoFrame then
 		tutorialFramesTarget[frameName] = relativeTo
-		tutorialFrames[frameName]:ClearAllPoints()
-		tutorialFrames[frameName]:SetPoint(point, relativeTo, relativePoint, ofsx, ofsy)
+		tutoFrame:ClearAllPoints()
+		tutoFrame:SetPoint(point, relativeTo, relativePoint, ofsx, ofsy)
+
+		if relativeTo and relativeTo.HookScript and relativeTo.IsVisible then
+			relativeTo:HookScript("OnShow", function(self)
+				if tutorialFramesTarget[frameName] == self and tutorialFrames[frameName] then
+					if tutorialFrames[frameName].shouldBeShown then
+						tutorialFrames[frameName]:Show()
+					end
+				end
+			end)
+			relativeTo:HookScript("OnHide", function(self)
+				if tutorialFramesTarget[frameName] == self and tutorialFrames[frameName] then
+					tutorialFrames[frameName]:Hide()
+				end
+			end)
+			tutoFrame:SetShown(tutoFrame.shouldBeShown and relativeTo:IsVisible())
+		else
+			tutoFrame:Hide()
+		end
 	end
 end
 
 function tutorialsManager:SetFramesScale(scale)
 	for _, v in pairs(tutorialFrames) do
 		v:SetScale(scale)
-	end
-end
-
-function tutorialsManager:UpdateFramesVisibility()
-	-- here we manage the visibility of the tutorial frames, showing them if their corresponding frames are shown
-	-- this is called by the OnUpdate event of the widgetsFrame (private:Event_widgetsFrame_OnUpdate(elapsed) in widgets.lua)
-
-	for frameName,frame in pairs(tutorialFrames) do
-		local newShownState = false
-		if frame.shouldBeShown then
-			if tutorialFramesTarget[frameName] ~= nil and tutorialFramesTarget[frameName]:IsVisible() then -- if the corresponding target frame is currently visible
-				newShownState = true -- then we can show the tutorial frame
-			end
-		end
-		if frame:IsShown() ~= newShownState then
-			frame:SetShown(newShownState)
-		end
 	end
 end
 
@@ -255,6 +257,14 @@ function tutorialsManager:Refresh()
 			if tutorialFrames[frameName] then
 				tutorialFrames[frameName].shouldBeShown = true
 			end
+		end
+	end
+
+	for frameName,frame in pairs(tutorialFrames) do
+		if tutorialFramesTarget[frameName] then
+			frame:SetShown(frame.shouldBeShown and tutorialFramesTarget[frameName]:IsVisible())
+		else
+			frame:Hide()
 		end
 	end
 end

@@ -1235,9 +1235,6 @@ function private:Event_widgetsFrame_OnUpdate(elapsed)
 			end
 		end
 
-		-- tuto frames visibility
-		tutorialsManager:UpdateFramesVisibility()
-
 		-- // -------------- // --
 
 		while widgetsFrame.timeSinceLastRefresh > refreshRate do
