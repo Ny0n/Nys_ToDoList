@@ -833,13 +833,13 @@ function private:CreateAddonOptionsTable()
 
 									-- and save the changes
 
-									--@retail@
-									SaveBindings(GetCurrentBindingSet())
-									--@end-retail@
-
-									--[===[@non-retail@
-									AttemptToSaveBindings(GetCurrentBindingSet())
-									--@end-non-retail@]===]
+									if WOW_PROJECT_ID == WOW_PROJECT_CLASSIC then
+										print("classic")
+										AttemptToSaveBindings(GetCurrentBindingSet())
+									else
+										print("non-classic")
+										SaveBindings(GetCurrentBindingSet())
+									end
 								end,
 							}, -- keyBind
 

@@ -61,7 +61,7 @@ function private:SetSimpleMode()
 	local tooltipObject -- we get the tooltip frame on the first private:DrawSimpleTooltip call from OnTooltipShow
 	o.type = "launcher"
 	o.label = core.toc.title
-	o.icon = "Interface\\AddOns\\"..addonName.."\\Assets\\Art\\minimap_icon"
+	o.icon = enums.icons.minimap.info()
 	function o.OnClick()
 		if IsControlKeyDown() then
 			-- lock minimap button
@@ -112,7 +112,7 @@ function private:SetAdvancedMode()
 	local tooltipObject -- we get the tooltip frame on the first private:DrawSimpleTooltip call from OnTooltipShow
 	o.type = "launcher"
 	o.label = core.toc.title.." ADVANCED"
-	o.icon = "Interface\\AddOns\\"..addonName.."\\Assets\\Art\\minimap_icon"
+	o.icon = enums.icons.minimap.info()
 	function o.OnClick()
 		if IsControlKeyDown() then
 			-- lock minimap button
@@ -149,7 +149,7 @@ function private:SetFrameMode()
 
 	o.type = "launcher"
 	o.label = core.toc.title.." TDLATER"
-	o.icon = "Interface\\AddOns\\"..addonName.."\\Assets\\Art\\minimap_icon"
+	o.icon = enums.icons.minimap.info()
 end
 
 --/***************/ DATAOBJECT /*****************/--
