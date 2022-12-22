@@ -1,5 +1,5 @@
 # Ny's To-Do List
-WoW addon for retail
+WoW addon for retail and classic
 
 ![Preview](https://github.com/Ny0n/Nys_ToDoList/blob/main/.other/previews/previewBase.png?raw=true)
 
