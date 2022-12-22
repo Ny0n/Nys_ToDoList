@@ -233,7 +233,7 @@ end
 
 local changelog = {
 	-- index table (not key-value), only place here the important changes.
-	"- Global tabs are here! They are account-wide and work just like normal tabs. You can create them in the addon options",
+	"- Added support for WoW Classic versions",
 }
 
 ---Called once, when the addon gets an update.
