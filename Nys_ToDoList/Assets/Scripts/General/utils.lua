@@ -171,7 +171,7 @@ end
 ---Quick and easy check to know if we are currently running Dragonflight or not
 ---@return boolean
 function utils:IsDF()
-	return enums.interfaceNumber >= 100000
+	return LE_EXPANSION_LEVEL_CURRENT >= 9
 end
 
 ---To copy any table.

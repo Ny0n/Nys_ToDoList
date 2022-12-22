@@ -1,3 +1,7 @@
+#### **6.7**
+
+- Added support for WoW Classic versions
+
 #### **6.6**
 
 - Global tabs are here! They are account-wide and work just like normal tabs. You can create them in the addon options

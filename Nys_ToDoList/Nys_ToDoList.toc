@@ -1,11 +1,10 @@
 # /run print((select(4, GetBuildInfo())))
-#@retail@
 ## Interface: 100002
-#@end-retail@
-#@non-retail@
-# ## Interface: 11306
-#@end-non-retail@
-## Version: 6.6
+## Interface-Classic: 11403
+## Interface-BCC: 20504
+## Interface-Wrath: 30400
+
+## Version: 6.7-alpha
 
 ## Author: Nyony (on Twitch)
 ## Title: Ny's To-Do List

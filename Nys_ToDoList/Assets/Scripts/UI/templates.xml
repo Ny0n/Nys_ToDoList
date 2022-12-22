@@ -660,7 +660,7 @@
 		<Size x="1" y="1"/> <!-- Just so that we see the content of the frame -->
 		<Layers>
 			<Layer level="BACKGROUND">
-				<Texture parentKey="Line" file="Interface\CovenantChoice\CovenantChoiceCelebration">
+				<Texture parentKey="Line">
 					<TexCoords left="0.1" right="0.3" top="0.90" bottom="0.95"/>
 					<Size x="200" y="15"/>
 					<Anchors>
@@ -669,7 +669,7 @@
 				</Texture>
 			</Layer>
 			<Layer level="ARTWORK">
-				<Texture parentKey="Arrow" file="Interface\Azerite\Azerite">
+				<Texture parentKey="Arrow">
 					<TexCoords left="0.756" right="0.848" top="0.841" bottom="0.864"/>
 					<Size x="15" y="15"/>
 					<Anchors>
@@ -680,6 +680,8 @@
 		</Layers>
 		<Scripts>
 			<OnLoad>
+				self.Line:SetTexture(NysTDL.enums.icons.dropLine.info())
+				self.Arrow:SetTexture(NysTDL.enums.icons.dropArrow.info())
 				self.Arrow:SetRotation(0.77)
 			</OnLoad>
 		</Scripts>

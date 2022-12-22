@@ -8,6 +8,7 @@ NysTDL.enums = enums
 -- Primary aliases
 
 local libs = NysTDL.libs
+local core = NysTDL.core
 
 -- Secondary aliases
 
@@ -101,14 +102,24 @@ enums.days = {
 
 enums.interfaceNumber = tonumber(select(4, GetBuildInfo()))
 
+enums.artPath = "Interface\\AddOns\\"..core.addonName.."\\Assets\\Art\\"
 enums.icons = {
 	global = {
-		info = function() return "Interface\\HUD\\UIMicroMenu2x", 14.5, 15 end,
+		info = function() return enums.artPath.."UIMicroMenu2x", 14.5, 15 end,
 		texCoords = { 0.328, 0.436, 0.015, 0.074 },
 	},
 	profile = {
-		info = function() return "Interface\\HUD\\UIMicroMenu2x", 14, 18 end,
+		info = function() return enums.artPath.."UIMicroMenu2x", 14, 18 end,
 		texCoords = { 0.328, 0.438, 0.43, 0.502 },
+	},
+	minimap = {
+		info = function() return enums.artPath.."70_professions_scroll_03" end,
+	},
+	dropLine = {
+		info = function() return enums.artPath.."CovenantChoiceCelebration" end,
+	},
+	dropArrow = {
+		info = function() return enums.artPath.."Azerite" end,
 	},
 }
 

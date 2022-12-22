@@ -33,48 +33,55 @@ usage()
 	echo "Usage: build.sh [MODE]"
 	echo "[MODE] can be ONE of these, with [-a {args}] meaning that we can send more arguments to the packaging script if wanted:"
 	echo ""
-	echo -e "\t[-a {args}]    \tbuilds the addon for retail"
-	echo -e "\t-c [-a {args}] \tbuilds the addon for classic"
+	echo -e "\t[-a {args}]    \tbuilds the addon"
 	echo ""
 	echo -e "\t--release      \tpreps the toc file for release"
 	echo -e "\t--dev          \tpreps the toc file for development"
 }
 
-if [ -z "$1" ] || [ "$1" == "-c" ] || [ "$1" == "-a" ]; then # if we typed nothing or '-c' or '-a'
+if [ -z "$1" ] || [ "$1" == "-a" ]; then # if we typed nothing or '-a'
 	# first we prep the toc file
 	prepRelease
 	git add "$addondir"
 	git commit -m "temp"
 
-	if [ ! -d "$packagedir" ]; then # if the package dir doesn't exists
-		mkdir "$packagedir" # then we create it
+	if [ ! -d "$packagedir" ]; then # if the package dir doesn't exist
+		mkdir "$packagedir" # we create it
 	fi
 
 	# then we clear the old builds in the package folder
 	rm -rf "./${packagedir:?}/${addonname:?}"*
 
-	# and we create (use) the packaging script from 'BigWigsMods/packager' on github
+	# and we create (use) the packaging script from 'BigWigsMods/packager' on GitHub
+	# (renaming the script 'package.sh' for naming consistency)
 	curl -s "https://raw.githubusercontent.com/BigWigsMods/packager/master/release.sh" > "$packagedir/package.sh"
 
-	# here we get potential additionnal arguments to send to package.sh
+	# here we get potential additional arguments to send to package.sh
 	args=""
 	mark="0"
 	for i in "$@"; do
 		if [ "$mark" == "1" ]; then
-			args="$args $i"
+			if [ -z "$args" ]; then
+				args="$i"
+			else
+				args="$args $i"
+			fi
 		fi
 		if [ "$i" == "-a" ] && [ "$mark" == "0" ]; then
 			mark="1"
 		fi
 	done
+	if [ -z "$args" ]; then
+		echo "No additional arguments"
+	else
+		echo "Additional arguments: \"$args\""
+	fi
 
 	cd "$packagedir" || exit # we move the execution to the package folder
-	# we call release.sh (renamed package.sh for naming consistency :D) with the good arguments
-	if [ "$1" == "-c" ]; then
-		./package.sh -r "$(pwd)" -d -g classic "$args" # classic
-	else
-		./package.sh -r "$(pwd)" -d "$args" # retail
-	fi
+
+	# we call package.sh with the good arguments
+	./package.sh -r "$(pwd)" -d $args
+
 	cd "$builddir" || exit # we come back to the build folder
 
 	# we're done packaging, so we can delete the 'package.sh' script inside the package folder
@@ -84,7 +91,7 @@ if [ -z "$1" ] || [ "$1" == "-c" ] || [ "$1" == "-a" ]; then # if we typed nothi
 	git reset --soft HEAD~1
 	git restore --staged "$addondir"
 	prepDev
-elif [ "$1" == "--release" ] || [ "$1" == "--dev" ]; then # prep functionnality
+elif [ "$1" == "--release" ] || [ "$1" == "--dev" ]; then # prep functionality
 	prepRelease
 	if [ "$1" == "--dev" ]; then # if we want to prep for dev, we put back the WIPs
 		prepDev

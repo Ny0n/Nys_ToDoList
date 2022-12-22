@@ -1,5 +1,7 @@
 package-as: Nys_ToDoList
 
+enable-toc-creation: yes
+
 enable-nolib-creation: no
 
 externals:

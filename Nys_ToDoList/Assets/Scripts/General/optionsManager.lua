@@ -833,13 +833,11 @@ function private:CreateAddonOptionsTable()
 
 									-- and save the changes
 
-									--@retail@
-									SaveBindings(GetCurrentBindingSet())
-									--@end-retail@
-
-									--[===[@non-retail@
-									AttemptToSaveBindings(GetCurrentBindingSet())
-									--@end-non-retail@]===]
+									if AttemptToSaveBindings then
+										AttemptToSaveBindings(GetCurrentBindingSet())
+									else
+										SaveBindings(GetCurrentBindingSet())
+									end
 								end,
 							}, -- keyBind
 
