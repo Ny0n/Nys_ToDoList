@@ -833,11 +833,9 @@ function private:CreateAddonOptionsTable()
 
 									-- and save the changes
 
-									if WOW_PROJECT_ID == WOW_PROJECT_CLASSIC then
-										print("classic")
+									if AttemptToSaveBindings then
 										AttemptToSaveBindings(GetCurrentBindingSet())
 									else
-										print("non-classic")
 										SaveBindings(GetCurrentBindingSet())
 									end
 								end,
