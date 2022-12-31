@@ -1,6 +1,7 @@
 #### **6.7**
 
 - Added support for WoW Classic versions
+- Added localization for Korean (koKR)
 
 #### **6.6**
 
