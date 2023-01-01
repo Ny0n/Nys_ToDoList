@@ -23,6 +23,7 @@ NysTDL.libs = {
 	AceDBOptions = LibStub("AceDBOptions-3.0"),
 	AceEvent = LibStub("AceEvent-3.0"),
 	AceGUI = LibStub("AceGUI-3.0"),
+	AceSerializer = LibStub("AceSerializer-3.0"),
 	AceTimer = LibStub("AceTimer-3.0"),
 
 	L = LibStub("AceLocale-3.0"):GetLocale(addonName),
@@ -31,7 +32,8 @@ NysTDL.libs = {
 	LDB = LibStub("LibDataBroker-1.1"),
 	LDBIcon = LibStub("LibDBIcon-1.0"),
 
-	LibQTip = LibStub('LibQTip-1.0'),
+	LibQTip = LibStub("LibQTip-1.0"),
+	LibDeflate = LibStub("LibDeflate"),
 }
 
 -- //** files **//
