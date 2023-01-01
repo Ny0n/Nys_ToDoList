@@ -10,6 +10,7 @@ local database = NysTDL.database
 local dataManager = NysTDL.dataManager
 local enums = NysTDL.enums
 local events = NysTDL.events
+local impexp = NysTDL.impexp
 local migration = NysTDL.migration
 local optionsManager = NysTDL.optionsManager
 local resetManager = NysTDL.resetManager
@@ -40,15 +41,44 @@ function NysTDL:Tests(nb, ...)
 	if nb == 1 then
 		AceConfigDialog:Open(addonName)
 	elseif nb == 2 then
-		mainFrame:Toggle()
+		-- mainFrame:Toggle()
 		-- UIFrameFadeOut(tdlFrame, 2)
 		-- print(tdlFrame.fadeInfo.finishedFunc)
 		-- tdlFrame.fadeInfo.finishedFunc = function(arg1)
 		-- print("hey")
 		-- end
 		-- print(tdlFrame.fadeInfo.finishedFunc)
+
+		-- impexp:ShowIEFrame(L["Export"], "", "")
+		-- do return end
+
+		-- local data = { 1, 2, 3, 4, 5 }
+		-- local data = { ["hey"] = 5 }
+		local data = {
+			-- global data
+			g_items = NysTDL.acedb.global.itemsList,
+			g_categories = NysTDL.acedb.global.categoriesList,
+			g_tabs = NysTDL.acedb.global.tabsList,
+
+			-- profile data
+			items = NysTDL.acedb.profile.itemsList,
+			categories = NysTDL.acedb.profile.categoriesList,
+			tabs = NysTDL.acedb.profile.tabsList,
+		}
+
+		local encodedData = impexp:Export(data)
+		if encodedData then
+			print("Export successful")
+			local length = #encodedData
+			local subtitle = "Characters: "..tostring(length)..", "..string.format("Size: %.1fKB", length/1024)
+			impexp:ShowIEFrame(L["Export"], subtitle, encodedData)
+		else
+			print("Export error")
+		end
 	elseif nb == 3 then
-		core:AddonUpdated()
+		impexp:ShowIEFrame(L["Import"])
+
+		-- core:AddonUpdated()
 		-- for tabID, tabData in dataManager:ForEach(enums.tab, false) do
 		--   if next(tabData.reset.days) then
 		--     print(">================<")
@@ -99,3 +129,11 @@ local backdrop_tests = {
 	tile = false, tileSize = 1, edgeSize = 10,
 	insets = { left = 0, right = 0, top = 0, bottom = 0 }
 }
+
+-- // Secure action button test
+-- local macroBtn = CreateFrame("Button", "myMacroButton", UIParent, "SecureActionButtonTemplate")
+-- macroBtn:SetAttribute("type1", "macro") -- left click causes macro
+-- macroBtn:SetAttribute("macrotext1", "/say test") -- text for macro on left click
+-- macroBtn:SetSize(100, 100)
+-- macroBtn:SetPoint("CENTER")
+-- macroBtn:RegisterForClicks("LeftButtonDown")

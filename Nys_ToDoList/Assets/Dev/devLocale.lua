@@ -19,6 +19,8 @@ addonTable.devLocale = L
 
 --/************************************************/--
 
+L["Import"] = true
+L["Export"] = true
 L["Create a new global tab"] = true
 L["Create a new profile tab"] = true
 L["Global tabs"] = true

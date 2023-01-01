@@ -43,6 +43,7 @@ NysTDL.database = {}
 NysTDL.dataManager = {}
 NysTDL.enums = {}
 NysTDL.events = {}
+NysTDL.impexp = {}
 NysTDL.migration = {}
 NysTDL.optionsManager = {}
 NysTDL.resetManager = {}
