@@ -498,7 +498,7 @@ end
 ---@param itemData table
 ---@return string|nil itemID
 ---@return table itemData
-function private:AddItem(itemID, itemData)
+function dataManager:AddItem(itemID, itemData)
 	-- we get where we are
 	local isGlobal, _, itemsList, categoriesList = select(2, dataManager:Find(itemData.originalTabID))
 
@@ -563,7 +563,7 @@ function dataManager:CreateItem(itemName, tabID, catID)
 		description = false,
 	}
 
-	return private:AddItem(dataManager:NewID(), itemData)
+	return dataManager:AddItem(dataManager:NewID(), itemData)
 end
 
 -- category
@@ -573,7 +573,7 @@ end
 ---@param catData table
 ---@return string|nil catID
 ---@return table catData
-function private:AddCategory(catID, catData)
+function dataManager:AddCategory(catID, catData)
 	-- we get where we are
 	local isGlobal, _, _, categoriesList = select(2, dataManager:Find(catData.originalTabID))
 
@@ -648,7 +648,7 @@ function dataManager:CreateCategory(catName, tabID, parentCatID)
 
 	catData.tabIDs[tabID] = true
 
-	return private:AddCategory(dataManager:NewID(), catData)
+	return dataManager:AddCategory(dataManager:NewID(), catData)
 end
 
 -- tab
@@ -659,7 +659,7 @@ end
 ---@param isGlobal boolean
 ---@return string|nil tabID
 ---@return table tabData
-function private:AddTab(tabID, tabData, isGlobal)
+function dataManager:AddTab(tabID, tabData, isGlobal)
 	-- we get where we are
 	isGlobal = not not isGlobal
 	local tabsList = select(3, dataManager:GetData(isGlobal))
@@ -726,7 +726,7 @@ function dataManager:CreateTab(tabName, isGlobal)
 
 	resetManager:InitTabData(tabData)
 
-	return private:AddTab(dataManager:NewID(), tabData, isGlobal)
+	return dataManager:AddTab(dataManager:NewID(), tabData, isGlobal)
 end
 
 -- misc
@@ -1275,11 +1275,11 @@ function dataManager:Undo()
 		else
 			local psuccess = pcall(function() -- we protect the code from potential "ID not found" errors
 				if toUndo.enum == enums.item then -- item
-					success = not not private:AddItem(toUndo.ID, toUndo.data)
+					success = not not dataManager:AddItem(toUndo.ID, toUndo.data)
 				elseif toUndo.enum == enums.category then -- category
-					success = not not private:AddCategory(toUndo.ID, toUndo.data)
+					success = not not dataManager:AddCategory(toUndo.ID, toUndo.data)
 				elseif toUndo.enum == enums.tab then -- tab
-					success = not not private:AddTab(toUndo.ID, toUndo.data, toUndo.isGlobal)
+					success = not not dataManager:AddTab(toUndo.ID, toUndo.data, toUndo.isGlobal)
 				end
 			end)
 

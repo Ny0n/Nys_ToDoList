@@ -52,29 +52,12 @@ function NysTDL:Tests(nb, ...)
 		-- impexp:ShowIEFrame(L["Export"], "", "")
 		-- do return end
 
-		-- local data = { 1, 2, 3, 4, 5 }
-		-- local data = { ["hey"] = 5 }
-		local data = {
-			-- global data
-			g_items = NysTDL.acedb.global.itemsList,
-			g_categories = NysTDL.acedb.global.categoriesList,
-			g_tabs = NysTDL.acedb.global.tabsList,
-
-			-- profile data
-			items = NysTDL.acedb.profile.itemsList,
-			categories = NysTDL.acedb.profile.categoriesList,
-			tabs = NysTDL.acedb.profile.tabsList,
-		}
-
-		local encodedData = impexp:Export(data)
-		if encodedData then
-			print("Export successful")
-			local length = #encodedData
-			local subtitle = "Characters: "..tostring(length)..", "..string.format("Size: %.1fKB", length/1024)
-			impexp:ShowIEFrame(L["Export"], subtitle, encodedData)
-		else
-			print("Export error")
+		local tabIDs = {}
+		for tabID in dataManager:ForEach(enums.tab) do
+			table.insert(tabIDs, tabID)
 		end
+
+		impexp:LaunchExportProcess(tabIDs)
 	elseif nb == 3 then
 		impexp:ShowIEFrame(L["Import"])
 

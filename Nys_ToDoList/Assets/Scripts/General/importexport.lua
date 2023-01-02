@@ -8,7 +8,10 @@ NysTDL.impexp = impexp
 -- Primary aliases
 
 local libs = NysTDL.libs
+local enums = NysTDL.enums
+local utils = NysTDL.utils
 local widgets = NysTDL.widgets
+local dataManager = NysTDL.dataManager
 
 -- Secondary aliases
 
@@ -18,6 +21,16 @@ local LibDeflate = libs.LibDeflate
 local AceGUI = libs.AceGUI
 
 --/*******************************************************/--
+
+-- Variables
+
+local private = {}
+
+-- // WoW & Lua APIs
+
+local wipe, select = wipe, select
+local type, pairs, ipairs = type, pairs, ipairs
+local tinsert, tremove = table.insert, table.remove
 
 ---@class impexp.deflateMethod
 impexp.deflateMethod = {
@@ -85,12 +98,15 @@ function impexp:TryToImport(editbox)
 	local success
 	local decodedData = impexp:Import(editbox:GetText())
 	if decodedData then
+		success = private:LaunchImportProcess(decodedData)
+	else
+		success = false
+	end
+
+	if success then
 		print("Import successful")
-		-- import data...
-		success = true
 	else
 		print("Import error")
-		success = false
 	end
 
 	collectgarbage()
@@ -132,4 +148,101 @@ function impexp:ShowIEFrame(title, statusText, data)
 			end
 		end)
 	end
+end
+
+--/***************/ Data Import /*****************/--
+
+function private:LaunchImportProcess(data)
+	-- // Part 1: Validate the data
+	if type(data) ~= "table" then return end
+	--[[
+		data = {
+			elementInfo,
+			...
+		}
+	]]
+
+	-- ...
+
+	-- // Part 2: Replace all IDs by new ones
+	local idMap = {
+		-- [importID] = dataManager:NewID(),
+		-- ...
+	}
+
+
+	-- // Part 3: Adding the processed data into the list
+	local success, psuccess
+	for _,elementInfo in ipairs(data) do
+		psuccess = pcall(function() -- we protect the code from potential "ID not found" errors
+			if elementInfo.enum == enums.item then -- item
+				success = not not dataManager:AddItem(elementInfo.ID, elementInfo.data)
+			elseif elementInfo.enum == enums.category then -- category
+				success = not not dataManager:AddCategory(elementInfo.ID, elementInfo.data)
+			elseif elementInfo.enum == enums.tab then -- tab
+				success = not not dataManager:AddTab(elementInfo.ID, elementInfo.data, elementInfo.isGlobal)
+			end
+		end)
+
+		if psuccess then
+			if not success then
+				print("error adding element")
+			else
+				-- ...
+			end
+		else
+			print("pcall error adding element")
+		end
+	end
+
+	return true
+end
+
+function impexp:LaunchExportProcess(tabIDs)
+	-- // Part 1: Validate the tabIDs
+	if type(tabIDs) ~= "table" then return end
+	--[[
+		tabIDs = {
+			ID,
+			ID,
+			...
+		}
+	]]
+
+	-- // Part 2: Create the export table
+	local exportData = {}
+
+	-- // Part 3: Find all of the data related to the tabs we want to export, process its info, and add it to the export table
+	for _,tabID in ipairs(tabIDs) do
+		tinsert(exportData, private:GenerateInfoTable(tabID)) -- tabs
+		for catID in dataManager:ForEach(enums.category, tabID) do
+			tinsert(exportData, private:GenerateInfoTable(catID)) -- categories
+		end
+		for itemID in dataManager:ForEach(enums.item, tabID) do
+			tinsert(exportData, private:GenerateInfoTable(itemID)) -- items
+		end
+	end
+
+	-- // Part 4: Export the table and show it to the player
+	local encodedData = impexp:Export(exportData)
+	if encodedData then
+		print("Export successful")
+		local length = #encodedData
+		local subtitle = "Characters: "..tostring(length)..", "..string.format("Size: %.1fKB", length/1024)
+		impexp:ShowIEFrame(L["Export"], subtitle, encodedData)
+	else
+		print("Export error")
+	end
+
+	collectgarbage()
+end
+
+function private:GenerateInfoTable(ID)
+	local enum, isGlobal, data = dataManager:Find(ID)
+	return {
+		ID = ID,
+		enum = enum,
+		isGlobal = isGlobal,
+		data = utils:Deepcopy(data),
+	}
 end
