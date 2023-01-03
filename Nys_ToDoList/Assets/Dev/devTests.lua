@@ -53,9 +53,13 @@ function NysTDL:Tests(nb, ...)
 		-- do return end
 
 		local tabIDs = {}
-		for tabID in dataManager:ForEach(enums.tab) do
-			table.insert(tabIDs, tabID)
-		end
+
+		-- for tabID in dataManager:ForEach(enums.tab, false) do
+		-- 	table.insert(tabIDs, tabID)
+		-- end
+
+		local tabID = dataManager:FindFirstIDByName("Daily", enums.tab)
+		table.insert(tabIDs, tabID)
 
 		impexp:LaunchExportProcess(tabIDs)
 	elseif nb == 3 then

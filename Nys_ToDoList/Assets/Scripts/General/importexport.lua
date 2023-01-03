@@ -8,14 +8,18 @@ NysTDL.impexp = impexp
 -- Primary aliases
 
 local libs = NysTDL.libs
+local core = NysTDL.core
 local enums = NysTDL.enums
 local utils = NysTDL.utils
 local widgets = NysTDL.widgets
+local mainFrame = NysTDL.mainFrame
+local tabsFrame = NysTDL.tabsFrame
 local dataManager = NysTDL.dataManager
 
 -- Secondary aliases
 
 local L = libs.L
+local AceConfigRegistry = libs.AceConfigRegistry
 local AceSerializer = libs.AceSerializer
 local LibDeflate = libs.LibDeflate
 local AceGUI = libs.AceGUI
@@ -157,7 +161,12 @@ function private:LaunchImportProcess(data)
 	if type(data) ~= "table" then return end
 	--[[
 		data = {
-			elementInfo,
+			elementInfo = {
+				ID = ID,
+				enum = enum,
+				isGlobal = isGlobal,
+				data = utils:Deepcopy(data),
+			}
 			...
 		}
 	]]
@@ -170,18 +179,87 @@ function private:LaunchImportProcess(data)
 		-- ...
 	}
 
+	local function replacement(ID)
+		if not ID then return end
+		local r = idMap[ID]
+		if not r then
+			r = dataManager:NewID()
+			idMap[ID] = r
+		end
+		return r
+	end
+
+	for _,elementInfo in ipairs(data) do
+		elementInfo.ID = replacement(elementInfo.ID)
+		local data = elementInfo.data
+		if elementInfo.enum == enums.item then -- item
+			data.originalTabID = replacement(data.originalTabID)
+
+			local temp = {}
+			for tabID in pairs(data.tabIDs) do
+				temp[replacement(tabID)] = true
+			end
+			data.tabIDs = temp
+
+			data.catID = replacement(data.catID)
+		elseif elementInfo.enum == enums.category then -- category
+			data.originalTabID = replacement(data.originalTabID)
+
+			local temp = {}
+			for tabID in pairs(data.tabIDs) do
+				temp[replacement(tabID)] = true
+			end
+			data.tabIDs = temp
+
+			temp = {}
+			for tabID in pairs(data.closedInTabIDs) do
+				temp[replacement(tabID)] = true
+			end
+			data.closedInTabIDs = temp
+
+			data.parentCatID = replacement(data.parentCatID)
+
+			temp = {}
+			for _,ID in ipairs(data.orderedContentIDs) do
+				tinsert(temp, replacement(ID))
+			end
+			data.orderedContentIDs = temp
+		elseif elementInfo.enum == enums.tab then -- tab
+			local temp = {}
+			for _,ID in ipairs(data.orderedCatIDs) do
+				tinsert(temp, replacement(ID))
+			end
+			data.orderedCatIDs = temp
+
+			temp = {}
+			for tabID in pairs(data.shownIDs) do
+				temp[replacement(tabID)] = true
+			end
+			data.shownIDs = temp
+		end
+	end
+
+	-- // Part 2.5: Override the current profile data if the player chose to
+	NysTDL.acedb.profile.itemsList = {}
+	NysTDL.acedb.profile.categoriesList = {}
+	NysTDL.acedb.profile.tabsList = {orderedTabIDs = {}}
 
 	-- // Part 3: Adding the processed data into the list
 	local success, psuccess
 	for _,elementInfo in ipairs(data) do
 		psuccess = pcall(function() -- we protect the code from potential "ID not found" errors
 			if elementInfo.enum == enums.item then -- item
-				success = not not dataManager:AddItem(elementInfo.ID, elementInfo.data)
+				NysTDL.acedb.profile.itemsList[elementInfo.ID] = elementInfo.data
+				-- success = not not dataManager:AddItem(elementInfo.ID, elementInfo.data)
 			elseif elementInfo.enum == enums.category then -- category
-				success = not not dataManager:AddCategory(elementInfo.ID, elementInfo.data)
+				NysTDL.acedb.profile.categoriesList[elementInfo.ID] = elementInfo.data
+				-- success = not not dataManager:AddCategory(elementInfo.ID, elementInfo.data)
 			elseif elementInfo.enum == enums.tab then -- tab
-				success = not not dataManager:AddTab(elementInfo.ID, elementInfo.data, elementInfo.isGlobal)
+				NysTDL.acedb.profile.tabsList[elementInfo.ID] = elementInfo.data
+				tinsert(NysTDL.acedb.profile.tabsList.orderedTabIDs, elementInfo.ID) -- position (last)
+				-- success = not not dataManager:AddTab(elementInfo.ID, elementInfo.data, elementInfo.isGlobal)
 			end
+			success = true
 		end)
 
 		if psuccess then
@@ -194,6 +272,8 @@ function private:LaunchImportProcess(data)
 			print("pcall error adding element")
 		end
 	end
+
+	ReloadUI() -- temp
 
 	return true
 end
