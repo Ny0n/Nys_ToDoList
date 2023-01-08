@@ -376,6 +376,7 @@ end
 ---
 ---@param enum enumObject
 ---@param location nil|false|true|string
+---@param original boolean
 ---@return function
 function dataManager:ForEach(enum, location, original)
 	--[[
@@ -502,10 +503,10 @@ function dataManager:AddItem(itemID, itemData)
 	-- we get where we are
 	local isGlobal, _, itemsList, categoriesList = select(2, dataManager:Find(itemData.originalTabID))
 
-	if dataManager:GetQuantity(enums.item, isGlobal) >= dataManager:GetMaxQuantity(enums.item, isGlobal) then -- temp limit
-		chat:Print(utils:SafeStringFormat(L["Cannot add %s"].." ("..L["Max quantity reached"]..")", L["Item"]:lower()))
-		return
-	end
+	-- if dataManager:GetQuantity(enums.item, isGlobal) >= dataManager:GetMaxQuantity(enums.item, isGlobal) then -- temp limit
+	-- 	chat:Print(utils:SafeStringFormat(L["Cannot add %s"].." ("..L["Max quantity reached"]..")", L["Item"]:lower()))
+	-- 	return
+	-- end
 
 	wipe(itemData.tabIDs)
 	itemData.tabIDs[itemData.originalTabID] = true -- by default, an item/cat can only be added to one tab, the shownTabIDs do the rest after
@@ -577,10 +578,10 @@ function dataManager:AddCategory(catID, catData)
 	-- we get where we are
 	local isGlobal, _, _, categoriesList = select(2, dataManager:Find(catData.originalTabID))
 
-	if dataManager:GetQuantity(enums.category, isGlobal) >= dataManager:GetMaxQuantity(enums.category, isGlobal) then -- temp limit
-		chat:Print(utils:SafeStringFormat(L["Cannot add %s"].." ("..L["Max quantity reached"]..")", L["Category"]:lower()))
-		return
-	end
+	-- if dataManager:GetQuantity(enums.category, isGlobal) >= dataManager:GetMaxQuantity(enums.category, isGlobal) then -- temp limit
+	-- 	chat:Print(utils:SafeStringFormat(L["Cannot add %s"].." ("..L["Max quantity reached"]..")", L["Category"]:lower()))
+	-- 	return
+	-- end
 
 	wipe(catData.tabIDs)
 	catData.tabIDs[catData.originalTabID] = true -- by default, an item/cat can only be added to one tab, the shownTabIDs do the rest after
@@ -664,10 +665,10 @@ function dataManager:AddTab(tabID, tabData, isGlobal)
 	isGlobal = not not isGlobal
 	local tabsList = select(3, dataManager:GetData(isGlobal))
 
-	if dataManager:GetQuantity(enums.tab, isGlobal) >= dataManager:GetMaxQuantity(enums.tab, isGlobal) then -- temp limit
-		chat:Print(utils:SafeStringFormat(L["Cannot add %s"].." ("..L["Max quantity reached"]..")", L["Tab"]:lower()))
-		return
-	end
+	-- if dataManager:GetQuantity(enums.tab, isGlobal) >= dataManager:GetMaxQuantity(enums.tab, isGlobal) then -- temp limit
+	-- 	chat:Print(utils:SafeStringFormat(L["Cannot add %s"].." ("..L["Max quantity reached"]..")", L["Tab"]:lower()))
+	-- 	return
+	-- end
 
 	-- we add the tab to the saved variables
 
@@ -1042,7 +1043,7 @@ function dataManager:DeleteItem(itemID)
 	tremove(dataManager:GetPosData(itemID))
 
 	local undoData = private:CreateUndo(itemID)
-	private:AddUndo(undoData)
+	dataManager:AddUndo(undoData)
 	itemsList[itemID] = nil -- delete action
 
 	-- we hide a potentially opened desc frame
@@ -1095,7 +1096,7 @@ function dataManager:DeleteCat(catID)
 		-- we update its data (pretty much the reverse actions of the Add func)
 		private:UpdateTabsDisplay(catData.originalTabID, false, catID)
 
-		private:AddUndo(undoData)
+		dataManager:AddUndo(undoData)
 		categoriesList[catID] = nil -- delete action
 
 		mainFrame:DeleteWidget(catID)
@@ -1109,7 +1110,7 @@ function dataManager:DeleteCat(catID)
 	end
 
 	if nbToUndo > 0 then
-		private:AddUndo(nbToUndo + (result and 1 or 0)) -- to undo in one go everything that was removed
+		dataManager:AddUndo(nbToUndo + (result and 1 or 0)) -- to undo in one go everything that was removed
 	end
 
 	dataManager:SetRefresh(true, refreshID)
@@ -1173,7 +1174,7 @@ function dataManager:DeleteTab(tabID)
 		local loc, pos = dataManager:GetPosData(tabID)
 		tremove(loc, pos)
 
-		private:AddUndo(undoData)
+		dataManager:AddUndo(undoData)
 		tabsList[tabID] = nil -- delete action
 
 		dataManager:AddQuantity(enums.tab, isGlobal, -1)
@@ -1195,7 +1196,7 @@ function dataManager:DeleteTab(tabID)
 	end
 
 	if nbToUndo > 0 then
-		private:AddUndo(nbToUndo + (result and 1 or 0)) -- to undo in one go everything that was removed
+		dataManager:AddUndo(nbToUndo + (result and 1 or 0)) -- to undo in one go everything that was removed
 	end
 
 	dataManager:SetRefresh(true, refreshID)
@@ -1210,7 +1211,7 @@ end
 
 ---Creates an undo data table from the given object.
 ---
----This is what gets added to the `NysTDL.acedb.profile.undoTable` saved variable (@see private:AddUndo()).
+---This is what gets added to the `NysTDL.acedb.profile.undoTable` saved variable (@see dataManager:AddUndo()).
 ---
 ---@param ID string
 ---@return table undoData
@@ -1229,7 +1230,7 @@ end
 
 ---The actual adding of the undoData to the saved variable.
 ---@param undoData table|number
-function private:AddUndo(undoData)
+function dataManager:AddUndo(undoData)
 	-- this is so we can add undos at the right time, and possibly not at creation
 	-- because the table data / orders can be modified in between the two actions.
 	-- undoData can also be a pure number, to keep track of how many undos to undo after a clear
@@ -1745,7 +1746,7 @@ function dataManager:ClearTab(tabID)
 	end
 	clearing = false
 
-	private:AddUndo(nbToUndo)
+	dataManager:AddUndo(nbToUndo)
 
 	dataManager:SetRefresh(true, refreshID)
 
@@ -1782,7 +1783,7 @@ function dataManager:DeleteCheckedItems(tabID)
 	end
 
 	if nbToUndo > 0 then
-		private:AddUndo(nbToUndo)
+		dataManager:AddUndo(nbToUndo)
 	end
 
 	dataManager:SetRefresh(true, refreshID)

@@ -12,6 +12,7 @@ local core = NysTDL.core
 local enums = NysTDL.enums
 local utils = NysTDL.utils
 local widgets = NysTDL.widgets
+local database = NysTDL.database
 local mainFrame = NysTDL.mainFrame
 local tabsFrame = NysTDL.tabsFrame
 local dataManager = NysTDL.dataManager
@@ -118,10 +119,9 @@ function impexp:TryToImport(editbox)
 end
 
 ---Shows an editbox where the player can copy or paste serialized data
-function impexp:ShowIEFrame(title, statusText, data)
+function impexp:ShowIEFrame(title, data)
 	local frame = AceGUI:Create("Frame")
 	frame:SetTitle(title or "")
-	frame:SetStatusText(statusText or "")
 	frame:SetLayout("Fill")
 	frame:SetWidth(525)
 	frame:SetHeight(375)
@@ -135,6 +135,16 @@ function impexp:ShowIEFrame(title, statusText, data)
 	editbox:SetFullWidth(true)
 	editbox:SetFullHeight(true)
 	frame:AddChild(editbox)
+
+	local function refreshStatusText()
+		local text = editbox.editBox:GetText() or ""
+		local length = #text
+		local subtitle = "Characters: "..tostring(length)..", "..string.format("Size: %.1fKB", length/1024)
+		frame:SetStatusText(subtitle)
+	end
+
+	editbox.editBox:HookScript("OnTextChanged", refreshStatusText)
+	refreshStatusText()
 
 	if type(data) == "string" then
 		editbox:SetText(data)
@@ -161,13 +171,19 @@ function private:LaunchImportProcess(data)
 	if type(data) ~= "table" then return end
 	--[[
 		data = {
-			elementInfo = {
-				ID = ID,
-				enum = enum,
-				isGlobal = isGlobal,
-				data = utils:Deepcopy(data),
+			orderedTabIDs = {
+				[true] = {...},
+				[false] = {...},
+			},
+			elements = {
+				elementInfo = {
+					ID = ID,
+					enum = enum,
+					isGlobal = isGlobal,
+					data = utils:Deepcopy(data),
+				},
+				...
 			}
-			...
 		}
 	]]
 
@@ -179,6 +195,7 @@ function private:LaunchImportProcess(data)
 		-- ...
 	}
 
+	-- helpers
 	local function replacement(ID)
 		if not ID then return end
 		local r = idMap[ID]
@@ -188,76 +205,85 @@ function private:LaunchImportProcess(data)
 		end
 		return r
 	end
+	local function replaceTable(tbl, isKey)
+		local temp = utils:Deepcopy(tbl)
+		wipe(tbl)
 
-	for _,elementInfo in ipairs(data) do
+		if isKey then
+			for ID in pairs(temp) do
+				tbl[replacement(ID)] = true
+			end
+		else
+			for _,ID in ipairs(temp) do
+				tinsert(tbl, replacement(ID))
+			end
+		end
+	end
+
+	-- tabs order
+	for i=1,2 do
+		local isGlobal = i==2
+		replaceTable(data.orderedTabIDs[isGlobal])
+	end
+
+	-- elements
+	for _,elementInfo in ipairs(data.elements) do
 		elementInfo.ID = replacement(elementInfo.ID)
 		local data = elementInfo.data
 		if elementInfo.enum == enums.item then -- item
 			data.originalTabID = replacement(data.originalTabID)
-
-			local temp = {}
-			for tabID in pairs(data.tabIDs) do
-				temp[replacement(tabID)] = true
-			end
-			data.tabIDs = temp
-
+			replaceTable(data.tabIDs, true)
 			data.catID = replacement(data.catID)
 		elseif elementInfo.enum == enums.category then -- category
 			data.originalTabID = replacement(data.originalTabID)
-
-			local temp = {}
-			for tabID in pairs(data.tabIDs) do
-				temp[replacement(tabID)] = true
-			end
-			data.tabIDs = temp
-
-			temp = {}
-			for tabID in pairs(data.closedInTabIDs) do
-				temp[replacement(tabID)] = true
-			end
-			data.closedInTabIDs = temp
-
+			replaceTable(data.tabIDs, true)
+			replaceTable(data.closedInTabIDs, true)
 			data.parentCatID = replacement(data.parentCatID)
-
-			temp = {}
-			for _,ID in ipairs(data.orderedContentIDs) do
-				tinsert(temp, replacement(ID))
-			end
-			data.orderedContentIDs = temp
+			replaceTable(data.orderedContentIDs)
 		elseif elementInfo.enum == enums.tab then -- tab
-			local temp = {}
-			for _,ID in ipairs(data.orderedCatIDs) do
-				tinsert(temp, replacement(ID))
-			end
-			data.orderedCatIDs = temp
-
-			temp = {}
-			for tabID in pairs(data.shownIDs) do
-				temp[replacement(tabID)] = true
-			end
-			data.shownIDs = temp
+			replaceTable(data.orderedCatIDs)
+			replaceTable(data.shownIDs, true)
 		end
 	end
 
-	-- // Part 2.5: Override the current profile data if the player chose to
-	NysTDL.acedb.profile.itemsList = {}
-	NysTDL.acedb.profile.categoriesList = {}
-	NysTDL.acedb.profile.tabsList = {orderedTabIDs = {}}
+	-- // Part 2.5: We save the tabs to delete if the user chose to override its data with the import
+	local toDelete = {}
+	for i=1,2 do
+		local isGlobal = i==2
+
+		if #data.orderedTabIDs[isGlobal] > 0 and true then -- if there are things in this category TODO and CHECK IF WE SELECTED OVERRIDE OR NOT
+			tinsert(toDelete, isGlobal)
+		end
+	end
 
 	-- // Part 3: Adding the processed data into the list
+	local refreshID = dataManager:SetRefresh(false)
+
+	-- tabs order
+	for i=1,2 do
+		local isGlobal = i==2
+		local orderedTabIDs = (select(3, dataManager:GetData(isGlobal))).orderedTabIDs
+
+		for _,tabID in ipairs(data.orderedTabIDs[isGlobal]) do
+			tinsert(orderedTabIDs, tabID)
+		end
+	end
+
+	-- elements
 	local success, psuccess
-	for _,elementInfo in ipairs(data) do
+	for _,elementInfo in ipairs(data.elements) do
 		psuccess = pcall(function() -- we protect the code from potential "ID not found" errors
+			local itemsList, categoriesList, tabsList = dataManager:GetData(elementInfo.isGlobal)
 			if elementInfo.enum == enums.item then -- item
-				NysTDL.acedb.profile.itemsList[elementInfo.ID] = elementInfo.data
-				-- success = not not dataManager:AddItem(elementInfo.ID, elementInfo.data)
+				itemsList[elementInfo.ID] = elementInfo.data
+				mainFrame:UpdateWidget(elementInfo.ID, enums.item)
 			elseif elementInfo.enum == enums.category then -- category
-				NysTDL.acedb.profile.categoriesList[elementInfo.ID] = elementInfo.data
-				-- success = not not dataManager:AddCategory(elementInfo.ID, elementInfo.data)
+				categoriesList[elementInfo.ID] = elementInfo.data
+				mainFrame:UpdateWidget(elementInfo.ID, enums.category)
 			elseif elementInfo.enum == enums.tab then -- tab
-				NysTDL.acedb.profile.tabsList[elementInfo.ID] = elementInfo.data
-				tinsert(NysTDL.acedb.profile.tabsList.orderedTabIDs, elementInfo.ID) -- position (last)
-				-- success = not not dataManager:AddTab(elementInfo.ID, elementInfo.data, elementInfo.isGlobal)
+				tabsList[elementInfo.ID] = elementInfo.data
+				tabsFrame:UpdateTab(elementInfo.ID)
+				database.ctab(elementInfo.ID)
 			end
 			success = true
 		end)
@@ -273,7 +299,26 @@ function private:LaunchImportProcess(data)
 		end
 	end
 
-	ReloadUI() -- temp
+	-- // Part 3.5: Delete what we saved
+	local nbToUndo = 0
+	for _,isGlobal in ipairs(toDelete) do
+		local orderedTabIDs = utils:Deepcopy((select(3, dataManager:GetData(isGlobal))).orderedTabIDs)
+		nbToUndo = nbToUndo + #orderedTabIDs
+
+		for _,tabID in ipairs(orderedTabIDs) do
+			dataManager:DeleteTab(tabID)
+		end
+	end
+	if nbToUndo > 0 then
+		dataManager:AddUndo(nbToUndo)
+	end
+
+	-- // Last Part: Refresh!
+	dataManager:SetRefresh(true, refreshID)
+	dataManager:UpdateQuantities()
+	AceConfigRegistry:NotifyChange(core.addonName)
+	tabsFrame:Refresh()
+	mainFrame:Refresh()
 
 	return true
 end
@@ -290,26 +335,83 @@ function impexp:LaunchExportProcess(tabIDs)
 	]]
 
 	-- // Part 2: Create the export table
-	local exportData = {}
+	local exportData = {
+		orderedTabIDs = {
+			[true] = {}, -- global
+			[false] = {}, -- profile
+		},
+		elements = {},
+	}
 
-	-- // Part 3: Find all of the data related to the tabs we want to export, process its info, and add it to the export table
-	for _,tabID in ipairs(tabIDs) do
-		tinsert(exportData, private:GenerateInfoTable(tabID)) -- tabs
-		for catID in dataManager:ForEach(enums.category, tabID) do
-			tinsert(exportData, private:GenerateInfoTable(catID)) -- categories
-		end
-		for itemID in dataManager:ForEach(enums.item, tabID) do
-			tinsert(exportData, private:GenerateInfoTable(itemID)) -- items
+	-- helpers
+	local function isTabInExport(tabID)
+		return utils:HasValue(tabIDs, tabID)
+	end
+	local function removeUnusedTabIDs(tbl, isKey)
+		local temp = utils:Deepcopy(tbl)
+		wipe(tbl)
+
+		if isKey then
+			for tabID in pairs(temp) do
+				if isTabInExport(tabID) then
+					tbl[tabID] = true
+				end
+			end
+		else
+			for _,tabID in ipairs(temp) do
+				if isTabInExport(tabID) then
+					tinsert(tbl, tabID)
+				end
+			end
 		end
 	end
 
-	-- // Part 4: Export the table and show it to the player
+	-- // Part 3: Find all of the data related to the tabs we want to export, process its info, and add it to the export table
+	-- tabs order
+	for i=1,2 do
+		local isGlobal = i==2
+		exportData.orderedTabIDs[isGlobal] = utils:Deepcopy((select(3, dataManager:GetData(isGlobal))).orderedTabIDs)
+		removeUnusedTabIDs(exportData.orderedTabIDs[isGlobal])
+	end
+
+	-- elements TODO check original????
+	for _,tabID in ipairs(tabIDs) do
+		tinsert(exportData.elements, private:GenerateInfoTable(tabID)) -- tabs
+		for catID in dataManager:ForEach(enums.category, tabID) do
+			tinsert(exportData.elements, private:GenerateInfoTable(catID)) -- categories
+		end
+		for itemID in dataManager:ForEach(enums.item, tabID) do
+			tinsert(exportData.elements, private:GenerateInfoTable(itemID)) -- items
+		end
+	end
+
+	-- // Part 4: Process the shownIDs
+	for _,elementInfo in ipairs(exportData.elements) do
+		local data = elementInfo.data
+		if elementInfo.enum == enums.item then -- item
+			removeUnusedTabIDs(data.tabIDs, true)
+		elseif elementInfo.enum == enums.category then -- category
+			removeUnusedTabIDs(data.tabIDs, true)
+			removeUnusedTabIDs(data.closedInTabIDs, true)
+		elseif elementInfo.enum == enums.tab then -- tab
+			local temp = {}
+			for _,catID in ipairs(data.orderedCatIDs) do -- those are catIDs, not tabIDs (so we find and use their originalTabID)
+				local originalTabID = (select(3, dataManager:Find(catID))).originalTabID
+				if isTabInExport(originalTabID) then
+					tinsert(temp, catID)
+				end
+			end
+			data.orderedCatIDs = temp
+
+			removeUnusedTabIDs(data.shownIDs, true)
+		end
+	end
+
+	-- // Last Part: Export the table and show it to the player
 	local encodedData = impexp:Export(exportData)
 	if encodedData then
 		print("Export successful")
-		local length = #encodedData
-		local subtitle = "Characters: "..tostring(length)..", "..string.format("Size: %.1fKB", length/1024)
-		impexp:ShowIEFrame(L["Export"], subtitle, encodedData)
+		impexp:ShowIEFrame(L["Export"], encodedData)
 	else
 		print("Export error")
 	end
