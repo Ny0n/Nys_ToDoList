@@ -16,6 +16,7 @@ local database = NysTDL.database
 local mainFrame = NysTDL.mainFrame
 local tabsFrame = NysTDL.tabsFrame
 local dataManager = NysTDL.dataManager
+local resetManager = NysTDL.resetManager
 
 -- Secondary aliases
 
@@ -252,12 +253,14 @@ function private:LaunchImportProcess(data)
 		local isGlobal = i==2
 
 		if #data.orderedTabIDs[isGlobal] > 0 and true then -- if there are things in this category TODO and CHECK IF WE SELECTED OVERRIDE OR NOT
-			tinsert(toDelete, isGlobal)
+			for tabID in dataManager:ForEach(enums.tab, isGlobal) do
+				tinsert(toDelete, tabID)
+			end
 		end
 	end
 
 	-- // Part 3: Adding the processed data into the list
-	local refreshID = dataManager:SetRefresh(false)
+	dataManager.authorized = false
 
 	-- tabs order
 	for i=1,2 do
@@ -276,14 +279,10 @@ function private:LaunchImportProcess(data)
 			local itemsList, categoriesList, tabsList = dataManager:GetData(elementInfo.isGlobal)
 			if elementInfo.enum == enums.item then -- item
 				itemsList[elementInfo.ID] = elementInfo.data
-				mainFrame:UpdateWidget(elementInfo.ID, enums.item)
 			elseif elementInfo.enum == enums.category then -- category
 				categoriesList[elementInfo.ID] = elementInfo.data
-				mainFrame:UpdateWidget(elementInfo.ID, enums.category)
 			elseif elementInfo.enum == enums.tab then -- tab
 				tabsList[elementInfo.ID] = elementInfo.data
-				tabsFrame:UpdateTab(elementInfo.ID)
-				database.ctab(elementInfo.ID)
 			end
 			success = true
 		end)
@@ -301,24 +300,23 @@ function private:LaunchImportProcess(data)
 
 	-- // Part 3.5: Delete what we saved
 	local nbToUndo = 0
-	for _,isGlobal in ipairs(toDelete) do
-		local orderedTabIDs = utils:Deepcopy((select(3, dataManager:GetData(isGlobal))).orderedTabIDs)
-		nbToUndo = nbToUndo + #orderedTabIDs
-
-		for _,tabID in ipairs(orderedTabIDs) do
-			dataManager:DeleteTab(tabID)
+	for _,tabID in ipairs(toDelete) do
+		-- TDLATER dataManager clearing = true/false et faire gaffe aux protected contents si je les réajoute (faudrait force delete)
+		local result, nb = dataManager:DeleteTab(tabID)
+		if result or nb > 0 then
+			nbToUndo = nbToUndo + 1
 		end
 	end
 	if nbToUndo > 0 then
 		dataManager:AddUndo(nbToUndo)
 	end
 
+	dataManager.authorized = true
+
 	-- // Last Part: Refresh!
-	dataManager:SetRefresh(true, refreshID)
-	dataManager:UpdateQuantities()
-	AceConfigRegistry:NotifyChange(core.addonName)
-	tabsFrame:Refresh()
-	mainFrame:Refresh()
+	local wasShown = mainFrame:GetFrame():IsShown()
+	database:ProfileChanged()
+	mainFrame:GetFrame():SetShown(wasShown)
 
 	return true
 end
@@ -374,13 +372,13 @@ function impexp:LaunchExportProcess(tabIDs)
 		removeUnusedTabIDs(exportData.orderedTabIDs[isGlobal])
 	end
 
-	-- elements TODO check original????
+	-- elements
 	for _,tabID in ipairs(tabIDs) do
 		tinsert(exportData.elements, private:GenerateInfoTable(tabID)) -- tabs
-		for catID in dataManager:ForEach(enums.category, tabID) do
+		for catID in dataManager:ForEach(enums.category, tabID, true) do
 			tinsert(exportData.elements, private:GenerateInfoTable(catID)) -- categories
 		end
-		for itemID in dataManager:ForEach(enums.item, tabID) do
+		for itemID in dataManager:ForEach(enums.item, tabID, true) do
 			tinsert(exportData.elements, private:GenerateInfoTable(itemID)) -- items
 		end
 	end
