@@ -17,6 +17,7 @@ local tabsFrame = NysTDL.tabsFrame
 local databroker = NysTDL.databroker
 local dataManager = NysTDL.dataManager
 local resetManager = NysTDL.resetManager
+local importexport = NysTDL.importexport
 
 -- Secondary aliases
 
@@ -1022,15 +1023,47 @@ function private:CreateAddonOptionsTable()
 				name = L["Profiles"],
 				childGroups = "tab",
 				args = {
-					-- new profiles tab (created from AceDBOptions)
-					-- importexport = { -- TDLATER careful with exporting copied profiles... (when tab goes global and vice-versa, change ID)
-					-- 	order = 101, -- because the profiles tab will have 100, the default value, when created from AceDBOptions
-					-- 	type = "group",
-					-- 	name = "Import/Export",
-					-- 	args = {
-					-- 		-- later
-					-- 	} -- args
-					-- } -- importexport
+					-- ** new profiles tab (created from AceDBOptions) **
+					importexport = {
+						order = 101, -- because the profiles tab will have 100, the default value, when created from AceDBOptions
+						type = "group",
+						name = "Import/Export",
+						args = {
+							exportExecute = {
+								order = 1.1,
+								type = "execute",
+								name = "Export",
+								func = function()
+									local tabIDs = {}
+
+									for tabID in dataManager:ForEach(enums.tab, false) do
+										table.insert(tabIDs, tabID)
+									end
+
+									-- local tabID = dataManager:FindFirstIDByName("Daily", enums.tab)
+									-- table.insert(tabIDs, tabID)
+
+									importexport:LaunchExportProcess(tabIDs)
+								end,
+							},
+							importExecute = {
+								order = 1.2,
+								type = "execute",
+								name = "Import",
+								func = function()
+									importexport:ShowIEFrame(L["Import"])
+								end,
+							},
+							exportTabsDropDownExecute = {
+								order = 1.3,
+								type = "execute",
+								name = "",
+								func = importexport.OpenTabsSelectMenu,
+								image = "Interface\\ChatFrame\\UI-ChatIcon-ScrollDown-Up",
+								width = 0.15,
+							},
+						} -- args
+					} -- importexport
 				}, -- args
 			} -- child_profiles
 		} -- args

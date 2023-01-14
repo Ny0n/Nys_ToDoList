@@ -10,7 +10,7 @@ local database = NysTDL.database
 local dataManager = NysTDL.dataManager
 local enums = NysTDL.enums
 local events = NysTDL.events
-local impexp = NysTDL.impexp
+local importexport = NysTDL.importexport
 local migration = NysTDL.migration
 local optionsManager = NysTDL.optionsManager
 local resetManager = NysTDL.resetManager
@@ -39,7 +39,8 @@ function NysTDL:Tests(nb, ...)
 	-- NysTDL.dataManager:Find()
 
 	if nb == 1 then
-		AceConfigDialog:Open(addonName)
+		-- AceConfigDialog:Open(addonName)
+		importexport:OpenTabsSelectMenu()
 	elseif nb == 2 then
 		-- mainFrame:Toggle()
 		-- UIFrameFadeOut(tdlFrame, 2)
@@ -49,21 +50,12 @@ function NysTDL:Tests(nb, ...)
 		-- end
 		-- print(tdlFrame.fadeInfo.finishedFunc)
 
-		-- impexp:ShowIEFrame(L["Export"], "", "")
+		-- importexport:ShowIEFrame(L["Export"], "", "")
 		-- do return end
 
-		local tabIDs = {}
-
-		for tabID in dataManager:ForEach(enums.tab, false) do
-			table.insert(tabIDs, tabID)
-		end
-
-		-- local tabID = dataManager:FindFirstIDByName("Daily", enums.tab)
-		-- table.insert(tabIDs, tabID)
-
-		impexp:LaunchExportProcess(tabIDs)
+		importexport:LaunchExportProcess()
 	elseif nb == 3 then
-		impexp:ShowIEFrame(L["Import"])
+		importexport:ShowIEFrame(L["Import"])
 
 		-- core:AddonUpdated()
 		-- for tabID, tabData in dataManager:ForEach(enums.tab, false) do

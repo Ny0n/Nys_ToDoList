@@ -2,8 +2,8 @@
 
 -- File init
 
-local impexp = NysTDL.impexp
-NysTDL.impexp = impexp
+local importexport = NysTDL.importexport
+NysTDL.importexport = importexport
 
 -- Primary aliases
 
@@ -38,19 +38,22 @@ local wipe, select = wipe, select
 local type, pairs, ipairs = type, pairs, ipairs
 local tinsert, tremove = table.insert, table.remove
 
----@class impexp.deflateMethod
-impexp.deflateMethod = {
+---@class importexport.deflateMethod
+importexport.deflateMethod = {
 	PRINT = 1,
 	WOW_ADDON_CHANNEL = 2,
 	WOW_CHAT_CHANNEL = 3,
  }
 
+local selectedTabIDs = {}
+local TabsSelectDropDown = nil
+
 ---Exports as a string the given data, using the given deflate method.
 ---Order of operation: Serialize -> Compress -> Encode -> return
 ---@param data any
----@param method impexp.deflateMethod
+---@param method importexport.deflateMethod
 ---@return string encodedData
-function impexp:Export(data, method)
+function importexport:Export(data, method)
 	if type(data) == "nil" then return end
 
     local serialized = AceSerializer:Serialize(data)
@@ -60,9 +63,9 @@ function impexp:Export(data, method)
 	if not compressed then return end
 
 	local encoded
-	if method == impexp.deflateMethod.WOW_ADDON_CHANNEL then
+	if method == importexport.deflateMethod.WOW_ADDON_CHANNEL then
 		encoded = LibDeflate:EncodeForWoWAddonChannel(compressed)
-	elseif method == impexp.deflateMethod.WOW_CHAT_CHANNEL then
+	elseif method == importexport.deflateMethod.WOW_CHAT_CHANNEL then
 		encoded = LibDeflate:EncodeForWoWChatChannel(compressed)
 	else
 		encoded = LibDeflate:EncodeForPrint(compressed)
@@ -74,15 +77,15 @@ end
 ---Imports the given text, using the given deflate method.
 ---Order of operation: Decode -> Decompress -> Deserialize -> return
 ---@param text string
----@param method impexp.deflateMethod
+---@param method importexport.deflateMethod
 ---@return any decodedData
-function impexp:Import(text, method)
+function importexport:Import(text, method)
 	if type(text) ~= "string" then return end
 
 	local decoded
-	if method == impexp.deflateMethod.WOW_ADDON_CHANNEL then
+	if method == importexport.deflateMethod.WOW_ADDON_CHANNEL then
 		decoded = LibDeflate:DecodeForWoWAddonChannel(text)
-	elseif method == impexp.deflateMethod.WOW_CHAT_CHANNEL then
+	elseif method == importexport.deflateMethod.WOW_CHAT_CHANNEL then
 		decoded = LibDeflate:DecodeForWoWChatChannel(text)
 	else
 		decoded = LibDeflate:DecodeForPrint(text)
@@ -98,11 +101,11 @@ function impexp:Import(text, method)
     return data
 end
 
-function impexp:TryToImport(editbox)
+function importexport:TryToImport(editbox)
 	if not editbox or not editbox.GetText then return end
 
 	local success
-	local decodedData = impexp:Import(editbox:GetText())
+	local decodedData = importexport:Import(editbox:GetText())
 	if decodedData then
 		success = private:LaunchImportProcess(decodedData)
 	else
@@ -120,7 +123,7 @@ function impexp:TryToImport(editbox)
 end
 
 ---Shows an editbox where the player can copy or paste serialized data
-function impexp:ShowIEFrame(title, data)
+function importexport:ShowIEFrame(title, data)
 	local frame = AceGUI:Create("Frame")
 	frame:SetTitle(title or "")
 	frame:SetLayout("Fill")
@@ -158,7 +161,7 @@ function impexp:ShowIEFrame(title, data)
 		editbox.button:SetEnabled(false)
 		editbox.button:SetText(L["Import"])
 		editbox.button:SetScript("OnClick", function()
-			if impexp:TryToImport(editbox) then
+			if importexport:TryToImport(editbox) then
 				frame:Hide()
 			end
 		end)
@@ -321,9 +324,19 @@ function private:LaunchImportProcess(data)
 	return true
 end
 
-function impexp:LaunchExportProcess(tabIDs)
+function importexport:LaunchExportProcess()
 	-- // Part 1: Validate the tabIDs
-	if type(tabIDs) ~= "table" then return end
+	if type(selectedTabIDs) ~= "table" then return end
+
+	local tabIDs = {}
+	for tabID, value in pairs(selectedTabIDs) do
+		if value and dataManager:IsID(tabID) then
+			tinsert(tabIDs, tabID)
+		end
+	end
+
+	if #tabIDs <= 0 then return end -- no tabs were selected for the export
+
 	--[[
 		tabIDs = {
 			ID,
@@ -406,10 +419,10 @@ function impexp:LaunchExportProcess(tabIDs)
 	end
 
 	-- // Last Part: Export the table and show it to the player
-	local encodedData = impexp:Export(exportData)
+	local encodedData = importexport:Export(exportData)
 	if encodedData then
 		print("Export successful")
-		impexp:ShowIEFrame(L["Export"], encodedData)
+		importexport:ShowIEFrame(L["Export"], encodedData)
 	else
 		print("Export error")
 	end
@@ -425,4 +438,129 @@ function private:GenerateInfoTable(ID)
 		isGlobal = isGlobal,
 		data = utils:Deepcopy(data),
 	}
+end
+
+function importexport:OpenTabsSelectMenu()
+	TabsSelectDropDown = CreateFrame("Frame", "NysTDL_importexport_TabsSelectMenu", UIParent, "UIDropDownMenuTemplate")
+	UIDropDownMenu_Initialize(TabsSelectDropDown, private.TabsSelectMenuInitialize, "MENU")
+
+	TabsSelectDropDown.OnTabChecked = function(_, tabID, _, checked)
+		selectedTabIDs[tabID] = checked or nil
+	end
+
+	TabsSelectDropDown.IsTabChecked = function(info)
+		return not not selectedTabIDs[info.arg1]
+	end
+
+	TabsSelectDropDown.CheckAll = function(_, isGlobal)
+		for tabID in dataManager:ForEach(enums.tab, isGlobal) do
+			selectedTabIDs[tabID] = true
+		end
+		UIDropDownMenu_Refresh(TabsSelectDropDown, UIDROPDOWNMENU_MENU_VALUE, UIDROPDOWNMENU_MENU_LEVEL)
+	end
+
+	TabsSelectDropDown.UncheckAll = function(_, isGlobal)
+		for tabID in dataManager:ForEach(enums.tab, isGlobal) do
+			selectedTabIDs[tabID] = nil
+		end
+		UIDropDownMenu_Refresh(TabsSelectDropDown, UIDROPDOWNMENU_MENU_VALUE, UIDROPDOWNMENU_MENU_LEVEL)
+	end
+
+	TabsSelectDropDown.HideMenu = function()
+		if UIDROPDOWNMENU_OPEN_MENU == TabsSelectDropDown then
+			CloseDropDownMenus()
+		end
+	end
+
+	-- show on the cursor position
+	local scale, x, y = UIParent:GetScale(), GetCursorPosition()
+	x, y = x/scale, y/scale
+	ToggleDropDownMenu(1, nil, TabsSelectDropDown, "UIParent", x, y)
+end
+
+function private.TabsSelectMenuInitialize(self, level)
+	if not level then return end
+
+	local info = UIDropDownMenu_CreateInfo()
+
+	if level == 1 then
+		-- title
+		wipe(info)
+		info.isTitle = true
+		info.text = "Select tabs"
+		info.notCheckable = true
+		UIDropDownMenu_AddButton(info, level)
+
+		-- space
+		wipe(info)
+		info.notCheckable = true
+		info.disabled = true
+		info.text = nil
+		info.func = nil
+		UIDropDownMenu_AddButton(info, level)
+
+		-- global tabs submenu
+		wipe(info)
+		info.text = "Global"
+		info.disabled = not dataManager:HasGlobalData()
+		info.notCheckable = true
+		info.keepShownOnClick = true
+		info.hasArrow = true
+		info.value = "global"
+		UIDropDownMenu_AddButton(info, level)
+
+		-- profile tabs submenu
+		wipe(info)
+		info.text = "Profile"
+		info.notCheckable = true
+		info.keepShownOnClick = true
+		info.hasArrow = true
+		info.value = "profile"
+		UIDropDownMenu_AddButton(info, level)
+
+		-- space
+		wipe(info)
+		info.notCheckable = true
+		info.disabled = true
+		info.text = nil
+		info.func = nil
+		UIDropDownMenu_AddButton(info, level)
+
+		-- close button
+		wipe(info)
+		info.notCheckable = true
+		info.text = CLOSE
+		info.func = self.HideMenu
+		UIDropDownMenu_AddButton(info, level)
+
+	elseif level == 2 then
+		local isGlobal = UIDROPDOWNMENU_MENU_VALUE == "global"
+
+		wipe(info)
+		info.text = CHECK_ALL
+		info.func = self.CheckAll
+		info.arg1 = isGlobal
+		info.notCheckable = true
+		info.keepShownOnClick = true
+		UIDropDownMenu_AddButton(info, level)
+
+		wipe(info)
+		info.text = UNCHECK_ALL
+		info.func = self.UncheckAll
+		info.arg1 = isGlobal
+		info.notCheckable = true
+		info.keepShownOnClick = true
+		UIDropDownMenu_AddButton(info, level)
+
+		wipe(info)
+		info.keepShownOnClick = true
+		info.isNotRadio = true
+		info.func = self.OnTabChecked
+		info.checked = self.IsTabChecked
+		for tabID, tabData in dataManager:ForEach(enums.tab, isGlobal) do
+			info.text = tabData.name
+			info.arg1 = tabID
+			UIDropDownMenu_AddButton(info, level)
+		end
+	end
 end
