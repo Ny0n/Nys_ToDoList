@@ -39,8 +39,7 @@ function NysTDL:Tests(nb, ...)
 	-- NysTDL.dataManager:Find()
 
 	if nb == 1 then
-		-- AceConfigDialog:Open(addonName)
-		importexport:OpenTabsSelectMenu()
+		AceConfigDialog:Open(addonName)
 	elseif nb == 2 then
 		-- mainFrame:Toggle()
 		-- UIFrameFadeOut(tdlFrame, 2)
@@ -69,27 +68,29 @@ function NysTDL:Tests(nb, ...)
 		-- end
 		-- print("<================>")
 	elseif nb == 4 then
-		-- ITEM EXPLOSION
-		local refreshID = dataManager:SetRefresh(false)
+		importexport:OpenTabsSelectMenu()
 
-		local itemTabID, itemCatID
-		for tabID,tabData in dataManager:ForEach(enums.tab) do
-			if tabData.name == "All" then
-				itemCatID = dataManager:CreateCategory("EXPLOSION", tabID)
-				itemTabID = tabID
-			end
-		end
-		for i = 1, 100 do
-			dataManager:CreateItem(tostring(i), itemTabID, itemCatID)
-		end
+		-- -- ITEM EXPLOSION
+		-- local refreshID = dataManager:SetRefresh(false)
 
-		-- for i=1,2000 do
-		-- 	dataManager:Undo()
+		-- local itemTabID, itemCatID
+		-- for tabID,tabData in dataManager:ForEach(enums.tab) do
+		-- 	if tabData.name == "All" then
+		-- 		itemCatID = dataManager:CreateCategory("EXPLOSION", tabID)
+		-- 		itemTabID = tabID
+		-- 	end
+		-- end
+		-- for i = 1, 100 do
+		-- 	dataManager:CreateItem(tostring(i), itemTabID, itemCatID)
 		-- end
 
-		dataManager:SetRefresh(true, refreshID)
+		-- -- for i=1,2000 do
+		-- -- 	dataManager:Undo()
+		-- -- end
 
-		mainFrame:Refresh()
+		-- dataManager:SetRefresh(true, refreshID)
+
+		-- mainFrame:Refresh()
 	elseif nb == 5 then
 		migration:TestFunc()
 	end

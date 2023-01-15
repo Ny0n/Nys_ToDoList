@@ -9,6 +9,7 @@ NysTDL.importexport = importexport
 
 local libs = NysTDL.libs
 local core = NysTDL.core
+local chat = NysTDL.chat
 local enums = NysTDL.enums
 local utils = NysTDL.utils
 local widgets = NysTDL.widgets
@@ -47,6 +48,7 @@ importexport.deflateMethod = {
 
 local selectedTabIDs = {}
 local TabsSelectDropDown = nil
+local globalButton, profileButton
 
 ---Exports as a string the given data, using the given deflate method.
 ---Order of operation: Serialize -> Compress -> Encode -> return
@@ -335,7 +337,10 @@ function importexport:LaunchExportProcess()
 		end
 	end
 
-	if #tabIDs <= 0 then return end -- no tabs were selected for the export
+	if #tabIDs <= 0 then -- no tabs selected
+		chat:PrintForced("No tabs selected for export")
+		return
+	end
 
 	--[[
 		tabIDs = {
@@ -440,12 +445,34 @@ function private:GenerateInfoTable(ID)
 	}
 end
 
+--/***************/ Tabs Selection /*****************/--
+
+function private:CountSelectedTabs(isGlobal)
+	local n = 0
+	for tabID in pairs(selectedTabIDs) do
+		if dataManager:IsID(tabID) then
+			local isTabGlobal = select(2, dataManager:Find(tabID))
+			if isGlobal and isTabGlobal or not isGlobal and not isTabGlobal then
+				n = n + 1
+			end
+		end
+	end
+	return n
+end
+
+function private:RefreshBaseLevel()
+	globalButton:SetText(L["Global tabs"].." ("..tostring(private:CountSelectedTabs(true))..")")
+	profileButton:SetText(L["Profile tabs"].." ("..tostring(private:CountSelectedTabs(false))..")")
+	UIDropDownMenu_Refresh(TabsSelectDropDown, nil, 1)
+end
+
 function importexport:OpenTabsSelectMenu()
 	TabsSelectDropDown = CreateFrame("Frame", "NysTDL_importexport_TabsSelectMenu", UIParent, "UIDropDownMenuTemplate")
 	UIDropDownMenu_Initialize(TabsSelectDropDown, private.TabsSelectMenuInitialize, "MENU")
 
 	TabsSelectDropDown.OnTabChecked = function(_, tabID, _, checked)
 		selectedTabIDs[tabID] = checked or nil
+		private:RefreshBaseLevel()
 	end
 
 	TabsSelectDropDown.IsTabChecked = function(info)
@@ -457,6 +484,7 @@ function importexport:OpenTabsSelectMenu()
 			selectedTabIDs[tabID] = true
 		end
 		UIDropDownMenu_Refresh(TabsSelectDropDown, UIDROPDOWNMENU_MENU_VALUE, UIDROPDOWNMENU_MENU_LEVEL)
+		private:RefreshBaseLevel()
 	end
 
 	TabsSelectDropDown.UncheckAll = function(_, isGlobal)
@@ -464,6 +492,7 @@ function importexport:OpenTabsSelectMenu()
 			selectedTabIDs[tabID] = nil
 		end
 		UIDropDownMenu_Refresh(TabsSelectDropDown, UIDROPDOWNMENU_MENU_VALUE, UIDROPDOWNMENU_MENU_LEVEL)
+		private:RefreshBaseLevel()
 	end
 
 	TabsSelectDropDown.HideMenu = function()
@@ -476,55 +505,59 @@ function importexport:OpenTabsSelectMenu()
 	local scale, x, y = UIParent:GetScale(), GetCursorPosition()
 	x, y = x/scale, y/scale
 	ToggleDropDownMenu(1, nil, TabsSelectDropDown, "UIParent", x, y)
+	private:RefreshBaseLevel()
 end
 
 function private.TabsSelectMenuInitialize(self, level)
 	if not level then return end
 
 	local info = UIDropDownMenu_CreateInfo()
+	local fontObject = "GameFontHighlightSmallLeft"
 
 	if level == 1 then
 		-- title
 		wipe(info)
 		info.isTitle = true
-		info.text = "Select tabs"
+		info.text = "Tabs to export"
 		info.notCheckable = true
 		UIDropDownMenu_AddButton(info, level)
 
-		-- space
-		wipe(info)
-		info.notCheckable = true
-		info.disabled = true
-		info.text = nil
-		info.func = nil
-		UIDropDownMenu_AddButton(info, level)
+		-- separator
+		UIDropDownMenu_AddSeparator(level)
 
 		-- global tabs submenu
 		wipe(info)
-		info.text = "Global"
+		info.text = L["Global tabs"]
 		info.disabled = not dataManager:HasGlobalData()
 		info.notCheckable = true
 		info.keepShownOnClick = true
 		info.hasArrow = true
 		info.value = "global"
-		UIDropDownMenu_AddButton(info, level)
+		info.icon = enums.icons.global.info()
+		info.tCoordLeft, info.tCoordRight, info.tCoordTop, info.tCoordBottom = unpack(enums.icons.global.texCoords)
+		info.iconXOffset = -20
+		info.fontObject = fontObject
+		info.minWidth = widgets:GetWidth(info.text, info.fontObject) + 65
+		globalButton = UIDropDownMenu_AddButton(info, level)
+		_G[globalButton:GetName().."Icon"]:SetSize(14, 14)
 
 		-- profile tabs submenu
 		wipe(info)
-		info.text = "Profile"
+		info.text = L["Profile tabs"]
 		info.notCheckable = true
 		info.keepShownOnClick = true
 		info.hasArrow = true
 		info.value = "profile"
-		UIDropDownMenu_AddButton(info, level)
+		info.icon = enums.icons.profile.info()
+		info.tCoordLeft, info.tCoordRight, info.tCoordTop, info.tCoordBottom = unpack(enums.icons.profile.texCoords)
+		info.iconXOffset = -21
+		info.fontObject = fontObject
+		info.minWidth = widgets:GetWidth(info.text, info.fontObject) + 65
+		profileButton = UIDropDownMenu_AddButton(info, level)
+		_G[profileButton:GetName().."Icon"]:SetSize(12, 14)
 
-		-- space
-		wipe(info)
-		info.notCheckable = true
-		info.disabled = true
-		info.text = nil
-		info.func = nil
-		UIDropDownMenu_AddButton(info, level)
+		-- separator
+		UIDropDownMenu_AddSeparator(level)
 
 		-- close button
 		wipe(info)
@@ -532,7 +565,6 @@ function private.TabsSelectMenuInitialize(self, level)
 		info.text = CLOSE
 		info.func = self.HideMenu
 		UIDropDownMenu_AddButton(info, level)
-
 	elseif level == 2 then
 		local isGlobal = UIDROPDOWNMENU_MENU_VALUE == "global"
 
