@@ -46,9 +46,12 @@ importexport.deflateMethod = {
 	WOW_CHAT_CHANNEL = 3,
  }
 
+local IEFrame
 local selectedTabIDs = {}
 local TabsSelectDropDown = nil
-local globalButton, profileButton
+local globalButton, profileButton, titleButton
+
+importexport.overrideCurrentDataOnImport = false
 
 ---Exports as a string the given data, using the given deflate method.
 ---Order of operation: Serialize -> Compress -> Encode -> return
@@ -115,9 +118,9 @@ function importexport:TryToImport(editbox)
 	end
 
 	if success then
-		print("Import successful")
+		chat:PrintForced("Import successful")
 	else
-		print("Import error")
+		chat:PrintForced("Invalid import string")
 	end
 
 	collectgarbage()
@@ -125,14 +128,17 @@ function importexport:TryToImport(editbox)
 end
 
 ---Shows an editbox where the player can copy or paste serialized data
-function importexport:ShowIEFrame(title, data)
-	local frame = AceGUI:Create("Frame")
-	frame:SetTitle(title or "")
-	frame:SetLayout("Fill")
-	frame:SetWidth(525)
-	frame:SetHeight(375)
-	frame:SetCallback("OnClose", function(widget)
+function importexport:ShowIEFrame(isImport, data)
+	if IEFrame then return end
+
+	IEFrame = AceGUI:Create("Frame")
+	IEFrame:SetTitle(isImport and L["Import"] or L["Export"])
+	IEFrame:SetLayout("Fill")
+	IEFrame:SetWidth(525)
+	IEFrame:SetHeight(375)
+	IEFrame:SetCallback("OnClose", function(widget)
 		AceGUI:Release(widget)
+		IEFrame = nil
 	end)
 
 	local editbox = AceGUI:Create("MultiLineEditBox")
@@ -140,34 +146,37 @@ function importexport:ShowIEFrame(title, data)
 	editbox:SetLabel("")
 	editbox:SetFullWidth(true)
 	editbox:SetFullHeight(true)
-	frame:AddChild(editbox)
+	IEFrame:AddChild(editbox)
 
 	local function refreshStatusText()
 		local text = editbox.editBox:GetText() or ""
 		local length = #text
-		local subtitle = "Characters: "..tostring(length)..", "..string.format("Size: %.1fKB", length/1024)
-		frame:SetStatusText(subtitle)
+		local subtitle = utils:SafeStringFormat(L["Characters: %s, Size: %sKB"], tostring(length), string.format("%.1f", length/1024))
+		IEFrame:SetStatusText(subtitle)
 	end
 
 	editbox.editBox:HookScript("OnTextChanged", refreshStatusText)
 	refreshStatusText()
 
-	if type(data) == "string" then
-		editbox:SetText(data)
+	-- IEFrame:SetStatusText(isImport and "Press Ctrl+V to paste an import text" or "Press Ctrl+C to copy the text to your clipboard")
+
+	if isImport then
+		editbox.button:SetEnabled(false)
+		editbox.button:SetText(L["Import"])
+		editbox.button:SetScript("OnClick", function()
+			if importexport:TryToImport(editbox) then
+				IEFrame:Hide()
+			end
+		end)
+	else
+		editbox:SetText(type(data) == "string" and data or "")
 		editbox.button:SetEnabled(true)
 		editbox.button:SetText(L["Ctrl+A"])
 		editbox.button:SetScript("OnClick", function()
 			widgets:SetFocusEditBox(editbox, true)
 		end)
-	else
-		editbox.button:SetEnabled(false)
-		editbox.button:SetText(L["Import"])
-		editbox.button:SetScript("OnClick", function()
-			if importexport:TryToImport(editbox) then
-				frame:Hide()
-			end
-		end)
 	end
+	widgets:SetFocusEditBox(editbox, true)
 end
 
 --/***************/ Data Import /*****************/--
@@ -254,12 +263,14 @@ function private:LaunchImportProcess(data)
 
 	-- // Part 2.5: We save the tabs to delete if the user chose to override its data with the import
 	local toDelete = {}
-	for i=1,2 do
-		local isGlobal = i==2
+	if importexport.overrideCurrentDataOnImport then
+		for i=1,2 do
+			local isGlobal = i==2
 
-		if #data.orderedTabIDs[isGlobal] > 0 and true then -- if there are things in this category TODO and CHECK IF WE SELECTED OVERRIDE OR NOT
-			for tabID in dataManager:ForEach(enums.tab, isGlobal) do
-				tinsert(toDelete, tabID)
+			if #data.orderedTabIDs[isGlobal] > 0 then -- if there are things in this category
+				for tabID in dataManager:ForEach(enums.tab, isGlobal) do
+					tinsert(toDelete, tabID)
+				end
 			end
 		end
 	end
@@ -327,6 +338,8 @@ function private:LaunchImportProcess(data)
 end
 
 function importexport:LaunchExportProcess()
+	if IEFrame then return end
+
 	-- // Part 1: Validate the tabIDs
 	if type(selectedTabIDs) ~= "table" then return end
 
@@ -338,7 +351,6 @@ function importexport:LaunchExportProcess()
 	end
 
 	if #tabIDs <= 0 then -- no tabs selected
-		chat:PrintForced("No tabs selected for export")
 		return
 	end
 
@@ -426,10 +438,10 @@ function importexport:LaunchExportProcess()
 	-- // Last Part: Export the table and show it to the player
 	local encodedData = importexport:Export(exportData)
 	if encodedData then
-		print("Export successful")
-		importexport:ShowIEFrame(L["Export"], encodedData)
+		chat:PrintForced("Export successful")
+		importexport:ShowIEFrame(false, encodedData)
 	else
-		print("Export error")
+		chat:PrintForced("Export error")
 	end
 
 	collectgarbage()
@@ -447,12 +459,12 @@ end
 
 --/***************/ Tabs Selection /*****************/--
 
-function private:CountSelectedTabs(isGlobal)
+function importexport:CountSelectedTabs(isGlobal)
 	local n = 0
 	for tabID in pairs(selectedTabIDs) do
 		if dataManager:IsID(tabID) then
 			local isTabGlobal = select(2, dataManager:Find(tabID))
-			if isGlobal and isTabGlobal or not isGlobal and not isTabGlobal then
+			if isGlobal == nil or isGlobal and isTabGlobal or not isGlobal and not isTabGlobal then
 				n = n + 1
 			end
 		end
@@ -461,9 +473,21 @@ function private:CountSelectedTabs(isGlobal)
 end
 
 function private:RefreshBaseLevel()
-	globalButton:SetText(L["Global tabs"].." ("..tostring(private:CountSelectedTabs(true))..")")
-	profileButton:SetText(L["Profile tabs"].." ("..tostring(private:CountSelectedTabs(false))..")")
+	local total, count = 0
+
+	count = importexport:CountSelectedTabs(true)
+	globalButton:SetText(L["Global tabs"].." ("..tostring(count)..")")
+	total = total + count
+
+	count = importexport:CountSelectedTabs(false)
+	profileButton:SetText(L["Profile tabs"].." ("..tostring(count)..")")
+	total = total + count
+
+	-- titleButton:SetText(L["Select tabs"].." ("..tostring(total)..")")
 	UIDropDownMenu_Refresh(TabsSelectDropDown, nil, 1)
+
+	-- refresh options buttons
+	AceConfigRegistry:NotifyChange(core.addonName)
 end
 
 function importexport:OpenTabsSelectMenu()
@@ -518,9 +542,9 @@ function private.TabsSelectMenuInitialize(self, level)
 		-- title
 		wipe(info)
 		info.isTitle = true
-		info.text = "Tabs to export"
+		info.text = L["Select tabs"]
 		info.notCheckable = true
-		UIDropDownMenu_AddButton(info, level)
+		titleButton = UIDropDownMenu_AddButton(info, level)
 
 		-- separator
 		UIDropDownMenu_AddSeparator(level)

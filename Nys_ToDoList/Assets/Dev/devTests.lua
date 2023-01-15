@@ -49,12 +49,9 @@ function NysTDL:Tests(nb, ...)
 		-- end
 		-- print(tdlFrame.fadeInfo.finishedFunc)
 
-		-- importexport:ShowIEFrame(L["Export"], "", "")
-		-- do return end
-
 		importexport:LaunchExportProcess()
 	elseif nb == 3 then
-		importexport:ShowIEFrame(L["Import"])
+		importexport:ShowIEFrame(true)
 
 		-- core:AddonUpdated()
 		-- for tabID, tabData in dataManager:ForEach(enums.tab, false) do

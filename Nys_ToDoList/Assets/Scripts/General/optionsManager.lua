@@ -672,7 +672,7 @@ function private:CreateAddonOptionsTable()
 				childGroups = "tab",
 				args = {
 					general = {
-						order = 0,
+						order = 1,
 						type = "group",
 						name = L["General"],
 						args = {
@@ -900,49 +900,6 @@ function private:CreateAddonOptionsTable()
 							}, -- header3
 						}, -- args
 					}, -- general
-					tabs = {
-						order = 1,
-						type = "group",
-						name = L["Tabs"],
-						args = {
-							optionsUpdater = {
-								-- this is completely hidden from the UI and is only here to silently update
-								-- the tab groups whenever there is a change.
-								order = 0.1,
-								type = "toggle",
-								name = "options updater",
-								-- whenever a setter is called when this tab of the options is opened OR we opened this tab,
-								-- AceConfig will call each getter/disabled/hidden values of everything present on the page,
-								-- so putting the update func here actually works really well
-								hidden = function()
-									private:RefreshTabManagement()
-									widgets:UpdateTDLButtonColor() -- in case we changed reset times
-									tabsFrame:Refresh() -- in case we changed tab data
-									return true
-								end,
-							}, -- optionsUpdater
-							groupTabManagement = {
-								order = 1,
-								type = "group",
-								name = L["Tab Management"],
-								args = tabAddTable,
-							},
-							groupGlobalTabManagement = {
-								order = 1.1,
-								type = "group",
-								name = L["Global tabs"],
-								arg = true,
-								args = {},
-							}, -- groupGlobalTabManagement
-							groupProfileTabManagement = {
-								order = 1.2,
-								type = "group",
-								name = L["Profile tabs"],
-								arg = false,
-								args = {},
-							}, -- groupProfileTabManagement
-						} -- args
-					}, -- tabs
 					chat = {
 						order = 2,
 						type = "group",
@@ -1014,6 +971,111 @@ function private:CreateAddonOptionsTable()
 							}, -- header2
 						} -- args
 					}, -- chat
+					tabs = {
+						order = 3,
+						type = "group",
+						name = L["Tabs"],
+						args = {
+							optionsUpdater = {
+								-- this is completely hidden from the UI and is only here to silently update
+								-- the tab groups whenever there is a change.
+								order = 0.1,
+								type = "toggle",
+								name = "options updater",
+								-- whenever a setter is called when this tab of the options is opened OR we opened this tab,
+								-- AceConfig will call each getter/disabled/hidden values of everything present on the page,
+								-- so putting the update func here actually works really well
+								hidden = function()
+									private:RefreshTabManagement()
+									widgets:UpdateTDLButtonColor() -- in case we changed reset times
+									tabsFrame:Refresh() -- in case we changed tab data
+									return true
+								end,
+							}, -- optionsUpdater
+							groupTabManagement = {
+								order = 1,
+								type = "group",
+								name = L["Tab Management"],
+								args = tabAddTable,
+							},
+							groupGlobalTabManagement = {
+								order = 1.1,
+								type = "group",
+								name = L["Global tabs"],
+								arg = true,
+								args = {},
+							}, -- groupGlobalTabManagement
+							groupProfileTabManagement = {
+								order = 1.2,
+								type = "group",
+								name = L["Profile tabs"],
+								arg = false,
+								args = {},
+							}, -- groupProfileTabManagement
+						} -- args
+					}, -- tabs
+					importexport = {
+						order = 4,
+						type = "group",
+						name = L["Import/Export"],
+						args = {
+							header1 = {
+								order = 1,
+								type = "header",
+								name = L["Import"],
+							},
+							importExecute = {
+								order = 1.1,
+								type = "execute",
+								name = L["Import tabs"],
+								func = function()
+									importexport:ShowIEFrame(true)
+								end,
+							},
+							spacer111 = {
+								order = 1.11,
+								type = "description",
+								width = "full",
+								name = "",
+							},
+							overrideDataToggle = {
+								order = 1.2,
+								type = "toggle",
+								name = L["Override current data on import"],
+								-- desc = "",
+								get = function()
+									return importexport.overrideCurrentDataOnImport
+								end,
+								set = function(_, state)
+									importexport.overrideCurrentDataOnImport = state
+								end,
+							},
+							header2 = {
+								order = 2,
+								type = "header",
+								name = L["Export"],
+							},
+							exportExecute = {
+								order = 2.1,
+								type = "execute",
+								name = L["Export selected tabs"],
+								func = function()
+									importexport:LaunchExportProcess()
+								end,
+								disabled = function()
+									return importexport:CountSelectedTabs() <= 0
+								end
+							},
+							exportTabsDropDownExecute = {
+								order = 2.2,
+								type = "execute",
+								name = "",
+								func = importexport.OpenTabsSelectMenu,
+								image = "Interface\\ChatFrame\\UI-ChatIcon-ScrollDown-Up",
+								width = 0.18,
+							},
+						} -- args
+					} -- importexport
 					-- new main tab
 				}, -- args
 			}, -- main
@@ -1024,46 +1086,6 @@ function private:CreateAddonOptionsTable()
 				childGroups = "tab",
 				args = {
 					-- ** new profiles tab (created from AceDBOptions) **
-					importexport = {
-						order = 101, -- because the profiles tab will have 100, the default value, when created from AceDBOptions
-						type = "group",
-						name = "Import/Export",
-						args = {
-							exportExecute = {
-								order = 1.1,
-								type = "execute",
-								name = "Export",
-								func = function()
-									local tabIDs = {}
-
-									for tabID in dataManager:ForEach(enums.tab, false) do
-										table.insert(tabIDs, tabID)
-									end
-
-									-- local tabID = dataManager:FindFirstIDByName("Daily", enums.tab)
-									-- table.insert(tabIDs, tabID)
-
-									importexport:LaunchExportProcess(tabIDs)
-								end,
-							},
-							importExecute = {
-								order = 1.2,
-								type = "execute",
-								name = "Import",
-								func = function()
-									importexport:ShowIEFrame(L["Import"])
-								end,
-							},
-							exportTabsDropDownExecute = {
-								order = 1.3,
-								type = "execute",
-								name = "",
-								func = importexport.OpenTabsSelectMenu,
-								image = "Interface\\ChatFrame\\UI-ChatIcon-ScrollDown-Up",
-								width = 0.15,
-							},
-						} -- args
-					} -- importexport
 				}, -- args
 			} -- child_profiles
 		} -- args
