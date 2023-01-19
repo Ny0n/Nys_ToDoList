@@ -53,6 +53,18 @@ local globalButton, profileButton, titleButton
 
 importexport.overrideCurrentDataOnImport = false
 
+local prefixes = { "!NysTDL!" } -- I'm using a table for backwards compatibility, in case the prefix changes. It's the first one in the table that is used for exports
+
+function private:CheckPrefixes(prefixed)
+	for _,prefix in ipairs(prefixes) do
+		local encoded, count = string.gsub(prefixed, "^"..prefix, "", 1)
+		if count == 1 then
+			return encoded
+		end
+	end
+	return false
+end
+
 ---Exports as a string the given data, using the given deflate method.
 ---Order of operation: Serialize -> Compress -> Encode -> return
 ---@param data any
@@ -76,31 +88,37 @@ function importexport:Export(data, method)
 		encoded = LibDeflate:EncodeForPrint(compressed)
 	end
 
-    return encoded
+	local prefixed = prefixes[1]..encoded
+	if not prefixed then return end
+
+    return prefixed
 end
 
----Imports the given text, using the given deflate method.
+---Imports the given encoded text, using the given deflate method.
 ---Order of operation: Decode -> Decompress -> Deserialize -> return
 ---@param text string
 ---@param method importexport.deflateMethod
 ---@return any decodedData
-function importexport:Import(text, method)
-	if type(text) ~= "string" then return end
+function importexport:Import(prefixed, method)
+	if type(prefixed) ~= "string" then return end
 
-	local decoded
+	local encoded = private:CheckPrefixes(prefixed)
+	if not encoded then return end
+
+	local compressed
 	if method == importexport.deflateMethod.WOW_ADDON_CHANNEL then
-		decoded = LibDeflate:DecodeForWoWAddonChannel(text)
+		compressed = LibDeflate:DecodeForWoWAddonChannel(encoded)
 	elseif method == importexport.deflateMethod.WOW_CHAT_CHANNEL then
-		decoded = LibDeflate:DecodeForWoWChatChannel(text)
+		compressed = LibDeflate:DecodeForWoWChatChannel(encoded)
 	else
-		decoded = LibDeflate:DecodeForPrint(text)
+		compressed = LibDeflate:DecodeForPrint(encoded)
 	end
-    if not decoded then return end
+    if not compressed then return end
 
-    local decompressed = LibDeflate:DecompressDeflate(decoded)
-    if not decompressed then return end
+    local serialized = LibDeflate:DecompressDeflate(compressed)
+    if not serialized then return end
 
-    local success, data = AceSerializer:Deserialize(decompressed)
+    local success, data = AceSerializer:Deserialize(serialized)
     if not success then return end
 
     return data
@@ -202,8 +220,6 @@ function private:LaunchImportProcess(data)
 		}
 	]]
 
-	-- ...
-
 	-- // Part 2: Replace all IDs by new ones
 	local idMap = {
 		-- [importID] = dataManager:NewID(),
@@ -261,13 +277,13 @@ function private:LaunchImportProcess(data)
 		end
 	end
 
-	-- // Part 2.5: We save the tabs to delete if the user chose to override its data with the import
+	-- // Part 2.5: We find the tabs to delete if the user chose to override its data with the import
 	local toDelete = {}
 	if importexport.overrideCurrentDataOnImport then
 		for i=1,2 do
 			local isGlobal = i==2
 
-			if #data.orderedTabIDs[isGlobal] > 0 then -- if there are things in this category
+			if #data.orderedTabIDs[isGlobal] > 0 then -- if there are things in this category of tabs (global / profile)
 				for tabID in dataManager:ForEach(enums.tab, isGlobal) do
 					tinsert(toDelete, tabID)
 				end
@@ -278,20 +294,25 @@ function private:LaunchImportProcess(data)
 	-- // Part 3: Adding the processed data into the list
 	dataManager.authorized = false
 
-	-- tabs order
-	for i=1,2 do
-		local isGlobal = i==2
-		local orderedTabIDs = (select(3, dataManager:GetData(isGlobal))).orderedTabIDs
+	-- save the data in case there is an unexpected error
+	local g_itemsList, g_categoriesList, g_tabsList = dataManager:GetData(true)
+	g_itemsList, g_categoriesList, g_tabsList = utils:Deepcopy(g_itemsList), utils:Deepcopy(g_categoriesList), utils:Deepcopy(g_tabsList)
+	local p_itemsList, p_categoriesList, p_tabsList = dataManager:GetData(false)
+	p_itemsList, p_categoriesList, p_tabsList = utils:Deepcopy(p_itemsList), utils:Deepcopy(p_categoriesList), utils:Deepcopy(p_tabsList)
 
-		for _,tabID in ipairs(data.orderedTabIDs[isGlobal]) do
-			tinsert(orderedTabIDs, tabID)
+	local success = pcall(function()
+		-- tabs order
+		for i=1,2 do
+			local isGlobal = i==2
+			local orderedTabIDs = dataManager:GetTabsLoc(isGlobal)
+
+			for _,tabID in ipairs(data.orderedTabIDs[isGlobal]) do
+				tinsert(orderedTabIDs, tabID)
+			end
 		end
-	end
 
-	-- elements
-	local success, psuccess
-	for _,elementInfo in ipairs(data.elements) do
-		psuccess = pcall(function() -- we protect the code from potential "ID not found" errors
+		-- elements
+		for _,elementInfo in ipairs(data.elements) do
 			local itemsList, categoriesList, tabsList = dataManager:GetData(elementInfo.isGlobal)
 			if elementInfo.enum == enums.item then -- item
 				itemsList[elementInfo.ID] = elementInfo.data
@@ -300,21 +321,20 @@ function private:LaunchImportProcess(data)
 			elseif elementInfo.enum == enums.tab then -- tab
 				tabsList[elementInfo.ID] = elementInfo.data
 			end
-			success = true
-		end)
-
-		if psuccess then
-			if not success then
-				print("error adding element")
-			else
-				-- ...
-			end
-		else
-			print("pcall error adding element")
 		end
+	end)
+
+	if not success then
+		chat:PrintForced("Invalid import string")
+
+		local global, profile = NysTDL.acedb.global, NysTDL.acedb.profile
+		global.itemsList, global.categoriesList, global.tabsList = g_itemsList, g_categoriesList, g_tabsList
+		profile.itemsList, profile.categoriesList, profile.tabsList = p_itemsList, p_categoriesList, p_tabsList
+
+		return
 	end
 
-	-- // Part 3.5: Delete what we saved
+	-- // Part 3.5: Delete what we should be deleting because the user chose to override its current data
 	local nbToUndo = 0
 	for _,tabID in ipairs(toDelete) do
 		-- TDLATER dataManager clearing = true/false et faire gaffe aux protected contents si je les réajoute (faudrait force delete)
@@ -398,7 +418,7 @@ function importexport:LaunchExportProcess()
 	-- tabs order
 	for i=1,2 do
 		local isGlobal = i==2
-		exportData.orderedTabIDs[isGlobal] = utils:Deepcopy((select(3, dataManager:GetData(isGlobal))).orderedTabIDs)
+		exportData.orderedTabIDs[isGlobal] = utils:Deepcopy(dataManager:GetTabsLoc(isGlobal))
 		removeUnusedTabIDs(exportData.orderedTabIDs[isGlobal])
 	end
 
@@ -438,7 +458,6 @@ function importexport:LaunchExportProcess()
 	-- // Last Part: Export the table and show it to the player
 	local encodedData = importexport:Export(exportData)
 	if encodedData then
-		chat:PrintForced("Export successful")
 		importexport:ShowIEFrame(false, encodedData)
 	else
 		chat:PrintForced("Export error")

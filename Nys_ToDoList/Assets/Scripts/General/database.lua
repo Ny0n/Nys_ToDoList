@@ -260,8 +260,14 @@ function database.ctab(newTabID)
 	end
 
 	if database.ctabstate() then
+		if not dataManager:IsID(NysTDL.acedb.global.currentGlobalTab) then
+			database.ctab(dataManager:GetTabsLoc(true)[1] or dataManager:GetTabsLoc(false)[1])
+		end
 		return NysTDL.acedb.global.currentGlobalTab
 	else
+		if not dataManager:IsID(NysTDL.acedb.profile.currentProfileTab) then
+			database.ctab(dataManager:GetTabsLoc(false)[1])
+		end
 		return NysTDL.acedb.profile.currentProfileTab
 	end
 end

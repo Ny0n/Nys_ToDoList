@@ -1179,7 +1179,8 @@ function dataManager:DeleteTab(tabID)
 
 		dataManager:AddQuantity(enums.tab, isGlobal, -1)
 
-		if database.ctab() == tabID then
+		if isGlobal and NysTDL.acedb.global.currentGlobalTab == tabID
+		or not isGlobal and NysTDL.acedb.profile.currentProfileTab == tabID then
 			if not loc[1] then -- we just deleted the last global tab
 				database.ctabstate(false) -- so we refocus a profile tab
 			else
@@ -1837,6 +1838,14 @@ function dataManager:IsTabContentHidden(tabID)
 		end
 	end
 	return true
+end
+
+---Returns the table containing the tabs, either the profile one or the global one.
+---@param isGlobal boolean
+---@return table
+function dataManager:GetTabsLoc(isGlobal)
+	isGlobal = not not isGlobal
+	return (select(3, dataManager:GetData(isGlobal))).orderedTabIDs
 end
 
 --/*******************/ UTILS /*************************/--
