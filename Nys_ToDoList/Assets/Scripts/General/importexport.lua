@@ -512,13 +512,16 @@ function private:RefreshBaseLevel()
 	local total, count = 0
 
 	count = importexport:CountSelectedTabs(true)
+	-- globalButton:SetText(L["Global tabs"])
 	globalButton:SetText(L["Global tabs"].." ("..tostring(count)..")")
 	total = total + count
 
 	count = importexport:CountSelectedTabs(false)
+	-- profileButton:SetText(L["Profile tabs"])
 	profileButton:SetText(L["Profile tabs"].." ("..tostring(count)..")")
 	total = total + count
 
+	-- titleButton:SetText(L["Select tabs"])
 	-- titleButton:SetText(L["Select tabs"].." ("..tostring(total)..")")
 	UIDropDownMenu_Refresh(TabsSelectDropDown, nil, 1)
 
@@ -582,8 +585,24 @@ function private.TabsSelectMenuInitialize(self, level)
 		info.notCheckable = true
 		titleButton = UIDropDownMenu_AddButton(info, level)
 
-		-- separator
-		UIDropDownMenu_AddSeparator(level)
+		-- -- separator
+		-- UIDropDownMenu_AddSeparator(level)
+
+		wipe(info)
+		info.text = CHECK_ALL
+		info.func = self.CheckAll
+		info.arg1 = nil
+		info.notCheckable = true
+		info.keepShownOnClick = true
+		UIDropDownMenu_AddButton(info, level)
+
+		wipe(info)
+		info.text = UNCHECK_ALL
+		info.func = self.UncheckAll
+		info.arg1 = nil
+		info.notCheckable = true
+		info.keepShownOnClick = true
+		UIDropDownMenu_AddButton(info, level)
 
 		-- global tabs submenu
 		wipe(info)
@@ -593,13 +612,13 @@ function private.TabsSelectMenuInitialize(self, level)
 		info.keepShownOnClick = true
 		info.hasArrow = true
 		info.value = "global"
-		info.icon = enums.icons.global.info()
-		info.tCoordLeft, info.tCoordRight, info.tCoordTop, info.tCoordBottom = unpack(enums.icons.global.texCoords)
-		info.iconXOffset = -20
+		-- info.icon = enums.icons.global.info()
+		-- info.tCoordLeft, info.tCoordRight, info.tCoordTop, info.tCoordBottom = unpack(enums.icons.global.texCoords)
+		-- info.iconXOffset = -20
 		info.fontObject = fontObject
-		info.minWidth = widgets:GetWidth(info.text, info.fontObject) + 65
+		info.minWidth = widgets:GetWidth(info.text, info.fontObject) + 45
 		globalButton = UIDropDownMenu_AddButton(info, level)
-		_G[globalButton:GetName().."Icon"]:SetSize(14, 14)
+		-- _G[globalButton:GetName().."Icon"]:SetSize(14, 14)
 
 		-- profile tabs submenu
 		wipe(info)
@@ -608,23 +627,23 @@ function private.TabsSelectMenuInitialize(self, level)
 		info.keepShownOnClick = true
 		info.hasArrow = true
 		info.value = "profile"
-		info.icon = enums.icons.profile.info()
-		info.tCoordLeft, info.tCoordRight, info.tCoordTop, info.tCoordBottom = unpack(enums.icons.profile.texCoords)
-		info.iconXOffset = -21
+		-- info.icon = enums.icons.profile.info()
+		-- info.tCoordLeft, info.tCoordRight, info.tCoordTop, info.tCoordBottom = unpack(enums.icons.profile.texCoords)
+		-- info.iconXOffset = -21
 		info.fontObject = fontObject
-		info.minWidth = widgets:GetWidth(info.text, info.fontObject) + 65
+		info.minWidth = widgets:GetWidth(info.text, info.fontObject) + 45
 		profileButton = UIDropDownMenu_AddButton(info, level)
-		_G[profileButton:GetName().."Icon"]:SetSize(12, 14)
+		-- _G[profileButton:GetName().."Icon"]:SetSize(12, 14)
 
-		-- separator
-		UIDropDownMenu_AddSeparator(level)
+		-- -- separator
+		-- UIDropDownMenu_AddSeparator(level)
 
-		-- close button
-		wipe(info)
-		info.notCheckable = true
-		info.text = CLOSE
-		info.func = self.HideMenu
-		UIDropDownMenu_AddButton(info, level)
+		-- -- close button
+		-- wipe(info)
+		-- info.notCheckable = true
+		-- info.text = CLOSE
+		-- info.func = self.HideMenu
+		-- UIDropDownMenu_AddButton(info, level)
 	elseif level == 2 then
 		local isGlobal = UIDROPDOWNMENU_MENU_VALUE == "global"
 
