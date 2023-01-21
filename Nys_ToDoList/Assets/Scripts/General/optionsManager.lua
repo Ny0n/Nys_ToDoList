@@ -1017,7 +1017,7 @@ function private:CreateAddonOptionsTable()
 					importexport = {
 						order = 4,
 						type = "group",
-						name = L["Import/Export"],
+						name = L["Import"].."/"..L["Export"],
 						args = {
 							header1 = {
 								order = 1,
@@ -1038,16 +1038,19 @@ function private:CreateAddonOptionsTable()
 								width = "full",
 								name = "",
 							},
-							overrideDataToggle = {
+							overrideDataSelect = {
 								order = 1.2,
-								type = "toggle",
-								name = L["Override current data on import"],
-								-- desc = "",
-								get = function()
-									return importexport.overrideCurrentDataOnImport
+								type = "select",
+								name = L["Data to override on import"],
+								desc = L["Delete the selected data to keep only what is imported (only if there is something to import)"].."\n"..L["Can be undone by pressing the list's undo button"],
+								values = function()
+									return importexport.dataToOverrideOnImportTypes
 								end,
-								set = function(_, state)
-									importexport.overrideCurrentDataOnImport = state
+								get = function()
+									return importexport.dataToOverrideOnImport
+								end,
+								set = function(_, value)
+									importexport.dataToOverrideOnImport = value
 								end,
 							},
 							header2 = {

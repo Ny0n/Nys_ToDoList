@@ -19,16 +19,18 @@ addonTable.devLocale = L
 
 --/************************************************/--
 
+L["Delete the selected data to keep only what is imported (only if there is something to import)"] = true
+L["Can be undone by pressing the list's undo button"] = true
+L["None"] = true
 L["Export error"] = true
 L["Invalid import string"] = true
 L["Import successful"] = true
-L["Import/Export"] = true
 L["Select tabs"] = true
 L["Import"] = true
 L["Import tabs"] = true
 L["Export"] = true
 L["Export selected tabs"] = true
-L["Override current data on import"] = true
+L["Data to override on import"] = true
 L["Characters: %s, Size: %sKB"] = true
 L["Create a new global tab"] = true
 L["Create a new profile tab"] = true

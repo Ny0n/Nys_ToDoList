@@ -51,7 +51,13 @@ local selectedTabIDs = {}
 local TabsSelectDropDown = nil
 local globalButton, profileButton, titleButton
 
-importexport.overrideCurrentDataOnImport = false
+importexport.dataToOverrideOnImport = 1
+importexport.dataToOverrideOnImportTypes = {
+	L["None"], -- [1]
+	L["All"], -- [2]
+	L["Global tabs"], -- [3]
+	L["Profile tabs"], -- [4]
+ }
 
 local prefixes = { "!NysTDL!" } -- I'm using a table for backwards compatibility, in case the prefix changes. It's the first one in the table that is used for exports
 
@@ -289,11 +295,12 @@ function private:LaunchImportProcess(data)
 
 	-- // Part 2.5: We find the tabs to delete if the user chose to override its data with the import
 	local toDelete = {}
-	if importexport.overrideCurrentDataOnImport then
-		for i=1,2 do
-			local isGlobal = i==2
+	local toOverride = importexport.dataToOverrideOnImport -- alias
+	if toOverride ~= 1 then
+		for i=3,4 do
+			local isGlobal = i==3
 
-			if #data.orderedTabIDs[isGlobal] > 0 then -- if there are things in this category of tabs (global / profile)
+			if #data.orderedTabIDs[isGlobal] > 0 and (toOverride == 2 or toOverride == i) then -- if there are things in this category of tabs (global / profile)
 				for tabID in dataManager:ForEach(enums.tab, isGlobal) do
 					tinsert(toDelete, tabID)
 				end
