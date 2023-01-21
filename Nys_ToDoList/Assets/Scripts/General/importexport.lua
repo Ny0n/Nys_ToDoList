@@ -144,7 +144,7 @@ function importexport:TryToImport(editbox)
 	if success then
 		chat:PrintForced(L["Import successful"])
 	else
-		chat:PrintForced(L["Invalid import string"])
+		chat:PrintForced(L["Invalid import text"])
 	end
 
 	collectgarbage()
@@ -342,12 +342,11 @@ function private:LaunchImportProcess(data)
 	end)
 
 	if not success then
-		chat:PrintForced(L["Invalid import string"])
-
 		local global, profile = NysTDL.acedb.global, NysTDL.acedb.profile
 		global.itemsList, global.categoriesList, global.tabsList = g_itemsList, g_categoriesList, g_tabsList
 		profile.itemsList, profile.categoriesList, profile.tabsList = p_itemsList, p_categoriesList, p_tabsList
 
+		chat:PrintForced(L["Invalid import text"])
 		return
 	end
 

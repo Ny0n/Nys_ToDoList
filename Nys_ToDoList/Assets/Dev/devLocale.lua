@@ -23,7 +23,7 @@ L["Delete the selected data to keep only what is imported (only if there is some
 L["Can be undone by pressing the list's undo button"] = true
 L["None"] = true
 L["Export error"] = true
-L["Invalid import string"] = true
+L["Invalid import text"] = true
 L["Import successful"] = true
 L["Select tabs"] = true
 L["Import"] = true
