@@ -19,6 +19,9 @@ addonTable.devLocale = L
 
 --/************************************************/--
 
+L["Export error"] = true
+L["Invalid import string"] = true
+L["Import successful"] = true
 L["Import/Export"] = true
 L["Select tabs"] = true
 L["Import"] = true

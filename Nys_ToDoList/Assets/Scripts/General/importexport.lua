@@ -136,9 +136,9 @@ function importexport:TryToImport(editbox)
 	end
 
 	if success then
-		chat:PrintForced("Import successful")
+		chat:PrintForced(L["Import successful"])
 	else
-		chat:PrintForced("Invalid import string")
+		chat:PrintForced(L["Invalid import string"])
 	end
 
 	collectgarbage()
@@ -173,10 +173,15 @@ function importexport:ShowIEFrame(isImport, data)
 		IEFrame:SetStatusText(subtitle)
 	end
 
-	editbox.editBox:HookScript("OnTextChanged", refreshStatusText)
-	refreshStatusText()
+	editbox.editBox:HookScript("OnTextChanged", function()
+		refreshStatusText()
 
-	-- IEFrame:SetStatusText(isImport and "Press Ctrl+V to paste an import text" or "Press Ctrl+C to copy the text to your clipboard")
+		-- hack to fix a scroll bug when we Ctrl+V something big
+		local v = editbox.scrollFrame:GetVerticalScroll()
+		editbox.scrollFrame:SetVerticalScroll(0)
+		editbox.scrollFrame:SetVerticalScroll(v)
+	end)
+	refreshStatusText()
 
 	if isImport then
 		editbox.button:SetEnabled(false)
@@ -186,15 +191,20 @@ function importexport:ShowIEFrame(isImport, data)
 				IEFrame:Hide()
 			end
 		end)
+		editbox.editBox:HookScript("OnTextChanged", function()
+			if editbox.editBox:GetText() == "" then
+				editbox.button:SetEnabled(false)
+			end
+		end)
 	else
 		editbox:SetText(type(data) == "string" and data or "")
 		editbox.button:SetEnabled(true)
 		editbox.button:SetText(L["Ctrl+A"])
 		editbox.button:SetScript("OnClick", function()
-			widgets:SetFocusEditBox(editbox, true)
+			widgets:SetFocusEditBox(editbox.editBox, true)
 		end)
 	end
-	widgets:SetFocusEditBox(editbox, true)
+	widgets:SetFocusEditBox(editbox.editBox, true)
 end
 
 --/***************/ Data Import /*****************/--
@@ -325,7 +335,7 @@ function private:LaunchImportProcess(data)
 	end)
 
 	if not success then
-		chat:PrintForced("Invalid import string")
+		chat:PrintForced(L["Invalid import string"])
 
 		local global, profile = NysTDL.acedb.global, NysTDL.acedb.profile
 		global.itemsList, global.categoriesList, global.tabsList = g_itemsList, g_categoriesList, g_tabsList
@@ -460,7 +470,7 @@ function importexport:LaunchExportProcess()
 	if encodedData then
 		importexport:ShowIEFrame(false, encodedData)
 	else
-		chat:PrintForced("Export error")
+		chat:PrintForced(L["Export error"])
 	end
 
 	collectgarbage()
