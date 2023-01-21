@@ -236,7 +236,7 @@ end
 
 local changelog = {
 	-- index table (not key-value), only place here the important changes.
-	"- Added support for WoW Classic versions",
+	"- Added the import/export feature (v1.0). This means you can now easily share any of your tabs, through the use of an automatically generated text",
 }
 
 ---Called once, when the addon gets an update.
