@@ -512,17 +512,20 @@ function private:RefreshBaseLevel()
 	local total, count = 0
 
 	count = importexport:CountSelectedTabs(true)
-	-- globalButton:SetText(L["Global tabs"])
-	globalButton:SetText(L["Global tabs"].." ("..tostring(count)..")")
+	if globalButton then
+		globalButton:SetText(L["Global tabs"].." ("..tostring(count)..")")
+	end
 	total = total + count
 
 	count = importexport:CountSelectedTabs(false)
-	-- profileButton:SetText(L["Profile tabs"])
-	profileButton:SetText(L["Profile tabs"].." ("..tostring(count)..")")
+	if profileButton then
+		profileButton:SetText(L["Profile tabs"].." ("..tostring(count)..")")
+	end
 	total = total + count
 
-	-- titleButton:SetText(L["Select tabs"])
-	-- titleButton:SetText(L["Select tabs"].." ("..tostring(total)..")")
+	-- if titleButton then
+	-- 	titleButton:SetText(L["Select tabs"].." ("..tostring(total)..")")
+	-- end
 	UIDropDownMenu_Refresh(TabsSelectDropDown, nil, 1)
 
 	-- refresh options buttons

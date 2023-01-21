@@ -35,10 +35,10 @@ local addonName = core.addonName
 ---@param nb number
 ---@param ... any
 function NysTDL:Tests(nb, ...)
-
-	-- NysTDL.dataManager:Find()
-
-	if nb == 1 then
+	nb = nb or 0
+	if nb == 0 then
+		print((select(4, GetBuildInfo())))
+	elseif nb == 1 then
 		AceConfigDialog:Open(addonName)
 	elseif nb == 2 then
 		-- mainFrame:Toggle()
