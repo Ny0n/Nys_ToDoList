@@ -10,6 +10,7 @@ local database = NysTDL.database
 local dataManager = NysTDL.dataManager
 local enums = NysTDL.enums
 local events = NysTDL.events
+local importexport = NysTDL.importexport
 local migration = NysTDL.migration
 local optionsManager = NysTDL.optionsManager
 local resetManager = NysTDL.resetManager
@@ -34,21 +35,25 @@ local addonName = core.addonName
 ---@param nb number
 ---@param ... any
 function NysTDL:Tests(nb, ...)
-
-	-- NysTDL.dataManager:Find()
-
-	if nb == 1 then
+	nb = nb or 0
+	if nb == 0 then
+		print((select(4, GetBuildInfo())))
+	elseif nb == 1 then
 		AceConfigDialog:Open(addonName)
 	elseif nb == 2 then
-		mainFrame:Toggle()
+		-- mainFrame:Toggle()
 		-- UIFrameFadeOut(tdlFrame, 2)
 		-- print(tdlFrame.fadeInfo.finishedFunc)
 		-- tdlFrame.fadeInfo.finishedFunc = function(arg1)
 		-- print("hey")
 		-- end
 		-- print(tdlFrame.fadeInfo.finishedFunc)
+
+		importexport:LaunchExportProcess()
 	elseif nb == 3 then
-		core:AddonUpdated()
+		importexport:ShowIEFrame(true)
+
+		-- core:AddonUpdated()
 		-- for tabID, tabData in dataManager:ForEach(enums.tab, false) do
 		--   if next(tabData.reset.days) then
 		--     print(">================<")
@@ -60,27 +65,29 @@ function NysTDL:Tests(nb, ...)
 		-- end
 		-- print("<================>")
 	elseif nb == 4 then
-		-- ITEM EXPLOSION
-		local refreshID = dataManager:SetRefresh(false)
+		importexport:OpenTabsSelectMenu()
 
-		local itemTabID, itemCatID
-		for tabID,tabData in dataManager:ForEach(enums.tab) do
-			if tabData.name == "All" then
-				itemCatID = dataManager:CreateCategory("EXPLOSION", tabID)
-				itemTabID = tabID
-			end
-		end
-		for i = 1, 100 do
-			dataManager:CreateItem(tostring(i), itemTabID, itemCatID)
-		end
+		-- -- ITEM EXPLOSION
+		-- local refreshID = dataManager:SetRefresh(false)
 
-		-- for i=1,2000 do
-		-- 	dataManager:Undo()
+		-- local itemTabID, itemCatID
+		-- for tabID,tabData in dataManager:ForEach(enums.tab) do
+		-- 	if tabData.name == "All" then
+		-- 		itemCatID = dataManager:CreateCategory("EXPLOSION", tabID)
+		-- 		itemTabID = tabID
+		-- 	end
+		-- end
+		-- for i = 1, 100 do
+		-- 	dataManager:CreateItem(tostring(i), itemTabID, itemCatID)
 		-- end
 
-		dataManager:SetRefresh(true, refreshID)
+		-- -- for i=1,2000 do
+		-- -- 	dataManager:Undo()
+		-- -- end
 
-		mainFrame:Refresh()
+		-- dataManager:SetRefresh(true, refreshID)
+
+		-- mainFrame:Refresh()
 	elseif nb == 5 then
 		migration:TestFunc()
 	end
@@ -99,3 +106,11 @@ local backdrop_tests = {
 	tile = false, tileSize = 1, edgeSize = 10,
 	insets = { left = 0, right = 0, top = 0, bottom = 0 }
 }
+
+-- // Secure action button test
+-- local macroBtn = CreateFrame("Button", "myMacroButton", UIParent, "SecureActionButtonTemplate")
+-- macroBtn:SetAttribute("type1", "macro") -- left click causes macro
+-- macroBtn:SetAttribute("macrotext1", "/say test") -- text for macro on left click
+-- macroBtn:SetSize(100, 100)
+-- macroBtn:SetPoint("CENTER")
+-- macroBtn:RegisterForClicks("LeftButtonDown")

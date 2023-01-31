@@ -143,7 +143,7 @@ database.defaults = {
 
 -- this func is called once in initialize, on the addon load
 -- and also everytime we switch profiles
-function private:DBInit()
+function private:DBInit(profile)
 	dataManager.authorized = false -- there's no calling mainFrame funcs while we're tampering with the database!
 
 	-- data quantities
@@ -182,19 +182,19 @@ function private:DBInit()
 	-- // initialization of elements that need to be updated correctly when the profile changes
 
 	-- remember undos
-	if not NysTDL.acedb.profile.rememberUndo then
+	if profile and not NysTDL.acedb.profile.rememberUndo then
 		wipe(NysTDL.acedb.profile.undoTable)
 	end
 
 	dataManager.authorized = true
 end
 
-function private:ProfileChanged(_, profile)
+function database:ProfileChanged(_, profile)
 	-- // here we update (basically in the same order as the core init) everything
 	-- that needs an update after a database change
 
 	-- #1 - database (always init a database)
-	private:DBInit()
+	private:DBInit(profile)
 
 	-- #2 - options
 	AceConfigRegistry:NotifyChange(addonName)
@@ -260,8 +260,14 @@ function database.ctab(newTabID)
 	end
 
 	if database.ctabstate() then
+		if not dataManager:IsID(NysTDL.acedb.global.currentGlobalTab) then
+			database.ctab(dataManager:GetTabsLoc(true)[1] or dataManager:GetTabsLoc(false)[1])
+		end
 		return NysTDL.acedb.global.currentGlobalTab
 	else
+		if not dataManager:IsID(NysTDL.acedb.profile.currentProfileTab) then
+			database.ctab(dataManager:GetTabsLoc(false)[1])
+		end
 		return NysTDL.acedb.profile.currentProfileTab
 	end
 end
@@ -290,8 +296,8 @@ function database:Initialize()
 	private:DBInit() -- initialization for some elements of the current acedb
 
 	-- callbacks for database changes
-	NysTDL.acedb.RegisterCallback(private, "OnProfileChanged", "ProfileChanged")
-	NysTDL.acedb.RegisterCallback(private, "OnProfileCopied", "ProfileChanged")
-	NysTDL.acedb.RegisterCallback(private, "OnProfileReset", "ProfileChanged")
-	NysTDL.acedb.RegisterCallback(private, "OnDatabaseReset", "ProfileChanged")
+	NysTDL.acedb.RegisterCallback(database, "OnProfileChanged", "ProfileChanged")
+	NysTDL.acedb.RegisterCallback(database, "OnProfileCopied", "ProfileChanged")
+	NysTDL.acedb.RegisterCallback(database, "OnProfileReset", "ProfileChanged")
+	NysTDL.acedb.RegisterCallback(database, "OnDatabaseReset", "ProfileChanged")
 end

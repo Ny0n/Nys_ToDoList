@@ -17,6 +17,7 @@ local tabsFrame = NysTDL.tabsFrame
 local databroker = NysTDL.databroker
 local dataManager = NysTDL.dataManager
 local resetManager = NysTDL.resetManager
+local importexport = NysTDL.importexport
 
 -- Secondary aliases
 
@@ -671,7 +672,7 @@ function private:CreateAddonOptionsTable()
 				childGroups = "tab",
 				args = {
 					general = {
-						order = 0,
+						order = 1,
 						type = "group",
 						name = L["General"],
 						args = {
@@ -899,49 +900,6 @@ function private:CreateAddonOptionsTable()
 							}, -- header3
 						}, -- args
 					}, -- general
-					tabs = {
-						order = 1,
-						type = "group",
-						name = L["Tabs"],
-						args = {
-							optionsUpdater = {
-								-- this is completely hidden from the UI and is only here to silently update
-								-- the tab groups whenever there is a change.
-								order = 0.1,
-								type = "toggle",
-								name = "options updater",
-								-- whenever a setter is called when this tab of the options is opened OR we opened this tab,
-								-- AceConfig will call each getter/disabled/hidden values of everything present on the page,
-								-- so putting the update func here actually works really well
-								hidden = function()
-									private:RefreshTabManagement()
-									widgets:UpdateTDLButtonColor() -- in case we changed reset times
-									tabsFrame:Refresh() -- in case we changed tab data
-									return true
-								end,
-							}, -- optionsUpdater
-							groupTabManagement = {
-								order = 1,
-								type = "group",
-								name = L["Tab Management"],
-								args = tabAddTable,
-							},
-							groupGlobalTabManagement = {
-								order = 1.1,
-								type = "group",
-								name = L["Global tabs"],
-								arg = true,
-								args = {},
-							}, -- groupGlobalTabManagement
-							groupProfileTabManagement = {
-								order = 1.2,
-								type = "group",
-								name = L["Profile tabs"],
-								arg = false,
-								args = {},
-							}, -- groupProfileTabManagement
-						} -- args
-					}, -- tabs
 					chat = {
 						order = 2,
 						type = "group",
@@ -1013,6 +971,114 @@ function private:CreateAddonOptionsTable()
 							}, -- header2
 						} -- args
 					}, -- chat
+					tabs = {
+						order = 3,
+						type = "group",
+						name = L["Tabs"],
+						args = {
+							optionsUpdater = {
+								-- this is completely hidden from the UI and is only here to silently update
+								-- the tab groups whenever there is a change.
+								order = 0.1,
+								type = "toggle",
+								name = "options updater",
+								-- whenever a setter is called when this tab of the options is opened OR we opened this tab,
+								-- AceConfig will call each getter/disabled/hidden values of everything present on the page,
+								-- so putting the update func here actually works really well
+								hidden = function()
+									private:RefreshTabManagement()
+									widgets:UpdateTDLButtonColor() -- in case we changed reset times
+									tabsFrame:Refresh() -- in case we changed tab data
+									return true
+								end,
+							}, -- optionsUpdater
+							groupTabManagement = {
+								order = 1,
+								type = "group",
+								name = L["Tab Management"],
+								args = tabAddTable,
+							},
+							groupGlobalTabManagement = {
+								order = 1.1,
+								type = "group",
+								name = L["Global tabs"],
+								arg = true,
+								args = {},
+							}, -- groupGlobalTabManagement
+							groupProfileTabManagement = {
+								order = 1.2,
+								type = "group",
+								name = L["Profile tabs"],
+								arg = false,
+								args = {},
+							}, -- groupProfileTabManagement
+						} -- args
+					}, -- tabs
+					importexport = {
+						order = 4,
+						type = "group",
+						name = L["Import"].."/"..L["Export"],
+						args = {
+							header1 = {
+								order = 1,
+								type = "header",
+								name = L["Import"],
+							},
+							importExecute = {
+								order = 1.1,
+								type = "execute",
+								name = L["Import tabs"],
+								func = function()
+									importexport:ShowIEFrame(true)
+								end,
+							},
+							spacer111 = {
+								order = 1.11,
+								type = "description",
+								width = "full",
+								name = "",
+							},
+							overrideDataSelect = {
+								order = 1.2,
+								type = "select",
+								name = L["Data to override on import"],
+								desc = L["Delete the selected data to keep only what is imported (only if there is something to import)"].."\n"..L["Can be undone by pressing the list's undo button"],
+								values = function()
+									return importexport.dataToOverrideOnImportTypes
+								end,
+								get = function()
+									return importexport.dataToOverrideOnImport
+								end,
+								set = function(_, value)
+									importexport.dataToOverrideOnImport = value
+								end,
+							},
+							header2 = {
+								order = 2,
+								type = "header",
+								name = L["Export"],
+							},
+							exportExecute = {
+								order = 2.1,
+								type = "execute",
+								name = L["Export selected tabs"],
+								func = function()
+									importexport:LaunchExportProcess()
+								end,
+								disabled = function()
+									return importexport:CountSelectedTabs() <= 0
+								end
+							},
+							exportTabsDropDownExecute = {
+								order = 2.2,
+								type = "execute",
+								name = "",
+								func = importexport.OpenTabsSelectMenu,
+								image = "Interface\\ChatFrame\\UI-ChatIcon-ScrollDown-Up",
+								width = 0.18,
+							},
+						} -- args
+					} -- importexport
 					-- new main tab
 				}, -- args
 			}, -- main
@@ -1022,15 +1088,7 @@ function private:CreateAddonOptionsTable()
 				name = L["Profiles"],
 				childGroups = "tab",
 				args = {
-					-- new profiles tab (created from AceDBOptions)
-					-- importexport = { -- TDLATER careful with exporting copied profiles... (when tab goes global and vice-versa, change ID)
-					-- 	order = 101, -- because the profiles tab will have 100, the default value, when created from AceDBOptions
-					-- 	type = "group",
-					-- 	name = "Import/Export",
-					-- 	args = {
-					-- 		-- later
-					-- 	} -- args
-					-- } -- importexport
+					-- ** new profiles tab (created from AceDBOptions) **
 				}, -- args
 			} -- child_profiles
 		} -- args
