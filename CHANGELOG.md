@@ -1,3 +1,7 @@
+#### **6.9**
+
+- Added the possibility to move tabs from the Global section to the Profile section and vice versa
+
 #### **6.8**
 
 - Added the import/export feature (v1.0). This means you can now easily share any of your tabs, through the use of an automatically generated text

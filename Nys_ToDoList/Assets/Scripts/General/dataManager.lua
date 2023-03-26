@@ -1011,7 +1011,7 @@ end
 
 -- luacheck: push ignore
 
----Future function used to move a tab from global to profile and vice-versa.
+---Future function used to move a tab from global to profile and vice versa.
 ---@param tabID string
 ---@param newGlobalState boolean true = global, false = profile
 function dataManager:ChangeTabGlobalState(tabID, newGlobalState)

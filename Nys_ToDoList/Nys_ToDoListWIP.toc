@@ -1,10 +1,10 @@
 # /run print((select(4, GetBuildInfo())))
-## Interface: 100005
+## Interface: 100007
 ## Interface-Classic: 11403
 ## Interface-BCC: 20504
 ## Interface-Wrath: 30401
 
-## Version: 6.8
+## Version: 6.9
 
 ## Author: Nyony (on Twitch)
 ## Title: Ny's To-Do List WIP

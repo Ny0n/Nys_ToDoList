@@ -236,7 +236,7 @@ end
 
 local changelog = {
 	-- index table (not key-value), only place here the important changes.
-	"- Added the import/export feature (v1.0). This means you can now easily share any of your tabs, through the use of an automatically generated text",
+	"- Added the possibility to move tabs from the Global section to the Profile section and vice versa",
 }
 
 ---Called once, when the addon gets an update.
