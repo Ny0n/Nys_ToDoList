@@ -130,24 +130,19 @@ function importexport:Import(prefixed, method)
     return data
 end
 
-function importexport:TryToImport(editbox)
-	if not editbox or not editbox.GetText then return end
+function importexport:SwitchTabs(tabsToMigrate)
+	if type(tabsToMigrate) ~= "table" then return end
 
-	local success
-	local decodedData = importexport:Import(editbox:GetText())
-	if decodedData then
-		success = private:LaunchImportProcess(decodedData)
-	else
-		success = false
+	local encodedData = importexport:LaunchExportProcess(tabsToMigrate, true)
+	if not encodedData then return end
+
+	local success = importexport:LaunchImportProcess(encodedData)
+	if not success then return end
+
+	for tabID in pairs(tabsToMigrate) do
+		dataManager:DeleteTab(tabID) -- right now we just created a copy of the tabs in the other "globality" state, but the original ones still exist
 	end
 
-	if success then
-		chat:PrintForced(L["Import successful"])
-	else
-		chat:PrintForced(L["Invalid import text"])
-	end
-
-	collectgarbage()
 	return success
 end
 
@@ -193,8 +188,11 @@ function importexport:ShowIEFrame(isImport, data)
 		editbox.button:SetEnabled(false)
 		editbox.button:SetText(L["Import"])
 		editbox.button:SetScript("OnClick", function()
-			if importexport:TryToImport(editbox) then
+			if importexport:LaunchImportProcess(editbox:GetText()) then
+				chat:PrintForced(L["Import successful"])
 				IEFrame:Hide()
+			else
+				chat:PrintForced(L["Invalid import text"])
 			end
 		end)
 		editbox.editBox:HookScript("OnTextChanged", function()
@@ -215,11 +213,15 @@ end
 
 --/***************/ Data Import /*****************/--
 
-function private:LaunchImportProcess(data)
+function importexport:LaunchImportProcess(encodedData)
+	-- // Part 0: decode the data
+	local data = importexport:Import(encodedData)
+
 	-- // Part 1: Validate the data
 	if type(data) ~= "table" then return end
 	--[[
 		data = {
+			isMigration = bool,
 			orderedTabIDs = {
 				[true] = {...},
 				[false] = {...},
@@ -296,7 +298,7 @@ function private:LaunchImportProcess(data)
 	-- // Part 2.5: We find the tabs to delete if the user chose to override its data with the import
 	local toDelete = {}
 	local toOverride = importexport.dataToOverrideOnImport -- alias
-	if toOverride ~= 1 then
+	if toOverride ~= 1 and not data.isMigration then
 		for i=3,4 do
 			local isGlobal = i==3
 
@@ -305,6 +307,19 @@ function private:LaunchImportProcess(data)
 					tinsert(toDelete, tabID)
 				end
 			end
+		end
+	end
+
+	-- // Part 2.7: Checking if we are simply requesting a tabs migration from global -> profile or vice versa
+	if data.isMigration then
+		-- switch tabs order global state
+		local save = data.orderedTabIDs[true]
+		data.orderedTabIDs[true] = data.orderedTabIDs[false]
+		data.orderedTabIDs[false] = save
+
+		-- switch elements global state
+		for _,elementInfo in ipairs(data.elements) do
+			elementInfo.isGlobal = not elementInfo.isGlobal
 		end
 	end
 
@@ -370,17 +385,20 @@ function private:LaunchImportProcess(data)
 	database:ProfileChanged()
 	mainFrame:GetFrame():SetShown(wasShown)
 
+	-- collectgarbage()
 	return true
 end
 
-function importexport:LaunchExportProcess()
+function importexport:LaunchExportProcess(tabsToMigrate, onlyReturn)
 	if IEFrame then return end
 
+	local tabsToExport = tabsToMigrate or selectedTabIDs
+
 	-- // Part 1: Validate the tabIDs
-	if type(selectedTabIDs) ~= "table" then return end
+	if type(tabsToExport) ~= "table" then return end
 
 	local tabIDs = {}
-	for tabID, value in pairs(selectedTabIDs) do
+	for tabID, value in pairs(tabsToExport) do
 		if value and dataManager:IsID(tabID) then
 			tinsert(tabIDs, tabID)
 		end
@@ -400,6 +418,7 @@ function importexport:LaunchExportProcess()
 
 	-- // Part 2: Create the export table
 	local exportData = {
+		isMigration = not not tabsToMigrate,
 		orderedTabIDs = {
 			[true] = {}, -- global
 			[false] = {}, -- profile
@@ -474,12 +493,15 @@ function importexport:LaunchExportProcess()
 	-- // Last Part: Export the table and show it to the player
 	local encodedData = importexport:Export(exportData)
 	if encodedData then
-		importexport:ShowIEFrame(false, encodedData)
+		if not onlyReturn then
+			importexport:ShowIEFrame(false, encodedData)
+		end
 	else
 		chat:PrintForced(L["Export error"])
 	end
 
-	collectgarbage()
+	-- collectgarbage()
+	return encodedData
 end
 
 function private:GenerateInfoTable(ID)

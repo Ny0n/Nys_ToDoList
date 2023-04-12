@@ -124,8 +124,21 @@ local tabManagementTable = {
 					return pos >= #loc
 				end,
 			},
-			renameTabInput = {
+			migrateTabExecute = {
 				order = 1.5,
+				type = "execute",
+				name = L["Switch Global/Profile"],
+				func = function(info)
+					local tabID = private:GetTabInfo(info)
+					importexport:SwitchTabs({[tabID] = true})
+				end,
+				disabled = function(info)
+					local tabID = private:GetTabInfo(info)
+					return dataManager:IsProtected(tabID)
+				end,
+			},
+			renameTabInput = {
+				order = 1.6,
 				type = "input",
 				name = L["Rename"],
 				get = function(info)
@@ -138,7 +151,7 @@ local tabManagementTable = {
 				end,
 			},
 			instantRefreshToggle = {
-				order = 1.6,
+				order = 1.7,
 				type = "toggle",
 				name = L["Instant refresh"],
 				desc = L["Delete/Hide items instantly when checking them"].."\n("..L["Applies to all tabs"]..")",
@@ -151,7 +164,7 @@ local tabManagementTable = {
 				end,
 			},
 			groupItemSettings = {
-				order = 1.7,
+				order = 1.8,
 				type = "group",
 				name = L["Items"],
 				inline = true,
@@ -203,7 +216,7 @@ local tabManagementTable = {
 				},
 			},
 			groupCategorySettings = {
-				order = 1.8,
+				order = 1.9,
 				type = "group",
 				name = L["Categories"],
 				inline = true,
@@ -239,7 +252,7 @@ local tabManagementTable = {
 				},
 			},
 			shownTabsMultiSelect = {
-				order = 1.9,
+				order = 2.0,
 				type = "multiselect",
 				name = L["Shown tabs"],
 				width = "full",
@@ -310,6 +323,12 @@ local tabManagementTable = {
 			},
 			spacer191 = {
 				order = 1.91,
+				type = "description",
+				width = "full",
+				name = "",
+			},
+			spacer201 = {
+				order = 2.01,
 				type = "description",
 				width = "full",
 				name = "",
@@ -1041,7 +1060,7 @@ function private:CreateAddonOptionsTable()
 							overrideDataSelect = {
 								order = 1.2,
 								type = "select",
-								name = L["Data to override on import"],
+								name = L["Data to overwrite on import"],
 								desc = L["Delete the selected data to keep only what is imported (only if there is something to import)"].."\n"..L["Can be undone by pressing the list's undo button"],
 								values = function()
 									return importexport.dataToOverrideOnImportTypes
