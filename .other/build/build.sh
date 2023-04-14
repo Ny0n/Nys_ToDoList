@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # script vars
-addonname="Nys_ToDoList"			# the name of the addon's toc file
-packagedir="package"				# the name/path to give to the package folder
-tmptagfile="TAG_EDITMSG"			# the name/path to give to a temp file used for git flow purposes
-devword="WIP"						# the word used to differentiate the dev addon from the release addon. Used for the toc file and commit messages
-addondirpath="../../$addonname"		# the path to the dev addon folder. Use either absolute, or relative from the location of this script
+addonname="Nys_ToDoList"            # the name of the addon's toc file
+packagedir="package"                # the name/path to give to the package folder
+tmptagfile="TAG_EDITMSG"            # the name/path to give to a temp file used for git flow purposes
+devword="WIP"                       # the word used to differentiate the dev addon from the release addon. Used for the toc file and commit messages
+addondirpath="../../$addonname"     # the path to the dev addon folder. Use either absolute, or relative from the location of this script
 
 # ========================================================================== #
 
@@ -303,6 +303,7 @@ case $addondirpath in
 	*) addondir="$builddir/$addondirpath" ;; # relative path
 esac
 test -d "$builddir" -a -d "$addondir" || errormsg "Invalid directories" "vars" || exit
+test -f "$addondir"/*.toc || errormsg ".toc file not found" "vars" || exit
 
 if [ -z "$1" ] || [ "$1" == "-a" ]; then # if we typed nothing or '-a'
 	# PACKAGE COMMAND
