@@ -369,11 +369,7 @@ end
 
 function widgets:GetWidth(text, font)
 	-- not the length (#) of a string, but the width it takes when placed on the screen as a font string
-	local l = widgets:NoPointsLabel(UIParent, nil, text)
-
-	if font then
-		l:SetFontObject(font)
-	end
+	local l = widgets:NoPointsLabel(UIParent, nil, text, font)
 
 	local width = l:GetWidth()
 	l:Hide()
@@ -1234,9 +1230,6 @@ function private:Event_widgetsFrame_OnUpdate(elapsed)
 				mainFrame:ApplyNewRainbowColor()
 			end
 		end
-
-		-- tuto frames visibility
-		tutorialsManager:UpdateFramesVisibility()
 
 		-- // -------------- // --
 

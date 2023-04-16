@@ -1,7 +1,7 @@
 <Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
 ..\FrameXML\UI.xsd">
 
-	<!-- Loading every embedded libraries -->
+	<!-- Loading all embedded libraries -->
 
 	<!-- General -->
 	<Script file="LibStub\LibStub.lua"/>
@@ -16,6 +16,7 @@
 	<Include file="AceConfig-3.0\AceConfig-3.0.xml"/>
 	<Include file="AceTimer-3.0\AceTimer-3.0.xml"/>
 	<Include file="AceEvent-3.0\AceEvent-3.0.xml"/>
+	<Include file="AceSerializer-3.0\AceSerializer-3.0.xml"/>
 
 	<!-- Data broker -->
 	<Script file="LibDataBroker-1.1\LibDataBroker-1.1.lua"/>
@@ -23,6 +24,6 @@
 
 	<!-- Other -->
 	<Include file="LibQTip-1.0\lib.xml"/>
-	<!-- <Include file="!LibUIDropDownMenu\LibUIDropDownMenu\LibUIDropDownMenu.xml"/> -->
+	<Include file="LibDeflate\lib.xml"/>
 
 </Ui>

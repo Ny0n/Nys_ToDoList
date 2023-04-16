@@ -23,6 +23,7 @@ NysTDL.libs = {
 	AceDBOptions = LibStub("AceDBOptions-3.0"),
 	AceEvent = LibStub("AceEvent-3.0"),
 	AceGUI = LibStub("AceGUI-3.0"),
+	AceSerializer = LibStub("AceSerializer-3.0"),
 	AceTimer = LibStub("AceTimer-3.0"),
 
 	L = LibStub("AceLocale-3.0"):GetLocale(addonName),
@@ -31,7 +32,8 @@ NysTDL.libs = {
 	LDB = LibStub("LibDataBroker-1.1"),
 	LDBIcon = LibStub("LibDBIcon-1.0"),
 
-	LibQTip = LibStub('LibQTip-1.0'),
+	LibQTip = LibStub("LibQTip-1.0"),
+	LibDeflate = LibStub("LibDeflate"),
 }
 
 -- //** files **//
@@ -41,6 +43,7 @@ NysTDL.database = {}
 NysTDL.dataManager = {}
 NysTDL.enums = {}
 NysTDL.events = {}
+NysTDL.importexport = {}
 NysTDL.migration = {}
 NysTDL.optionsManager = {}
 NysTDL.resetManager = {}
@@ -233,7 +236,7 @@ end
 
 local changelog = {
 	-- index table (not key-value), only place here the important changes.
-	"- Global tabs are here! They are account-wide and work just like normal tabs. You can create them in the addon options",
+	"- Added the possibility to move tabs from the Global section to the Profile section and vice versa",
 }
 
 ---Called once, when the addon gets an update.

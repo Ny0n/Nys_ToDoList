@@ -376,6 +376,7 @@ end
 ---
 ---@param enum enumObject
 ---@param location nil|false|true|string
+---@param original boolean
 ---@return function
 function dataManager:ForEach(enum, location, original)
 	--[[
@@ -498,14 +499,14 @@ end
 ---@param itemData table
 ---@return string|nil itemID
 ---@return table itemData
-function private:AddItem(itemID, itemData)
+function dataManager:AddItem(itemID, itemData)
 	-- we get where we are
 	local isGlobal, _, itemsList, categoriesList = select(2, dataManager:Find(itemData.originalTabID))
 
-	if dataManager:GetQuantity(enums.item, isGlobal) >= dataManager:GetMaxQuantity(enums.item, isGlobal) then -- temp limit
-		chat:Print(utils:SafeStringFormat(L["Cannot add %s"].." ("..L["Max quantity reached"]..")", L["Item"]:lower()))
-		return
-	end
+	-- if dataManager:GetQuantity(enums.item, isGlobal) >= dataManager:GetMaxQuantity(enums.item, isGlobal) then -- temp limit
+	-- 	chat:Print(utils:SafeStringFormat(L["Cannot add %s"].." ("..L["Max quantity reached"]..")", L["Item"]:lower()))
+	-- 	return
+	-- end
 
 	wipe(itemData.tabIDs)
 	itemData.tabIDs[itemData.originalTabID] = true -- by default, an item/cat can only be added to one tab, the shownTabIDs do the rest after
@@ -563,7 +564,7 @@ function dataManager:CreateItem(itemName, tabID, catID)
 		description = false,
 	}
 
-	return private:AddItem(dataManager:NewID(), itemData)
+	return dataManager:AddItem(dataManager:NewID(), itemData)
 end
 
 -- category
@@ -573,14 +574,14 @@ end
 ---@param catData table
 ---@return string|nil catID
 ---@return table catData
-function private:AddCategory(catID, catData)
+function dataManager:AddCategory(catID, catData)
 	-- we get where we are
 	local isGlobal, _, _, categoriesList = select(2, dataManager:Find(catData.originalTabID))
 
-	if dataManager:GetQuantity(enums.category, isGlobal) >= dataManager:GetMaxQuantity(enums.category, isGlobal) then -- temp limit
-		chat:Print(utils:SafeStringFormat(L["Cannot add %s"].." ("..L["Max quantity reached"]..")", L["Category"]:lower()))
-		return
-	end
+	-- if dataManager:GetQuantity(enums.category, isGlobal) >= dataManager:GetMaxQuantity(enums.category, isGlobal) then -- temp limit
+	-- 	chat:Print(utils:SafeStringFormat(L["Cannot add %s"].." ("..L["Max quantity reached"]..")", L["Category"]:lower()))
+	-- 	return
+	-- end
 
 	wipe(catData.tabIDs)
 	catData.tabIDs[catData.originalTabID] = true -- by default, an item/cat can only be added to one tab, the shownTabIDs do the rest after
@@ -648,7 +649,7 @@ function dataManager:CreateCategory(catName, tabID, parentCatID)
 
 	catData.tabIDs[tabID] = true
 
-	return private:AddCategory(dataManager:NewID(), catData)
+	return dataManager:AddCategory(dataManager:NewID(), catData)
 end
 
 -- tab
@@ -659,15 +660,15 @@ end
 ---@param isGlobal boolean
 ---@return string|nil tabID
 ---@return table tabData
-function private:AddTab(tabID, tabData, isGlobal)
+function dataManager:AddTab(tabID, tabData, isGlobal)
 	-- we get where we are
 	isGlobal = not not isGlobal
 	local tabsList = select(3, dataManager:GetData(isGlobal))
 
-	if dataManager:GetQuantity(enums.tab, isGlobal) >= dataManager:GetMaxQuantity(enums.tab, isGlobal) then -- temp limit
-		chat:Print(utils:SafeStringFormat(L["Cannot add %s"].." ("..L["Max quantity reached"]..")", L["Tab"]:lower()))
-		return
-	end
+	-- if dataManager:GetQuantity(enums.tab, isGlobal) >= dataManager:GetMaxQuantity(enums.tab, isGlobal) then -- temp limit
+	-- 	chat:Print(utils:SafeStringFormat(L["Cannot add %s"].." ("..L["Max quantity reached"]..")", L["Tab"]:lower()))
+	-- 	return
+	-- end
 
 	-- we add the tab to the saved variables
 
@@ -726,7 +727,7 @@ function dataManager:CreateTab(tabName, isGlobal)
 
 	resetManager:InitTabData(tabData)
 
-	return private:AddTab(dataManager:NewID(), tabData, isGlobal)
+	return dataManager:AddTab(dataManager:NewID(), tabData, isGlobal)
 end
 
 -- misc
@@ -1010,7 +1011,7 @@ end
 
 -- luacheck: push ignore
 
----Future function used to move a tab from global to profile and vice-versa.
+---Future function used to move a tab from global to profile and vice versa.
 ---@param tabID string
 ---@param newGlobalState boolean true = global, false = profile
 function dataManager:ChangeTabGlobalState(tabID, newGlobalState)
@@ -1042,7 +1043,7 @@ function dataManager:DeleteItem(itemID)
 	tremove(dataManager:GetPosData(itemID))
 
 	local undoData = private:CreateUndo(itemID)
-	private:AddUndo(undoData)
+	dataManager:AddUndo(undoData)
 	itemsList[itemID] = nil -- delete action
 
 	-- we hide a potentially opened desc frame
@@ -1095,7 +1096,7 @@ function dataManager:DeleteCat(catID)
 		-- we update its data (pretty much the reverse actions of the Add func)
 		private:UpdateTabsDisplay(catData.originalTabID, false, catID)
 
-		private:AddUndo(undoData)
+		dataManager:AddUndo(undoData)
 		categoriesList[catID] = nil -- delete action
 
 		mainFrame:DeleteWidget(catID)
@@ -1109,7 +1110,7 @@ function dataManager:DeleteCat(catID)
 	end
 
 	if nbToUndo > 0 then
-		private:AddUndo(nbToUndo + (result and 1 or 0)) -- to undo in one go everything that was removed
+		dataManager:AddUndo(nbToUndo + (result and 1 or 0)) -- to undo in one go everything that was removed
 	end
 
 	dataManager:SetRefresh(true, refreshID)
@@ -1173,12 +1174,13 @@ function dataManager:DeleteTab(tabID)
 		local loc, pos = dataManager:GetPosData(tabID)
 		tremove(loc, pos)
 
-		private:AddUndo(undoData)
+		dataManager:AddUndo(undoData)
 		tabsList[tabID] = nil -- delete action
 
 		dataManager:AddQuantity(enums.tab, isGlobal, -1)
 
-		if database.ctab() == tabID then
+		if isGlobal and NysTDL.acedb.global.currentGlobalTab == tabID
+		or not isGlobal and NysTDL.acedb.profile.currentProfileTab == tabID then
 			if not loc[1] then -- we just deleted the last global tab
 				database.ctabstate(false) -- so we refocus a profile tab
 			else
@@ -1195,7 +1197,7 @@ function dataManager:DeleteTab(tabID)
 	end
 
 	if nbToUndo > 0 then
-		private:AddUndo(nbToUndo + (result and 1 or 0)) -- to undo in one go everything that was removed
+		dataManager:AddUndo(nbToUndo + (result and 1 or 0)) -- to undo in one go everything that was removed
 	end
 
 	dataManager:SetRefresh(true, refreshID)
@@ -1210,7 +1212,7 @@ end
 
 ---Creates an undo data table from the given object.
 ---
----This is what gets added to the `NysTDL.acedb.profile.undoTable` saved variable (@see private:AddUndo()).
+---This is what gets added to the `NysTDL.acedb.profile.undoTable` saved variable (@see dataManager:AddUndo()).
 ---
 ---@param ID string
 ---@return table undoData
@@ -1229,7 +1231,7 @@ end
 
 ---The actual adding of the undoData to the saved variable.
 ---@param undoData table|number
-function private:AddUndo(undoData)
+function dataManager:AddUndo(undoData)
 	-- this is so we can add undos at the right time, and possibly not at creation
 	-- because the table data / orders can be modified in between the two actions.
 	-- undoData can also be a pure number, to keep track of how many undos to undo after a clear
@@ -1275,11 +1277,11 @@ function dataManager:Undo()
 		else
 			local psuccess = pcall(function() -- we protect the code from potential "ID not found" errors
 				if toUndo.enum == enums.item then -- item
-					success = not not private:AddItem(toUndo.ID, toUndo.data)
+					success = not not dataManager:AddItem(toUndo.ID, toUndo.data)
 				elseif toUndo.enum == enums.category then -- category
-					success = not not private:AddCategory(toUndo.ID, toUndo.data)
+					success = not not dataManager:AddCategory(toUndo.ID, toUndo.data)
 				elseif toUndo.enum == enums.tab then -- tab
-					success = not not private:AddTab(toUndo.ID, toUndo.data, toUndo.isGlobal)
+					success = not not dataManager:AddTab(toUndo.ID, toUndo.data, toUndo.isGlobal)
 				end
 			end)
 
@@ -1745,7 +1747,7 @@ function dataManager:ClearTab(tabID)
 	end
 	clearing = false
 
-	private:AddUndo(nbToUndo)
+	dataManager:AddUndo(nbToUndo)
 
 	dataManager:SetRefresh(true, refreshID)
 
@@ -1782,7 +1784,7 @@ function dataManager:DeleteCheckedItems(tabID)
 	end
 
 	if nbToUndo > 0 then
-		private:AddUndo(nbToUndo)
+		dataManager:AddUndo(nbToUndo)
 	end
 
 	dataManager:SetRefresh(true, refreshID)
@@ -1836,6 +1838,14 @@ function dataManager:IsTabContentHidden(tabID)
 		end
 	end
 	return true
+end
+
+---Returns the table containing the tabs, either the profile one or the global one.
+---@param isGlobal boolean
+---@return table
+function dataManager:GetTabsLoc(isGlobal)
+	isGlobal = not not isGlobal
+	return (select(3, dataManager:GetData(isGlobal))).orderedTabIDs
 end
 
 --/*******************/ UTILS /*************************/--

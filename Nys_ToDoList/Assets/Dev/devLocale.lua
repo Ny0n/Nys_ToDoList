@@ -19,6 +19,20 @@ addonTable.devLocale = L
 
 --/************************************************/--
 
+L["Switch Global/Profile"] = true
+L["Data to overwrite on import"] = true
+L["Delete the selected data to keep only what is imported (only if there is something to import)"] = true
+L["Can be undone by pressing the list's undo button"] = true
+L["None"] = true
+L["Export error"] = true
+L["Invalid import text"] = true
+L["Import successful"] = true
+L["Select tabs"] = true
+L["Import"] = true
+L["Import tabs"] = true
+L["Export"] = true
+L["Export selected tabs"] = true
+L["Characters: %s, Size: %sKB"] = true
 L["Create a new global tab"] = true
 L["Create a new profile tab"] = true
 L["Global tabs"] = true
