@@ -886,6 +886,10 @@ function widgets:CategoryWidget(catID, parentFrame)
 	-- / interactiveLabel
 	categoryWidget.interactiveLabel = widgets:NoPointsInteractiveLabel(categoryWidget, nil, catData.name, "GameFontHighlightLarge")
 
+	-- categoryWidget.divider = widgets:HorizontalDivider(categoryWidget)
+	-- categoryWidget.divider:SetPoint("LEFT", categoryWidget.interactiveLabel, "BOTTOMLEFT", 0, -4)
+	-- categoryWidget.divider:SetPoint("RIGHT", categoryWidget.interactiveLabel, "BOTTOMRIGHT", 0, -4)
+
 	-- / interactiveLabel.Button
 	categoryWidget.interactiveLabel.Button:SetScript("OnEnter", function(self)
 		if dragndrop.dragging then return end
@@ -1205,6 +1209,13 @@ end
 
 function widgets:ThemeLine(relativeFrame, theme, dim)
 	return widgets:NoPointsLine(relativeFrame, 2, unpack(utils:ThemeDownTo01(utils:DimTheme(theme, dim))))
+end
+
+function widgets:HorizontalDivider(parentFrame, width, height)
+	local divider = parentFrame:CreateTexture()
+	divider:SetAtlas("Options_HorizontalDivider", true)
+	divider:SetSize(width or 200, height or 2)
+	return divider
 end
 
 --/*******************/ INITIALIZATION /*************************/--

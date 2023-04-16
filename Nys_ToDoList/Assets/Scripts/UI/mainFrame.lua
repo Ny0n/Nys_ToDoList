@@ -87,7 +87,7 @@ local loadOriginOffset = { 15, -20 }
 local centerXOffset = 165
 local lineOffset = 120
 local cursorX, cursorY, cursorDist = 0, 0, 10 -- for my special drag
-local lineBottomY = -64
+local lineBottom = { x = 12, y = -45 }
 
 -- // WoW & Lua APIs
 
@@ -121,14 +121,15 @@ function private:MenuClick(menuEnum)
 		local submenu = menuFrames[menuFrames.selected]
 		submenu:Show()
 
-		bottom = lineBottomY - submenu:GetHeight()
-		menu.lineBottom:SetStartPoint("TOPLEFT", centerXOffset-lineOffset, bottom)
-		menu.lineBottom:SetEndPoint("TOPLEFT", centerXOffset+lineOffset, bottom)
+		bottom = lineBottom.y - submenu:GetHeight()
+		-- menu.lineBottom:SetStartPoint("TOPLEFT", centerXOffset-lineOffset, bottom)
+		-- menu.lineBottom:SetEndPoint("TOPLEFT", centerXOffset+lineOffset, bottom)
 	else
-		bottom = lineBottomY
-		menu.lineBottom:SetStartPoint("TOPLEFT", centerXOffset-lineOffset, bottom)
-		menu.lineBottom:SetEndPoint("TOPLEFT", centerXOffset+lineOffset, bottom)
+		bottom = lineBottom.y
+		-- menu.lineBottom:SetStartPoint("TOPLEFT", centerXOffset-lineOffset, bottom)
+		-- menu.lineBottom:SetEndPoint("TOPLEFT", centerXOffset+lineOffset, bottom)
 	end
+	menu.lineBottom:SetPoint("TOPLEFT", content, "TOPLEFT", lineBottom.x, bottom)
 
 	-- bottomOrigin
 	if NysTDL.acedb.profile.isInMiniView then bottom = 0 end
@@ -258,27 +259,12 @@ function mainFrame:UpdateRemainingNumberLabels()
 	local menu = tdlFrame.content.menu
 
 	local numbers = dataManager:GetRemainingNumbers(nil, tabID)
-	local remainingNumberText = (numbers.totalUnchecked > 0 and "|cffffffff" or "|cff00ff00")..numbers.totalUnchecked.."|r"
-	menu.remainingNumber:SetText(remainingNumberText)
-	local remainingFavsNumber = numbers.uncheckedFav > 0 and "("..numbers.uncheckedFav..")" or ""
-	menu.remainingFavsNumber:SetText(remainingFavsNumber)
-
-	-- now we check the length of the whole "Remaining: x (x)" text,
-	-- and we scale it down if it's too long, to maxWidth.
-	-- (this is mainly to adapt for locales that are bigger than english)
-	local maxWidth = 150
-
-	local full = menu.remaining:GetText() .. " " .. remainingNumberText .. (#remainingFavsNumber > 0 and " "..remainingFavsNumber or "")
-	local width = widgets:GetWidth(full, "GameFontNormalLarge")
-
-	local scale = 1
-	if width > maxWidth then
-		scale = maxWidth/width
-	end
-
-	menu.remaining:SetTextScale(scale)
-	menu.remainingNumber:SetTextScale(scale)
-	menu.remainingFavsNumber:SetTextScale(scale)
+	local checkedNonFav = numbers.totalChecked-numbers.checkedFav
+	if (numbers.totalUnchecked-numbers.uncheckedFav > 0) then checkedNonFav = "|cffffffff"..checkedNonFav.."|r" end
+	menu.remainingNumber:SetText(checkedNonFav.."/"..(numbers.total-numbers.totalFav))
+	local checkedFav = numbers.checkedFav
+	if (numbers.uncheckedFav > 0) then checkedFav = "|cffffffff"..checkedFav.."|r" end
+	menu.remainingFavsNumber:SetText((numbers.totalFav > 0) and checkedFav.."/"..numbers.totalFav or "")
 
 	-- we update the remaining numbers of every category in the tab
 	for catID,catData in dataManager:ForEach(enums.category, tabID) do
@@ -1004,20 +990,12 @@ function private:GenerateFrameContent()
 	content.menu:SetSize(content:GetSize())
 	local menu = content.menu
 
-	-- remaining numbers labels
-	menu.remaining = widgets:NoPointsLabel(menu, nil, "To Do"..":")
-	menu.remaining:SetPoint("LEFT", menu, "TOPLEFT", 40, -30)
-	menu.remaining:SetFontObject("GameFontNormalLarge")
-	menu.remainingNumber = widgets:NoPointsLabel(menu, nil, "...")
-	menu.remainingNumber:SetPoint("LEFT", menu.remaining, "RIGHT", 3, 0)
-	menu.remainingNumber:SetFontObject("GameFontNormalLarge")
-	menu.remainingFavsNumber = widgets:NoPointsLabel(menu, nil, "...")
-	menu.remainingFavsNumber:SetPoint("LEFT", menu.remainingNumber, "RIGHT", 3, 0)
-	menu.remainingFavsNumber:SetFontObject("GameFontNormalLarge")
+	local spacing = 30
+	local origin = { 25, -22 }
 
 	-- help button
 	menu.helpButton = widgets:HelpButton(menu)
-	menu.helpButton:SetPoint("RIGHT", menu, "TOPRIGHT", -5, -30)
+	menu.helpButton:SetPoint("CENTER", menu, "TOPLEFT", unpack(origin))
 	menu.helpButton:SetScript("OnClick", function()
 		SlashCmdList.NysTDL(L["info"])
 		tutorialsManager:Validate("introduction", "getMoreInfo")
@@ -1026,7 +1004,7 @@ function private:GenerateFrameContent()
 
 	-- edit mode button
 	menu.editModeButton = widgets:IconTooltipButton(menu, "NysTDL_EditModeButton", L["Toggle edit mode"])
-	menu.editModeButton:SetPoint("RIGHT", menu.helpButton, "LEFT", 2, 0)
+	menu.editModeButton:SetPoint("CENTER", menu.helpButton, "CENTER", spacing, 0)
 	menu.editModeButton:SetScript("OnClick", function()
 		tutorialsManager:Validate("introduction", "editmode") -- I need to place this here to be sure it was a user action
 		mainFrame:ToggleEditMode()
@@ -1036,7 +1014,7 @@ function private:GenerateFrameContent()
 
 	-- frame options menu button
 	menu.frameOptionsButton = widgets:IconTooltipButton(menu, "NysTDL_FrameOptionsButton", L["Frame options"])
-	menu.frameOptionsButton:SetPoint("RIGHT", menu.editModeButton, "LEFT", 2, 0)
+	menu.frameOptionsButton:SetPoint("CENTER", menu.editModeButton, "CENTER", spacing, 0)
 	menu.frameOptionsButton:SetScript("OnClick", function()
 		private:MenuClick(enums.menus.frameopt)
 	end)
@@ -1044,7 +1022,7 @@ function private:GenerateFrameContent()
 
 	-- category menu button
 	menu.categoryButton = widgets:IconTooltipButton(menu, "NysTDL_CategoryButton", L["Add a category"])
-	menu.categoryButton:SetPoint("RIGHT", menu.frameOptionsButton, "LEFT", 2, 0)
+	menu.categoryButton:SetPoint("CENTER", menu.frameOptionsButton, "CENTER", spacing, 0)
 	menu.categoryButton:SetScript("OnClick", function()
 		private:MenuClick(enums.menus.addcat)
 	end)
@@ -1052,7 +1030,7 @@ function private:GenerateFrameContent()
 
 	-- tab actions menu button
 	menu.tabActionsButton = widgets:IconTooltipButton(menu, "NysTDL_TabActionsButton", L["Tab actions"])
-	menu.tabActionsButton:SetPoint("RIGHT", menu.editModeButton, "LEFT", 2, 0)
+	menu.tabActionsButton:SetPoint("CENTER", menu.editModeButton, "CENTER", 30, 0)
 	menu.tabActionsButton:SetScript("OnClick", function()
 		private:MenuClick(enums.menus.tabact)
 	end)
@@ -1060,11 +1038,22 @@ function private:GenerateFrameContent()
 
 	-- undo button
 	menu.undoButton = widgets:IconTooltipButton(menu, "NysTDL_UndoButton", L["Undo last remove"].."\n".."("..L["Item"]:lower().."/"..L["Category"]:lower().."/"..L["Tab"]:lower()..")")
-	menu.undoButton:SetPoint("RIGHT", menu.tabActionsButton, "LEFT", 2, 0)
+	menu.undoButton:SetPoint("CENTER", menu.tabActionsButton, "CENTER", spacing, 0)
 	menu.undoButton:SetScript("OnClick", function() dataManager:Undo() end)
 	menu.undoButton:Hide()
 	-- tutorialsManager:SetPoint("editmode", "buttons", "BOTTOM", menu.undoButton, "TOP", -15, 18)
 	-- tutorialsManager:SetPoint("editmode", "undo", "BOTTOM", menu.undoButton, "TOP", 0, 18)
+
+	-- remaining numbers labels
+	menu.remaining = widgets:Dummy(menu.helpButton)
+	menu.remaining:ClearAllPoints()
+	menu.remaining:SetPoint("LEFT", menu.helpButton, "CENTER", 111, 1)
+	menu.remainingNumber = widgets:NoPointsLabel(menu, nil, "...")
+	menu.remainingNumber:SetPoint("LEFT", menu.remaining, "RIGHT", 0, 0)
+	menu.remainingNumber:SetFontObject("GameFontNormalLarge")
+	menu.remainingFavsNumber = widgets:NoPointsLabel(menu, nil, "...")
+	menu.remainingFavsNumber:SetPoint("LEFT", menu.remainingNumber, "RIGHT", 7, 0)
+	menu.remainingFavsNumber:SetFontObject("GameFontNormalLarge")
 
 	-- // menus
 	local menuWidth, menuEnum = menu:GetWidth()
@@ -1081,7 +1070,7 @@ function private:GenerateFrameContent()
 
 	menuEnum = enums.menus.addcat
 	menu.menuFrames[menuEnum] = CreateFrame("Frame", nil, menu)
-	menu.menuFrames[menuEnum]:SetPoint("TOPLEFT", menu, "TOPLEFT", 0, lineBottomY)
+	menu.menuFrames[menuEnum]:SetPoint("TOPLEFT", menu, "TOPLEFT", 0, lineBottom.y)
 	menu.menuFrames[menuEnum]:SetSize(menuWidth, 110) -- CVAL (coded value, non automatic)
 	private:GenerateMenuAddACategory()
 
@@ -1089,7 +1078,7 @@ function private:GenerateFrameContent()
 
 	menuEnum = enums.menus.frameopt
 	menu.menuFrames[menuEnum] = CreateFrame("Frame", nil, menu)
-	menu.menuFrames[menuEnum]:SetPoint("TOPLEFT", menu, "TOPLEFT", 0, lineBottomY)
+	menu.menuFrames[menuEnum]:SetPoint("TOPLEFT", menu, "TOPLEFT", 0, lineBottom.y)
 	menu.menuFrames[menuEnum]:SetSize(menuWidth, 235) -- CVAL
 	private:GenerateMenuFrameOptions()
 
@@ -1097,11 +1086,11 @@ function private:GenerateFrameContent()
 
 	menuEnum = enums.menus.tabact
 	menu.menuFrames[menuEnum] = CreateFrame("Frame", nil, menu)
-	menu.menuFrames[menuEnum]:SetPoint("TOPLEFT", menu, "TOPLEFT", 0, lineBottomY)
+	menu.menuFrames[menuEnum]:SetPoint("TOPLEFT", menu, "TOPLEFT", 0, lineBottom.y)
 	menu.menuFrames[menuEnum]:SetSize(menuWidth, 240) -- CVAL
 	private:GenerateMenuTabActions()
 
-	menu.lineBottom = widgets:ThemeLine(menu, database.themes.theme, 0.7)
+	menu.lineBottom = widgets:HorizontalDivider(menu)
 
 	-- // the content, below the menu
 
