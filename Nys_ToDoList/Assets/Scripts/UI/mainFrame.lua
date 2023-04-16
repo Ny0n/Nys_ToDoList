@@ -122,12 +122,8 @@ function private:MenuClick(menuEnum)
 		submenu:Show()
 
 		bottom = lineBottom.y - submenu:GetHeight()
-		-- menu.lineBottom:SetStartPoint("TOPLEFT", centerXOffset-lineOffset, bottom)
-		-- menu.lineBottom:SetEndPoint("TOPLEFT", centerXOffset+lineOffset, bottom)
 	else
 		bottom = lineBottom.y
-		-- menu.lineBottom:SetStartPoint("TOPLEFT", centerXOffset-lineOffset, bottom)
-		-- menu.lineBottom:SetEndPoint("TOPLEFT", centerXOffset+lineOffset, bottom)
 	end
 	menu.lineBottom:SetPoint("TOPLEFT", content, "TOPLEFT", lineBottom.x, bottom)
 
@@ -623,9 +619,12 @@ function private:LoadContent()
 	local tabData = (select(3, dataManager:Find(tabID)))
 
 	-- // nothingLabel
-	tdlFrame.content.nothingLabel:Hide() -- we hide it by default
+	 -- we hide it by default
+	tdlFrame.content.nothingLabel:Hide()
+	tdlFrame.content.nothingLabel2:Hide()
 	if not next(tabData.orderedCatIDs) then -- we show it if the tab has no categories
 		tdlFrame.content.nothingLabel:Show()
+		tdlFrame.content.nothingLabel2:Show()
 	end
 
 	-- // hiddenLabel
@@ -1099,13 +1098,13 @@ function private:GenerateFrameContent()
 	content.loadOrigin = widgets:Dummy(content, content, 0, 0)
 	content.loadOrigin:SetPoint("TOPLEFT", content.bottomOrigin, "TOPLEFT", unpack(loadOriginOffset))
 
-	content.nothingLabel = widgets:HintLabel(content, nil, L["Empty tab"].."\n\n"..L["Start by adding a new category!"])
-	content.nothingLabel:SetPoint("TOP", content.bottomOrigin, "TOPLEFT", centerXOffset, -20)
-	content.nothingLabel:SetWidth(220) -- TODO update if resize
+	content.nothingLabel = widgets:HintLabel(content, nil, L["Empty tab"])
+	content.nothingLabel:SetPoint("LEFT", content.loadOrigin, "TOPLEFT", 0, 0)
+	content.nothingLabel2 = widgets:HintLabel(content, nil, L["Start by adding a new category!"])
+	content.nothingLabel2:SetPoint("LEFT", content.nothingLabel, "LEFT", 0, -20)
 
 	content.hiddenLabel = widgets:HintLabel(content, nil, L["Completed tab"])
-	content.hiddenLabel:SetPoint("TOP", content.bottomOrigin, "TOPLEFT", centerXOffset, -20)
-	content.hiddenLabel:SetWidth(220)
+	content.hiddenLabel:SetPoint("LEFT", content.loadOrigin, "TOPLEFT", 0, 0)
 
 	content.dummyBottomFrame = widgets:Dummy(content, content, 0, 0) -- this one if for putting a margin at the bottom of the content (mainly to leave space for the dropping of cat)
 end
