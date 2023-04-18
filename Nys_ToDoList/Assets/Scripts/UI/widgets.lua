@@ -276,7 +276,7 @@ function widgets:DescriptionFrame(itemWidget)
 	descFrame.closeButton:SetScript("OnClick", function() widgets:DescFrameHide(itemID) end)
 
 	-- / clear button
-	descFrame.clearButton = widgets:IconTooltipButton(descFrame, "NysTDL_ClearButton", L["Clear"].."\n("..L["Right-Click"]..")")
+	descFrame.clearButton = widgets:IconTooltipButton(descFrame, "NysTDL_ClearButton", L["Clear"].." ("..L["Right-Click"]..")")
 	descFrame.clearButton:SetPoint("TOPRIGHT", descFrame, "TOPRIGHT", -24, -2)
 	descFrame.clearButton:RegisterForClicks("RightButtonUp") -- only responds to right-clicks
 	descFrame.clearButton:SetScript("OnClick", function(self)
@@ -494,15 +494,48 @@ function widgets:Button(name, relativeFrame, text, iconPath, fc, bonusWidth)
 	return btn
 end
 
-function widgets:IconTooltipButton(relativeFrame, template, tooltip)
+function widgets:IconTooltipButton(relativeFrame, template, tooltipText, tooltipOffsetX, tooltipOffsetY)
 	local btn = CreateFrame("Button", nil, relativeFrame, template)
-	btn.tooltip = tooltip
+
+	if type(tooltipText) == "string" and tooltipText ~= "" then -- // Tooltip
+		btn.tooltip = nil
+		btn:HookScript("OnEnter", function(self)
+			-- if the tooltip is already in use by someone else, return
+			if LibQTip:IsAcquired("NysTDL_Tooltip_TooltipButton") then
+				return
+			end
+
+			-- we're good to go
+			btn.tooltip = widgets:AcquireTooltip("NysTDL_Tooltip_TooltipButton", self, tooltipOffsetX, tooltipOffsetY)
+			btn.tooltip:SetFont("GameTooltipText")
+			btn.tooltip:AddLine(tooltipText)
+		end)
+		btn:HookScript("OnLeave", function()
+			if btn.tooltip then
+				LibQTip:Release(btn.tooltip)
+				btn.tooltip = nil
+			end
+		end)
+	end
+
 	return btn
 end
 
-function widgets:HelpButton(relativeFrame)
-	local btn = CreateFrame("Button", nil, relativeFrame, "NysTDL_HelpButton")
-	btn.tooltip = L["Information"]
+function widgets:AcquireTooltip(name, relativeFrame, offsetx, offsety)
+	local tooltip = LibQTip:Acquire(name, 1)
+
+	tooltip:Clear()
+	tooltip:SmartAnchorTo(relativeFrame)
+	tooltip:ClearAllPoints()
+	tooltip:SetPoint("BOTTOMRIGHT", relativeFrame, "TOPRIGHT", offsetx or 0, offsety or 0)
+
+	tooltip:Show()
+
+	return tooltip
+end
+
+function widgets:HelpButton(relativeFrame, tooltipText)
+	local btn = widgets:IconTooltipButton(relativeFrame, "NysTDL_HelpButton", tooltipText, 0, 1)
 	btn:SetAlpha(0.7)
 
 	-- these are for changing the color depending on the mouse actions (since they are custom xml)
@@ -704,29 +737,23 @@ function widgets:DescButton(widget, parent)
 		end
 
 		-- if the tooltip is already in use by someone else
-		if LibQTip:IsAcquired("NysTDL_DescButton_tooltip") then
+		if LibQTip:IsAcquired("NysTDL_Tooltip_DescButton") then
 			return
 		end
 
 		-- we're good to go
-		btn.tooltip = LibQTip:Acquire("NysTDL_DescButton_tooltip", 1)
-		local tooltip = btn.tooltip
-
-		tooltip:Clear()
-		tooltip:SmartAnchorTo(self)
-		tooltip:ClearAllPoints()
-		tooltip:SetPoint("BOTTOMRIGHT", self, "TOPRIGHT", 0, 0)
+		btn.tooltip = widgets:AcquireTooltip("NysTDL_Tooltip_DescButton", self)
 
 		-- we use the same code to set the description frame's width
 		local w = widgets:GetWidth(widget.itemData.name)
 		local width = w < descFrameInfo.width and descFrameInfo.width+descFrameInfo.buttons or w+descFrameInfo.buttons
 
-		tooltip:SetFont(descFrameInfo.font)
+		btn.tooltip:SetFont(descFrameInfo.font)
 
-		tooltip:AddLine()
-		tooltip:SetCell(1, 1, widget.itemData.description, nil, nil, nil, nil, nil, nil, width-20)
+		btn.tooltip:AddLine()
+		btn.tooltip:SetCell(1, 1, widget.itemData.description, nil, nil, nil, nil, nil, nil, width-20)
 
-		tooltip:SetShown(btn.isTooltipShown())
+		btn.tooltip:SetShown(btn.isTooltipShown())
 	end)
 	btn:HookScript("OnLeave", function()
 		if btn.tooltip then

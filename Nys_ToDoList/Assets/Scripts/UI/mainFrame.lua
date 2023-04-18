@@ -993,7 +993,7 @@ function private:GenerateFrameContent()
 	local origin = { 25, -22 }
 
 	-- help button
-	menu.helpButton = widgets:HelpButton(menu)
+	menu.helpButton = widgets:HelpButton(menu, L["Information"])
 	menu.helpButton:SetPoint("CENTER", menu, "TOPLEFT", unpack(origin))
 	menu.helpButton:SetScript("OnClick", function()
 		SlashCmdList.NysTDL(L["info"])
@@ -1176,7 +1176,7 @@ function mainFrame:CreateTDLFrame()
 	tdlFrame.ScrollFrame:SetClipsChildren(true)
 
 	-- view button
-	tdlFrame.viewButton = CreateFrame("Button", nil, tdlFrame.ScrollFrame, "NysTDL_ViewButton")
+	tdlFrame.viewButton = widgets:IconTooltipButton(tdlFrame.ScrollFrame, "NysTDL_ViewButton", L["Toggle simplified view"])
 	tdlFrame.viewButton:SetPoint("TOPRIGHT", tdlFrame.ScrollFrame, "TOPRIGHT", -2, -2)
 	tdlFrame.viewButton:SetScript("OnClick", function() mainFrame:ToggleMinimalistView() end)
 	tutorialsManager:SetPoint("introduction", "viewButton", "LEFT", tdlFrame.viewButton, "RIGHT", 18, 0)
@@ -1219,26 +1219,24 @@ function mainFrame:CreateTDLFrame()
 
 	-- // outside the scroll frame
 
-
 	-- scroll bar
 	tdlFrame.ScrollFrame.ScrollBar:Hide()
 
 	-- resize button
-	tdlFrame.resizeButton = CreateFrame("Button", nil, tdlFrame, "NysTDL_TooltipResizeButton")
-	tdlFrame.resizeButton.tooltip = L["Left-Click"].." - "..L["Resize the list"].."\n"..L["Right-Click"].." - "..L["Reset"]
+	tdlFrame.resizeButton = widgets:IconTooltipButton(tdlFrame, "NysTDL_TooltipResizeButton", L["Left-Click"].." - "..L["Resize the list"].."\n"..L["Right-Click"].." - "..L["Reset"])
 	tdlFrame.resizeButton:SetPoint("BOTTOMRIGHT", -3, 3)
 	tdlFrame.resizeButton:SetScript("OnMouseDown", function(self, button)
 		if button == "LeftButton" then
 			tdlFrame:StartSizing("BOTTOMRIGHT")
 			self:GetHighlightTexture():Hide() -- more noticeable
-			self.Tooltip:Hide()
+			if self.tooltip and self.tooltip.Hide then self.tooltip:Hide() end
 		end
 	end)
 	tdlFrame.resizeButton:SetScript("OnMouseUp", function(self, button)
 		if button == "LeftButton" then
 			tdlFrame:StopMovingOrSizing()
 			self:GetHighlightTexture():Show()
-			self.Tooltip:Show()
+			if self.tooltip and self.tooltip.Show then self.tooltip:Show() end
 		end
 	end)
 	tdlFrame.resizeButton:SetScript("OnHide", function(self)  -- same as on mouse up, just security

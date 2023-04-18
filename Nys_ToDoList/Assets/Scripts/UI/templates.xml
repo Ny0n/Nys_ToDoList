@@ -102,75 +102,10 @@
 		</Scripts>
 	</Frame>
 
-	<Frame name="NysTDL_IconButtonTooltipScripts" virtual="true">
-		<Frames>
-			<!-- small tooltip frame to describe use of the buttons -->
-			<Frame parentKey="Tooltip" hidden="true"> <!-- parentKey ref in mainFrame -->
-				<Size x="0" y="26"/> <!-- size is set dynamically -->
-				<!-- content created OnLoad -->
-			</Frame>
-		</Frames>
-
-		<!-- Tooltip associated scripts -->
-		<Scripts>
-			<OnLoad>
-				-- backdrop
-				self.Tooltip.backdrop = CreateFrame("Frame", nil, self.Tooltip, BackdropTemplateMixin and "BackdropTemplate" or nil)
-				self.Tooltip.backdrop:SetAllPoints()
-				self.Tooltip.backdrop:SetBackdrop({
-					bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
-					edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-					tile = true, tileSize = 16, edgeSize = 16,
-					insets = { left = 2, right = 2, top = 2, bottom = 2, },
-				})
-				self.Tooltip.backdrop:SetBackdropColor(0, 0, 0, 1)
-				self.Tooltip.backdrop:SetBackdropBorderColor(0.65, 0.65, 0.65, 1)
-
-				-- text
-				self.Tooltip.backdrop.text = self.Tooltip.backdrop:CreateFontString(nil)
-				self.Tooltip.backdrop.text:SetAllPoints()
-				self.Tooltip.backdrop.text:SetFontObject("GameFontNormalSmall")
-			</OnLoad>
-			<OnEnter>
-				<!-- Show and reposition the tooltip -->
-				if type(self.tooltip) ~= "string" or self.tooltip == "" then return end -- no tooltip
-
-				self.Tooltip.backdrop.text:SetText(self.tooltip) -- may be set by locale AFTER creation, so we update it here
-				self.Tooltip:SetWidth(self.Tooltip.backdrop.text:GetStringWidth()+16)
-
-				local _, n = string.gsub(self.tooltip, "\n", "")
-				if n > 0 then
-					self.Tooltip:SetHeight(26 + n*10)
-				else
-					self.Tooltip:SetHeight(26)
-				end
-
-				if self.name == "AddButton" then -- cat add btn
-					self.Tooltip:SetPoint("BOTTOMRIGHT", self, "TOPRIGHT", 4, 7)
-				elseif self.name == "TooltipResizeButton" then -- frame resize btn
-					self.Tooltip:SetPoint("BOTTOMRIGHT", self, "BOTTOMLEFT", -5, 0)
-				elseif self.name == "ClearButton" then -- desc frame clear btn
-					self.Tooltip:SetPoint("BOTTOM", self, "TOP", 0, 0)
-				elseif self.name == "HelpButton" then -- information button
-					self.Tooltip:SetPoint("BOTTOMRIGHT", self, "TOPRIGHT", -4, -1)
-				else
-					self.Tooltip:SetPoint("BOTTOMRIGHT", self, "TOPRIGHT", -4, -2)
-				end
-
-				self.Tooltip:Show()
-			</OnEnter>
-			<OnLeave>
-				<!-- Hide the tooltip -->
-				self.Tooltip:Hide()
-			</OnLeave>
-		</Scripts>
-	</Frame>
-
 	<!-- Category button -->
-	<Button name="NysTDL_CategoryButton" inherits="NysTDL_IconButtonTemplate, NysTDL_IconButtonTooltipScripts, NysTDL_IconButtonPositionScripts" virtual="true">
+	<Button name="NysTDL_CategoryButton" inherits="NysTDL_IconButtonTemplate, NysTDL_IconButtonPositionScripts" virtual="true">
 		<Size x="32" y="32"/>
 		<KeyValues>
-			<KeyValue key="tooltip" value=""/>
 			<KeyValue key="name" value="CategoryButton"/>
 		</KeyValues>
 		<Layers>
@@ -188,10 +123,9 @@
 	</Button>
 
 	<!-- Undo button -->
-	<Button name="NysTDL_UndoButton" inherits="NysTDL_IconButtonTemplate, NysTDL_IconButtonTooltipScripts, NysTDL_IconButtonPositionScripts" virtual="true">
+	<Button name="NysTDL_UndoButton" inherits="NysTDL_IconButtonTemplate, NysTDL_IconButtonPositionScripts" virtual="true">
 		<Size x="32" y="32"/>
 		<KeyValues>
-			<KeyValue key="tooltip" value=""/>
 			<KeyValue key="name" value="UndoButton"/>
 		</KeyValues>
 		<Layers>
@@ -209,10 +143,9 @@
 	</Button>
 
 	<!-- Tab Actions button -->
-	<Button name="NysTDL_TabActionsButton" inherits="NysTDL_IconButtonTemplate, NysTDL_IconButtonTooltipScripts, NysTDL_IconButtonPositionScripts" virtual="true">
+	<Button name="NysTDL_TabActionsButton" inherits="NysTDL_IconButtonTemplate, NysTDL_IconButtonPositionScripts" virtual="true">
 		<Size x="32" y="32"/>
 		<KeyValues>
-			<KeyValue key="tooltip" value=""/>
 			<KeyValue key="name" value="TabActionsButton"/>
 		</KeyValues>
 		<Layers>
@@ -228,10 +161,9 @@
 	</Button>
 
 	<!-- Edit Mode button -->
-	<Button name="NysTDL_EditModeButton" inherits="NysTDL_IconButtonTooltipScripts" virtual="true">
+	<Button name="NysTDL_EditModeButton" virtual="true">
 		<Size x="32" y="32"/>
 		<KeyValues>
-			<KeyValue key="tooltip" value=""/>
 			<KeyValue key="name" value="EditModeButton"/>
 		</KeyValues>
 		<NormalTexture file="Interface\FriendsFrame\UI-FriendsList-Large-Up">
@@ -261,10 +193,9 @@
 	</Button>
 
 	<!-- Copy button -->
-	<Button name="NysTDL_CopyButton" inherits="NysTDL_IconButtonTooltipScripts" virtual="true">
+	<Button name="NysTDL_CopyButton" virtual="true">
 		<Size x="32" y="32"/>
 		<KeyValues>
-			<KeyValue key="tooltip" value=""/>
 			<KeyValue key="name" value="CopyButton"/>
 		</KeyValues>
 		<NormalTexture file="Interface\FriendsFrame\UI-FriendsList-Small-Up"/>
@@ -278,10 +209,9 @@
 	</Button>
 
 	<!-- Frame Options button -->
-	<Button name="NysTDL_FrameOptionsButton" inherits="NysTDL_IconButtonTemplate, NysTDL_IconButtonTooltipScripts, NysTDL_IconButtonPositionScripts" virtual="true">
+	<Button name="NysTDL_FrameOptionsButton" inherits="NysTDL_IconButtonTemplate, NysTDL_IconButtonPositionScripts" virtual="true">
 		<Size x="32" y="32"/>
 		<KeyValues>
-			<KeyValue key="tooltip" value=""/>
 			<KeyValue key="name" value="FrameOptionsButton"/>
 		</KeyValues>
 		<Layers>
@@ -297,10 +227,9 @@
 	</Button>
 
 	<!-- Help button -->
-	<Button name="NysTDL_HelpButton" inherits="InlineHyperlinkFrameTemplate, NysTDL_IconButtonTooltipScripts, NysTDL_IconButtonPositionScripts" virtual="true">
+	<Button name="NysTDL_HelpButton" inherits="InlineHyperlinkFrameTemplate, NysTDL_IconButtonPositionScripts" virtual="true">
 		<Size x="30" y="30"/>
 		<KeyValues>
-			<KeyValue key="tooltip" value=""/>
 			<KeyValue key="name" value="HelpButton"/>
 		</KeyValues>
 		<Layers>
@@ -352,10 +281,9 @@
 	</Button>
 
 	<!-- Clear button -->
-	<Button name="NysTDL_ClearButton" inherits="NysTDL_IconButtonTemplate, NysTDL_IconButtonPositionScripts, NysTDL_IconButtonTooltipScripts" virtual="true">
+	<Button name="NysTDL_ClearButton" inherits="NysTDL_IconButtonTemplate, NysTDL_IconButtonPositionScripts" virtual="true">
 		<Size x="25" y="25"/>
 		<KeyValues>
-			<KeyValue key="tooltip" value=""/>
 			<KeyValue key="name" value="ClearButton"/>
 		</KeyValues>
 		<Layers>
@@ -477,10 +405,9 @@
 	</Button>
 
 	<!-- resize button with tooltip -->
-	<Button name="NysTDL_TooltipResizeButton" inherits="NysTDL_IconButtonTooltipScripts" virtual="true">
+	<Button name="NysTDL_TooltipResizeButton" virtual="true">
 		<Size x="16" y="16"/> <!-- Size of interactable zone -->
 		<KeyValues>
-			<KeyValue key="tooltip" value=""/>
 			<KeyValue key="name" value="TooltipResizeButton"/>
 		</KeyValues>
 		<NormalTexture file="Interface\ChatFrame\UI-ChatIM-SizeGrabber-Up"/>

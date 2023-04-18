@@ -895,13 +895,6 @@ function private:NewCategoryWidget(catName)
 
         -- <!> tooltip content <!>
 
-        recoveryList.tooltip = LibQTip:Acquire("NysTDL_recoveryList_tooltip", 1)
-        local tooltip = recoveryList.tooltip
-
-        tooltip:SmartAnchorTo(self)
-        tooltip:ClearAllPoints()
-        tooltip:SetPoint("BOTTOMLEFT", self, "TOPLEFT", 0, 0)
-
         local tabName, last = nil, false
         if allTab then
             tabName = L["All"]
@@ -922,10 +915,15 @@ function private:NewCategoryWidget(catName)
                 tabName = L["Weekly"]
             end
         end
-        tooltip:AddHeader(L["Tab"]..": " .. (type(tabName) == "string" and tabName or "--"))
-        tooltip:SetLineTextColor(1, unpack(database.themes.theme_yellow))
 
-        tooltip:Show()
+        recoveryList.tooltip = widgets:AcquireTooltip("NysTDL_Tooltip_RecoveryList", self)
+
+		local customFont = CreateFont("NysTDL_Font_TooltipHeader")
+		customFont:CopyFontObject("GameTooltipHeaderText")
+		customFont:SetTextColor(unpack(utils:ThemeDownTo01(database.themes.theme_yellow)))
+		recoveryList.tooltip:SetFont(customFont)
+
+		recoveryList.tooltip:AddLine(L["Tab"]..": " .. (type(tabName) == "string" and tabName or "--"))
     end)
     categoryWidget.label:HookScript("OnLeave", function(self)
         LibQTip:Release(recoveryList.tooltip)
@@ -968,7 +966,6 @@ function private:NewItemWidget(itemName, removeBtnFunc)
 
     -- / infoBtn
     itemWidget.infoBtn = widgets:HelpButton(itemWidget)
-    itemWidget.infoBtn.tooltip = nil
     itemWidget.infoBtn:SetPoint("LEFT", itemWidget, "LEFT", 24, -1)
     itemWidget.infoBtn:SetScale(0.6)
     itemWidget.infoBtn:HookScript("OnClick", function(self)
@@ -981,28 +978,27 @@ function private:NewItemWidget(itemName, removeBtnFunc)
 
         -- <!> tooltip content <!>
 
-        recoveryList.tooltip = LibQTip:Acquire("NysTDL_recoveryList_tooltip", 1)
-        local tooltip = recoveryList.tooltip
+        recoveryList.tooltip = widgets:AcquireTooltip("NysTDL_Tooltip_RecoveryList", self)
 
-        tooltip:SmartAnchorTo(self)
-        tooltip:ClearAllPoints()
-        tooltip:SetPoint("BOTTOMRIGHT", self, "TOPRIGHT", 0, 0)
+		local customFont = CreateFont("NysTDL_Font_TooltipHeader")
+		customFont:CopyFontObject("GameTooltipHeaderText")
+		customFont:SetTextColor(unpack(utils:ThemeDownTo01(database.themes.theme_yellow)))
+		recoveryList.tooltip:SetFont(customFont)
 
         tabName = L[tabName]
-        tooltip:AddHeader(L["Tab"]..": " .. (type(tabName) == "string" and tabName or "--"))
-        tooltip:SetLineTextColor(1, unpack(database.themes.theme_yellow))
+		recoveryList.tooltip:AddLine(L["Tab"]..": " .. (type(tabName) == "string" and tabName or "--"))
+
+		recoveryList.tooltip:SetFont("GameTooltipText")
 
         if checked then
-            tooltip:AddLine(L["Checked"]..": "..L["Yes"])
+            recoveryList.tooltip:AddLine(L["Checked"]..": "..L["Yes"])
         end
         if favorite then
-            tooltip:AddLine(L["Favorite"]..": "..L["Yes"])
+            recoveryList.tooltip:AddLine(L["Favorite"]..": "..L["Yes"])
         end
         if description then
-            tooltip:AddLine(L["Description"]..": "..L["Click to copy"])
+            recoveryList.tooltip:AddLine(L["Description"]..": "..L["Click to copy"])
         end
-
-        tooltip:Show()
     end)
     itemWidget.infoBtn:HookScript("OnLeave", function(self)
         LibQTip:Release(recoveryList.tooltip)
