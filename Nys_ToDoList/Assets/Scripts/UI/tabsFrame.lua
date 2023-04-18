@@ -527,20 +527,26 @@ function tabsFrame:SetAlpha(alpha)
 
 	-- overflowButtonFrame
 	if overflowButtonFrame then
-		overflowButtonFrame.backdrop:SetBackdropColor(0, 0, 0, alpha)
-		overflowButtonFrame.backdrop:SetBackdropBorderColor(1, 1, 1, alpha)
+		local r, g, b = unpack{overflowButtonFrame.backdrop:GetBackdropColor()}
+		overflowButtonFrame.backdrop:SetBackdropColor(r, g, b, alpha)
+		r, g, b = unpack{overflowButtonFrame.backdrop:GetBackdropBorderColor()}
+		overflowButtonFrame.backdrop:SetBackdropBorderColor(r, g, b, alpha)
 	end
 
 	-- switchStateButtonFrame
 	if switchStateButtonFrame then
-		switchStateButtonFrame.backdrop:SetBackdropColor(0, 0, 0, alpha)
-		switchStateButtonFrame.backdrop:SetBackdropBorderColor(1, 1, 1, alpha)
+		local r, g, b = unpack{switchStateButtonFrame.backdrop:GetBackdropColor()}
+		switchStateButtonFrame.backdrop:SetBackdropColor(r, g, b, alpha)
+		r, g, b = unpack{switchStateButtonFrame.backdrop:GetBackdropBorderColor()}
+		switchStateButtonFrame.backdrop:SetBackdropBorderColor(r, g, b, alpha)
 	end
 
 	-- overflowList
 	if overflowList then
-		overflowList:SetBackdropColor(0, 0, 0, alpha)
-		overflowList:SetBackdropBorderColor(1, 1, 1, alpha)
+		local r, g, b = unpack{overflowList:GetBackdropColor()}
+		overflowList:SetBackdropColor(r, g, b, alpha)
+		r, g, b = unpack{overflowList:GetBackdropBorderColor()}
+		overflowList:SetBackdropBorderColor(r, g, b, alpha)
 	end
 end
 
@@ -725,39 +731,7 @@ function tabsFrame:CreateTabsFrame()
 	-- // overflowButton / overflowButtonFrame
 	-- !! both overflowButtonFrame and overflowButtonFrame.backdrop are there only to beautify the button,
 	-- by creating a better backdrop and masking of the border
-	overflowButtonFrame = CreateFrame("Frame", nil, mainFrame.tdlFrame, nil)
-	overflowButtonFrame:SetPoint("TOPRIGHT", mainFrame.tdlFrame, "BOTTOMRIGHT", -overflowButtonRightOffsetX, 2)
-	overflowButtonFrame:SetSize(overflowButtonSize, overflowButtonSize)
-	overflowButtonFrame:SetFrameStrata("BACKGROUND")
-	overflowButtonFrame:SetClipsChildren(true)
-
-	overflowButtonFrame.backdrop = CreateFrame("Frame", nil, overflowButtonFrame, BackdropTemplateMixin and "BackdropTemplate" or nil)
-	overflowButtonFrame.backdrop:SetBackdrop({
-		bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
-		edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-		tile = false, tileSize = 1, edgeSize = 10,
-		insets = { left = 2, right = 2, top = 2, bottom = 2 }
-	})
-	overflowButtonFrame.backdrop:SetPoint("TOPLEFT", overflowButtonFrame, "TOPLEFT", 0, 4)
-	overflowButtonFrame.backdrop:SetSize(overflowButtonFrame:GetWidth(), overflowButtonFrame:GetHeight()+2)
-	overflowButtonFrame.backdrop:SetClipsChildren(true)
-
-	overflowButtonFrame.btn = CreateFrame("Button", nil, overflowButtonFrame.backdrop, "NysTDL_OverflowButton")
-	overflowButtonFrame.btn:SetPoint("CENTER", overflowButtonFrame.backdrop, "CENTER", 0, 0)
-	local btnIconScale = 0.65 -- value between 0 and 1
-	overflowButtonFrame.btn:SetSize(overflowButtonFrame:GetWidth()*btnIconScale, (overflowButtonFrame:GetHeight()*btnIconScale)/2)
-	local inset = -overflowButtonFrame:GetWidth()*(1-btnIconScale)
-	overflowButtonFrame.btn:SetHitRectInsets(inset, inset, inset, inset)
-	overflowButtonFrame.btn.Highlight:SetPoint("TOPLEFT", overflowButtonFrame.backdrop, "TOPLEFT", 2, -4)
-	overflowButtonFrame.btn.Highlight:SetPoint("BOTTOMRIGHT", overflowButtonFrame.backdrop, "BOTTOMRIGHT", -2, 2)
-	overflowButtonFrame.btn:SetScript("OnMouseDown", function(self)
-		self:ClearAllPoints()
-		self:SetPoint("CENTER", self:GetParent(), "CENTER", 1, -2)
-	end)
-	overflowButtonFrame.btn:SetScript("OnMouseUp", function(self)
-		self:ClearAllPoints()
-		self:SetPoint("CENTER", self:GetParent(), "CENTER", 0, 0)
-	end)
+	overflowButtonFrame = widgets:TabIconFrame(mainFrame.tdlFrame, overflowButtonSize, -overflowButtonRightOffsetX)
 
 	overflowList = CreateFrame("Frame", nil, UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil)
 	overflowList:SetBackdrop({
@@ -766,6 +740,8 @@ function tabsFrame:CreateTabsFrame()
 		tile = false, tileSize = 1, edgeSize = 12,
 		insets = { left = 2, right = 2, top = 2, bottom = 2 }
 	})
+	overflowList:SetBackdropColor(utils:ThemeDownTo01(enums.backdropColor, true))
+	overflowList:SetBackdropBorderColor(utils:ThemeDownTo01(enums.backdropBorderColor, true))
 	overflowList:SetPoint("TOPRIGHT", overflowButtonFrame, "BOTTOMRIGHT", 0, -5)
 	overflowList:SetSize(150, 1) -- the height is updated dynamically
 	overflowList:EnableMouse(true)
@@ -792,41 +768,10 @@ function tabsFrame:CreateTabsFrame()
 	end)
 
 	-- // switchStateButton (switch global/profile)
-	switchStateButtonFrame = CreateFrame("Frame", nil, mainFrame.tdlFrame, nil)
-	switchStateButtonFrame:SetPoint("TOPRIGHT", mainFrame.tdlFrame, "BOTTOMRIGHT", -overflowButtonRightOffsetX, 2)
-	switchStateButtonFrame:SetSize(overflowButtonSize, overflowButtonSize)
-	switchStateButtonFrame:SetFrameStrata("BACKGROUND")
-	switchStateButtonFrame:SetClipsChildren(true)
+	switchStateButtonFrame = widgets:TabIconFrame(mainFrame.tdlFrame, overflowButtonSize, -overflowButtonRightOffsetX)
 
-	switchStateButtonFrame.backdrop = CreateFrame("Frame", nil, switchStateButtonFrame, BackdropTemplateMixin and "BackdropTemplate" or nil)
-	switchStateButtonFrame.backdrop:SetBackdrop({
-		bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
-		edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-		tile = false, tileSize = 1, edgeSize = 10,
-		insets = { left = 2, right = 2, top = 2, bottom = 2 }
-	})
-	switchStateButtonFrame.backdrop:SetPoint("TOPLEFT", switchStateButtonFrame, "TOPLEFT", 0, 4)
-	switchStateButtonFrame.backdrop:SetSize(switchStateButtonFrame:GetWidth(), switchStateButtonFrame:GetHeight()+2)
-	switchStateButtonFrame.backdrop:SetClipsChildren(true)
-
-	switchStateButtonFrame.btn = CreateFrame("Button", nil, switchStateButtonFrame.backdrop, "NysTDL_OverflowButton")
-	switchStateButtonFrame.btn:SetPoint("CENTER", switchStateButtonFrame.backdrop, "CENTER", 0, 0)
-	local btnIconScale = 0.65 -- value between 0 and 1
-	switchStateButtonFrame.btn:SetSize(switchStateButtonFrame:GetWidth()*btnIconScale, (switchStateButtonFrame:GetHeight()*btnIconScale)/2)
-	local inset = -switchStateButtonFrame:GetWidth()*(1-btnIconScale)
-	switchStateButtonFrame.btn:SetHitRectInsets(inset, inset, inset, inset)
 	switchStateButtonFrame.btn:SetNormalTexture(enums.icons.global.info())
 	switchStateButtonFrame.btn.Texture:SetAlpha(0.9)
-	switchStateButtonFrame.btn.Highlight:SetPoint("TOPLEFT", switchStateButtonFrame.backdrop, "TOPLEFT", 2, -4)
-	switchStateButtonFrame.btn.Highlight:SetPoint("BOTTOMRIGHT", switchStateButtonFrame.backdrop, "BOTTOMRIGHT", -2, 2)
-	switchStateButtonFrame.btn:SetScript("OnMouseDown", function(self)
-		self:ClearAllPoints()
-		self:SetPoint("CENTER", self:GetParent(), "CENTER", 1, -2)
-	end)
-	switchStateButtonFrame.btn:SetScript("OnMouseUp", function(self)
-		self:ClearAllPoints()
-		self:SetPoint("CENTER", self:GetParent(), "CENTER", 0, 0)
-	end)
 
 	-- click
 	switchStateButtonFrame.btn:SetScript("OnClick", function()

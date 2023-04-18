@@ -122,6 +122,9 @@ enums.icons = {
 	},
 }
 
+enums.backdropColor = { 60, 58, 53 }
+enums.backdropBorderColor = { 200, 200, 200 }
+
 -- dynamic values (still, accessible by all files)
 
 enums.quantities = {

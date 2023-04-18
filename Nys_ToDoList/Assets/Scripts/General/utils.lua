@@ -141,13 +141,17 @@ local T_ThemeDownTo01 = {}
 ---Takes in a rgb index table ({r, g, b}), and downgrades it from 0-255 to 0-1.
 ---@param theme table
 ---@return table theme01
-function utils:ThemeDownTo01(theme)
+function utils:ThemeDownTo01(theme, unpacked)
 	local r, g, b = unpack(theme)
 
 	wipe(T_ThemeDownTo01)
 	table.insert(T_ThemeDownTo01, r/255)
 	table.insert(T_ThemeDownTo01, g/255)
 	table.insert(T_ThemeDownTo01, b/255)
+
+	if unpacked == true then
+		return T_ThemeDownTo01[1], T_ThemeDownTo01[2], T_ThemeDownTo01[3]
+	end
 
 	return T_ThemeDownTo01
 end

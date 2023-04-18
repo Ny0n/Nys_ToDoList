@@ -106,10 +106,10 @@ database.defaults = {
 		-- // Frame Options
 		framePos = { point = "CENTER", relativePoint = "CENTER", xOffset = 0, yOffset = 0 },
 		frameSize = { width = enums.tdlFrameDefaultWidth, height = enums.tdlFrameDefaultHeight },
-		frameAlpha = 65,
+		frameAlpha = 75,
 		frameContentAlpha = 100,
 		affectDesc = true,
-		descFrameAlpha = 65,
+		descFrameAlpha = 75,
 		descFrameContentAlpha = 100,
 
 		-- // Addon Options

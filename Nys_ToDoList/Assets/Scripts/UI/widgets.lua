@@ -99,8 +99,10 @@ function widgets:SetDescFramesAlpha(alpha)
 	-- and then we update the alpha
 	alpha = NysTDL.acedb.profile.descFrameAlpha/100
 	for _, descFrame in pairs(descFrames) do -- we go through every desc frame
-		descFrame:SetBackdropColor(0, 0, 0, alpha)
-		descFrame:SetBackdropBorderColor(1, 1, 1, alpha)
+		local r, g, b = unpack{descFrame:GetBackdropColor()}
+		descFrame:SetBackdropColor(r, g, b, alpha)
+		r, g, b = unpack{descFrame:GetBackdropBorderColor()}
+		descFrame:SetBackdropBorderColor(r, g, b, alpha)
 		for k, x in pairs(descFrame.descriptionEditBox) do
 			-- setting the backdrop alpha is not enough, we also have to change the alpha of the big edit box,
 			-- the thing is that this template (from WoW) uses A LOT of sub-frames to make up that edit box,
@@ -206,7 +208,8 @@ function widgets:DescriptionFrame(itemWidget)
 		tile = false, tileSize = 1, edgeSize = 10,
 		insets = { left = 2, right = 2, top = 2, bottom = 2 }
 	})
-	descFrame:SetBackdropColor(0, 0, 0, 1)
+	descFrame:SetBackdropColor(utils:ThemeDownTo01(enums.backdropColor, true))
+	descFrame:SetBackdropBorderColor(utils:ThemeDownTo01(enums.backdropBorderColor, true))
 
 	-- quick access
 	descFrame.itemID = itemID
@@ -1243,6 +1246,53 @@ function widgets:HorizontalDivider(parentFrame, width, height)
 	divider:SetAtlas("Options_HorizontalDivider", true)
 	divider:SetSize(width or 200, height or 2)
 	return divider
+end
+
+function widgets:TabIconFrame(parentFrame, size, offsetx, btnIconScale)
+	-- Returns a frame used as a mini tab with an icon instead of text
+	-- the table is as follows:
+	-- 	return frame
+	--		frame is a Frame
+	--		frame.backdrop is the background
+	--		frame.btn is the clickable Button
+
+	local frame = CreateFrame("Frame", nil, parentFrame, nil)
+	frame:SetPoint("TOPRIGHT", parentFrame, "BOTTOMRIGHT", offsetx, 2)
+	frame:SetSize(size, size)
+	frame:SetFrameStrata("BACKGROUND")
+	frame:SetClipsChildren(true)
+
+	frame.backdrop = CreateFrame("Frame", nil, frame, BackdropTemplateMixin and "BackdropTemplate" or nil)
+	frame.backdrop:SetBackdrop({
+		bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+		edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+		tile = false, tileSize = 1, edgeSize = 10,
+		insets = { left = 2, right = 2, top = 2, bottom = 2 }
+	})
+	frame.backdrop:SetBackdropColor(utils:ThemeDownTo01(enums.backdropColor, true))
+	frame.backdrop:SetBackdropBorderColor(utils:ThemeDownTo01(enums.backdropBorderColor, true))
+	frame.backdrop:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 4)
+	frame.backdrop:SetSize(frame:GetWidth(), frame:GetHeight()+2)
+	frame.backdrop:SetClipsChildren(true)
+
+	frame.btn = CreateFrame("Button", nil, frame.backdrop, "NysTDL_OverflowButton")
+	frame.btn:SetPoint("CENTER", frame.backdrop, "CENTER", 0, 0)
+	btnIconScale = btnIconScale or 0.65
+	frame.btn:SetSize(frame:GetWidth()*btnIconScale, (frame:GetHeight()*btnIconScale)/2)
+	local inset = -frame:GetWidth()*(1-btnIconScale)
+	frame.btn:SetHitRectInsets(inset, inset, inset, inset)
+	frame.btn.Highlight:SetPoint("TOPLEFT", frame.backdrop, "TOPLEFT", 2, -4)
+	frame.btn.Highlight:SetPoint("BOTTOMRIGHT", frame.backdrop, "BOTTOMRIGHT", -2, 2)
+	frame.btn:SetScript("OnMouseDown", function(self)
+		self:ClearAllPoints()
+		self:SetPoint("CENTER", self:GetParent(), "CENTER", 1, -2)
+	end)
+	frame.btn:SetScript("OnMouseUp", function(self)
+		self:ClearAllPoints()
+		self:SetPoint("CENTER", self:GetParent(), "CENTER", 0, 0)
+	end)
+
+	return frame
 end
 
 --/*******************/ INITIALIZATION /*************************/--
