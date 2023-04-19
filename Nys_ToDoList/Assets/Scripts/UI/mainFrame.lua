@@ -507,7 +507,6 @@ function mainFrame:Event_FrameAlphaSlider_OnValueChanged(value)
 	NysTDL.acedb.profile.frameAlpha = value
 	tdlFrame.content.menu.menuFrames[enums.menus.frameopt].frameAlphaSliderValue:SetText(value)
 	tdlFrame.Bg:SetAlpha(value/100)
-	-- tdlFrame.NineSlice:SetAlpha(value/100)
 
 	-- description frames part
 	widgets:SetDescFramesAlpha(value)
@@ -522,6 +521,9 @@ function mainFrame:Event_FrameContentAlphaSlider_OnValueChanged(value)
 	tdlFrame.content.menu.menuFrames[enums.menus.frameopt].frameContentAlphaSliderValue:SetText(value)
 	tdlFrame.ScrollFrame:SetAlpha(value/100)
 	tdlFrame.resizeButton:SetAlpha(value/100)
+	tdlFrame.ScrollBar:SetAlpha(value/100)
+	tdlFrame.CloseButton:SetAlpha(value/100)
+	tdlFrame.NineSlice:SetAlpha(value/100) -- that's why the min opacity is 0.6!
 
 	-- description frames part
 	widgets:SetDescFramesContentAlpha(value)

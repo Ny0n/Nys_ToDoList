@@ -759,7 +759,7 @@
 					</Layer>
 				</Layers>
 			</Frame>
-			<Button inherits="UIPanelCloseButtonDefaultAnchors">
+			<Button parentKey="CloseButton" inherits="UIPanelCloseButtonDefaultAnchors">
 				<Scripts>
 					<OnClick>
 						self:GetParent():Hide()
