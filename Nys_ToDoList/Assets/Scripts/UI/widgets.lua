@@ -1282,6 +1282,49 @@ function widgets:TabIconFrame(parentFrame, size, offsetX, offsetY, btnOffsetX, b
 	return frame
 end
 
+function widgets:Slider(parentFrame, value, minValue, maxValue, Title)
+	-- creates and returns a slider (w/ BottomText), either with the dragonflight theme or the classic theme
+	-- used for the mainFrame's opacity sliders
+	-- DRY
+
+	local slider = CreateFrame("Slider", "NysTDL_Slider_"..tostring(dataManager:NewID()), parentFrame, utils:IsDF() and "MinimalSliderWithSteppersTemplate" or "OptionsSliderTemplate")
+	slider:SetWidth(200)
+
+	if utils:IsDF() then
+		local Enum = MinimalSliderWithSteppersMixin.Label
+		local formatters = {
+			[Enum.Right] = function(value) return value end,
+			[Enum.Min] = function() return tostring(minValue).."%" end,
+			[Enum.Max] = function() return tostring(maxValue).."%" end,
+			[Enum.Top] = function() return Title end,
+		}
+		slider:Init(value, minValue, maxValue, maxValue-minValue, formatters)
+		local hookScript = function(self, ...) slider.Slider:HookScript(...) end
+		slider.SetScript = hookScript
+		slider.HookScript = hookScript
+	else
+		slider:SetObeyStepOnDrag(true)
+		slider:SetMinMaxValues(minValue, maxValue)
+		slider:SetValueStep(1)
+		slider:SetValue(value)
+
+		_G[slider:GetName() .. 'Low']:SetText(tostring(minValue).."%") -- sets the left-side slider text (default is "Low")
+		_G[slider:GetName() .. 'High']:SetText(tostring(maxValue).."%") -- sets the right-side slider text (default is "High")
+		_G[slider:GetName() .. 'Text']:SetText(Title) -- sets the "title" text (top-center of slider)
+
+		slider.BottomText = slider:CreateFontString("NysTDL_FontString_"..tostring(dataManager:NewID())) -- the font string to see the current value -- NAME IS MANDATORY
+		slider.BottomText:SetPoint("TOP", slider, "BOTTOM", 0, 0)
+		slider.BottomText:SetFontObject("GameFontNormalSmall")
+		slider.BottomText:SetText(slider:GetValue())
+
+		slider:HookScript("OnValueChanged", function(self, value)
+			slider.BottomText:SetText(tostring(value))
+		end)
+	end
+
+	return slider
+end
+
 --/*******************/ INITIALIZATION /*************************/--
 
 function private:Event_widgetsFrame_OnUpdate(elapsed)

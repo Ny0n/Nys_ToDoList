@@ -19,6 +19,10 @@ addonTable.devLocale = L
 
 --/************************************************/--
 
+L["Change the background opacity"] = true
+L["Change the opacity for texts, buttons and other elements"] = true
+L["Name"] = true
+
 L["Toggle menu"] = true
 L["Switch Global/Profile"] = true
 L["Data to overwrite on import"] = true
@@ -105,7 +109,6 @@ L["List"] = true
 L["Open All"] = true
 L["Close All"] = true
 L["Toggle edit mode"] = true
-L["Name"] = true
 L["Access new buttons: %s and %s"] = true
 L["Resize the list"] = true
 L["Button in the bottom-right"] = true
@@ -161,9 +164,7 @@ L["Because why not?"] = true
 L["Bind a key to toggle the list"] = true
 L["Buttons"] = true
 L["categories"] = true -- command
-L["Change the background opacity"] = true
 L["Change the color for the favorite items"] = true
-L["Change the opacity for texts, buttons and other elements"] = true
 L["Changes the color of the movable button if there are items left to do before tomorrow"] = true
 L["Check"] = true
 L["Clear"] = true

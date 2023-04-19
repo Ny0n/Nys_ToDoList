@@ -44,6 +44,7 @@ globals = {
 	"Settings",
 
 	-- FrameXML misc
+	"MinimalSliderWithSteppersMixin",
 	"EncounterJournal",
 	"ChatFrame_OnHyperlinkShow",
 	"ChatFrame1",

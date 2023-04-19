@@ -125,6 +125,7 @@ function private:MenuClick(menuEnum)
 	else
 		bottom = lineBottom.y
 	end
+	menu.lineTopSubMenu:SetShown(not not menuFrames.selected)
 	menu.lineBottom:SetPoint("TOPLEFT", content, "TOPLEFT", lineBottom.x, bottom)
 
 	-- bottomOrigin
@@ -150,24 +151,6 @@ function private:MenuClick(menuEnum)
 	elseif selected == enums.menus.tabact then -- tab actions menu
 		menu.tabActionsButton.Icon:SetDesaturated(1)
 	end
-end
-
-function private:SetDoubleLinePoints(lineLeft, lineRight, l, y)
-	local lineMinWidth = 5
-	local semiLength = l/2 + 10
-
-	if semiLength + lineMinWidth >= lineOffset then
-		lineLeft:Hide()
-		lineRight:Hide()
-		return
-	end
-
-	lineLeft:SetStartPoint("TOPLEFT", centerXOffset-lineOffset, y)
-	lineLeft:SetEndPoint("TOPLEFT", centerXOffset-l/2 - 10, y)
-	lineRight:SetStartPoint("TOPLEFT", centerXOffset+l/2 + 10, y)
-	lineRight:SetEndPoint("TOPLEFT", centerXOffset+lineOffset, y)
-	lineLeft:Show()
-	lineRight:Show()
 end
 
 function private:SubMenuNameFormat(name)
@@ -505,7 +488,6 @@ end
 function mainFrame:Event_FrameAlphaSlider_OnValueChanged(value)
 	-- itemsList frame part
 	NysTDL.acedb.profile.frameAlpha = value
-	tdlFrame.content.menu.menuFrames[enums.menus.frameopt].frameAlphaSliderValue:SetText(value)
 	tdlFrame.Bg:SetAlpha(value/100)
 
 	-- description frames part
@@ -518,7 +500,6 @@ end
 function mainFrame:Event_FrameContentAlphaSlider_OnValueChanged(value)
 	-- itemsList frame part
 	NysTDL.acedb.profile.frameContentAlpha = value
-	tdlFrame.content.menu.menuFrames[enums.menus.frameopt].frameContentAlphaSliderValue:SetText(value)
 	tdlFrame.ScrollFrame:SetAlpha(value/100)
 	tdlFrame.resizeButton:SetAlpha(value/100)
 	tdlFrame.ScrollBar:SetAlpha(value/100)
@@ -827,24 +808,16 @@ function private:GenerateMenuAddACategory()
 	--/************************************************/--
 
 	-- title
-	menuframe.menuTitle = widgets:NoPointsLabel(menuframe, nil, string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), private:SubMenuNameFormat(L["Add a category"])))
-	menuframe.menuTitle:SetPoint("CENTER", menuframe, "TOPLEFT", centerXOffset, 0)
-	-- left/right lines
-	menuframe.menuTitleLL = widgets:ThemeLine(menuframe, database.themes.theme, 0.7)
-	menuframe.menuTitleLR = widgets:ThemeLine(menuframe, database.themes.theme, 0.7)
-	private:SetDoubleLinePoints(menuframe.menuTitleLL, menuframe.menuTitleLR, menuframe.menuTitle:GetWidth(), 0)
+	menuframe.menuTitle = widgets:NoPointsLabel(menuframe, nil, L["Add a category"])
+	menuframe.menuTitle:SetPoint("TOPLEFT", tdlFrame.content.menu.lineTopSubMenu, "TOPLEFT", 3, -13)
 
 	--/************************************************/--
 
-	menuframe.labelCategoryName = widgets:NoPointsLabel(menuframe, nil, L["Name"]..":")
-	menuframe.labelCategoryName:SetPoint("TOPLEFT", menuframe.menuTitle, "TOP", -140, -32)
-
 	menuframe.categoryEditBox = CreateFrame("EditBox", nil, menuframe, "InputBoxTemplate") -- edit box to put the new category name
-	menuframe.categoryEditBox:SetPoint("RIGHT", menuframe, "RIGHT", -3, 0)
-	menuframe.categoryEditBox:SetPoint("LEFT", menuframe.labelCategoryName, "RIGHT", 10, 0)
-	menuframe.categoryEditBox:SetHeight(30)
+	menuframe.categoryEditBox:SetPoint("TOPLEFT", menuframe.menuTitle, "BOTTOMLEFT", 5, -5)
+	menuframe.categoryEditBox:SetSize(200, 30)
 	menuframe.categoryEditBox:SetAutoFocus(false)
-	menuframe.categoryEditBox:SetScript("OnEnterPressed", addCat) -- if we press enter, it's like we clicked on the add button
+	menuframe.categoryEditBox:SetScript("OnEnterPressed", addCat)
 	menuframe.categoryEditBox:HookScript("OnEditFocusGained", function(self)
 		-- since this edit box stays there, even when we lose the focus,
 		-- I have to reapply the highlight depending on the SV
@@ -856,11 +829,17 @@ function private:GenerateMenuAddACategory()
 		end
 	end)
 
-	menuframe.addBtn = widgets:Button("NysTDL_category_addButton", menuframe, L["Add"], nil, nil, 40)
-	menuframe.addBtn:SetPoint("TOP", menuframe.menuTitle, "TOP", 0, -65)
-	menuframe.addBtn:SetScript("OnClick", addCat)
+	menuframe.categoryEditBoxHint = menuframe.categoryEditBox:CreateFontString(nil)
+	menuframe.categoryEditBoxHint:SetFontObject("GameFontNormal")
+	menuframe.categoryEditBoxHint:SetTextColor(0.35, 0.35, 0.35)
+	menuframe.categoryEditBoxHint:SetText("Press enter to add")
+	menuframe.categoryEditBoxHint:SetPoint("LEFT", menuframe.categoryEditBox, "LEFT", 3, -1)
 
-	tutorialsManager:SetPoint("introduction", "addCat", "TOP", menuframe.addBtn, "BOTTOM", 0, -22)
+	menuframe.categoryEditBox:HookScript("OnTextChanged", function(self)
+		menuframe.categoryEditBoxHint:SetShown(self:GetText() == "")
+	end)
+
+	tutorialsManager:SetPoint("introduction", "addCat", "TOP", menuframe.categoryEditBox, "BOTTOM", 0, -22)
 end
 
 function private:GenerateMenuFrameOptions()
@@ -869,71 +848,31 @@ function private:GenerateMenuFrameOptions()
 	--/************************************************/--
 
 	-- title
-	menuframe.menuTitle = widgets:NoPointsLabel(menuframe, nil, string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), private:SubMenuNameFormat(L["Frame options"])))
-	menuframe.menuTitle:SetPoint("CENTER", menuframe, "TOPLEFT", centerXOffset, 0)
-	-- left/right lines
-	menuframe.menuTitleLL = widgets:ThemeLine(menuframe, database.themes.theme, 0.7)
-	menuframe.menuTitleLR = widgets:ThemeLine(menuframe, database.themes.theme, 0.7)
-	private:SetDoubleLinePoints(menuframe.menuTitleLL, menuframe.menuTitleLR, menuframe.menuTitle:GetWidth(), 0)
+	menuframe.menuTitle = widgets:NoPointsLabel(menuframe, nil, L["Frame options"])
+	menuframe.menuTitle:SetPoint("TOPLEFT", tdlFrame.content.menu.lineTopSubMenu, "TOPLEFT", 3, -13)
 
 	--/************************************************/--
 
-	menuframe.frameAlphaSlider = CreateFrame("Slider", "NysTDL_mainFrame_frameAlphaSlider", menuframe, "OptionsSliderTemplate") -- NAME IS MANDATORY
-	menuframe.frameAlphaSlider:SetPoint("TOP", menuframe.menuTitle, "TOP", 0, -45)
-	menuframe.frameAlphaSlider:SetWidth(200)
-	-- menuframe.frameAlphaSlider:SetHeight(17)
-	-- menuframe.frameAlphaSlider:SetOrientation('HORIZONTAL')
-
-	menuframe.frameAlphaSlider:SetMinMaxValues(0, 100)
-	menuframe.frameAlphaSlider:SetValue(NysTDL.acedb.profile.frameAlpha)
-	menuframe.frameAlphaSlider:SetValueStep(1)
-	menuframe.frameAlphaSlider:SetObeyStepOnDrag(true)
-
-	menuframe.frameAlphaSlider.tooltipText = L["Change the background opacity"] -- creates a tooltip on mouseover
-	_G[menuframe.frameAlphaSlider:GetName() .. 'Low']:SetText((select(1,menuframe.frameAlphaSlider:GetMinMaxValues()))..'%') -- sets the left-side slider text (default is "Low")
-	_G[menuframe.frameAlphaSlider:GetName() .. 'High']:SetText((select(2,menuframe.frameAlphaSlider:GetMinMaxValues()))..'%') -- sets the right-side slider text (default is "High")
-	_G[menuframe.frameAlphaSlider:GetName() .. 'Text']:SetText(L["Frame opacity"]) -- sets the "title" text (top-center of slider)
+	menuframe.frameAlphaSlider = widgets:Slider(menuframe, NysTDL.acedb.profile.frameAlpha, 0, 100, L["Frame opacity"])
+	menuframe.frameAlphaSlider:SetPoint("TOPLEFT", menuframe.menuTitle, "BOTTOMLEFT", 5, -18)
 	menuframe.frameAlphaSlider:SetScript("OnValueChanged", mainFrame.Event_FrameAlphaSlider_OnValueChanged)
 
-	menuframe.frameAlphaSliderValue = menuframe.frameAlphaSlider:CreateFontString("NysTDL_mainFrame_frameAlphaSliderValue") -- the font string to see the current value -- NAME IS MANDATORY
-	menuframe.frameAlphaSliderValue:SetPoint("TOP", menuframe.frameAlphaSlider, "BOTTOM", 0, 0)
-	menuframe.frameAlphaSliderValue:SetFontObject("GameFontNormalSmall")
-	menuframe.frameAlphaSliderValue:SetText(menuframe.frameAlphaSlider:GetValue())
-
 	--/************************************************/--
 
-	menuframe.frameContentAlphaSlider = CreateFrame("Slider", "NysTDL_mainFrame_frameContentAlphaSlider", menuframe, "OptionsSliderTemplate") -- NAME IS MANDATORY
-	menuframe.frameContentAlphaSlider:SetPoint("TOP", menuframe.frameAlphaSlider, "TOP", 0, -50)
-	menuframe.frameContentAlphaSlider:SetWidth(200)
-	-- menuframe.frameContentAlphaSlider:SetHeight(17)
-	-- menuframe.frameContentAlphaSlider:SetOrientation('HORIZONTAL')
-
-	menuframe.frameContentAlphaSlider:SetMinMaxValues(60, 100)
-	menuframe.frameContentAlphaSlider:SetValue(NysTDL.acedb.profile.frameContentAlpha)
-	menuframe.frameContentAlphaSlider:SetValueStep(1)
-	menuframe.frameContentAlphaSlider:SetObeyStepOnDrag(true)
-
-	menuframe.frameContentAlphaSlider.tooltipText = L["Change the opacity for texts, buttons and other elements"] --Creates a tooltip on mouseover.
-	_G[menuframe.frameContentAlphaSlider:GetName() .. 'Low']:SetText((select(1,menuframe.frameContentAlphaSlider:GetMinMaxValues()))..'%') --Sets the left-side slider text (default is "Low").
-	_G[menuframe.frameContentAlphaSlider:GetName() .. 'High']:SetText((select(2,menuframe.frameContentAlphaSlider:GetMinMaxValues()))..'%') --Sets the right-side slider text (default is "High").
-	_G[menuframe.frameContentAlphaSlider:GetName() .. 'Text']:SetText(L["Frame content opacity"]) --Sets the "title" text (top-centre of slider).
+	menuframe.frameContentAlphaSlider = widgets:Slider(menuframe, NysTDL.acedb.profile.frameContentAlpha, 60, 100, L["Frame content opacity"])
+	menuframe.frameContentAlphaSlider:SetPoint("TOPLEFT", menuframe.frameAlphaSlider, "BOTTOMLEFT", 0, -18)
 	menuframe.frameContentAlphaSlider:SetScript("OnValueChanged", mainFrame.Event_FrameContentAlphaSlider_OnValueChanged)
-
-	menuframe.frameContentAlphaSliderValue = menuframe.frameContentAlphaSlider:CreateFontString("NysTDL_mainFrame_frameContentAlphaSliderValue") -- the font string to see the current value -- NAME IS MANDATORY
-	menuframe.frameContentAlphaSliderValue:SetPoint("TOP", menuframe.frameContentAlphaSlider, "BOTTOM", 0, 0)
-	menuframe.frameContentAlphaSliderValue:SetFontObject("GameFontNormalSmall")
-	menuframe.frameContentAlphaSliderValue:SetText(menuframe.frameContentAlphaSlider:GetValue())
 
 	--/************************************************/--
 
 	menuframe.affectDesc = CreateFrame("CheckButton", nil, menuframe, "ChatConfigCheckButtonTemplate")
 	menuframe.affectDesc.tooltip = L["Share the opacity options of the list to the description frames"].." ("..L["Only when checked"]..")"
-	menuframe.affectDesc:SetPoint("TOP", menuframe.frameContentAlphaSlider, "TOP", 0, -40)
+	menuframe.affectDesc:SetPoint("TOPLEFT", menuframe.frameContentAlphaSlider, "BOTTOMLEFT", 0, -18)
 	menuframe.affectDesc.Text:SetText(L["Apply to description frames"])
 	menuframe.affectDesc.Text:SetFontObject("GameFontHighlight")
 	menuframe.affectDesc.Text:ClearAllPoints()
-	menuframe.affectDesc.Text:SetPoint("TOP", menuframe.affectDesc, "BOTTOM")
-	menuframe.affectDesc:SetHitRectInsets(0, 0, 0, 0)
+	menuframe.affectDesc.Text:SetPoint("LEFT", menuframe.affectDesc, "RIGHT", 2, 0)
+	menuframe.affectDesc:SetHitRectInsets(0, -menuframe.affectDesc.Text:GetWidth(), 0, 0)
 	menuframe.affectDesc:SetScript("OnClick", function(self)
 		NysTDL.acedb.profile.affectDesc = not NysTDL.acedb.profile.affectDesc
 		self:SetChecked(NysTDL.acedb.profile.affectDesc)
@@ -945,8 +884,8 @@ function private:GenerateMenuFrameOptions()
 	--/************************************************/--
 
 	menuframe.btnAddonOptions = widgets:Button("addonOptionsButton", menuframe, L["Open addon options"], "Interface\\Buttons\\UI-OptionsButton")
-	menuframe.btnAddonOptions:SetPoint("TOP", menuframe.affectDesc, "TOP", 0, -55)
-	menuframe.btnAddonOptions:SetScript("OnClick", function() if not optionsManager:ToggleOptions(true) then tdlFrame:Hide() end end)
+	menuframe.btnAddonOptions:SetPoint("TOPLEFT", menuframe.affectDesc, "BOTTOMLEFT", 0, -12)
+	menuframe.btnAddonOptions:SetScript("OnClick", function() optionsManager:ToggleOptions(true) end)
 end
 
 function private:GenerateMenuTabActions()
@@ -955,33 +894,31 @@ function private:GenerateMenuTabActions()
 	--/************************************************/--
 
 	-- title
-	menuframe.menuTitle = widgets:NoPointsLabel(menuframe, nil, string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), private:SubMenuNameFormat(L["Tab actions"])))
-	menuframe.menuTitle:SetPoint("CENTER", menuframe, "TOPLEFT", centerXOffset, 0)
-	-- left/right lines
-	menuframe.menuTitleLL = widgets:ThemeLine(menuframe, database.themes.theme, 0.7)
-	menuframe.menuTitleLR = widgets:ThemeLine(menuframe, database.themes.theme, 0.7)
-	private:SetDoubleLinePoints(menuframe.menuTitleLL, menuframe.menuTitleLR, menuframe.menuTitle:GetWidth(), 0)
+	menuframe.menuTitle = widgets:NoPointsLabel(menuframe, nil, L["Tab actions"])
+	menuframe.menuTitle:SetPoint("TOPLEFT", tdlFrame.content.menu.lineTopSubMenu, "TOPLEFT", 3, -13)
 
 	--/************************************************/--
 
+	local spacingY = -6
+
 	menuframe.btnCheck = widgets:Button("NysTDL_menuframe_btnCheck", menuframe, L["Check"], "Interface\\BUTTONS\\UI-CheckBox-Check")
-	menuframe.btnCheck:SetPoint("TOP", menuframe.menuTitle, "TOP", 0, -35)
+	menuframe.btnCheck:SetPoint("TOPLEFT", menuframe.menuTitle, "BOTTOMLEFT", 3, -10)
 	menuframe.btnCheck:SetScript("OnClick", function() dataManager:ToggleTabChecked(database.ctab(), true) end)
 
 	menuframe.btnUncheck = widgets:Button("NysTDL_menuframe_btnUncheck", menuframe, L["Uncheck"], "Interface\\BUTTONS\\UI-CheckBox-Check-Disabled")
-	menuframe.btnUncheck:SetPoint("TOP", menuframe.btnCheck, "TOP", 0, -40)
+	menuframe.btnUncheck:SetPoint("TOPLEFT", menuframe.btnCheck, "BOTTOMLEFT", 0, spacingY)
 	menuframe.btnUncheck:SetScript("OnClick", function() dataManager:ToggleTabChecked(database.ctab(), false) end)
 
 	menuframe.btnCloseCat = widgets:Button("NysTDL_menuframe_btnCloseCat", menuframe, L["Close All"], "Interface\\BUTTONS\\Arrow-Up-Disabled")
-	menuframe.btnCloseCat:SetPoint("TOP", menuframe.btnUncheck, "TOP", 0, -40)
+	menuframe.btnCloseCat:SetPoint("TOPLEFT", menuframe.btnUncheck, "BOTTOMLEFT", 0, spacingY)
 	menuframe.btnCloseCat:SetScript("OnClick", function() dataManager:ToggleTabClosed(database.ctab(), false) end)
 
 	menuframe.btnOpenCat = widgets:Button("NysTDL_menuframe_btnOpenCat", menuframe, L["Open All"], "Interface\\BUTTONS\\Arrow-Down-Up")
-	menuframe.btnOpenCat:SetPoint("TOP", menuframe.btnCloseCat, "TOP", 0, -40)
+	menuframe.btnOpenCat:SetPoint("TOPLEFT", menuframe.btnCloseCat, "BOTTOMLEFT", 0, spacingY)
 	menuframe.btnOpenCat:SetScript("OnClick", function() dataManager:ToggleTabClosed(database.ctab(), true) end)
 
 	menuframe.btnClear = widgets:Button("NysTDL_menuframe_btnClear", menuframe, L["Clear"], "Interface\\GLUES\\LOGIN\\Glues-CheckBox-Check")
-	menuframe.btnClear:SetPoint("TOP", menuframe.btnOpenCat, "TOP", 0, -40)
+	menuframe.btnClear:SetPoint("TOPLEFT", menuframe.btnOpenCat, "BOTTOMLEFT", 0, spacingY)
 	menuframe.btnClear:SetScript("OnClick", function() dataManager:ClearTab(database.ctab()) end)
 end
 
@@ -1077,10 +1014,13 @@ function private:GenerateFrameContent()
 
 	-- / add a category sub-menu
 
+	menu.lineTopSubMenu = widgets:HorizontalDivider(menu)
+	menu.lineTopSubMenu:SetPoint("TOPLEFT", content, "TOPLEFT", lineBottom.x, lineBottom.y)
+
 	menuEnum = enums.menus.addcat
 	menu.menuFrames[menuEnum] = CreateFrame("Frame", nil, menu)
 	menu.menuFrames[menuEnum]:SetPoint("TOPLEFT", menu, "TOPLEFT", 0, lineBottom.y)
-	menu.menuFrames[menuEnum]:SetSize(menuWidth, 110) -- CVAL (coded value, non automatic)
+	menu.menuFrames[menuEnum]:SetSize(menuWidth, 75) -- CVAL (coded value, non automatic)
 	private:GenerateMenuAddACategory()
 
 	-- / frame options sub-menu
@@ -1088,7 +1028,7 @@ function private:GenerateFrameContent()
 	menuEnum = enums.menus.frameopt
 	menu.menuFrames[menuEnum] = CreateFrame("Frame", nil, menu)
 	menu.menuFrames[menuEnum]:SetPoint("TOPLEFT", menu, "TOPLEFT", 0, lineBottom.y)
-	menu.menuFrames[menuEnum]:SetSize(menuWidth, 235) -- CVAL
+	menu.menuFrames[menuEnum]:SetSize(menuWidth, 246) -- CVAL
 	private:GenerateMenuFrameOptions()
 
 	-- / tab actions sub-menu
@@ -1096,7 +1036,7 @@ function private:GenerateFrameContent()
 	menuEnum = enums.menus.tabact
 	menu.menuFrames[menuEnum] = CreateFrame("Frame", nil, menu)
 	menu.menuFrames[menuEnum]:SetPoint("TOPLEFT", menu, "TOPLEFT", 0, lineBottom.y)
-	menu.menuFrames[menuEnum]:SetSize(menuWidth, 240) -- CVAL
+	menu.menuFrames[menuEnum]:SetSize(menuWidth, 242) -- CVAL
 	private:GenerateMenuTabActions()
 
 	menu.lineBottom = widgets:HorizontalDivider(menu)
