@@ -19,7 +19,7 @@ addonTable.devLocale = L
 
 --/************************************************/--
 
-L["Toggle simplified view"] = true
+L["Toggle menu"] = true
 L["Switch Global/Profile"] = true
 L["Data to overwrite on import"] = true
 L["Delete the selected data to keep only what is imported (only if there is something to import)"] = true

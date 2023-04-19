@@ -28,7 +28,7 @@ local private = {}
 tabsFrame.authorized = true -- can it call Refresh() ? (just there for optimization)
 
 --** UI pos control **--
-local overflowButtonSize = 29
+local overflowButtonSize = 31
 local listButtonWidgetHeight = 12
 
 local inBetweenTabOffset = 5 -- POSITIVE, is part of the real tab size
@@ -37,6 +37,7 @@ local MIN_TAB_SIZE, MAX_TAB_SIZE = 72, 90
 local leftScrollFrameOffset = sidesBonusOffset + inBetweenTabOffset
 local rightScrollFrameOffset = sidesBonusOffset
 local overflowButtonRightOffsetX = rightScrollFrameOffset + inBetweenTabOffset
+local overflowButtonOffsetY = 2
 local overflowButtonWidth = overflowButtonRightOffsetX + overflowButtonSize
 local inBetweenButtonOffset = 5
 
@@ -308,7 +309,7 @@ function private:RefreshSize()
 
 	local rightOffset = -rightScrollFrameOffset
 	if hasOverflow then
-		overflowButtonFrame:SetPoint("TOPRIGHT", mainFrame.tdlFrame, "BOTTOMRIGHT", -overflowButtonRightOffsetX, 2)
+		overflowButtonFrame:SetPoint("TOPRIGHT", mainFrame.tdlFrame, "BOTTOMRIGHT", -overflowButtonRightOffsetX, overflowButtonOffsetY)
 		overflowButtonFrame:SetShown(true)
 		rightOffset = -overflowButtonWidth
 	else
@@ -318,7 +319,7 @@ function private:RefreshSize()
 	local hasGlobalData = dataManager:HasGlobalData()
 
 	if hasGlobalData then
-		overflowButtonFrame:SetPoint("TOPRIGHT", mainFrame.tdlFrame, "BOTTOMRIGHT", -overflowButtonWidth-inBetweenButtonOffset, 2)
+		overflowButtonFrame:SetPoint("TOPRIGHT", mainFrame.tdlFrame, "BOTTOMRIGHT", -overflowButtonWidth-inBetweenButtonOffset, overflowButtonOffsetY)
 		switchStateButtonFrame:SetShown(true)
 
 		if database.ctabstate() then
@@ -444,6 +445,41 @@ function private:TabWidget(tabID, parentFrame)
 	local parentName = parentFrame:GetName()
 	local tabWidget = CreateFrame("Button", parentName.."Tab".._currentID, parentFrame, utils:IsDF() and "CharacterFrameTabTemplate" or "CharacterFrameTabButtonTemplate")
 
+	-- // backdrop
+	-- I'm adding a backdrop only for the edge, so that we still see it when we lower the frame opacity
+	-- it's mimicking the tabs appeareance, so that it's almost invisible
+
+	tabWidget.backdrop = CreateFrame("Frame", nil, tabWidget, BackdropTemplateMixin and "BackdropTemplate" or nil)
+	tabWidget.backdrop:SetBackdrop(enums.backdrop)
+	tabWidget.backdrop.Center:SetAlpha(0)
+	tabWidget.backdrop:SetBackdropBorderColor(utils:ThemeDownTo01(enums.backdropBorderColor, true))
+
+	tabWidget:HookScript("OnDisable", function(self) -- when selected
+		self.backdrop.savedWidth = 2
+		self.backdrop.savedHeight = 9
+		self.backdrop:ClearAllPoints()
+		self.backdrop:SetPoint("TOPLEFT", self, "TOPLEFT", -1, 4)
+		self.backdrop:SetSize(self:GetWidth()+self.backdrop.savedWidth, self:GetHeight()+self.backdrop.savedHeight)
+	end)
+	local onEnable = function(self) -- when unselected
+		self.backdrop.savedWidth = 2
+		self.backdrop.savedHeight = 2
+		self.backdrop:ClearAllPoints()
+		self.backdrop:SetPoint("TOP", self, "TOP", 0, 4)
+		self.backdrop:SetSize(self:GetWidth()+self.backdrop.savedWidth, self:GetHeight()+self.backdrop.savedHeight)
+	end
+	tabWidget:HookScript("OnEnable", onEnable)
+	onEnable(tabWidget) -- init values
+
+	tabWidget:HookScript("OnSizeChanged", function(self)
+		self.backdrop:SetSize(self:GetWidth()+self.backdrop.savedWidth, self:GetHeight()+self.backdrop.savedHeight)
+	end)
+
+	tabWidget:SetFrameLevel(tabWidget:GetFrameLevel()+1)
+	tabWidget.backdrop:SetFrameLevel(tabWidget:GetFrameLevel()-1)
+
+	-- TODO jouer avec edgesize
+
 	-- // data
 
 	tabWidget.tabID = tabID
@@ -506,13 +542,10 @@ function tabsFrame:SetAlpha(alpha)
 		if tabWidget.Left and tabWidget.Middle and tabWidget.Right then
 			tabWidget.Left:SetAlpha(alpha)
 			tabWidget.LeftActive:SetAlpha(alpha)
-			tabWidget.LeftHighlight:SetAlpha(alpha)
 			tabWidget.Middle:SetAlpha(alpha)
 			tabWidget.MiddleActive:SetAlpha(alpha)
-			tabWidget.MiddleHighlight:SetAlpha(alpha)
 			tabWidget.Right:SetAlpha(alpha)
 			tabWidget.RightActive:SetAlpha(alpha)
-			tabWidget.RightHighlight:SetAlpha(alpha)
 		else
 			local name = tabWidget:GetName()
 			_G[name.."Left"]:SetAlpha(alpha)
@@ -527,26 +560,17 @@ function tabsFrame:SetAlpha(alpha)
 
 	-- overflowButtonFrame
 	if overflowButtonFrame then
-		local r, g, b = unpack{overflowButtonFrame.backdrop:GetBackdropColor()}
-		overflowButtonFrame.backdrop:SetBackdropColor(r, g, b, alpha)
-		r, g, b = unpack{overflowButtonFrame.backdrop:GetBackdropBorderColor()}
-		overflowButtonFrame.backdrop:SetBackdropBorderColor(r, g, b, alpha)
+		overflowButtonFrame.backdrop.Center:SetAlpha(alpha)
 	end
 
 	-- switchStateButtonFrame
 	if switchStateButtonFrame then
-		local r, g, b = unpack{switchStateButtonFrame.backdrop:GetBackdropColor()}
-		switchStateButtonFrame.backdrop:SetBackdropColor(r, g, b, alpha)
-		r, g, b = unpack{switchStateButtonFrame.backdrop:GetBackdropBorderColor()}
-		switchStateButtonFrame.backdrop:SetBackdropBorderColor(r, g, b, alpha)
+		switchStateButtonFrame.backdrop.Center:SetAlpha(alpha)
 	end
 
 	-- overflowList
 	if overflowList then
-		local r, g, b = unpack{overflowList:GetBackdropColor()}
-		overflowList:SetBackdropColor(r, g, b, alpha)
-		r, g, b = unpack{overflowList:GetBackdropBorderColor()}
-		overflowList:SetBackdropBorderColor(r, g, b, alpha)
+		overflowList.Center:SetAlpha(alpha)
 	end
 end
 
@@ -731,18 +755,13 @@ function tabsFrame:CreateTabsFrame()
 	-- // overflowButton / overflowButtonFrame
 	-- !! both overflowButtonFrame and overflowButtonFrame.backdrop are there only to beautify the button,
 	-- by creating a better backdrop and masking of the border
-	overflowButtonFrame = widgets:TabIconFrame(mainFrame.tdlFrame, overflowButtonSize, -overflowButtonRightOffsetX)
+	overflowButtonFrame = widgets:TabIconFrame(mainFrame.tdlFrame, overflowButtonSize, -overflowButtonRightOffsetX, overflowButtonOffsetY, 0, 4, 18, 12)
 
 	overflowList = CreateFrame("Frame", nil, UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil)
-	overflowList:SetBackdrop({
-		bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
-		edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-		tile = false, tileSize = 1, edgeSize = 12,
-		insets = { left = 2, right = 2, top = 2, bottom = 2 }
-	})
+	overflowList:SetBackdrop(enums.backdrop)
 	overflowList:SetBackdropColor(utils:ThemeDownTo01(enums.backdropColor, true))
 	overflowList:SetBackdropBorderColor(utils:ThemeDownTo01(enums.backdropBorderColor, true))
-	overflowList:SetPoint("TOPRIGHT", overflowButtonFrame, "BOTTOMRIGHT", 0, -5)
+	overflowList:SetPoint("TOPRIGHT", overflowButtonFrame, "BOTTOMRIGHT", 0, -8)
 	overflowList:SetSize(150, 1) -- the height is updated dynamically
 	overflowList:EnableMouse(true)
 	overflowList:SetClampedToScreen(true)
@@ -768,7 +787,7 @@ function tabsFrame:CreateTabsFrame()
 	end)
 
 	-- // switchStateButton (switch global/profile)
-	switchStateButtonFrame = widgets:TabIconFrame(mainFrame.tdlFrame, overflowButtonSize, -overflowButtonRightOffsetX)
+	switchStateButtonFrame = widgets:TabIconFrame(mainFrame.tdlFrame, overflowButtonSize, -overflowButtonRightOffsetX, overflowButtonOffsetY, 0, 3)
 
 	switchStateButtonFrame.btn:SetNormalTexture(enums.icons.global.info())
 	switchStateButtonFrame.btn.Texture:SetAlpha(0.9)

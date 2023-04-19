@@ -506,8 +506,8 @@ function mainFrame:Event_FrameAlphaSlider_OnValueChanged(value)
 	-- itemsList frame part
 	NysTDL.acedb.profile.frameAlpha = value
 	tdlFrame.content.menu.menuFrames[enums.menus.frameopt].frameAlphaSliderValue:SetText(value)
-	-- tdlFrame:SetBackdropColor(0, 0, 0, value/100)
-	-- tdlFrame:SetBackdropBorderColor(1, 1, 1, value/100)
+	tdlFrame.Bg:SetAlpha(value/100)
+	-- tdlFrame.NineSlice:SetAlpha(value/100)
 
 	-- description frames part
 	widgets:SetDescFramesAlpha(value)
@@ -761,6 +761,14 @@ function mainFrame:UpdateVisuals()
 	-- mainFrame:UpdateCategoryNamesColor()
 	widgets:UpdateDescFramesTitle()
 	widgets:UpdateTDLButtonColor()
+
+	-- list's title
+	local title = string.gsub(core.toc.title, "Ny's ", "")
+	if dataManager:HasGlobalData() then
+		title = title.." - "..(dataManager:IsGlobal(database.ctab()) and L["Global tabs"] or L["Profile tabs"])
+	end
+	-- title = title..dataManager:GetName(database.ctab())
+	mainFrame.tdlFrame.NineSlice.Text:SetText(title)
 end
 
 function mainFrame:DontRefreshNextTime(nb)
@@ -1114,9 +1122,6 @@ end
 function mainFrame:CreateTDLFrame()
 	-- // we create the list
 
-	-- title
-	tdlFrame.NineSlice.Text:SetText(string.gsub(core.toc.title, "Ny's ", ""))
-
 	-- properties
 	tdlFrame:SetFrameStrata("LOW")
 	tdlFrame:EnableMouse(true)
@@ -1176,7 +1181,7 @@ function mainFrame:CreateTDLFrame()
 	tdlFrame.ScrollFrame:SetClipsChildren(true)
 
 	-- view button
-	tdlFrame.viewButton = widgets:IconTooltipButton(tdlFrame.ScrollFrame, "NysTDL_ViewButton", L["Toggle simplified view"])
+	tdlFrame.viewButton = widgets:IconTooltipButton(tdlFrame.ScrollFrame, "NysTDL_ViewButton", L["Toggle menu"])
 	tdlFrame.viewButton:SetPoint("TOPRIGHT", tdlFrame.ScrollFrame, "TOPRIGHT", -2, -2)
 	tdlFrame.viewButton:SetScript("OnClick", function() mainFrame:ToggleMinimalistView() end)
 	tutorialsManager:SetPoint("introduction", "viewButton", "LEFT", tdlFrame.viewButton, "RIGHT", 18, 0)

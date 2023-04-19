@@ -520,13 +520,7 @@ function private:CreateRecoveryList()
 	tutorialsManager:SetPoint("migration", "explainFrame", "BOTTOM", frame, "TOP", 0, 20)
 
     -- background
-    frame:SetBackdrop({
-        bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
-        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-        tile = false, tileSize = 1, edgeSize = 12,
-        insets = { left = 2, right = 2, top = 2, bottom = 2 }
-    })
-
+    frame:SetBackdrop(enums.backdrop)
     frame:SetBackdropColor(0, 0, 0, 1)
     frame:SetBackdropBorderColor(1, 1, 1, 1)
 
@@ -703,13 +697,7 @@ function private:CreateWarning()
     local frame = recoveryList.warningFrame
 
     -- background
-    frame:SetBackdrop({
-        bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
-        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-        tile = false, tileSize = 1, edgeSize = 12,
-        insets = { left = 2, right = 2, top = 2, bottom = 2 }
-    })
-
+    frame:SetBackdrop(enums.backdrop)
     frame:SetBackdropColor(0, 0, 0, 1)
     frame:SetBackdropBorderColor(1, 1, 1, 1)
 

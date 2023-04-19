@@ -108,8 +108,8 @@ enums.icons = {
 		texCoords = { 0.328, 0.436, 0.015, 0.074 },
 	},
 	profile = {
-		info = function() return enums.artPath.."UIMicroMenu2x", 14, 18 end,
-		texCoords = { 0.328, 0.438, 0.43, 0.502 },
+		info = function() return enums.artPath.."UIMicroMenu2x", 14, 16.5 end,
+		texCoords = { 0.328, 0.438, 0.438, 0.502 },
 	},
 	minimap = {
 		info = function() return enums.artPath.."70_professions_scroll_03" end,
@@ -122,8 +122,14 @@ enums.icons = {
 	},
 }
 
-enums.backdropColor = { 60, 58, 53 }
-enums.backdropBorderColor = { 200, 200, 200 }
+enums.backdropColor = { 55, 53, 48 }
+enums.backdropBorderColor = { 140, 140, 140 }
+enums.backdrop = {
+	bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+	edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+	tile = false, tileSize = 1, edgeSize = 14,
+	insets = { left = 2, right = 2, top = 2, bottom = 2 }
+}
 
 -- dynamic values (still, accessible by all files)
 
