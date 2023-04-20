@@ -699,23 +699,24 @@ function private:CreateAddonOptionsTable()
 							-- / options widgets / --
 
 							lockList = {
-								order = 1.2,
+								order = 1.3,
 								type = "toggle",
 								name = L["Lock position"],
 							}, -- lockList
-							keepOpen = {
-								order = 1.3,
-								type = "toggle",
-								name = L["Stay opened"],
-								desc = L["Keeps the list opened if it was during last session"],
-								disabled = function() return NysTDL.acedb.profile.openByDefault end,
-							}, -- keepOpen
-							openByDefault = {
-								order = 1.4,
-								type = "toggle",
-								name = L["Open by default"],
-								hidden = function() return not NysTDL.acedb.profile.keepOpen end
-							}, -- openByDefault
+							openBehavior = {
+								order = 1.2,
+								type = "select",
+								name = L["Open behavior on login"],
+								values = function()
+									local openBehaviors = {
+										L["None"], -- [1]
+										L["Remember"], -- [2]
+										L["Open if not done"], -- [3]
+										L["Always open"], -- [4]
+									 }
+									return openBehaviors
+								end,
+							}, -- openBehavior
 							rememberUndo = {
 								order = 3.6,
 								type = "toggle",

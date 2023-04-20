@@ -121,9 +121,8 @@ database.defaults = {
 		rainbowSpeed = 2,
 		rememberUndo = true,
 		highlightOnFocus = true,
-		keepOpen = false,
-		openByDefault = false,
 		descriptionTooltip = true,
+		openBehavior = 1,
 
 		--'Tabs' tab
 		instantRefresh = false, -- profile-wide
