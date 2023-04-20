@@ -1,3 +1,7 @@
+#### **6.10**
+
+- Updated the "Open by default" list options and added a new one that opens the list only if it is not done
+
 #### **6.9**
 
 - Added the possibility to move tabs from the Global section to the Profile section and vice versa
