@@ -1250,9 +1250,17 @@ function mainFrame:Init()
 
 	tdlFrame:Hide() -- WoW 10.0 now requires a frame visibility update? /shrug
 
-	if NysTDL.acedb.profile.openByDefault then
-		tdlFrame:Show()
-	elseif NysTDL.acedb.profile.keepOpen then
-		tdlFrame:SetShown(lastListVisibility)
+	local openBehavior = NysTDL.acedb.profile.openBehavior
+	if openBehavior ~= 1 then
+		if openBehavior == 2 then
+			tdlFrame:SetShown(lastListVisibility)
+		elseif openBehavior == 3 then
+			local maxTime = time() + 86400 -- in the next 24 hours
+			dataManager:DoIfFoundTabMatch(maxTime, "totalUnchecked", function()
+				tdlFrame:Show()
+			end)
+		elseif openBehavior == 4 then
+			tdlFrame:Show()
+		end
 	end
 end

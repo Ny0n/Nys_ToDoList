@@ -236,7 +236,6 @@ end
 
 local changelog = {
 	-- index table (not key-value), only place here the important changes.
-	"- Added the possibility to move tabs from the Global section to the Profile section and vice versa",
 }
 
 ---Called once, when the addon gets an update.
