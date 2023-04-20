@@ -18,6 +18,11 @@ addonTable.devLocale = L
 -- "방탄소년단" test locale (:D)
 
 --/************************************************/--
+L["Change the background opacity"] = true
+L["Change the opacity for texts, buttons and other elements"] = true
+L["Name"] = true
+
+L["Toggle menu"] = true
 
 L["Open behavior on login"] = true
 L["Remember"] = true
@@ -53,9 +58,7 @@ L["Cannot remove this tab"] = true
 L["categories"] = true
 L["Categories"] = true
 L["Category"] = true
-L["Change the background opacity"] = true
 L["Change the color for the favorite items"] = true
-L["Change the opacity for texts, buttons and other elements"] = true
 L["Changes the color of the movable button if there are items left to do before tomorrow"] = true
 L["Characters: %s, Size: %sKB"] = true
 L["Chat message when logging in"] = true
@@ -155,7 +158,6 @@ L["Monday"] = true
 L["More visible remaining numbers"] = true
 L["Move down"] = true
 L["Move up"] = true
-L["Name"] = true
 L["Name cannot be empty"] = true
 L["Name is too large"] = true
 L["No"] = true
