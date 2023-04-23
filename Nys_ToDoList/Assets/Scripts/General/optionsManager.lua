@@ -698,11 +698,6 @@ function private:CreateAddonOptionsTable()
 
 							-- / options widgets / --
 
-							lockList = {
-								order = 1.3,
-								type = "toggle",
-								name = L["Lock position"],
-							}, -- lockList
 							openBehavior = {
 								order = 1.2,
 								type = "select",
@@ -717,6 +712,23 @@ function private:CreateAddonOptionsTable()
 									return openBehaviors
 								end,
 							}, -- openBehavior
+							lockList = {
+								order = 1.3,
+								type = "toggle",
+								name = L["Lock position"],
+							}, -- lockList
+							frameScale = {
+								order = 1.4,
+								type = "range",
+								name = L["Font size"],
+								min = 0.5,
+								max = 2,
+								step = 0.01,
+								set = function(info, value)
+									NysTDL.acedb.profile.frameScale = value
+									mainFrame:RefreshScale()
+								end,
+							}, -- frameScale
 							rememberUndo = {
 								order = 3.6,
 								type = "toggle",
@@ -871,6 +883,13 @@ function private:CreateAddonOptionsTable()
 								width = "full",
 								name = "",
 							}, -- spacer199
+							-- spacers
+							spacer131 = {
+								order = 1.31,
+								type = "description",
+								width = "full",
+								name = "",
+							}, -- spacer131
 							spacer199 = {
 								order = 1.99,
 								type = "description",

@@ -468,6 +468,17 @@ function mainFrame:ToggleMinimalistView(state, forceUpdate)
 	private:MenuClick()
 end
 
+function mainFrame:RefreshScale()
+	-- // content font size (scale)
+
+	local scale = NysTDL.acedb.profile.frameScale
+
+	tdlFrame.content:SetScale(scale)
+	dragndrop:SetScale(scale)
+
+	-- tutorialsManager:SetFramesScale(scale)
+end
+
 --/*******************/ EVENTS /*************************/--
 
 function mainFrame:Event_ScrollFrame_OnMouseWheel(delta)
@@ -502,6 +513,7 @@ function mainFrame:Event_FrameContentAlphaSlider_OnValueChanged(value)
 	NysTDL.acedb.profile.frameContentAlpha = value
 	tdlFrame.ScrollFrame:SetAlpha(value/100)
 	tdlFrame.resizeButton:SetAlpha(value/100)
+	tdlFrame.viewButton:SetAlpha(value/100)
 	tdlFrame.ScrollBar:SetAlpha(value/100)
 	tdlFrame.CloseButton:SetAlpha(value/100)
 	tdlFrame.NineSlice:SetAlpha(value/100) -- that's why the min opacity is 0.6!
@@ -527,20 +539,12 @@ function mainFrame:Event_TDLFrame_OnSizeChanged(width, height)
 	NysTDL.acedb.profile.frameSize.width = width
 	NysTDL.acedb.profile.frameSize.height = height
 
-	tdlFrame.content:SetWidth(width-50)
+	-- tell the content to resize (not using points because it's the scroll child of the scroll frame)
+	tdlFrame.scrollChild:SetWidth(width-50)
 
-	-- scaling
+	-- and tell the tabs to resize as well
 	local scale = width/enums.tdlFrameDefaultWidth
 	tabsFrame:SetScale(scale)
-	dragndrop:SetScale(1)
-
-	-- mainFrame:Refresh()
-	do return end
-
-	self.ScrollFrame:SetScale(scale)
-	self.resizeButton:SetScale(scale)
-	dragndrop:SetScale(scale)
-	tutorialsManager:SetFramesScale(scale)
 end
 
 function mainFrame:Event_TDLFrame_OnUpdate()
@@ -936,13 +940,14 @@ end
 function private:GenerateFrameContent()
 	-- // generating the content (top to bottom)
 
-	-- creating content, scroll child of ScrollFrame (everything will be inside of it)
-	tdlFrame.content = CreateFrame("Frame", nil, tdlFrame.ScrollFrame)
-	-- tdlFrame.content:SetPoint("TOPLEFT", tdlFrame.ScrollFrame, "TOPLEFT", 4, - 4)
-	-- tdlFrame.content:SetPoint("BOTTOMRIGHT", tdlFrame.ScrollFrame, "BOTTOMRIGHT", - 4, 4)
-	-- tdlFrame.content:SetSize(enums.tdlFrameDefaultWidth-30, 1) -- y is determined by the elements inside of it
-	tdlFrame.content:SetSize(enums.tdlFrameDefaultWidth-50, 1)
-	tdlFrame.ScrollFrame:SetScrollChild(tdlFrame.content)
+	-- creating the scroll child, whose width will be manually controlled for word wrap purposes
+	tdlFrame.scrollChild = CreateFrame("Frame", nil, tdlFrame.ScrollFrame)
+	tdlFrame.scrollChild:SetHeight(1) -- y is determined by the elements inside of it, this is just to make the frame visible. Also, x is set on resize so no need to set it here
+	tdlFrame.ScrollFrame:SetScrollChild(tdlFrame.scrollChild)
+
+	-- creating content, child of scrollChild which is scroll child of ScrollFrame (everything will be inside of content)
+	tdlFrame.content = CreateFrame("Frame", nil, tdlFrame.scrollChild)
+	tdlFrame.content:SetAllPoints(tdlFrame.scrollChild)
 	local content = tdlFrame.content
 
 	content.menu = CreateFrame("Frame", nil, content)
@@ -1137,13 +1142,13 @@ function mainFrame:CreateTDLFrame()
 	tdlFrame.ScrollFrame:SetClipsChildren(true)
 
 	-- view button
-	tdlFrame.viewButton = widgets:IconTooltipButton(tdlFrame.ScrollFrame, "NysTDL_ViewButton", L["Toggle menu"])
-	tdlFrame.viewButton:SetPoint("TOPRIGHT", tdlFrame.ScrollFrame, "TOPRIGHT", -2, -2)
+	tdlFrame.viewButton = widgets:IconTooltipButton(tdlFrame, "NysTDL_ViewButton", L["Toggle menu"])
+	tdlFrame.viewButton:SetPoint("TOPRIGHT", tdlFrame, "TOPRIGHT", -6, -26)
 	tdlFrame.viewButton:SetScript("OnClick", function() mainFrame:ToggleMinimalistView() end)
 	tutorialsManager:SetPoint("introduction", "viewButton", "LEFT", tdlFrame.viewButton, "RIGHT", 18, 0)
 
 	tdlFrame.ScrollBar:ClearAllPoints()
-	tdlFrame.ScrollBar:SetPoint("TOPLEFT", tdlFrame.ScrollFrame, "TOPRIGHT", -19, -30)
+	tdlFrame.ScrollBar:SetPoint("TOPLEFT", tdlFrame, "TOPRIGHT", -23, -54)
 	tdlFrame.ScrollBar:Init(0.1, 0.1)
 
 	tdlFrame.ScrollBar:RegisterCallback("OnScroll", function(_, scrollPercentage)
@@ -1241,6 +1246,7 @@ function mainFrame:Init()
 
 	-- we resize and scale the frame
 	tdlFrame:SetSize(NysTDL.acedb.profile.frameSize.width, NysTDL.acedb.profile.frameSize.height)
+	mainFrame:RefreshScale()
 
 	-- we reposition the frame
 	local points = NysTDL.acedb.profile.framePos

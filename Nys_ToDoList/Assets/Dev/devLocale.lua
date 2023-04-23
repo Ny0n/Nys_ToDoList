@@ -22,6 +22,7 @@ L["Change the background opacity"] = true
 L["Change the opacity for texts, buttons and other elements"] = true
 L["Name"] = true
 
+L["Font size"] = true
 L["Toggle menu"] = true
 
 L["Open behavior on login"] = true
