@@ -28,10 +28,10 @@ local normalAlpha = 1
 local selectedDimAlpha = 0 -- TDLATER glow
 local forbiddenDimAlpha = 0.3
 
-local catTopPos = { 4, enums.ofsyCat/2 }
-local catBottomPos = { 4, -enums.ofsyCat/2 }
-local catItemPos = { enums.ofsxContent, -enums.ofsyCatContent/2+4 }
+local catTopPos = { 4, enums.ofsyCat/2+2 }
+local catItemPos = { enums.ofsxContent, -enums.ofsyCatContent/2+3 }
 local itemPos = { 0, -enums.ofsyContent/2+4 }
+local catBottomPos = { 4, -enums.ofsyCat/2 }
 local itemCatPos = { -enums.ofsxContent+4, -enums.ofsyContentCat/2 }
 
 -- drag&drop data
@@ -174,40 +174,42 @@ function private:RecursiveUpdate(catWidget, w)
 	local catID, catData, newDropFrame = catWidget.catID, catWidget.catData
 	local contentWidgets = mainFrame:GetContentWidgets()
 
-	if not catData.closedInTabIDs[currentTab] then -- if the cat is not closed
-		newDropFrame = dragndrop:CreateDropFrame(catWidget, unpack(catItemPos)) -- /*item/*cat/ first pos, under the cat
-		dragndrop:SetDropFrameData(newDropFrame, currentTab, catID, 1)
-		tinsert(favsDropFrames, newDropFrame) -- favs can always be placed first
-		if dataManager:GetNextFavPos(catID) == 1 then
-			tinsert(itemsDropFrames, newDropFrame) -- and normal items only if there are no favs
-		end
-		if private:IsCatDropValid(catID) then
-			tinsert(categoryDropFrames, newDropFrame)
-		end
+	if catData.closedInTabIDs[currentTab] then -- if the cat is not closed
+		return
+	end
 
-		-- content widgets loop
-		for contentOrder,contentID in ipairs(catData.orderedContentIDs) do -- for everything in a base category
-			local contentWidget = contentWidgets[contentID]
-			w.lastWidget = contentWidget
+	newDropFrame = dragndrop:CreateDropFrame(catWidget, true, unpack(catItemPos)) -- /*item/*cat/ first pos, under the cat
+	dragndrop:SetDropFrameData(newDropFrame, currentTab, catID, 1)
+	tinsert(favsDropFrames, newDropFrame) -- favs can always be placed first
+	if dataManager:GetNextFavPos(catID) == 1 then
+		tinsert(itemsDropFrames, newDropFrame) -- and normal items only if there are no favs
+	end
+	if private:IsCatDropValid(catID) then
+		tinsert(categoryDropFrames, newDropFrame)
+	end
 
-			if not dataManager:IsHidden(contentID, currentTab) then -- since we are in edit mode when drag & dropping, this line doesn't really matter
-				if contentWidget.enum == enums.category then -- sub-category
-					private:RecursiveUpdate(contentWidget, w)
-				elseif contentWidget.enum == enums.item then -- item
-					newDropFrame = dragndrop:CreateDropFrame(contentWidget, unpack(itemPos)) -- /*item/*cat/ under each item/cat
-					dragndrop:SetDropFrameData(newDropFrame, currentTab, catID, contentOrder+1)
-					if contentWidget.itemData.favorite then
-						tinsert(favsDropFrames, newDropFrame) -- we can always place a fav item below a fav item
-						if dataManager:GetNextFavPos(catID) == contentOrder+1 then -- if it's the last fav in the cat, we can drop a normal item below it as well
-							tinsert(itemsDropFrames, newDropFrame)
-						end
-					else
-						tinsert(itemsDropFrames, newDropFrame) -- we can always place a normal item below a normal item
+	-- content widgets loop
+	for contentOrder,contentID in ipairs(catData.orderedContentIDs) do -- for everything in a base category
+		local contentWidget = contentWidgets[contentID]
+		w.lastWidget = contentWidget
+
+		if not dataManager:IsHidden(contentID, currentTab) then -- since we are in edit mode when drag & dropping, this line doesn't really matter
+			if contentWidget.enum == enums.category then -- sub-category
+				private:RecursiveUpdate(contentWidget, w)
+			elseif contentWidget.enum == enums.item then -- item
+				newDropFrame = dragndrop:CreateDropFrame(contentWidget, true, unpack(itemPos)) -- /*item/*cat/ under each item/cat
+				dragndrop:SetDropFrameData(newDropFrame, currentTab, catID, contentOrder+1)
+				if contentWidget.itemData.favorite then
+					tinsert(favsDropFrames, newDropFrame) -- we can always place a fav item below a fav item
+					if dataManager:GetNextFavPos(catID) == contentOrder+1 then -- if it's the last fav in the cat, we can drop a normal item below it as well
+						tinsert(itemsDropFrames, newDropFrame)
 					end
+				else
+					tinsert(itemsDropFrames, newDropFrame) -- we can always place a normal item below a normal item
+				end
 
-					if private:IsCatDropValid(catID) then
-						tinsert(categoryDropFrames, newDropFrame) -- we can place a category as a sub-cat anywhere, considering it's not inside itself
-					end
+				if private:IsCatDropValid(catID) then
+					tinsert(categoryDropFrames, newDropFrame) -- we can place a category as a sub-cat anywhere, considering it's not inside itself
 				end
 			end
 		end
@@ -250,7 +252,7 @@ function dragndrop:UpdateDropFrames()
 		w.lastWidget = catWidget
 
 		if not dataManager:IsHidden(catID, currentTab) then
-			local newDropFrame = dragndrop:CreateDropFrame(catWidget, unpack(catTopPos)) -- /*cat/ over each cat
+			local newDropFrame = dragndrop:CreateDropFrame(catWidget, false, unpack(catTopPos)) -- /*cat/ over each cat
 			dragndrop:SetDropFrameData(newDropFrame, currentTab, nil, catOrder) -- no parent cat (base cat)
 			tinsert(categoryDropFrames, newDropFrame)
 
@@ -270,13 +272,13 @@ function dragndrop:UpdateDropFrames()
 			catID = w.lastWidget.itemData.catID
 		end
 
-		local newDropFrame = dragndrop:CreateDropFrame(w.lastWidget, unpack(offset)) -- /*cat/ under the last category
+		local newDropFrame = dragndrop:CreateDropFrame(w.lastWidget, true, unpack(offset)) -- /*cat/ under the last category
 		dragndrop:SetDropFrameData(newDropFrame, currentTab, nil, dataManager:GetPosData(catID, nil, true)+1) -- no parent cat (base cat)
 		tinsert(categoryDropFrames, newDropFrame)
 	end
 end
 
-function dragndrop:CreateDropFrame(parent, ofsx, ofsy)
+function dragndrop:CreateDropFrame(parent, isUnder, ofsx, ofsy)
 	-- here we get a drop frame (basically a drop point), or create one if it doesn't exist
 	dropFrameNb = dropFrameNb + 1
 
@@ -299,7 +301,7 @@ function dragndrop:CreateDropFrame(parent, ofsx, ofsy)
 
 	dropFrame:ClearAllPoints()
 	dropFrame:SetParent(parent)
-	dropFrame:SetPoint("CENTER", parent, "CENTER", ofsx, ofsy) -- LIST CS
+	dropFrame:SetPoint("CENTER", parent.heightFrame, isUnder and "BOTTOMLEFT" or "TOPLEFT", ofsx, ofsy) -- LIST CS
 	return dropFrame
 end
 
@@ -482,7 +484,9 @@ function private:DragMouseStart()
 
 	local cursorX, cursorY = private:GetCursorScaledPosition() -- UIPARENT CS
 	draggingWidget:ClearAllPoints()
-	draggingWidget:SetPoint("CENTER", UIParent, "BOTTOMLEFT", cursorX-ofsx, cursorY-ofsy) -- so we can snap the widget to the cursor at the same place that we clicked on (like a typical drag&drop)
+	draggingWidget.interactiveLabel:ClearPoint("RIGHT")
+	draggingWidget.interactiveLabel:SetWidth(draggingWidget.interactiveLabel.Text:GetWrappedWidth())
+	draggingWidget:SetPoint("CENTER", nil, "BOTTOMLEFT", cursorX-ofsx, cursorY-ofsy) -- so we can snap the widget to the cursor at the same place that we clicked on (like a typical drag&drop)
 
 	draggingWidget:StartMoving()
 	draggingWidget:SetUserPlaced(false)

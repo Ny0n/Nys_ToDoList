@@ -736,10 +736,10 @@ function private:LoadList()
 
 	tdlFrame.content.dummyBottomFrame:SetPoint("TOPLEFT", p.relativeFrame, "BOTTOMLEFT", p.offsetX, p.offsetY)
 
-	-- -- drag&drop
-	-- if dragndrop.dragging then
-	-- 	dragndrop:UpdateDropFrames()
-	-- end
+	-- drag&drop
+	if dragndrop.dragging then
+		dragndrop:UpdateDropFrames()
+	end
 end
 
 -- // frame refresh
