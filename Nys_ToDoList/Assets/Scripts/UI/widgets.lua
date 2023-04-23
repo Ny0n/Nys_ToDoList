@@ -438,15 +438,45 @@ function widgets:NoPointsLabel(relativeFrame, name, text, font)
 	return label
 end
 
-function widgets:NoPointsInteractiveLabel(relativeFrame, name, text, fontObjectString)
-	local interactiveLabel = CreateFrame("Frame", name, relativeFrame, "NysTDL_InteractiveLabel")
+function widgets:NoPointsInteractiveLabel(parent, pointLeft, pointRight, name, text, fontObjectString)
+	local interactiveLabel = CreateFrame("Frame", name, parent, "NysTDL_InteractiveLabel")
+	interactiveLabel:SetPoint("LEFT", pointLeft, "RIGHT", 0, 0) -- width
+	interactiveLabel:SetPoint("RIGHT", pointRight, "RIGHT", 0, 0) -- width
+	interactiveLabel:SetHeight(parent:GetHeight()) -- height
+
+	parent.heightFrame = CreateFrame("Frame", nil, parent)
+	parent.heightFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
+	parent.heightFrame:SetWidth(1) -- height is set just below
+
 	interactiveLabel.Text:SetFontObject(fontObjectString)
 	interactiveLabel.Text:SetText(text)
-	interactiveLabel:SetSize(interactiveLabel.Text:GetWidth(), interactiveLabel.Text:GetHeight()) -- we init the size to the text's size
+	-- interactiveLabel.Text:SetWordWrap(false)
+	-- interactiveLabel.Text:SetIndentedWordWrap(true)
+	-- interactiveLabel.Text:SetNonSpaceWrap(true)
 
-	-- this updates the frame's size each time the text's size is changed
-	interactiveLabel.Button:SetScript("OnSizeChanged", function(self, width, height)
-		self:GetParent():SetSize(width, height)
+	local limitWrapLineCount = 2
+	local height = limitWrapLineCount * interactiveLabel.Text:GetLineHeight() + (limitWrapLineCount-1) * interactiveLabel.Text:GetSpacing()
+	interactiveLabel.Text:SetHeight(height)
+
+	interactiveLabel:SetScript("OnSizeChanged", function(self, width, height)
+		if width < 50 then width = 50 end
+
+		interactiveLabel.Text:SetWidth(width) -- we do it a first time to update the wrapped state
+		interactiveLabel.Button:SetSize(interactiveLabel.Text:GetWrappedWidth(), interactiveLabel.Text:GetStringHeight())
+
+		-- if after that the text is all on one line (no wrap),
+		-- we set its width to be its real visible size, not the one of the interactiveLabel
+		-- (so that the interactive zone (the button) doesn't get bigger than the actual size of the text)
+		if interactiveLabel.Text:GetNumLines() == 1 then
+			interactiveLabel.Text:SetWidth(interactiveLabel.Text:GetWrappedWidth())
+		end
+
+		parent.heightFrame:SetHeight(self.Text:GetStringHeight())
+
+		if parent.enum == enums.item then
+			private.Item_SetCheckBtnExtended(parent, not mainFrame.editMode)
+			-- print(interactiveLabel.Text:GetText(), "--", string.format("%.f", interactiveLabel.Text:GetHeight()), "--", string.format("%.f", height), "--", string.format("%.f", interactiveLabel.Text:GetStringHeight()), "--", interactiveLabel.Text:GetNumLines(), "--", interactiveLabel.Text:GetStringHeight())
+		end
 	end)
 
 	return interactiveLabel
@@ -883,17 +913,17 @@ contentWidgets = {
 function private:Category_SetEditMode(state)
 	if state then
 		self.editModeFrame:Show()
-		self.interactiveLabel:SetPoint("LEFT", self.editModeFrame, "RIGHT", 0, 0)
+		self.startPosFrame:SetPoint("LEFT", self, "LEFT", enums.ofsxItemIcons, 0)
 		self.interactiveLabel.Button:GetScript("OnLeave")(self.interactiveLabel.Button)
 	else
 		self.editModeFrame:Hide()
-		self.interactiveLabel:SetPoint("LEFT", self, "LEFT", 0, 0)
+		self.startPosFrame:SetPoint("LEFT", self, "LEFT", 0, 0)
 	end
 end
 
 function widgets:CategoryWidget(catID, parentFrame)
 	local categoryWidget = CreateFrame("Frame", nil, parentFrame, nil)
-	categoryWidget:SetSize(1, 1) -- so that its children are visible
+	categoryWidget:SetSize(1, 16) -- so that its children are visible
 
 	-- // data
 
@@ -905,8 +935,13 @@ function widgets:CategoryWidget(catID, parentFrame)
 
 	-- // frames
 
+	categoryWidget.startPosFrame = CreateFrame("Frame", nil, categoryWidget) -- frame to determine where we start the checkbox, or the label if we are in a non-checkable item
+	categoryWidget.startPosFrame:SetPoint("LEFT", categoryWidget, "LEFT", 0, 0)
+	categoryWidget.startPosFrame:SetSize(categoryWidget:GetSize())
+
 	-- / interactiveLabel
-	categoryWidget.interactiveLabel = widgets:NoPointsInteractiveLabel(categoryWidget, nil, catData.name, "GameFontHighlightLarge")
+	categoryWidget.interactiveLabel = widgets:NoPointsInteractiveLabel(categoryWidget, categoryWidget.startPosFrame, parentFrame, nil, catData.name, "GameFontNormalLargeLeftTop")
+	categoryWidget.interactiveLabel.Text:SetTextColor(1, 1, 1)
 
 	-- categoryWidget.divider = widgets:HorizontalDivider(categoryWidget)
 	-- categoryWidget.divider:SetPoint("LEFT", categoryWidget.interactiveLabel, "BOTTOMLEFT", 0, -4)
@@ -953,7 +988,7 @@ function widgets:CategoryWidget(catID, parentFrame)
 	-- / editModeFrame
 	categoryWidget.editModeFrame = CreateFrame("Frame", nil, categoryWidget, nil)
 	categoryWidget.editModeFrame:SetPoint("LEFT", categoryWidget, "LEFT", 0, 0)
-	categoryWidget.editModeFrame:SetSize(20, 20) -- CVAL
+	categoryWidget.editModeFrame:SetSize(categoryWidget:GetSize())
 	local emf = categoryWidget.editModeFrame
 
 	-- / removeBtn
@@ -1079,8 +1114,7 @@ contentWidgets = {
 function private:Item_SetCheckBtnExtended(state)
 	if state then
 		if not utils:HasHyperlink(self.itemData.name) then -- so that we can actually click on the hyperlinks
-			-- self.checkBtn:SetHitRectInsets(0, -enums.maxNameWidth[enums.item], 0, 0)
-			self.checkBtn:SetHitRectInsets(0, -widgets:GetWidth(self.itemData.name), 0, 0)
+			self.checkBtn:SetHitRectInsets(0, -self.interactiveLabel.Text:GetWrappedWidth(), 0, -(self.interactiveLabel.Text:GetStringHeight()-self.interactiveLabel.Text:GetLineHeight()))
 		end
 	else
 		self.checkBtn:SetHitRectInsets(0, 0, 0, 0)
@@ -1092,22 +1126,22 @@ function private:Item_SetEditMode(state)
 		self.editModeFrame:Show()
 
 		self.favoriteBtn:SetParent(self.editModeFrame)
-		self.favoriteBtn:SetPoint("LEFT", self.removeBtn, "LEFT", 20, -2)
+		self.favoriteBtn:SetPoint("LEFT", self, "LEFT", enums.ofsxItemIcons, -2)
 		self.descBtn:SetParent(self.editModeFrame)
-		self.descBtn:SetPoint("LEFT", self.favoriteBtn, "LEFT", 20, 3)
+		self.descBtn:SetPoint("LEFT", self, "LEFT", enums.ofsxItemIcons*2, 1)
 
-		self.checkBtn:SetPoint("LEFT", self.editModeFrame, "RIGHT", 0, 0)
+		self.startPosFrame:SetPoint("LEFT", self, "LEFT", enums.ofsxItemIcons*3, 0)
 
 		self.interactiveLabel.Button:Show()
 	else
 		self.editModeFrame:Hide()
 
 		self.favoriteBtn:SetParent(self)
-		self.favoriteBtn:SetPoint("LEFT", self, "LEFT", enums.ofsxItemIcons, -2)
+		self.favoriteBtn:SetPoint("LEFT", self, "LEFT", 0, -2)
 		self.descBtn:SetParent(self)
-		self.descBtn:SetPoint("LEFT", self, "LEFT", enums.ofsxItemIcons, 0)
+		self.descBtn:SetPoint("LEFT", self, "LEFT", 0, 1)
 
-		self.checkBtn:SetPoint("LEFT", self, "LEFT", 0, 0)
+		self.startPosFrame:SetPoint("LEFT", self, "LEFT", enums.ofsxItemIcons, 0)
 
 		self.interactiveLabel.Button:Hide()
 	end
@@ -1118,7 +1152,7 @@ end
 
 function widgets:ItemWidget(itemID, parentFrame)
 	local itemWidget = CreateFrame("Frame", nil, parentFrame, nil)
-	itemWidget:SetSize(1, 1) -- so that its children are visible
+	itemWidget:SetSize(1, 16) -- so that its children are visible
 
 	-- // data
 
@@ -1129,20 +1163,20 @@ function widgets:ItemWidget(itemID, parentFrame)
 
 	-- // frames
 
+	itemWidget.startPosFrame = CreateFrame("Frame", nil, itemWidget) -- frame to determine where we start the checkbox, or the label if we are in a non-checkable item
+	itemWidget.startPosFrame:SetPoint("LEFT", itemWidget, "LEFT", enums.ofsxItemIcons, 0)
+	itemWidget.startPosFrame:SetSize(itemWidget:GetSize())
+
 	-- / checkBtn
 	itemWidget.checkBtn = CreateFrame("CheckButton", nil, itemWidget, "UICheckButtonTemplate")
-	-- itemWidget.checkBtn = CreateFrame("CheckButton", nil, itemWidget, "ChatConfigCheckButtonTemplate")
-	-- itemWidget.checkBtn = CreateFrame("CheckButton", nil, itemWidget, "OptionsCheckButtonTemplate")
+	itemWidget.checkBtn:SetPoint("LEFT", itemWidget.startPosFrame, "LEFT", 0, 0)
 	itemWidget.checkBtn:SetScript("OnClick", function() dataManager:ToggleChecked(itemID) end)
-	-- itemWidget.checkBtn:SetPoint("LEFT", itemWidget, "LEFT", 0, 0)
-	-- itemWidget.checkBtn:SetSize(28, 28)
 	itemWidget.SetCheckBtnExtended = private.Item_SetCheckBtnExtended
-	itemWidget:SetCheckBtnExtended(true)
 
 	-- / interactiveLabel
-	itemWidget.interactiveLabel = widgets:NoPointsInteractiveLabel(itemWidget, nil, itemData.name, "GameFontNormalLarge")
-	itemWidget.interactiveLabel:SetPoint("LEFT", itemWidget.checkBtn, "RIGHT", 0, 0)
+	itemWidget.interactiveLabel = widgets:NoPointsInteractiveLabel(itemWidget, itemWidget.checkBtn, parentFrame, nil, itemData.name, "GameFontNormalLargeLeftTop")
 	widgets:SetHyperlinksEnabled(itemWidget.interactiveLabel, true)
+	itemWidget:SetCheckBtnExtended(true)
 
 	-- / interactiveLabel.Text
 	if utils:HasHyperlink(itemData.name) then -- this is for making more space for items that have hyperlinks in them
@@ -1158,12 +1192,12 @@ function widgets:ItemWidget(itemID, parentFrame)
 	-- / editModeFrame
 	itemWidget.editModeFrame = CreateFrame("Frame", nil, itemWidget, nil)
 	itemWidget.editModeFrame:SetPoint("LEFT", itemWidget, "LEFT", 0, 0)
-	itemWidget.editModeFrame:SetSize(40, 20) -- CVAL
+	itemWidget.editModeFrame:SetSize(itemWidget:GetSize())
 	local emf = itemWidget.editModeFrame
 
 	-- / removeBtn
 	itemWidget.removeBtn = widgets:RemoveButton(itemWidget, emf)
-	itemWidget.removeBtn:SetPoint("LEFT", emf, "LEFT", enums.ofsxItemIcons, 0)
+	itemWidget.removeBtn:SetPoint("LEFT", emf, "LEFT", 0, 1)
 	itemWidget.removeBtn:SetScript("OnClick", function() dataManager:DeleteItem(itemID) end)
 
 	-- / favoriteBtn

@@ -57,12 +57,12 @@ enums.tdlFrameDefaultWidth = 340
 enums.tdlFrameDefaultHeight = 400
 enums.rightPointDistance = 297
 
-enums.ofsxContent = 30
-enums.ofsyCatContent = 27
-enums.ofsyCat = 26
-enums.ofsyContentCat = 27
-enums.ofsyContent = 22
-enums.ofsxItemIcons = -18
+enums.ofsxContent = 15
+enums.ofsyCatContent = 10
+enums.ofsyCat = 5
+enums.ofsyContentCat = 10
+enums.ofsyContent = 6
+enums.ofsxItemIcons = 20
 
 enums.hyperlinkNameBonus = 65
 enums.maxNameWidth = {

@@ -527,12 +527,19 @@ function mainFrame:Event_TDLFrame_OnSizeChanged(width, height)
 	NysTDL.acedb.profile.frameSize.width = width
 	NysTDL.acedb.profile.frameSize.height = height
 
+	tdlFrame.content:SetWidth(width-50)
+
 	-- scaling
 	local scale = width/enums.tdlFrameDefaultWidth
+	tabsFrame:SetScale(scale)
+	dragndrop:SetScale(1)
+
+	-- mainFrame:Refresh()
+	do return end
+
 	self.ScrollFrame:SetScale(scale)
 	self.resizeButton:SetScale(scale)
 	dragndrop:SetScale(scale)
-	tabsFrame:SetScale(scale)
 	tutorialsManager:SetFramesScale(scale)
 end
 
@@ -631,16 +638,16 @@ function private:RecursiveLoad(tabID, tabData, catWidget, p)
 
 	-- if the cat is closed, ignore it
 	if catData.closedInTabIDs[tabID] then
-		p.newY = p.newY - enums.ofsyCat
+		p.offsetY = -enums.ofsyCat
 		return
 	end
-
-	p.newY = p.newY - enums.ofsyCatContent
 
 	-- emptyLabel : we show it if there's nothing in the category
 	if not next(catData.orderedContentIDs) then
 		catWidget.emptyLabel:Show()
-		p.newY = p.newY - enums.ofsyContentCat
+		p.relativeFrame = catWidget.emptyLabel
+		p.offsetX = -enums.ofsxContent
+		p.offsetY = -enums.ofsyContentCat
 		return
 	end
 
@@ -650,7 +657,9 @@ function private:RecursiveLoad(tabID, tabData, catWidget, p)
 			if not dataManager:IsParent(catWidget.catID) then
 				if dataManager:IsCategoryCompleted(catWidget.catID) then
 					catWidget.hiddenLabel:Show()
-					p.newY = p.newY - enums.ofsyContentCat
+					p.relativeFrame = catWidget.hiddenLabel
+					p.offsetX = -enums.ofsxContent
+					p.offsetY = -enums.ofsyContentCat
 					return
 				end
 			end
@@ -658,24 +667,27 @@ function private:RecursiveLoad(tabID, tabData, catWidget, p)
 	end
 
 	-- then we show everything there is to show in the category
-	p.newX = p.newX + enums.ofsxContent
+	p.offsetX = enums.ofsxContent
+	p.offsetY = -enums.ofsyCatContent
 	for contentOrder,contentID in ipairs(catData.orderedContentIDs) do -- for everything in a category
 		local contentWidget = contentWidgets[contentID]
 		if not dataManager:IsHidden(contentID, tabID) then -- if it's not hidden, we show the corresponding widget
-			contentWidget:SetPoint("TOPLEFT", tdlFrame.content.loadOrigin, "TOPLEFT", p.newX, p.newY)
+			contentWidget:SetPoint("TOPLEFT", p.relativeFrame, "BOTTOMLEFT", p.offsetX, p.offsetY)
 			contentWidget:Show()
+
+			p.relativeFrame = contentWidget.heightFrame
+			p.offsetX = 0
 
 			if contentWidget.enum == enums.category then -- sub-category
 				private:RecursiveLoad(tabID, tabData, contentWidget, p)
 			elseif contentWidget.enum == enums.item then -- item
-				p.newY = p.newY - enums.ofsyContent
+				p.offsetY = -enums.ofsyContent
 			end
 		end
 	end
-	p.newX = p.newX - enums.ofsxContent
-
-	p.newY = p.newY + enums.ofsyContent -- TDLATER take last used offset for sub-cats? (not sure of this comment tho)
-	p.newY = p.newY - enums.ofsyContentCat
+	p.offsetX = -enums.ofsxContent
+	p.offsetY = -enums.ofsyContentCat
+	-- p.offsetY = enums.ofsyContent -- TDLATER take last used offset for sub-cats? (not sure of this comment tho)
 end
 
 function private:LoadList()
@@ -692,8 +704,9 @@ function private:LoadList()
 	local tabID = database.ctab()
 	local tabData = select(3, dataManager:Find(tabID))
 	local p = { -- pos table
-		newX = 0,
-		newY = 0,
+		relativeFrame = tdlFrame.content.loadOrigin,
+		offsetX = 0,
+		offsetY = 0,
 	}
 
 	-- base category widgets loop
@@ -701,16 +714,13 @@ function private:LoadList()
 		local catWidget = contentWidgets[catID]
 
 		if not dataManager:IsHidden(catID, tabID) then
-			catWidget:SetPoint("TOPLEFT", tdlFrame.content.loadOrigin, "TOPLEFT", p.newX, p.newY)
+			catWidget:SetPoint("TOPLEFT", p.relativeFrame, "BOTTOMLEFT", p.offsetX, p.offsetY)
 			catWidget:Show()
+
+			p.relativeFrame = catWidget.heightFrame
 
 			if catOrder == 1 then -- if it's the first loaded cat widget
 				tutorialsManager:SetPoint("introduction", "addItem", "RIGHT", catWidget, "LEFT", -23, 0) -- we put the corresponding tuto on it
-				-- local firstItemWidget = mainFrame:GetFirstShownItemWidget()
-				-- tutorialsManager:SetPoint("editmode", "delete", "RIGHT", firstItemWidget, "LEFT", 0, 0)
-				-- tutorialsManager:SetPoint("editmode", "favdesc", "RIGHT", firstItemWidget, "LEFT", math.abs(enums.ofsxItemIcons), 0)
-				-- tutorialsManager:SetPoint("editmode", "rename", "TOP", firstItemWidget.interactiveLabel, "BOTTOM", 0, 0)
-				-- tutorialsManager:SetPoint("editmode", "sort", "BOTTOM", firstItemWidget.interactiveLabel, "TOP", 0, 0)
 			end
 
 			if catWidget.catData.originalTabID == tabID then
@@ -724,12 +734,12 @@ function private:LoadList()
 		end
 	end
 
-	tdlFrame.content.dummyBottomFrame:SetPoint("TOPLEFT", tdlFrame.content.loadOrigin, "TOPLEFT", p.newX, p.newY)
+	tdlFrame.content.dummyBottomFrame:SetPoint("TOPLEFT", p.relativeFrame, "BOTTOMLEFT", p.offsetX, p.offsetY)
 
-	-- drag&drop
-	if dragndrop.dragging then
-		dragndrop:UpdateDropFrames()
-	end
+	-- -- drag&drop
+	-- if dragndrop.dragging then
+	-- 	dragndrop:UpdateDropFrames()
+	-- end
 end
 
 -- // frame refresh
@@ -927,7 +937,10 @@ function private:GenerateFrameContent()
 
 	-- creating content, scroll child of ScrollFrame (everything will be inside of it)
 	tdlFrame.content = CreateFrame("Frame", nil, tdlFrame.ScrollFrame)
-	tdlFrame.content:SetSize(enums.tdlFrameDefaultWidth-40, 1) -- y is determined by the elements inside of it
+	-- tdlFrame.content:SetPoint("TOPLEFT", tdlFrame.ScrollFrame, "TOPLEFT", 4, - 4)
+	-- tdlFrame.content:SetPoint("BOTTOMRIGHT", tdlFrame.ScrollFrame, "BOTTOMRIGHT", - 4, 4)
+	-- tdlFrame.content:SetSize(enums.tdlFrameDefaultWidth-30, 1) -- y is determined by the elements inside of it
+	tdlFrame.content:SetSize(enums.tdlFrameDefaultWidth-50, 1)
 	tdlFrame.ScrollFrame:SetScrollChild(tdlFrame.content)
 	local content = tdlFrame.content
 
