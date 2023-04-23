@@ -718,6 +718,7 @@ function private:LoadList()
 			catWidget:Show()
 
 			p.relativeFrame = catWidget.heightFrame
+			p.offsetX = 0
 
 			if catOrder == 1 then -- if it's the first loaded cat widget
 				tutorialsManager:SetPoint("introduction", "addItem", "RIGHT", catWidget, "LEFT", -23, 0) -- we put the corresponding tuto on it
