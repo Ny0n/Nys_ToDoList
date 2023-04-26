@@ -49,7 +49,7 @@ importexport.deflateMethod = {
 local IEFrame
 local selectedTabIDs = {}
 local TabsSelectDropDown = nil
-local globalButton, profileButton, titleButton
+local globalButton, profileButton--[[, titleButton]]
 
 importexport.dataToOverrideOnImport = 1
 importexport.dataToOverrideOnImportTypes = {
@@ -102,7 +102,7 @@ end
 
 ---Imports the given encoded text, using the given deflate method.
 ---Order of operation: Decode -> Decompress -> Deserialize -> return
----@param text string
+---@param prefixed string
 ---@param method importexport.deflateMethod
 ---@return any decodedData
 function importexport:Import(prefixed, method)
@@ -607,7 +607,7 @@ function private.TabsSelectMenuInitialize(self, level)
 		info.isTitle = true
 		info.text = L["Select tabs"]
 		info.notCheckable = true
-		titleButton = UIDropDownMenu_AddButton(info, level)
+		--[[titleButton = ]]UIDropDownMenu_AddButton(info, level)
 
 		-- -- separator
 		-- UIDropDownMenu_AddSeparator(level)
