@@ -196,10 +196,9 @@
 		</KeyValues>
 		<Layers>
 			<Layer level="OVERLAY">
-				<Texture parentKey="Icon" file="Interface\Transmogrify\Transmogrify">
-					<TexCoords left="0.538" right="0.575" top="0.255" bottom="0.288"/>
+				<Texture parentKey="Icon" atlas="transmog-icon-revert-small">
 					<Color r="0.9" g="1" b="1"/>
-					<Size x="15" y="14"/>
+					<Size x="20" y="20"/>
 					<Anchors>
 						<Anchor point="CENTER"/>
 					</Anchors>
