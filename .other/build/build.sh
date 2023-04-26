@@ -183,16 +183,13 @@ function makeLinks()
 	esac
 	test -d "$wowdir" || errormsg "Invalid WoW directory path" "vars" || return
 	test "${#wowversions[@]}" -ne 0 || errormsg "No WoW version has been specified" "vars" || return
-	# for element in "${wowversions[@]}"; do
-	# 	test -n "$element" || errormsg "The wow versions " "vars" || return
-	# done
 
 	if [ "$canDoDir" -eq 0 ]; then
 		# addon build dir
 		addonbuilddir="$builddir/$packagedir/$addonname"
 		test -d "$addonbuilddir" || errormsg "Could not find the build folder, please ensure that the addon has been built at least once" || return
 
-		# $addondir for the dev version, $addonbuilddir for the build version
+		# so we have: $addondir for the dev version, $addonbuilddir for the build version
 	fi
 
 	if [ "$canDoSavedDir" -eq 0 ]; then
@@ -204,6 +201,8 @@ function makeLinks()
 			*) savedvarsdir=$(realpath "$builddir/$savedvarspath") ;; # relative path
 		esac
 		test -d "$savedvarsdir" || errormsg "Could not find the saved variables folder to point to" "vars" || return
+
+		# so we have: $savedvarsdir for the common saved vars folder
 	fi
 
 	echo ""
