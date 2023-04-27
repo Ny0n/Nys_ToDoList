@@ -99,7 +99,7 @@ enums.days = {
 	[1] = L["Sunday"],
 }
 
-enums.interfaceNumber = tonumber(select(4, GetBuildInfo()))
+enums.interfaceNumber = tonumber((select(4, GetBuildInfo())))
 
 enums.artPath = "Interface\\AddOns\\"..core.addonName.."\\Assets\\Art\\"
 enums.icons = {

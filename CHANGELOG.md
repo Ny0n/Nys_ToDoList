@@ -1,3 +1,7 @@
+#### **6.11**
+
+- Added support for patch 10.1.0
+
 #### **6.10**
 
 - Updated the "Open by default" list options and added a new one that opens the list only if it is not done

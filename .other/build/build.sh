@@ -7,6 +7,22 @@ tmptagfile="TAG_EDITMSG"            # the name/path to give to a temp file used 
 devword="WIP"                       # the word used to differentiate the dev addon from the release addon. Used for the toc file and commit messages
 addondirpath="../../$addonname"     # the path to the dev addon folder. Use either absolute, or relative from the location of this script
 
+# symlink paths
+wowpath="/c/Program Files (x86)/World of Warcraft"
+savedvarspath="$wowpath/SavedVariables" # common saved vars folder path, the one we will point to for every WoW version
+
+wowversions=() # add/remove wow versions below (used for symlinks locations)
+wowversions+=("_retail_")
+wowversions+=("_classic_")
+wowversions+=("_classic_era_")
+wowversions+=("_ptr_")
+wowversions+=("_ptr2_")
+wowversions+=("_beta_")
+
+accountfilenames=()	# add/remove account file names below (used for symlinks locations)
+accountfilenames+=("122995789#1")
+accountfilenames+=("122995789#2")
+
 # ========================================================================== #
 
 function usage()
@@ -15,12 +31,14 @@ function usage()
 	echo "Usage: build.sh [MODE]"
 	echo "[MODE] can be ONE of these:"
 	echo ""
-	echo -e "\t[-a {args}]    \tbuild the addon locally. If any {args} are specified, they will be sent to the packaging script"
+	echo -e "\t[-a {args}]    \t\tbuild the addon locally. If any {args} are specified, they will be sent to the packaging script"
 	echo ""
-	echo -e "\t--release      \tprep the toc file for release"
-	echo -e "\t--dev          \tprep the toc file for development"
+	echo -e "\t--release      \t\tprep the toc file for release"
+	echo -e "\t--dev          \t\tprep the toc file for development"
 	echo ""
-	echo -e "\t--publish      \tlaunch the process to publish the current addon version. Will prompt for validation before starting"
+	echo -e "\t--publish      \t\tlaunch the process to publish the current addon version. Will prompt for validation before starting"
+	echo ""
+	echo -e "\t--symlink [-d|-f]\tcreate all addon symlinks. You can limit what gets created with -d (only addon directories) or -f (only saved variables directories)"
 
 	return 1
 }
@@ -89,21 +107,139 @@ function findVersion()
 	test -n "$version" || errormsg "Could not find the addon's version number"
 }
 
+function makeLinks()
+{
+	function internalDir()
+	{
+		test -d "$1" || errormsg "Invalid source folder for links" "vars" || return
+
+		for version in "${wowversions[@]}"; do
+			toPath="$wowdir/$version/Interface/AddOns" # WOW ADDON PATH
+			if [ ! -d "$toPath" ]; then
+				echo -e "\e[33m-\e[0m WoW \"$version\" version not found"
+				continue
+			fi
+
+			to="${toPath:?}/${addonname:?}$2"
+			test ! -d "$to" || rm -rf "$to"
+
+			ln -s "$1" "$to" || return
+			echo -e "\e[32m+\e[0m \"$to\" (symlink) --> (target) \"$1\""
+			symlinkCount=$((symlinkCount+1))
+		done
+	}
+
+	function internalSavedDir()
+	{
+		test -d "$1" || errormsg "Invalid source folder for saved variables links" "vars" || return
+
+		for version in "${wowversions[@]}"; do
+			toPath="$wowdir/$version/WTF/Account" # WOW SAVED VARIABLES PATH
+			if [ ! -d "$toPath" ]; then
+				echo -e "\e[33m-\e[0m WoW \"$version\" version not found"
+				continue
+			fi
+
+			for account in "${accountfilenames[@]}"; do
+				toPathAccount="$toPath/$account" # WOW SAVED VARIABLES PATH
+				if [ ! -d "$toPathAccount" ] || [ -z "$account" ]; then
+					echo -e "\e[33m-\e[0m Account \"$account\" not found for \"$version\""
+					continue
+				fi
+
+				to="${toPathAccount:?}/SavedVariables"
+				if [ -d "$to" ]; then
+					if [ ! -L "$to" ] && [ -n "$(ls -A "$to")" ]; then
+						echo -e "\e[31m-\e[0m Found a non-empty SavedVariables directory, skipping. Please backup, remove the folder and try again (\"$to\")"
+						continue
+					fi
+					rm -rf "$to"
+				fi
+
+				ln -s "$1" "$to" || return
+				echo -e "\e[32m+\e[0m \"$to\" (symlink) --> (target) \"$1\""
+				symlinkCount=$((symlinkCount+1))
+			done
+		done
+	}
+
+	test -z "$1" || test "$1" == "-d"
+	canDoDir=$?
+
+	test -z "$1" || test "$1" == "-f"
+	canDoSavedDir=$?
+
+	if [ "$canDoDir" -ne 0 ] && [ "$canDoSavedDir" -ne 0 ]; then
+		usage
+		return
+	fi
+
+	ln --version || errormsg "The \"ln\" command must be installed to create symbolic links" || return
+	export MSYS=winsymlinks:nativestrict || return # to create real symlinks with ln, not just copies
+
+	case $wowpath in
+		/*) wowdir="$wowpath" ;; # absolute path
+		*) wowdir=$(realpath "$builddir/$wowpath") ;; # relative path
+	esac
+	test -d "$wowdir" || errormsg "Invalid WoW directory path" "vars" || return
+	test "${#wowversions[@]}" -ne 0 || errormsg "No WoW version has been specified" "vars" || return
+
+	if [ "$canDoDir" -eq 0 ]; then
+		# addon build dir
+		addonbuilddir="$builddir/$packagedir/$addonname"
+		test -d "$addonbuilddir" || errormsg "Could not find the build folder, please ensure that the addon has been built at least once" || return
+
+		# so we have: $addondir for the dev version, $addonbuilddir for the build version
+	fi
+
+	if [ "$canDoSavedDir" -eq 0 ]; then
+		test "${#accountfilenames[@]}" -ne 0 || errormsg "No account file name has been specified" "vars" || return
+
+		# addon saved vars dir
+		case $savedvarspath in
+			/*) savedvarsdir="$savedvarspath" ;; # absolute path
+			*) savedvarsdir=$(realpath "$builddir/$savedvarspath") ;; # relative path
+		esac
+		test -d "$savedvarsdir" || errormsg "Could not find the saved variables folder to point to" "vars" || return
+
+		# so we have: $savedvarsdir for the common saved vars folder
+	fi
+
+	echo ""
+	symlinkCount=0
+
+	if [ "$canDoDir" -eq 0 ]; then
+		echo -e "Creating \e[4mdirectory\e[0m symlinks for the \e[4mbuild\e[0m addon version..."
+		internalDir "$addonbuilddir" || errormsg "Could not create symbolic links for the build addon version" || return
+
+		echo -e "Creating \e[4mdirectory\e[0m symlinks for the \e[4m$devword\e[0m addon version..."
+		internalDir "$addondir" "$devword" || errormsg "Could not create symbolic links for the $devword addon version" || return
+	fi
+
+	if [ "$canDoSavedDir" -eq 0 ]; then
+		echo -e "Creating \e[4msaved variables\e[0m symlinks..."
+		internalSavedDir "$savedvarsdir" || errormsg "Could not create symbolic links for the saved variables" || return
+	fi
+
+	echo ""
+	echo "Complete. Created $symlinkCount symbolic links"
+}
+
 function prepRelease()
 {
 	tocNewName="$(basename "$addondir"/*.toc | sed -e "s/$devword//")"
-	mv "$addondir"/*.toc "$addondir/$tocNewName" # remove any WIP in the toc's name
+	mv "$addondir"/*.toc "$addondir/$tocNewName" # remove any $devword in the toc's name
 
-	sed -i "s/ $devword//" "$addondir"/*.toc # remove any WIP in the toc file
+	sed -i "s/ $devword//" "$addondir"/*.toc # remove any $devword in the toc file
 }
 
 function prepDev()
 {
 	tocNewName="$(basename "$addondir"/*.toc .toc)$devword.toc"
-	mv "$addondir"/*.toc "$addondir/$tocNewName" # we put WIP at the end of the toc's name
+	mv "$addondir"/*.toc "$addondir/$tocNewName" # we put $devword at the end of the toc's name
 
 	titleCurrentValue="$(grep -Pom1 "## Title:.*" "$addondir"/*.toc)"
-	sed -i "s/$titleCurrentValue/$titleCurrentValue $devword/" "$addondir"/*.toc # then we put WIP at the end of the the toc file's Title tag
+	sed -i "s/$titleCurrentValue/$titleCurrentValue $devword/" "$addondir"/*.toc # then we put $devword at the end of the the toc file's Title tag
 }
 
 function checkExecution()
@@ -300,7 +436,7 @@ test -n "$addondirpath" || errormsg "Invalid addon directory path" "vars" || exi
 builddir="$(pwd)"
 case $addondirpath in
 	/*) addondir="$addondirpath" ;; # absolute path
-	*) addondir="$builddir/$addondirpath" ;; # relative path
+	*) addondir=$(realpath "$builddir/$addondirpath") ;; # relative path
 esac
 test -d "$builddir" -a -d "$addondir" || errormsg "Invalid directories" "vars" || exit
 test -f "$addondir"/*.toc || errormsg ".toc file not found" "vars" || exit
@@ -331,9 +467,12 @@ elif [ "$1" == "--release" ] || [ "$1" == "--dev" ]; then
 	# PREP COMMAND
 
 	prepRelease
-	if [ "$1" == "--dev" ]; then # if we want to prep for dev, we put back the WIPs
+	if [ "$1" == "--dev" ]; then # if we want to prep for dev, we put back the $devword
 		prepDev
 	fi
+elif [ "$1" == "--symlink" ]; then
+	# MAKE LINKS COMMAND
+	makeLinks "$2"
 else
 	# we misstyped something, or we typed "--help"
 	usage
