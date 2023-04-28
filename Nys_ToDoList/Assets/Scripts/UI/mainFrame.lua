@@ -83,9 +83,7 @@ contentWidgets = {
 
 -- these are for code comfort
 
-local loadOriginOffset = { 15, -20 }
-local centerXOffset = 165
-local lineOffset = 120
+local loadOriginOffset = { 14, -12 }
 local cursorX, cursorY, cursorDist = 0, 0, 10 -- for my special drag
 local lineBottom = { x = 12, y = -45 }
 
@@ -129,7 +127,7 @@ function private:MenuClick(menuEnum)
 	menu.lineBottom:SetPoint("TOPLEFT", content, "TOPLEFT", lineBottom.x, bottom)
 
 	-- bottomOrigin
-	if NysTDL.acedb.profile.isInMiniView then bottom = 0 end
+	if NysTDL.acedb.profile.isInMiniView then bottom = 2 end
 	content.bottomOrigin:SetPoint("TOPLEFT", content, "TOPLEFT", 0, bottom)
 
 	-- // we do specific things afterwards
@@ -1042,6 +1040,7 @@ function mainFrame:CreateTDLFrame()
 	tdlFrame:HookScript("OnShow", mainFrame.Event_TDLFrame_OnVisibilityUpdate)
 	tdlFrame:HookScript("OnHide", mainFrame.Event_TDLFrame_OnVisibilityUpdate)
 	tdlFrame:HookScript("OnSizeChanged", mainFrame.Event_TDLFrame_OnSizeChanged)
+	tdlFrame:HookScript("OnMouseWheel", mainFrame.Event_ScrollFrame_OnMouseWheel)
 	tdlFrame:HookScript("OnMouseUp", function(self, button) -- toggle edit mode
 		if button == "RightButton" then
 			tutorialsManager:Validate("introduction", "editmode")
