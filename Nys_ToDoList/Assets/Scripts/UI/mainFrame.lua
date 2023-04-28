@@ -848,46 +848,6 @@ function private:GenerateMenuAddACategory()
 	tutorialsManager:SetPoint("introduction", "addCat", "TOP", menuframe.categoryEditBox, "BOTTOM", 0, -22)
 end
 
-function private:GenerateMenuFrameOptions()
-	local menuframe = tdlFrame.content.menu.menuFrames[enums.menus.frameopt]
-
-	--/************************************************/--
-
-	-- title
-	menuframe.menuTitle = widgets:NoPointsLabel(menuframe, nil, L["Frame options"])
-	menuframe.menuTitle:SetPoint("TOPLEFT", tdlFrame.content.menu.lineTopSubMenu, "TOPLEFT", 3, -13)
-
-	--/************************************************/--
-
-	menuframe.frameAlphaSlider = widgets:Slider(menuframe, NysTDL.acedb.profile.frameAlpha, 0, 100, L["Frame opacity"])
-	menuframe.frameAlphaSlider:SetPoint("TOPLEFT", menuframe.menuTitle, "BOTTOMLEFT", 5, -18)
-	menuframe.frameAlphaSlider:SetScript("OnValueChanged", mainFrame.Event_FrameAlphaSlider_OnValueChanged)
-
-	--/************************************************/--
-
-	menuframe.frameContentAlphaSlider = widgets:Slider(menuframe, NysTDL.acedb.profile.frameContentAlpha, 60, 100, L["Frame content opacity"])
-	menuframe.frameContentAlphaSlider:SetPoint("TOPLEFT", menuframe.frameAlphaSlider, "BOTTOMLEFT", 0, -18)
-	menuframe.frameContentAlphaSlider:SetScript("OnValueChanged", mainFrame.Event_FrameContentAlphaSlider_OnValueChanged)
-
-	--/************************************************/--
-
-	menuframe.affectDesc = CreateFrame("CheckButton", nil, menuframe, "ChatConfigCheckButtonTemplate")
-	menuframe.affectDesc.tooltip = L["Share the opacity options of the list to the description frames"].." ("..L["Only when checked"]..")"
-	menuframe.affectDesc:SetPoint("TOPLEFT", menuframe.frameContentAlphaSlider, "BOTTOMLEFT", 0, -18)
-	menuframe.affectDesc.Text:SetText(L["Apply to description frames"])
-	menuframe.affectDesc.Text:SetFontObject("GameFontHighlight")
-	menuframe.affectDesc.Text:ClearAllPoints()
-	menuframe.affectDesc.Text:SetPoint("LEFT", menuframe.affectDesc, "RIGHT", 2, 0)
-	menuframe.affectDesc:SetHitRectInsets(0, -menuframe.affectDesc.Text:GetWidth(), 0, 0)
-	menuframe.affectDesc:SetScript("OnClick", function(self)
-		NysTDL.acedb.profile.affectDesc = not NysTDL.acedb.profile.affectDesc
-		self:SetChecked(NysTDL.acedb.profile.affectDesc)
-		mainFrame:Event_FrameAlphaSlider_OnValueChanged(NysTDL.acedb.profile.frameAlpha)
-		mainFrame:Event_FrameContentAlphaSlider_OnValueChanged(NysTDL.acedb.profile.frameContentAlpha)
-	end)
-	menuframe.affectDesc:SetChecked(NysTDL.acedb.profile.affectDesc)
-end
-
 function private:GenerateMenuTabActions()
 	local menuframe = tdlFrame.content.menu.menuFrames[enums.menus.tabact]
 
