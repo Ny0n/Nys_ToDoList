@@ -459,7 +459,7 @@ function widgets:NoPointsInteractiveLabel(parent, pointLeft, pointRight, name, t
 	interactiveLabel.Text:SetHeight(height)
 
 	interactiveLabel:SetScript("OnSizeChanged", function(self, width, height)
-		if width < 50 then width = 50 end
+		if width < 18 then width = 18 end
 
 		interactiveLabel.Text:SetWidth(width) -- we do it a first time to update the wrapped state
 		interactiveLabel.Button:SetSize(interactiveLabel.Text:GetWrappedWidth(), interactiveLabel.Text:GetStringHeight())
@@ -471,11 +471,17 @@ function widgets:NoPointsInteractiveLabel(parent, pointLeft, pointRight, name, t
 			interactiveLabel.Text:SetWidth(interactiveLabel.Text:GetWrappedWidth())
 		end
 
+		-- make the text dissapear if we are resizing the frame to be too small, so that the text doesn't go out of bounds to the left
+		if self:GetLeft() >= pointLeft:GetRight() then
+			interactiveLabel.Text:SetPoint("TOPLEFT", interactiveLabel)
+		else
+			interactiveLabel.Text:ClearPoint("TOPLEFT")
+		end
+
 		parent.heightFrame:SetHeight(self.Text:GetStringHeight())
 
 		if parent.enum == enums.item then
 			private.Item_SetCheckBtnExtended(parent, not mainFrame.editMode)
-			-- print(interactiveLabel.Text:GetText(), "--", string.format("%.f", interactiveLabel.Text:GetHeight()), "--", string.format("%.f", height), "--", string.format("%.f", interactiveLabel.Text:GetStringHeight()), "--", interactiveLabel.Text:GetNumLines(), "--", interactiveLabel.Text:GetStringHeight())
 		end
 	end)
 
@@ -847,22 +853,20 @@ function private.Widget_OnDoubleClick(self, button)
 	if widget.enum == enums.item then
 		ID = widget.itemID
 		name = widget.itemData.name
-		renameEditBoxWidth = 0
 	elseif widget.enum == enums.category then
 		ID = widget.catID
 		name = widget.catData.name
-		renameEditBoxWidth = enums.maxNameWidth[enums.category]
 	end
 
 	-- we're ready, now we start by hiding the interactiveLabel
 	self:GetParent():Hide()
 
 	-- then, we can create the new edit box to rename the object, where the label was
-	local renameEditBox = widgets:NoPointsRenameEditBox(widget, name, renameEditBoxWidth, self:GetHeight())
+	local renameEditBox = widgets:NoPointsRenameEditBox(widget, name, self:GetHeight())
 	renameEditBox:SetPoint("LEFT", widget.interactiveLabel, "LEFT", 5, 0)
+	renameEditBox:SetPoint("RIGHT", widget:GetParent(), "RIGHT", -3, 0)
 
 	if widget.enum == enums.item then
-		renameEditBox:SetPoint("RIGHT", widget:GetParent(), "RIGHT", -3, 0)
 		widgets:AddHyperlinkEditBox(renameEditBox) -- so that we can add hyperlinks in it
 		-- widgets:SetHyperlinksEnabled(renameEditBox, true) -- to click on hyperlinks inside the edit box
 	end
@@ -1178,13 +1182,6 @@ function widgets:ItemWidget(itemID, parentFrame)
 	widgets:SetHyperlinksEnabled(itemWidget.interactiveLabel, true)
 	itemWidget:SetCheckBtnExtended(true)
 
-	-- / interactiveLabel.Text
-	if utils:HasHyperlink(itemData.name) then -- this is for making more space for items that have hyperlinks in them
-		if itemWidget.interactiveLabel.Text:GetWidth() > enums.maxNameWidth[enums.item] then
-			itemWidget.interactiveLabel.Text:SetFontObject("GameFontNormal")
-		end
-	end
-
 	-- / interactiveLabel.Button
 	itemWidget.interactiveLabel.Button:Hide() -- we are not in edit mode by default
 	itemWidget.interactiveLabel.Button:SetScript("OnDoubleClick", private.Widget_OnDoubleClick)
@@ -1220,9 +1217,9 @@ end
 
 --/*******************/ EDIT BOXES /*************************/--
 
-function widgets:NoPointsRenameEditBox(relativeFrame, text, width, height)
+function widgets:NoPointsRenameEditBox(relativeFrame, text, height)
 	local renameEditBox = CreateFrame("EditBox", nil, relativeFrame, "InputBoxTemplate")
-	renameEditBox:SetSize(width-10, height)
+	renameEditBox:SetHeight(height)
 	renameEditBox:SetText(text)
 	renameEditBox:SetFontObject("GameFontHighlightLarge")
 	renameEditBox:SetAutoFocus(false)

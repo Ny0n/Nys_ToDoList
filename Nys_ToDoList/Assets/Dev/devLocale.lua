@@ -21,6 +21,7 @@ addonTable.devLocale = L
 L["Change the background opacity"] = true
 L["Change the opacity for texts, buttons and other elements"] = true
 L["Name"] = true
+L["Name is too large"] = true
 
 L["Font size"] = true
 L["Toggle menu"] = true
@@ -160,7 +161,6 @@ L["More visible remaining numbers"] = true
 L["Move down"] = true
 L["Move up"] = true
 L["Name cannot be empty"] = true
-L["Name is too large"] = true
 L["No"] = true
 L["No description"] = true
 L["None"] = true

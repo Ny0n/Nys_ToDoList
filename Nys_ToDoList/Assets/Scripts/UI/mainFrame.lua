@@ -540,7 +540,7 @@ function mainFrame:Event_TDLFrame_OnSizeChanged(width, height)
 	NysTDL.acedb.profile.frameSize.height = height
 
 	-- tell the content to resize (not using points because it's the scroll child of the scroll frame)
-	tdlFrame.scrollChild:SetWidth(width-50)
+	tdlFrame.scrollChild:SetWidth(width-8-34)
 
 	-- and tell the tabs to resize as well
 	local scale = width/enums.tdlFrameDefaultWidth
@@ -613,13 +613,7 @@ function private:LoadContent()
 	local tabData = (select(3, dataManager:Find(tabID)))
 
 	-- // nothingLabel
-	 -- we hide it by default
-	tdlFrame.content.nothingLabel:Hide()
-	tdlFrame.content.nothingLabel2:Hide()
-	if not next(tabData.orderedCatIDs) then -- we show it if the tab has no categories
-		tdlFrame.content.nothingLabel:Show()
-		tdlFrame.content.nothingLabel2:Show()
-	end
+	tdlFrame.content.nothingLabel:SetShown(not next(tabData.orderedCatIDs)) -- we show it if the tab has no categories
 
 	-- // hiddenLabel
 	tdlFrame.content.hiddenLabel:Hide() -- we hide it by default
@@ -1067,13 +1061,18 @@ function private:GenerateFrameContent()
 	content.loadOrigin = widgets:Dummy(content, content, 0, 0)
 	content.loadOrigin:SetPoint("TOPLEFT", content.bottomOrigin, "TOPLEFT", unpack(loadOriginOffset))
 
-	content.nothingLabel = widgets:HintLabel(content, nil, L["Empty tab"])
-	content.nothingLabel:SetPoint("LEFT", content.loadOrigin, "TOPLEFT", 0, 0)
-	content.nothingLabel2 = widgets:HintLabel(content, nil, L["Start by adding a new category!"])
-	content.nothingLabel2:SetPoint("LEFT", content.nothingLabel, "LEFT", 0, -20)
+	content.nothingLabel = widgets:HintLabel(content, nil, L["Empty tab"].."\n"..L["Start by adding a new category!"])
+	content.nothingLabel:SetPoint("TOPLEFT", content.loadOrigin, "TOPLEFT", 0, 0)
+	content.nothingLabel:SetPoint("RIGHT", content, "RIGHT", 0, 0)
+	content.nothingLabel:SetJustifyH("LEFT")
+	content.nothingLabel:SetJustifyV("TOP")
+	content.nothingLabel:SetSpacing(4)
 
 	content.hiddenLabel = widgets:HintLabel(content, nil, L["Completed tab"])
-	content.hiddenLabel:SetPoint("LEFT", content.loadOrigin, "TOPLEFT", 0, 0)
+	content.hiddenLabel:SetPoint("TOPLEFT", content.loadOrigin, "TOPLEFT", 0, 0)
+	content.hiddenLabel:SetPoint("RIGHT", content, "RIGHT", 0, 0)
+	content.hiddenLabel:SetJustifyH("LEFT")
+	content.hiddenLabel:SetJustifyV("TOP")
 
 	content.dummyBottomFrame = widgets:Dummy(content, content, 0, 0) -- this one if for putting a margin at the bottom of the content (mainly to leave space for the dropping of cat)
 end
@@ -1136,8 +1135,8 @@ function mainFrame:CreateTDLFrame()
 	-- // scroll frame (almost everything will be inside of it using a scroll child frame, see private:GenerateFrameContent())
 
 	tdlFrame.ScrollFrame = CreateFrame("ScrollFrame", nil, tdlFrame, "UIPanelScrollFrameTemplate")
-	tdlFrame.ScrollFrame:SetPoint("TOPLEFT", tdlFrame, "TOPLEFT", 4, - 24)
-	tdlFrame.ScrollFrame:SetPoint("BOTTOMRIGHT", tdlFrame, "BOTTOMRIGHT", - 4, 4)
+	tdlFrame.ScrollFrame:SetPoint("TOPLEFT", tdlFrame, "TOPLEFT", 4, -24)
+	tdlFrame.ScrollFrame:SetPoint("BOTTOMRIGHT", tdlFrame, "BOTTOMRIGHT", -4 -34, 4)
 	tdlFrame.ScrollFrame:SetScript("OnMouseWheel", mainFrame.Event_ScrollFrame_OnMouseWheel)
 	tdlFrame.ScrollFrame:SetClipsChildren(true)
 
@@ -1167,25 +1166,17 @@ function mainFrame:CreateTDLFrame()
 
 		tdlFrame.ScrollBar:SetVisibleExtentPercentage(visibleExtentPercentage)
 		tdlFrame.ScrollBar:SetScrollPercentage(tdlFrame.ScrollFrame:GetVerticalScroll()/tdlFrame.ScrollFrame:GetVerticalScrollRange())
-		-- print() -- content's height!!
-		-- print(tdlFrame.content:GetHeight())
-		-- print(tdlFrame.ScrollFrame:GetHeight())
-
-		-- tdlFrame.ScrollBar:SetVisibleExtentPercentage()
 	end)
 
 	tdlFrame.ScrollFrame:SetScript("OnVerticalScroll", function(self, newVerticalScroll)
 		tdlFrame.ScrollBar:SetScrollPercentage(newVerticalScroll/tdlFrame.ScrollFrame:GetVerticalScrollRange())
-		-- print() -- content's height!!
-		-- print(tdlFrame.content:GetHeight())
-		-- print(tdlFrame.ScrollFrame:GetHeight())
-
-		-- tdlFrame.ScrollBar:SetVisibleExtentPercentage()
 	end)
+
+	tdlFrame.ScrollBar:SetVisibleExtentPercentage(0) -- init
 
 	-- // outside the scroll frame
 
-	-- scroll bar
+	-- old scroll bar
 	tdlFrame.ScrollFrame.ScrollBar:Hide()
 
 	-- resize button

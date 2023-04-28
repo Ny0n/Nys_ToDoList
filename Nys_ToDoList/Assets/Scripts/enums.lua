@@ -64,13 +64,6 @@ enums.ofsyContentCat = 10
 enums.ofsyContent = 6
 enums.ofsxItemIcons = 20
 
-enums.hyperlinkNameBonus = 65
-enums.maxNameWidth = {
-	[enums.item] = 240,
-	[enums.category] = 220,
-	[enums.tab] = 150,
-}
-
 enums.maxDescriptionCharCount = 10000
 enums.maxQuantities = {
 	[false] = { -- profile
