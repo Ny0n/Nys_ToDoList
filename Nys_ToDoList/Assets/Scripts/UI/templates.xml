@@ -215,7 +215,7 @@
 		</KeyValues>
 		<Layers>
 			<Layer level="OVERLAY">
-				<Texture parentKey="Icon" file="Interface\BUTTONS\UI-GuildButton-OfficerNote-Up">
+				<Texture parentKey="Icon" file="Interface\Buttons\UI-OptionsButton">
 					<Size x="15" y="15"/>
 					<Anchors>
 						<Anchor point="CENTER"/>

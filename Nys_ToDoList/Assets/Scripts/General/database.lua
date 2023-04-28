@@ -182,6 +182,9 @@ function private:DBInit(profile)
 
 	-- // initialization of elements that need to be updated correctly when the profile changes
 
+	-- WARNING: Right now I'm only using the "profile" var to know if we are coming from a profile change or grom the importexport code,
+	-- I don't care about what's inside of it, I only need to know if it is set or not
+
 	-- remember undos
 	if profile and not NysTDL.acedb.profile.rememberUndo then
 		wipe(NysTDL.acedb.profile.undoTable)
@@ -294,7 +297,7 @@ end
 function database:Initialize()
 	-- Saved variable database
 	NysTDL.acedb = LibStub("AceDB-3.0"):New("NysToDoListDB", database.defaults)
-	private:DBInit() -- initialization for some elements of the current acedb
+	private:DBInit(true) -- initialization for some elements of the current acedb
 
 	-- callbacks for database changes
 	NysTDL.acedb.RegisterCallback(database, "OnProfileChanged", "ProfileChanged")

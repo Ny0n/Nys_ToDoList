@@ -137,7 +137,6 @@ function private:MenuClick(menuEnum)
 
 	-- like updating the color to white-out the selected menu button, so first we reset them all
 	menu.categoryButton.Icon:SetDesaturated(nil) menu.categoryButton.Icon:SetVertexColor(0.85, 1, 1) -- here we change the vertex color because the original icon is a bit reddish
-	menu.frameOptionsButton.Icon:SetDesaturated(nil)
 	menu.tabActionsButton.Icon:SetDesaturated(nil)
 
 	-- and other things
@@ -145,9 +144,6 @@ function private:MenuClick(menuEnum)
 		menu.categoryButton.Icon:SetDesaturated(1) menu.categoryButton.Icon:SetVertexColor(1, 1, 1)
 		widgets:SetFocusEditBox(menuFrames[enums.menus.addcat].categoryEditBox)
 		tutorialsManager:Validate("introduction", "addNewCat") -- tutorial
-	elseif selected == enums.menus.frameopt then -- frame options menu
-		menu.frameOptionsButton.Icon:SetDesaturated(1)
-		tutorialsManager:Validate("introduction", "accessOptions") -- tutorial
 	elseif selected == enums.menus.tabact then -- tab actions menu
 		menu.tabActionsButton.Icon:SetDesaturated(1)
 	end
@@ -423,10 +419,11 @@ function mainFrame:ToggleEditMode(state, forceUpdate)
 	end
 
 	-- we switch the category and frame options buttons for the undo and frame action ones and vice versa
-	menu.categoryButton:SetShown(not mainFrame.editMode)
-	menu.frameOptionsButton:SetShown(not mainFrame.editMode)
 	menu.tabActionsButton:SetShown(mainFrame.editMode)
 	menu.undoButton:SetShown(mainFrame.editMode)
+	menu.frameOptionsButton:SetShown(mainFrame.editMode)
+
+	menu.remaining:SetPoint("LEFT", menu.helpButton, "CENTER", mainFrame.editMode and 170 or 80, 1)
 
 	-- resize button
 	tdlFrame.resizeButton:SetShown(mainFrame.editMode)
@@ -889,12 +886,6 @@ function private:GenerateMenuFrameOptions()
 		mainFrame:Event_FrameContentAlphaSlider_OnValueChanged(NysTDL.acedb.profile.frameContentAlpha)
 	end)
 	menuframe.affectDesc:SetChecked(NysTDL.acedb.profile.affectDesc)
-
-	--/************************************************/--
-
-	menuframe.btnAddonOptions = widgets:Button("addonOptionsButton", menuframe, L["Open addon options"], "Interface\\Buttons\\UI-OptionsButton")
-	menuframe.btnAddonOptions:SetPoint("TOPLEFT", menuframe.affectDesc, "BOTTOMLEFT", 0, -12)
-	menuframe.btnAddonOptions:SetScript("OnClick", function() optionsManager:ToggleOptions(true) end)
 end
 
 function private:GenerateMenuTabActions()
@@ -971,17 +962,9 @@ function private:GenerateFrameContent()
 	tutorialsManager:SetPoint("introduction", "editmode", "BOTTOM", menu.editModeButton, "TOP", 0, 18)
 	-- tutorialsManager:SetPoint("editmode", "editmodeBtn", "BOTTOM", menu.editModeButton, "TOP", 0, 18) -- TDLATER
 
-	-- frame options menu button
-	menu.frameOptionsButton = widgets:IconTooltipButton(menu, "NysTDL_FrameOptionsButton", L["Frame options"])
-	menu.frameOptionsButton:SetPoint("CENTER", menu.editModeButton, "CENTER", spacing, 0)
-	menu.frameOptionsButton:SetScript("OnClick", function()
-		private:MenuClick(enums.menus.frameopt)
-	end)
-	tutorialsManager:SetPoint("introduction", "accessOptions", "BOTTOM", menu.frameOptionsButton, "TOP", 0, 18)
-
 	-- category menu button
 	menu.categoryButton = widgets:IconTooltipButton(menu, "NysTDL_CategoryButton", L["Add a category"])
-	menu.categoryButton:SetPoint("CENTER", menu.frameOptionsButton, "CENTER", spacing, 0)
+	menu.categoryButton:SetPoint("CENTER", menu.editModeButton, "CENTER", spacing, 0)
 	menu.categoryButton:SetScript("OnClick", function()
 		private:MenuClick(enums.menus.addcat)
 	end)
@@ -989,7 +972,7 @@ function private:GenerateFrameContent()
 
 	-- tab actions menu button
 	menu.tabActionsButton = widgets:IconTooltipButton(menu, "NysTDL_TabActionsButton", L["Tab actions"])
-	menu.tabActionsButton:SetPoint("CENTER", menu.editModeButton, "CENTER", 30, 0)
+	menu.tabActionsButton:SetPoint("CENTER", menu.categoryButton, "CENTER", 30, 0)
 	menu.tabActionsButton:SetScript("OnClick", function()
 		private:MenuClick(enums.menus.tabact)
 	end)
@@ -1003,10 +986,17 @@ function private:GenerateFrameContent()
 	-- tutorialsManager:SetPoint("editmode", "buttons", "BOTTOM", menu.undoButton, "TOP", -15, 18)
 	-- tutorialsManager:SetPoint("editmode", "undo", "BOTTOM", menu.undoButton, "TOP", 0, 18)
 
+	-- addon options button
+	menu.frameOptionsButton = widgets:IconTooltipButton(menu, "NysTDL_FrameOptionsButton", L["Open addon options"])
+	menu.frameOptionsButton:SetPoint("CENTER", menu.undoButton, "CENTER", spacing, 0)
+	menu.frameOptionsButton:SetScript("OnClick", function()
+		optionsManager:ToggleOptions(true)
+	end)
+	tutorialsManager:SetPoint("introduction", "accessOptions", "BOTTOM", menu.frameOptionsButton, "TOP", 0, 18)
+
 	-- remaining numbers labels
 	menu.remaining = widgets:Dummy(menu.helpButton)
-	menu.remaining:ClearAllPoints()
-	menu.remaining:SetPoint("LEFT", menu.helpButton, "CENTER", 111, 1)
+	menu.remaining:ClearAllPoints() -- points set on edit mode toggle
 	menu.remainingNumber = widgets:NoPointsLabel(menu, nil, "...")
 	menu.remainingNumber:SetPoint("LEFT", menu.remaining, "RIGHT", 0, 0)
 	menu.remainingNumber:SetFontObject("GameFontNormalLarge")
@@ -1035,14 +1025,6 @@ function private:GenerateFrameContent()
 	menu.menuFrames[menuEnum]:SetPoint("TOPLEFT", menu, "TOPLEFT", 0, lineBottom.y)
 	menu.menuFrames[menuEnum]:SetSize(menuWidth, 75) -- CVAL (coded value, non automatic)
 	private:GenerateMenuAddACategory()
-
-	-- / frame options sub-menu
-
-	menuEnum = enums.menus.frameopt
-	menu.menuFrames[menuEnum] = CreateFrame("Frame", nil, menu)
-	menu.menuFrames[menuEnum]:SetPoint("TOPLEFT", menu, "TOPLEFT", 0, lineBottom.y)
-	menu.menuFrames[menuEnum]:SetSize(menuWidth, 246) -- CVAL
-	private:GenerateMenuFrameOptions()
 
 	-- / tab actions sub-menu
 
@@ -1247,11 +1229,6 @@ function mainFrame:Init()
 	-- and update its elements opacity
 	mainFrame:Event_FrameAlphaSlider_OnValueChanged(NysTDL.acedb.profile.frameAlpha)
 	mainFrame:Event_FrameContentAlphaSlider_OnValueChanged(NysTDL.acedb.profile.frameContentAlpha)
-	-- as well as updating the elements needing an update
-	local frameopt = tdlFrame.content.menu.menuFrames[enums.menus.frameopt]
-	frameopt.frameAlphaSlider:SetValue(NysTDL.acedb.profile.frameAlpha)
-	frameopt.frameContentAlphaSlider:SetValue(NysTDL.acedb.profile.frameContentAlpha)
-	frameopt.affectDesc:SetChecked(NysTDL.acedb.profile.affectDesc)
 
 	-- we generate the widgets once
 	private:LoadWidgets()
