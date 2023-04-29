@@ -1002,10 +1002,17 @@ function widgets:CategoryWidget(catID, parentFrame)
 
 	-- / favsRemainingLabel
 	categoryWidget.favsRemainingLabel = widgets:NoPointsLabel(categoryWidget.interactiveLabel, nil, "")
-	categoryWidget.favsRemainingLabel:SetPoint("LEFT", categoryWidget.interactiveLabel, "RIGHT", 6, 0)
+	categoryWidget.favsRemainingLabel:SetPoint("TOPLEFT", categoryWidget.interactiveLabel.Text, "TOPRIGHT", 6, 0)
+	categoryWidget.favsRemainingLabel:SetPoint("RIGHT", categoryWidget.interactiveLabel, "RIGHT", 0, 0)
+	categoryWidget.favsRemainingLabel:SetJustifyV("TOP")
+	categoryWidget.favsRemainingLabel:SetJustifyH("LEFT")
+	categoryWidget.favsRemainingLabel:SetHeight(categoryWidget.favsRemainingLabel:GetLineHeight())
 
 	-- / originalTabLabel
 	categoryWidget.originalTabLabel = widgets:HintLabel(categoryWidget.interactiveLabel, nil, "")
+	categoryWidget.originalTabLabel:SetJustifyV("TOP")
+	categoryWidget.originalTabLabel:SetJustifyH("LEFT")
+	categoryWidget.originalTabLabel:SetHeight(categoryWidget.originalTabLabel:GetLineHeight())
 
 	-- / emptyLabel
 	categoryWidget.emptyLabel = widgets:HintLabel(categoryWidget, nil, L["Empty category"])
@@ -1045,16 +1052,9 @@ function widgets:CategoryWidget(catID, parentFrame)
 		-- // we give it the focus
 		widgets:SetFocusEditBox(categoryWidget.addEditBox)
 		tutorialsManager:Validate("introduction", "addItem") -- tutorial
-
-		-- we hide the originalTabLabel so it doesn't overlap (we show it back when the edit box dissapears)
-		categoryWidget.originalTabLabel:Hide()
 	end)
 	categoryWidget.addEditBox:SetScript("OnHide", function(self)
 		self:ClearAllPoints()
-		-- if the originalTabLabel was hidden because the add edit box was shown, we show it back if it's necessary
-		if catData.originalTabID ~= database.ctab() then
-			categoryWidget.originalTabLabel:Show()
-		end
 	end)
 	widgets:AddHyperlinkEditBox(categoryWidget.addEditBox)
 
