@@ -482,10 +482,20 @@ function private:DragMouseStart()
 	local widgetX, widgetY = draggingWidget:GetCenter() -- UIPARENT CS
 	local ofsx, ofsy = clickX - widgetX, clickY - widgetY -- here we take the offset between the original click's pos (dragMouseDown) and the widget's center
 
-	local cursorX, cursorY = private:GetCursorScaledPosition() -- UIPARENT CS
-	draggingWidget:ClearAllPoints()
+	-- update points & cleanup the widget we are dragging
 	draggingWidget.interactiveLabel:ClearPoint("RIGHT")
 	draggingWidget.interactiveLabel:SetWidth(draggingWidget.interactiveLabel.Text:GetWrappedWidth())
+	if draggingWidget.enum == enums.category then
+		draggingWidget.emptyLabel.labelFrame:ClearPoint("RIGHT")
+		draggingWidget.emptyLabel.labelFrame:SetWidth(draggingWidget.emptyLabel.labelFrame.Text:GetWrappedWidth())
+		draggingWidget.hiddenLabel.labelFrame:ClearPoint("RIGHT")
+		draggingWidget.hiddenLabel.labelFrame:SetWidth(draggingWidget.hiddenLabel.labelFrame.Text:GetWrappedWidth())
+		draggingWidget.favsRemainingLabel:Hide()
+		draggingWidget.originalTabLabel:Hide()
+	end
+
+	local cursorX, cursorY = private:GetCursorScaledPosition() -- UIPARENT CS
+	draggingWidget:ClearAllPoints()
 	draggingWidget:SetPoint("CENTER", nil, "BOTTOMLEFT", cursorX-ofsx, cursorY-ofsy) -- so we can snap the widget to the cursor at the same place that we clicked on (like a typical drag&drop)
 
 	draggingWidget:StartMoving()

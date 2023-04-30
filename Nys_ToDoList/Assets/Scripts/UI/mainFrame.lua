@@ -637,8 +637,10 @@ function private:RecursiveLoad(tabID, tabData, catWidget, p)
 
 	-- emptyLabel : we show it if there's nothing in the category
 	if not next(catData.orderedContentIDs) then
-		catWidget.emptyLabel:Show()
-		p.relativeFrame = catWidget.emptyLabel
+		p.offsetX = enums.ofsxContent
+		p.offsetY = -enums.ofsyCatContent
+		p:ShowFrame(catWidget.emptyLabel)
+		p.relativeFrame = catWidget.emptyLabel.heightFrame
 		p.offsetX = -enums.ofsxContent
 		p.offsetY = -enums.ofsyContentCat
 		return
@@ -649,8 +651,10 @@ function private:RecursiveLoad(tabID, tabData, catWidget, p)
 		if tabData.hideCheckedItems then
 			if not dataManager:IsParent(catWidget.catID) then
 				if dataManager:IsCategoryCompleted(catWidget.catID) then
-					catWidget.hiddenLabel:Show()
-					p.relativeFrame = catWidget.hiddenLabel
+					p.offsetX = enums.ofsxContent
+					p.offsetY = -enums.ofsyCatContent
+					p:ShowFrame(catWidget.hiddenLabel)
+					p.relativeFrame = catWidget.hiddenLabel.heightFrame
 					p.offsetX = -enums.ofsxContent
 					p.offsetY = -enums.ofsyContentCat
 					return
@@ -665,9 +669,7 @@ function private:RecursiveLoad(tabID, tabData, catWidget, p)
 	for contentOrder,contentID in ipairs(catData.orderedContentIDs) do -- for everything in a category
 		local contentWidget = contentWidgets[contentID]
 		if not dataManager:IsHidden(contentID, tabID) then -- if it's not hidden, we show the corresponding widget
-			contentWidget:SetPoint("TOPLEFT", p.relativeFrame, "BOTTOMLEFT", p.offsetX, p.offsetY)
-			contentWidget:Show()
-
+			p:ShowFrame(contentWidget)
 			p.relativeFrame = contentWidget.heightFrame
 			p.offsetX = 0
 
@@ -700,6 +702,10 @@ function private:LoadList()
 		relativeFrame = tdlFrame.content.loadOrigin,
 		offsetX = 0,
 		offsetY = 0,
+		ShowFrame = function(self, frame)
+			frame:SetPoint("TOPLEFT", self.relativeFrame, "BOTTOMLEFT", self.offsetX, self.offsetY)
+			frame:Show()
+		end
 	}
 
 	-- base category widgets loop
@@ -707,9 +713,7 @@ function private:LoadList()
 		local catWidget = contentWidgets[catID]
 
 		if not dataManager:IsHidden(catID, tabID) then
-			catWidget:SetPoint("TOPLEFT", p.relativeFrame, "BOTTOMLEFT", p.offsetX, p.offsetY)
-			catWidget:Show()
-
+			p:ShowFrame(catWidget)
 			p.relativeFrame = catWidget.heightFrame
 			p.offsetX = 0
 

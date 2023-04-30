@@ -471,12 +471,12 @@ function widgets:NoPointsInteractiveLabel(parent, pointLeft, pointRight, name, t
 			interactiveLabel.Text:SetWidth(interactiveLabel.Text:GetWrappedWidth())
 		end
 
-		-- make the text dissapear if we are resizing the frame to be too small, so that the text doesn't go out of bounds to the left
-		if self:GetLeft() >= pointLeft:GetRight() then
-			interactiveLabel.Text:SetPoint("TOPLEFT", interactiveLabel)
-		else
-			interactiveLabel.Text:ClearPoint("TOPLEFT")
-		end
+		-- -- make the text dissapear if we are resizing the frame to be too small, so that the text doesn't go out of bounds to the left
+		-- if self:GetLeft() >= pointLeft:GetRight() then
+		-- 	interactiveLabel.Text:SetPoint("TOPLEFT", interactiveLabel)
+		-- else
+		-- 	interactiveLabel.Text:ClearPoint("TOPLEFT")
+		-- end
 
 		parent.heightFrame:SetHeight(self.Text:GetStringHeight())
 
@@ -486,6 +486,56 @@ function widgets:NoPointsInteractiveLabel(parent, pointLeft, pointRight, name, t
 	end)
 
 	return interactiveLabel
+end
+
+function widgets:AutoWrapCatSubLabel(parent, label, pointRight)
+	-- // here we create the sub-widget frame for empty label / completed label (categories)
+
+	local widget = CreateFrame("Frame", nil, parent)
+	widget:SetSize(parent:GetSize())
+
+	widget.heightFrame = CreateFrame("Frame", nil, widget)
+	widget.heightFrame:SetPoint("TOPLEFT", widget)
+	widget.heightFrame:SetWidth(1) -- height is set just below
+
+	widget.startPosFrame = CreateFrame("Frame", nil, widget)
+	widget.startPosFrame:SetPoint("LEFT", widget, "LEFT", enums.ofsxItemIcons, 0)
+	widget.startPosFrame:SetSize(widget:GetSize())
+
+	widget.labelFrame = CreateFrame("Frame", nil, widget)
+	widget.labelFrame:SetPoint("LEFT", widget.startPosFrame)
+	widget.labelFrame:SetPoint("RIGHT", pointRight)
+	widget.labelFrame:SetHeight(widget:GetHeight())
+
+	widget.labelFrame.Text = label
+	widget.labelFrame.Text:SetParent(widget.labelFrame)
+	widget.labelFrame.Text:SetPoint("TOPLEFT", widget.labelFrame)
+	widget.labelFrame.Text:SetJustifyV("TOP")
+	widget.labelFrame.Text:SetJustifyH("LEFT")
+	-- widget.labelFrame.Text:SetWordWrap(false)
+	-- widget.labelFrame.Text:SetIndentedWordWrap(true)
+	-- widget.labelFrame.Text:SetNonSpaceWrap(true)
+
+	local limitWrapLineCount = 2
+	local height = limitWrapLineCount * widget.labelFrame.Text:GetLineHeight() + (limitWrapLineCount-1) * widget.labelFrame.Text:GetSpacing()
+	widget.labelFrame.Text:SetHeight(height)
+
+	widget.labelFrame:SetScript("OnSizeChanged", function(self, width, height)
+		if width < 18 then width = 18 end
+
+		widget.labelFrame.Text:SetWidth(width)
+
+		-- -- make the text dissapear if we are resizing the frame to be too small, so that the text doesn't go out of bounds to the left
+		-- if widget.labelFrame:GetLeft() >= widget.startPosFrame:GetRight() then
+		-- 	widget.labelFrame.Text:SetPoint("TOPLEFT", widget.labelFrame)
+		-- else
+		-- 	widget.labelFrame.Text:ClearPoint("TOPLEFT")
+		-- end
+
+		widget.heightFrame:SetHeight(widget.labelFrame.Text:GetStringHeight())
+	end)
+
+	return widget
 end
 
 function widgets:HintLabel(relativeFrame, name, text)
@@ -1015,13 +1065,14 @@ function widgets:CategoryWidget(catID, parentFrame)
 	categoryWidget.originalTabLabel:SetHeight(categoryWidget.originalTabLabel:GetLineHeight())
 
 	-- / emptyLabel
-	categoryWidget.emptyLabel = widgets:HintLabel(categoryWidget, nil, L["Empty category"])
-	categoryWidget.emptyLabel:SetPoint("LEFT", categoryWidget, "TOPLEFT", enums.ofsxContent, -enums.ofsyCatContent)
+	local emptyLabel = widgets:HintLabel(categoryWidget, nil, L["Empty category"])
+	categoryWidget.emptyLabel = widgets:AutoWrapCatSubLabel(categoryWidget, emptyLabel, parentFrame)
+	-- emptyLabel points are set in mainFrame:Refresh() (it is treated as an individual widget)
 
 	-- / hiddenLabel
-	categoryWidget.hiddenLabel = widgets:HintLabel(categoryWidget, nil, L["Completed category"])
-	categoryWidget.hiddenLabel:SetPoint("LEFT", categoryWidget, "TOPLEFT", enums.ofsxContent, -enums.ofsyCatContent)
-	categoryWidget.hiddenLabel:Hide()
+	local hiddenLabel = widgets:HintLabel(categoryWidget, nil, L["Completed category"])
+	categoryWidget.hiddenLabel = widgets:AutoWrapCatSubLabel(categoryWidget, hiddenLabel, parentFrame)
+	-- hiddenLabel points are set in mainFrame:Refresh() (it is treated as an individual widget)
 
 	-- / addEditBox
 	categoryWidget.addEditBox = widgets:NoPointsCatEditBox("NysTDL_"..catID.."_widget_addEditBox", categoryWidget)
