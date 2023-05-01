@@ -1125,14 +1125,17 @@ function widgets:CategoryWidget(catID, parentFrame)
 		AceTimer:CancelTimer(categoryWidget.hoverTimerID)
 	end)
 	categoryWidget.hoverFrame:SetScript("OnLeave", function(self)
-		-- if not categoryWidget.hoverFrame:IsMouseOver() then
-			AceTimer:CancelTimer(categoryWidget.hoverTimerID)
-			categoryWidget.hoverTimerID = AceTimer:ScheduleTimer(function()
-				if self and self.Hide then
-					self:Hide()
-				end
-			end, hoverFrameTimeout)
-		-- end
+		if catData.closedInTabIDs[database.ctab()] then
+			self:Hide()
+			return
+		end
+
+		AceTimer:CancelTimer(categoryWidget.hoverTimerID)
+		categoryWidget.hoverTimerID = AceTimer:ScheduleTimer(function()
+			if self and self.Hide then
+				self:Hide()
+			end
+		end, hoverFrameTimeout)
 	end)
 	local tryToShowHoverFrame = function()
 		if dragndrop.dragging then return end
@@ -1618,8 +1621,6 @@ function widgets:ProfileChanged()
 	-- TDLATER ici ligne pr refresh tooltip frame de databroker
 	databroker:RefreshMinimapButton()
 
-	widgets.currentHoverFrame = nil
-	wipe(widgets.aebShown)
 	widgets:WipeDescFrames()
 	mainFrame:Init()
 	tabsFrame:Init()

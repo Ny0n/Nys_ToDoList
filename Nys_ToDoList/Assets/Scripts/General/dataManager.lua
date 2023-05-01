@@ -1583,6 +1583,8 @@ function dataManager:ToggleClosed(catID, tabID, state)
 		catData.closedInTabIDs[tabID] = nil
 	end
 
+	widgets.aebShown[catID] = 0 -- hide the category's add edit boxes
+
 	-- refresh the mainFrame
 	mainFrame:Refresh()
 end

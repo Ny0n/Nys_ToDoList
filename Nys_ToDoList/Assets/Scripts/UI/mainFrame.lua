@@ -167,6 +167,7 @@ function mainFrame:Toggle()
 end
 
 function mainFrame:ChangeTab(newTabID)
+	wipe(widgets.aebShown) -- hide all add edit boxes
 	database.ctab(newTabID)
 	mainFrame:Refresh()
 end
@@ -522,6 +523,7 @@ end
 
 function mainFrame:Event_TDLFrame_OnVisibilityUpdate()
 	-- things to do when we hide/show the list
+	wipe(widgets.aebShown) -- hide all add edit boxes
 	private:MenuClick() -- to close any opened menu
 	mainFrame:Refresh()
 	NysTDL.acedb.profile.lastListVisibility = tdlFrame:IsShown()

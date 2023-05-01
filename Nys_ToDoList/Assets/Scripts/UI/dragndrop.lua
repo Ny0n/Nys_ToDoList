@@ -323,6 +323,15 @@ function private:InitCategoryDrag()
 	-- creating the duplicate, and getting the dragging's widget current position
 	private:CreateDuplicate(enums.category, draggingWidget.catID)
 
+	-- hiding the unnecessary things
+	draggingWidget.emptyLabel:Hide()
+	draggingWidget.hiddenLabel:Hide()
+	draggingWidget.hoverFrame:Hide()
+	draggingWidget.favsRemainingLabel:Hide()
+	draggingWidget.originalTabLabel:Hide()
+	draggingWidget.addEditBox:Hide()
+	draggingWidget.editModeFrame:Hide()
+
 	-- when we are dragging a category, we dim every place we can't drag it to (for a visual feedback)
 	local contentWidgets = mainFrame:GetContentWidgets()
 	contentWidgets[draggingWidget.catID]:SetAlpha(selectedDimAlpha)
@@ -482,18 +491,9 @@ function private:DragMouseStart()
 	local widgetX, widgetY = draggingWidget:GetCenter() -- UIPARENT CS
 	local ofsx, ofsy = clickX - widgetX, clickY - widgetY -- here we take the offset between the original click's pos (dragMouseDown) and the widget's center
 
-	-- update points & cleanup the widget we are dragging
+	-- update points of the interactive label (valid for item & cat widgets)
 	draggingWidget.interactiveLabel:ClearPoint("RIGHT")
 	draggingWidget.interactiveLabel:SetWidth(draggingWidget.interactiveLabel.Text:GetWrappedWidth())
-	if draggingWidget.enum == enums.category then
-		draggingWidget.emptyLabel.labelFrame:ClearPoint("RIGHT")
-		draggingWidget.emptyLabel.labelFrame:SetWidth(draggingWidget.emptyLabel.labelFrame.Text:GetWrappedWidth())
-		draggingWidget.hiddenLabel.labelFrame:ClearPoint("RIGHT")
-		draggingWidget.hiddenLabel.labelFrame:SetWidth(draggingWidget.hiddenLabel.labelFrame.Text:GetWrappedWidth())
-		draggingWidget.hoverFrame:Hide()
-		draggingWidget.favsRemainingLabel:Hide()
-		draggingWidget.originalTabLabel:Hide()
-	end
 
 	local cursorX, cursorY = private:GetCursorScaledPosition() -- UIPARENT CS
 	draggingWidget:ClearAllPoints()
