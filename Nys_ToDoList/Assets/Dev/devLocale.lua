@@ -24,6 +24,7 @@ L["Name"] = true
 L["Name is too large"] = true
 L["Frame options"] = true
 
+L["Press enter to add"] = true
 L["Add an item"] = true
 L["Font size"] = true
 L["Toggle menu"] = true

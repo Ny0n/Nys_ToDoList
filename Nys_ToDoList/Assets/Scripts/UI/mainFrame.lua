@@ -625,24 +625,34 @@ end
 
 function private:RecursiveLoad(tabID, tabData, catWidget, p)
 	local catData = catWidget.catData
-	catWidget.addEditBox:Hide() -- we always hide every addEditBox on list Refresh
+	catWidget.addEditBox:Hide()
 	catWidget.emptyLabel:Hide()
 	catWidget.hiddenLabel:Hide()
 
 	-- if the cat is closed, ignore it
 	if catData.closedInTabIDs[tabID] then
-		p.offsetY = -enums.ofsyCat
+		p:SetY(-enums.ofsyCat)
 		return
+	end
+
+	p:SetX(enums.ofsxContent)
+	p:SetY(-enums.ofsyCatContent)
+
+	-- add edit boxes : check for the flags and show them accordingly
+	local isAddBoxShown = widgets.aebShown[catWidget.catID] and bit.band(widgets.aebShown[catWidget.catID], widgets.aebShownFlags.item) ~= 0
+	if isAddBoxShown then -- item add edit box
+		p:ShowFrame(catWidget.addEditBox)
+
+		p:SetX(0)
+		p:SetY(-enums.ofsyContent-3)
 	end
 
 	-- emptyLabel : we show it if there's nothing in the category
 	if not next(catData.orderedContentIDs) then
-		p.offsetX = enums.ofsxContent
-		p.offsetY = -enums.ofsyCatContent
 		p:ShowFrame(catWidget.emptyLabel)
-		p.relativeFrame = catWidget.emptyLabel.heightFrame
-		p.offsetX = -enums.ofsxContent
-		p.offsetY = -enums.ofsyContentCat
+
+		p:SetX(-enums.ofsxContent)
+		p:SetY(-enums.ofsyContentCat)
 		return
 	end
 
@@ -651,12 +661,10 @@ function private:RecursiveLoad(tabID, tabData, catWidget, p)
 		if tabData.hideCheckedItems then
 			if not dataManager:IsParent(catWidget.catID) then
 				if dataManager:IsCategoryCompleted(catWidget.catID) then
-					p.offsetX = enums.ofsxContent
-					p.offsetY = -enums.ofsyCatContent
 					p:ShowFrame(catWidget.hiddenLabel)
-					p.relativeFrame = catWidget.hiddenLabel.heightFrame
-					p.offsetX = -enums.ofsxContent
-					p.offsetY = -enums.ofsyContentCat
+
+					p:SetX(-enums.ofsxContent)
+					p:SetY(-enums.ofsyContentCat)
 					return
 				end
 			end
@@ -664,25 +672,24 @@ function private:RecursiveLoad(tabID, tabData, catWidget, p)
 	end
 
 	-- then we show everything there is to show in the category
-	p.offsetX = enums.ofsxContent
-	p.offsetY = -enums.ofsyCatContent
 	for contentOrder,contentID in ipairs(catData.orderedContentIDs) do -- for everything in a category
 		local contentWidget = contentWidgets[contentID]
 		if not dataManager:IsHidden(contentID, tabID) then -- if it's not hidden, we show the corresponding widget
 			p:ShowFrame(contentWidget)
-			p.relativeFrame = contentWidget.heightFrame
-			p.offsetX = 0
+			p:SetX(0)
 
 			if contentWidget.enum == enums.category then -- sub-category
 				private:RecursiveLoad(tabID, tabData, contentWidget, p)
 			elseif contentWidget.enum == enums.item then -- item
-				p.offsetY = -enums.ofsyContent
+				p:SetY(-enums.ofsyContent)
 			end
 		end
 	end
-	p.offsetX = -enums.ofsxContent
-	p.offsetY = -enums.ofsyContentCat
+
 	-- p.offsetY = enums.ofsyContent -- TDLATER take last used offset for sub-cats? (not sure of this comment tho)
+
+	p:SetX(-enums.ofsxContent)
+	p:SetY(-enums.ofsyContentCat)
 end
 
 function private:LoadList()
@@ -698,13 +705,26 @@ function private:LoadList()
 	-- let's go!
 	local tabID = database.ctab()
 	local tabData = select(3, dataManager:Find(tabID))
-	local p = { -- pos table
+	local p = { -- pos table TDLATER declare out of here for opti?
 		relativeFrame = tdlFrame.content.loadOrigin,
 		offsetX = 0,
 		offsetY = 0,
 		ShowFrame = function(self, frame)
 			frame:SetPoint("TOPLEFT", self.relativeFrame, "BOTTOMLEFT", self.offsetX, self.offsetY)
 			frame:Show()
+			self.relativeFrame = frame.heightFrame
+		end,
+		SetX = function(self, value)
+			self.offsetX = value
+		end,
+		SetY = function(self, value)
+			self.offsetY = value
+		end,
+		AddX = function(self, value)
+			self.offsetX = self.offsetX + value
+		end,
+		AddY = function(self, value)
+			self.offsetY = self.offsetY + value
 		end
 	}
 
@@ -714,8 +734,7 @@ function private:LoadList()
 
 		if not dataManager:IsHidden(catID, tabID) then
 			p:ShowFrame(catWidget)
-			p.relativeFrame = catWidget.heightFrame
-			p.offsetX = 0
+			p:SetX(0)
 
 			if catOrder == 1 then -- if it's the first loaded cat widget
 				tutorialsManager:SetPoint("introduction", "addItem", "RIGHT", catWidget, "LEFT", -23, 0) -- we put the corresponding tuto on it
@@ -732,7 +751,7 @@ function private:LoadList()
 		end
 	end
 
-	tdlFrame.content.dummyBottomFrame:SetPoint("TOPLEFT", p.relativeFrame, "BOTTOMLEFT", p.offsetX, p.offsetY)
+	p:ShowFrame(tdlFrame.content.dummyBottomFrame) -- add a bit of space at the bottom
 
 	-- drag&drop
 	if dragndrop.dragging then
@@ -821,32 +840,10 @@ function private:GenerateMenuAddACategory()
 
 	--/************************************************/--
 
-	menuframe.categoryEditBox = CreateFrame("EditBox", nil, menuframe, "InputBoxTemplate") -- edit box to put the new category name
-	menuframe.categoryEditBox:SetPoint("TOPLEFT", menuframe.menuTitle, "BOTTOMLEFT", 5, -5)
-	menuframe.categoryEditBox:SetSize(200, 30)
-	menuframe.categoryEditBox:SetAutoFocus(false)
+	menuframe.categoryEditBox = widgets:NoPointsCatEditBox(menuframe, L["Press enter to add"])
+	menuframe.categoryEditBox:SetPoint("TOPLEFT", menuframe.menuTitle, "BOTTOMLEFT", 5, -13)
+	menuframe.categoryEditBox:SetWidth(200)
 	menuframe.categoryEditBox:SetScript("OnEnterPressed", addCat)
-	menuframe.categoryEditBox:HookScript("OnEditFocusGained", function(self)
-		-- since this edit box stays there, even when we lose the focus,
-		-- I have to reapply the highlight depending on the SV
-		-- when clicking on it
-		if NysTDL.acedb.profile.highlightOnFocus then
-			self:HighlightText()
-		else
-			self:HighlightText(self:GetCursorPosition(), self:GetCursorPosition())
-		end
-	end)
-
-	menuframe.categoryEditBoxHint = menuframe.categoryEditBox:CreateFontString(nil)
-	menuframe.categoryEditBoxHint:SetFontObject("GameFontNormal")
-	menuframe.categoryEditBoxHint:SetTextColor(0.35, 0.35, 0.35)
-	menuframe.categoryEditBoxHint:SetText("Press enter to add")
-	menuframe.categoryEditBoxHint:SetPoint("LEFT", menuframe.categoryEditBox, "LEFT", 3, -1)
-
-	menuframe.categoryEditBox:HookScript("OnTextChanged", function(self)
-		menuframe.categoryEditBoxHint:SetShown(self:GetText() == "")
-	end)
-
 	tutorialsManager:SetPoint("introduction", "addCat", "TOP", menuframe.categoryEditBox, "BOTTOM", 0, -22)
 end
 

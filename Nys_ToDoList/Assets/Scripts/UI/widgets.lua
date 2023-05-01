@@ -48,6 +48,17 @@ local descFrameInfo = {
 local updateRate = 0.05
 local refreshRate = 1
 
+local currentHoverFrame = nil -- only one hover frame at a time (polish)
+
+widgets.aebShownFlags = {
+	item = bit.lshift(1, 0),
+	cat = bit.lshift(1, 1)
+	-- ...
+}
+widgets.aebShown = {
+	-- [catID] = <flag>
+}
+
 -- // WoW & Lua APIs
 
 -- local PlaySound = PlaySound -- TDLATER
@@ -856,16 +867,18 @@ function widgets:AddButton(widget, parent)
 
 	-- // Appearance
 
+	-- btn.Icon:SetDesaturated(true)
+
 	-- these are for changing the color depending on the mouse actions (since they are custom xml)
 	-- and yea, this one's a bit complicated too because it works in very specific ways
 	btn:HookScript("OnEnter", function(self)
 		self:SetAlpha(1)
 	end)
 	btn:HookScript("OnLeave", function(self)
-		self:SetAlpha(0.7)
+		self:SetAlpha(0.5)
 	end)
 	btn:HookScript("OnShow", function(self)
-		self:SetAlpha(0.7)
+		self:SetAlpha(0.5)
 	end)
 
 	return btn
@@ -1094,9 +1107,11 @@ function widgets:CategoryWidget(catID, parentFrame)
 	-- / add edit boxes & everything that goes with them
 	local hoverFrameExtent = 26
 	local hoverFrameTimeout = 0.6
-	categoryWidget.hoverFrame = CreateFrame("Frame", nil, categoryWidget)
+	categoryWidget.hoverFrame = CreateFrame("Frame", nil, categoryWidget.interactiveLabel)
 	categoryWidget.hoverFrame:SetPoint("TOPLEFT", categoryWidget.interactiveLabel.Button, "TOPLEFT", 0, 0)
 	categoryWidget.hoverFrame:SetPoint("BOTTOMRIGHT", categoryWidget.interactiveLabel.Button, "BOTTOMRIGHT", hoverFrameExtent, 0)
+
+	categoryWidget.hoverTimerID = -1
 	categoryWidget.hoverFrame:SetScript("OnShow", function(self)
 		categoryWidget.labelsStartPosFrame:ClearPoint("TOPLEFT")
 		categoryWidget.labelsStartPosFrame:SetPoint("TOPLEFT", categoryWidget.hoverFrame, "TOPRIGHT", 0, 0)
@@ -1105,7 +1120,6 @@ function widgets:CategoryWidget(catID, parentFrame)
 		categoryWidget.labelsStartPosFrame:ClearPoint("TOPLEFT")
 		categoryWidget.labelsStartPosFrame:SetPoint("TOPLEFT", categoryWidget.interactiveLabel.Text, "TOPRIGHT", 5, 0) -- 5 bc 6-width => 6-1 => 5 bc "RIGHT"
 	end)
-	categoryWidget.hoverTimerID = -1
 	categoryWidget.hoverFrame:SetScript("OnEnter", function(self)
 		AceTimer:CancelTimer(categoryWidget.hoverTimerID)
 	end)
@@ -1123,6 +1137,13 @@ function widgets:CategoryWidget(catID, parentFrame)
 		if dragndrop.dragging then return end
 		AceTimer:CancelTimer(categoryWidget.hoverTimerID)
 		categoryWidget.hoverFrame:SetShown(not catData.closedInTabIDs[database.ctab()])
+		if categoryWidget.hoverFrame:IsShown() then
+			if currentHoverFrame and currentHoverFrame ~= categoryWidget.hoverFrame then
+				currentHoverFrame:Hide()
+			end
+
+			currentHoverFrame = categoryWidget.hoverFrame
+		end
 	end
 	categoryWidget.interactiveLabel.Button:HookScript("OnEnter", function(self)
 		tryToShowHoverFrame()
@@ -1131,20 +1152,28 @@ function widgets:CategoryWidget(catID, parentFrame)
 		categoryWidget.hoverFrame:GetScript("OnLeave")(categoryWidget.hoverFrame)
 	end)
 	categoryWidget.interactiveLabel.Button:HookScript("OnShow", function(self)
-		if categoryWidget.hoverFrame:IsMouseOver() then
-			tryToShowHoverFrame()
-		end
+		AceTimer:ScheduleTimer(function()
+			if categoryWidget.hoverFrame:IsMouseOver() then
+				tryToShowHoverFrame()
+			else
+				categoryWidget.hoverFrame:GetScript("OnLeave")(categoryWidget.hoverFrame)
+			end
+		end, 0.0) -- wait for the next frame, just to make sure that everything has been properly refreshed
 	end)
 	categoryWidget.hoverFrame:Hide()
 
 	-- / addItemBtn
 	categoryWidget.addItemBtn = widgets:AddButton(categoryWidget, categoryWidget.hoverFrame)
-	categoryWidget.addItemBtn:SetPoint("TOPLEFT", categoryWidget.hoverFrame, "TOPRIGHT", -hoverFrameExtent+5, -1)
+	categoryWidget.addItemBtn:SetPoint("TOPLEFT", categoryWidget.hoverFrame, "TOPRIGHT", -hoverFrameExtent+5, -2)
 	categoryWidget.addItemBtn:SetScript("OnClick", function()
-		print(dataManager:GetName(categoryWidget.catID))
-		-- -- we toggle the add edit box TODO set flag
-		-- categoryWidget.addEditBox:SetShown(not categoryWidget.addEditBox:IsShown())
-		-- -- categoryWidget.addCatEditBox:SetShown(not categoryWidget.addCatEditBox:IsShown()) -- TDLATER sub-cats
+		if not widgets.aebShown[catID] then widgets.aebShown[catID] = 0 end
+
+		widgets.aebShown[catID] = bit.bxor(widgets.aebShown[catID], widgets.aebShownFlags.item)
+		mainFrame:Refresh()
+
+		if categoryWidget.addEditBox.edb:IsShown() then
+			widgets:SetFocusEditBox(categoryWidget.addEditBox.edb)
+		end
 	end)
 	categoryWidget.addItemBtn:HookScript("OnEnter", function(self)
 		categoryWidget.hoverFrame:GetScript("OnEnter")(categoryWidget.hoverFrame)
@@ -1154,39 +1183,28 @@ function widgets:CategoryWidget(catID, parentFrame)
 	end)
 
 	-- / addEditBox
-	categoryWidget.addEditBox = widgets:NoPointsCatEditBox("NysTDL_"..catID.."_widget_addEditBox", categoryWidget)
-	categoryWidget.addEditBox:SetHeight(30)
+	categoryWidget.addEditBox = widgets:NoPointsCatEditBox(categoryWidget, L["Press enter to add"], true, parentFrame)
 	categoryWidget.addEditBox:Hide()
-	categoryWidget.addEditBox:SetScript("OnEnterPressed", function(self)
+	categoryWidget.addEditBox.edb:SetScript("OnEnterPressed", function(self)
 		if dataManager:CreateItem(self:GetText(), catData.originalTabID, catID) then -- calls mainFrame:Refresh()
 			self:SetText("") -- we clear the box if the adding was a success
 		end
-		self:Show() -- we keep it shown to add more items
+		widgets:SetFocusEditBox(self)
 	end)
 	-- cancelling
-	categoryWidget.addEditBox:SetScript("OnEscapePressed", function(self)
-		self:Hide()
+	categoryWidget.addEditBox.edb:SetScript("OnEscapePressed", function(self)
+		widgets.aebShown[catID] = bit.band(widgets.aebShown[catID], bit.bnot(widgets.aebShownFlags.item))
+		mainFrame:Refresh()
 	end)
-	categoryWidget.addEditBox:HookScript("OnEditFocusLost", function(self)
-		if not NysTDL.acedb.profile.migrationData.failed then
-			self:GetScript("OnEscapePressed")(self)
-		end
-	end)
-	categoryWidget.addEditBox:SetScript("OnShow", function(self)
-		-- // we reset its points
-		categoryWidget.addEditBox:ClearAllPoints()
-		categoryWidget.addEditBox:SetPoint("LEFT", categoryWidget.interactiveLabel, "RIGHT", 10, 0)
-		categoryWidget.addEditBox:SetPoint("RIGHT", parentFrame, "RIGHT", -3, 0)
-		-- categoryWidget.addCatEditBox:ClearAllPoints() -- TDLATER sub-cats
-
-		-- // we give it the focus
-		widgets:SetFocusEditBox(categoryWidget.addEditBox)
+	-- categoryWidget.addEditBox.edb:HookScript("OnEditFocusLost", function(self)
+	-- 	if not NysTDL.acedb.profile.migrationData.failed then
+	-- 		self:GetScript("OnEscapePressed")(self)
+	-- 	end
+	-- end)
+	categoryWidget.addEditBox.edb:SetScript("OnShow", function(self)
 		tutorialsManager:Validate("introduction", "addItem") -- tutorial
 	end)
-	categoryWidget.addEditBox:SetScript("OnHide", function(self)
-		self:ClearAllPoints()
-	end)
-	widgets:AddHyperlinkEditBox(categoryWidget.addEditBox)
+	widgets:AddHyperlinkEditBox(categoryWidget.addEditBox.edb)
 
 	-- -- TDLATER sub-cat creation
 	-- -- / addCatEditBox
@@ -1303,7 +1321,7 @@ function widgets:ItemWidget(itemID, parentFrame)
 
 	-- / checkBtn
 	itemWidget.checkBtn = CreateFrame("CheckButton", nil, itemWidget, "UICheckButtonTemplate")
-	itemWidget.checkBtn:SetPoint("LEFT", itemWidget.startPosFrame, "LEFT", 0, 0)
+	itemWidget.checkBtn:SetPoint("LEFT", itemWidget.startPosFrame, "LEFT", -3, 0)
 	itemWidget.checkBtn:SetScript("OnClick", function() dataManager:ToggleChecked(itemID) end)
 	itemWidget.SetCheckBtnExtended = private.Item_SetCheckBtnExtended
 
@@ -1357,28 +1375,66 @@ function widgets:NoPointsRenameEditBox(relativeFrame, text, height)
 	return renameEditBox
 end
 
-function widgets:NoPointsCatEditBox(name, categoryWidget)
-	local edb = CreateFrame("EditBox", name, categoryWidget, "InputBoxTemplate")
+function widgets:NoPointsCatEditBox(parent, hint, fullWidget, pointRight)
+	local edb = CreateFrame("EditBox", nil, parent, "InputBoxTemplate")
+	edb:SetFontObject("GameFontHighlightLarge")
+	edb:SetHeight(16)
 	edb:SetAutoFocus(false)
-	-- edb:SetTextInsets(0, 15, 0, 0)
+	edb:HookScript("OnEditFocusGained", function(self)
+		if NysTDL.acedb.profile.highlightOnFocus then
+			self:HighlightText()
+		else
+			self:HighlightText(self:GetCursorPosition(), self:GetCursorPosition())
+		end
+	end)
 
-	-- local btn = CreateFrame("Button", nil, edb, "NysTDL_AddButton")
-	-- btn.tooltip = L["Press enter to add the item"]
-	-- btn:SetPoint("RIGHT", edb, "RIGHT", -4, -1.2)
-	-- btn:EnableMouse(true)
+	edb.Hint = edb:CreateFontString(nil)
+	edb.Hint:SetFontObject("GameFontNormal")
+	edb.Hint:SetTextColor(0.35, 0.35, 0.35)
+	edb.Hint:SetText(hint or "")
+	edb.Hint:SetPoint("LEFT", edb, "LEFT", 3, -1)
+	edb.Hint:SetPoint("RIGHT", edb, "RIGHT", -6, -1)
+	edb.Hint:SetJustifyV("TOP")
+	edb.Hint:SetJustifyH("LEFT")
+	edb.Hint:SetHeight(edb.Hint:GetLineHeight())
 
-	-- -- these are for changing the color depending on the mouse actions (since they are custom xml)
-	-- btn:HookScript("OnEnter", function(self)
-	-- 	self.Icon:SetTextColor(1, 1, 0, 0.6)
-	-- end)
-	-- btn:HookScript("OnLeave", function(self)
-	-- 	self.Icon:SetTextColor(1, 1, 1, 0.4)
-	-- end)
-	-- btn:HookScript("OnShow", function(self)
-	-- 	self.Icon:SetTextColor(1, 1, 1, 0.4)
-	-- end)
+	edb:HookScript("OnTextChanged", function(self)
+		self.Hint:SetShown(self:GetText() == "")
+	end)
 
-	return edb
+	if not fullWidget then
+		return edb
+	end
+
+	local widget = CreateFrame("Frame", nil, parent)
+	widget:SetSize(parent:GetSize())
+
+	widget.heightFrame = CreateFrame("Frame", nil, widget)
+	widget.heightFrame:SetPoint("TOPLEFT", widget)
+	widget.heightFrame:SetWidth(1)
+	widget.heightFrame:SetHeight(widget:GetHeight()) -- fixed for now
+
+	widget.startPosFrame = CreateFrame("Frame", nil, widget)
+	widget.startPosFrame:SetPoint("LEFT", widget, "LEFT", enums.ofsxItemIcons+5, 0)
+	widget.startPosFrame:SetSize(widget:GetSize())
+
+	widget.widthFrame = CreateFrame("Frame", nil, widget)
+	widget.widthFrame:SetPoint("LEFT", widget.startPosFrame)
+	widget.widthFrame:SetPoint("RIGHT", pointRight)
+	widget.widthFrame:SetHeight(widget:GetHeight())
+
+	widget.edb = edb
+	widget.edb:SetParent(widget)
+
+	widget.edb:SetPoint("LEFT", widget.widthFrame)
+
+	widget.widthFrame:HookScript("OnSizeChanged", function(self, width)
+		if width < 22 then width = 22 end
+		widget.edb:SetWidth(width)
+		widget.edb:SetShown(widget.widthFrame:GetLeft() >= widget.startPosFrame:GetRight()-1)
+	end)
+
+	return widget
 end
 
 --/*******************/ OTHER /*************************/--
@@ -1549,6 +1605,8 @@ function widgets:ProfileChanged()
 	-- TDLATER ici ligne pr refresh tooltip frame de databroker
 	databroker:RefreshMinimapButton()
 
+	widgets.currentHoverFrame = nil
+	wipe(widgets.aebShown)
 	widgets:WipeDescFrames()
 	mainFrame:Init()
 	tabsFrame:Init()
