@@ -1110,14 +1110,14 @@ function widgets:CategoryWidget(catID, parentFrame)
 		AceTimer:CancelTimer(categoryWidget.hoverTimerID)
 	end)
 	categoryWidget.hoverFrame:SetScript("OnLeave", function(self)
-		if not categoryWidget.hoverFrame:IsMouseOver() then
+		-- if not categoryWidget.hoverFrame:IsMouseOver() then
 			AceTimer:CancelTimer(categoryWidget.hoverTimerID)
 			categoryWidget.hoverTimerID = AceTimer:ScheduleTimer(function()
 				if self and self.Hide then
 					self:Hide()
 				end
 			end, hoverFrameTimeout)
-		end
+		-- end
 	end)
 	local tryToShowHoverFrame = function()
 		if dragndrop.dragging then return end
@@ -1139,7 +1139,7 @@ function widgets:CategoryWidget(catID, parentFrame)
 
 	-- / addItemBtn
 	categoryWidget.addItemBtn = widgets:AddButton(categoryWidget, categoryWidget.hoverFrame)
-	categoryWidget.addItemBtn:SetPoint("LEFT", categoryWidget.hoverFrame, "RIGHT", -hoverFrameExtent+5, -1)
+	categoryWidget.addItemBtn:SetPoint("TOPLEFT", categoryWidget.hoverFrame, "TOPRIGHT", -hoverFrameExtent+5, -1)
 	categoryWidget.addItemBtn:SetScript("OnClick", function()
 		print(dataManager:GetName(categoryWidget.catID))
 		-- -- we toggle the add edit box TODO set flag
