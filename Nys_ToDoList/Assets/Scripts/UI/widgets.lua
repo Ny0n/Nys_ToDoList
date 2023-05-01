@@ -676,7 +676,8 @@ end
 function widgets:RemoveButton(widget, parent)
 	local btn = CreateFrame("Button", nil, parent, "NysTDL_RemoveButton")
 	local ID = widget.itemID or widget.catID
-	local desaturated = widget.enum == enums.category and 1 or nil
+	local desaturated = nil
+	-- local desaturated = widget.enum == enums.category and 1 or nil
 
 	-- these are for changing the color depending on the mouse actions (since they are custom xml)
 	btn:HookScript("OnEnter", function(self)
@@ -1196,11 +1197,6 @@ function widgets:CategoryWidget(catID, parentFrame)
 		widgets.aebShown[catID] = bit.band(widgets.aebShown[catID], bit.bnot(widgets.aebShownFlags.item))
 		mainFrame:Refresh()
 	end)
-	-- categoryWidget.addEditBox.edb:HookScript("OnEditFocusLost", function(self)
-	-- 	if not NysTDL.acedb.profile.migrationData.failed then
-	-- 		self:GetScript("OnEscapePressed")(self)
-	-- 	end
-	-- end)
 	categoryWidget.addEditBox.edb:SetScript("OnShow", function(self)
 		tutorialsManager:Validate("introduction", "addItem") -- tutorial
 	end)
@@ -1432,6 +1428,23 @@ function widgets:NoPointsCatEditBox(parent, hint, fullWidget, pointRight)
 		if width < 22 then width = 22 end
 		widget.edb:SetWidth(width)
 		widget.edb:SetShown(widget.widthFrame:GetLeft() >= widget.startPosFrame:GetRight()-1)
+	end)
+
+	widget.removeBtn = CreateFrame("Button", nil, widget, "NysTDL_RemoveButton")
+	widget.removeBtn:SetPoint("LEFT", widget, "LEFT", 0, 0)
+	widget.removeBtn.Icon:SetDesaturated(1)
+	widget.removeBtn.Icon:SetVertexColor(1, 1, 1)
+	widget.removeBtn:HookScript("OnEnter", function(self)
+		self:SetAlpha(0.5)
+	end)
+	widget.removeBtn:HookScript("OnLeave", function(self)
+		self:SetAlpha(1)
+	end)
+	widget.removeBtn:HookScript("OnShow", function(self)
+		self:SetAlpha(1)
+	end)
+	widget.removeBtn:SetScript("OnClick", function()
+		widget.edb:GetScript("OnEscapePressed")(widget.edb) -- hide the edit box
 	end)
 
 	return widget
