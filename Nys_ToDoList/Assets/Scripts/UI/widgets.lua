@@ -851,6 +851,26 @@ function widgets:DescButton(widget, parent)
   return btn
 end
 
+function widgets:AddButton(widget, parent)
+	local btn = widgets:IconTooltipButton(parent, "NysTDL_AddButton", L["Add an item"])
+
+	-- // Appearance
+
+	-- these are for changing the color depending on the mouse actions (since they are custom xml)
+	-- and yea, this one's a bit complicated too because it works in very specific ways
+	btn:HookScript("OnEnter", function(self)
+		self:SetAlpha(1)
+	end)
+	btn:HookScript("OnLeave", function(self)
+		self:SetAlpha(0.7)
+	end)
+	btn:HookScript("OnShow", function(self)
+		self:SetAlpha(0.7)
+	end)
+
+	return btn
+end
+
 function widgets:ValidButton(parent)
 	local btn = CreateFrame("Button", nil, parent, "NysTDL_ValidButton")
 	local function toGreen()
@@ -1028,13 +1048,6 @@ function widgets:CategoryWidget(catID, parentFrame)
 			end
 
 			dataManager:ToggleClosed(catID, database.ctab())
-		elseif button == "RightButton" then -- we try to toggle the addEditBox
-			-- if the cat we right clicked on is NOT a closed category
-			if catData.closedInTabIDs[database.ctab()] then return end
-
-			-- we toggle its edit box
-			categoryWidget.addEditBox:SetShown(not categoryWidget.addEditBox:IsShown())
-			-- categoryWidget.addCatEditBox:SetShown(not categoryWidget.addCatEditBox:IsShown()) -- TDLATER sub-cats
 		end
 	end)
 	categoryWidget.interactiveLabel.Button:SetScript("OnDoubleClick", private.Widget_OnDoubleClick)
@@ -1079,46 +1092,66 @@ function widgets:CategoryWidget(catID, parentFrame)
 	-- hiddenLabel points are set in mainFrame:Refresh() (it is treated as an individual widget)
 
 	-- / add edit boxes & everything that goes with them
+	local hoverFrameExtent = 26
+	local hoverFrameTimeout = 0.6
 	categoryWidget.hoverFrame = CreateFrame("Frame", nil, categoryWidget)
 	categoryWidget.hoverFrame:SetPoint("TOPLEFT", categoryWidget.interactiveLabel.Button, "TOPLEFT", 0, 0)
-	categoryWidget.hoverFrame:SetPoint("BOTTOMRIGHT", categoryWidget.interactiveLabel.Button, "BOTTOMRIGHT", 50, 0)
+	categoryWidget.hoverFrame:SetPoint("BOTTOMRIGHT", categoryWidget.interactiveLabel.Button, "BOTTOMRIGHT", hoverFrameExtent, 0)
 	categoryWidget.hoverFrame:SetScript("OnShow", function(self)
 		categoryWidget.labelsStartPosFrame:ClearPoint("TOPLEFT")
-		categoryWidget.labelsStartPosFrame:SetPoint("TOPLEFT", categoryWidget.hoverFrame, "TOPRIGHT", 5, 0) -- 5 bc 6-width => 6-1 => 5 bc "RIGHT"
-		print("show")
+		categoryWidget.labelsStartPosFrame:SetPoint("TOPLEFT", categoryWidget.hoverFrame, "TOPRIGHT", 0, 0)
 	end)
 	categoryWidget.hoverFrame:SetScript("OnHide", function(self)
 		categoryWidget.labelsStartPosFrame:ClearPoint("TOPLEFT")
 		categoryWidget.labelsStartPosFrame:SetPoint("TOPLEFT", categoryWidget.interactiveLabel.Text, "TOPRIGHT", 5, 0) -- 5 bc 6-width => 6-1 => 5 bc "RIGHT"
-		print("hide")
+	end)
+	categoryWidget.hoverTimerID = -1
+	categoryWidget.hoverFrame:SetScript("OnEnter", function(self)
+		AceTimer:CancelTimer(categoryWidget.hoverTimerID)
 	end)
 	categoryWidget.hoverFrame:SetScript("OnLeave", function(self)
 		if not categoryWidget.hoverFrame:IsMouseOver() then
-			print("leave")
-			self:Hide()
+			AceTimer:CancelTimer(categoryWidget.hoverTimerID)
+			categoryWidget.hoverTimerID = AceTimer:ScheduleTimer(function()
+				if self and self.Hide then
+					self:Hide()
+				end
+			end, hoverFrameTimeout)
 		end
 	end)
-	categoryWidget.interactiveLabel.Button:HookScript("OnEnter", function(self)
+	local tryToShowHoverFrame = function()
 		if dragndrop.dragging then return end
+		AceTimer:CancelTimer(categoryWidget.hoverTimerID)
 		categoryWidget.hoverFrame:SetShown(not catData.closedInTabIDs[database.ctab()])
+	end
+	categoryWidget.interactiveLabel.Button:HookScript("OnEnter", function(self)
+		tryToShowHoverFrame()
 	end)
 	categoryWidget.interactiveLabel.Button:HookScript("OnLeave", function(self)
 		categoryWidget.hoverFrame:GetScript("OnLeave")(categoryWidget.hoverFrame)
 	end)
 	categoryWidget.interactiveLabel.Button:HookScript("OnShow", function(self)
 		if categoryWidget.hoverFrame:IsMouseOver() then
-			if dragndrop.dragging then return end
-			categoryWidget.hoverFrame:SetShown(not catData.closedInTabIDs[database.ctab()])
+			tryToShowHoverFrame()
 		end
 	end)
 	categoryWidget.hoverFrame:Hide()
 
-	local a = categoryWidget.hoverFrame:CreateFontString(nil)
-	a:SetPoint("RIGHT", categoryWidget.hoverFrame)
-	a:SetSize(100, 16)
-	a:SetJustifyH("RIGHT")
-	a:SetFontObject("GameFontNormalLarge")
-	a:SetText("hey")
+	-- / addItemBtn
+	categoryWidget.addItemBtn = widgets:AddButton(categoryWidget, categoryWidget.hoverFrame)
+	categoryWidget.addItemBtn:SetPoint("LEFT", categoryWidget.hoverFrame, "RIGHT", -hoverFrameExtent+5, -1)
+	categoryWidget.addItemBtn:SetScript("OnClick", function()
+		print(dataManager:GetName(categoryWidget.catID))
+		-- -- we toggle the add edit box TODO set flag
+		-- categoryWidget.addEditBox:SetShown(not categoryWidget.addEditBox:IsShown())
+		-- -- categoryWidget.addCatEditBox:SetShown(not categoryWidget.addCatEditBox:IsShown()) -- TDLATER sub-cats
+	end)
+	categoryWidget.addItemBtn:HookScript("OnEnter", function(self)
+		categoryWidget.hoverFrame:GetScript("OnEnter")(categoryWidget.hoverFrame)
+	end)
+	categoryWidget.addItemBtn:HookScript("OnLeave", function(self)
+		categoryWidget.hoverFrame:GetScript("OnLeave")(categoryWidget.hoverFrame)
+	end)
 
 	-- / addEditBox
 	categoryWidget.addEditBox = widgets:NoPointsCatEditBox("NysTDL_"..catID.."_widget_addEditBox", categoryWidget)

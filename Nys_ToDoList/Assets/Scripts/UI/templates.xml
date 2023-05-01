@@ -351,6 +351,24 @@
 		</Layers>
 	</Button>
 
+	<!-- Add button (item/sub-cat) -->
+	<Button name="NysTDL_AddButton" inherits="NysTDL_IconButtonPositionScripts" virtual="true">
+		<Size x="17" y="17"/> <!-- Size of interactable zone -->
+		<KeyValues>
+			<KeyValue key="name" value="AddButton"/>
+		</KeyValues>
+		<Layers>
+			<Layer level="OVERLAY">
+				<Texture parentKey="Icon" atlas="ui-hud-minimap-zoom-in">
+					<Size x="17" y="17"/>
+					<Anchors>
+						<Anchor point="CENTER"/>
+					</Anchors>
+				</Texture>
+			</Layer>
+		</Layers>
+	</Button>
+
 	<!-- Valid button -->
 	<Button name="NysTDL_ValidButton" inherits="NysTDL_IconButtonPositionScripts" virtual="true">
 		<Size x="12" y="11"/> <!-- Size of interactable zone -->
@@ -590,7 +608,7 @@
 			</Layer>
 		</Layers>
 		<Frames>
-			<Button name="$parentButton" parentKey="Button" registerForClicks="LeftButtonUp, RightButtonUp">
+			<Button name="$parentButton" parentKey="Button" registerForClicks="LeftButtonUp">
 				<Anchors>
 					<Anchor point="TOPLEFT" relativeKey="$parent.Text"/>
 				</Anchors>
