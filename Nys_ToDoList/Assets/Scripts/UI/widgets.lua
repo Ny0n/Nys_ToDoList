@@ -1050,9 +1050,13 @@ function widgets:CategoryWidget(catID, parentFrame)
 	categoryWidget.removeBtn:SetPoint("LEFT", emf, "LEFT", 0, -1)
 	categoryWidget.removeBtn:SetScript("OnClick", function() dataManager:DeleteCat(catID) end)
 
+	categoryWidget.labelsStartPosFrame = CreateFrame("Frame", nil, categoryWidget) -- frame to determine where we start the checkbox, or the label if we are in a non-checkable item
+	categoryWidget.labelsStartPosFrame:SetPoint("TOPLEFT", categoryWidget.interactiveLabel.Text, "TOPRIGHT", 5, 0) -- 5 bc 6-width => 6-1 => 5 bc "RIGHT"
+	categoryWidget.labelsStartPosFrame:SetSize(categoryWidget:GetSize())
+
 	-- / favsRemainingLabel
 	categoryWidget.favsRemainingLabel = widgets:NoPointsLabel(categoryWidget.interactiveLabel, nil, "")
-	categoryWidget.favsRemainingLabel:SetPoint("TOPLEFT", categoryWidget.interactiveLabel.Text, "TOPRIGHT", 6, 0)
+	categoryWidget.favsRemainingLabel:SetPoint("LEFT", categoryWidget.labelsStartPosFrame, "RIGHT", 0, 0)
 	categoryWidget.favsRemainingLabel:SetPoint("RIGHT", categoryWidget.interactiveLabel, "RIGHT", 0, 0)
 	categoryWidget.favsRemainingLabel:SetJustifyV("TOP")
 	categoryWidget.favsRemainingLabel:SetJustifyH("LEFT")
@@ -1073,6 +1077,48 @@ function widgets:CategoryWidget(catID, parentFrame)
 	local hiddenLabel = widgets:HintLabel(categoryWidget, nil, L["Completed category"])
 	categoryWidget.hiddenLabel = widgets:AutoWrapCatSubLabel(categoryWidget, hiddenLabel, parentFrame)
 	-- hiddenLabel points are set in mainFrame:Refresh() (it is treated as an individual widget)
+
+	-- / add edit boxes & everything that goes with them
+	categoryWidget.hoverFrame = CreateFrame("Frame", nil, categoryWidget)
+	categoryWidget.hoverFrame:SetPoint("TOPLEFT", categoryWidget.interactiveLabel.Button, "TOPLEFT", 0, 0)
+	categoryWidget.hoverFrame:SetPoint("BOTTOMRIGHT", categoryWidget.interactiveLabel.Button, "BOTTOMRIGHT", 50, 0)
+	categoryWidget.hoverFrame:SetScript("OnShow", function(self)
+		categoryWidget.labelsStartPosFrame:ClearPoint("TOPLEFT")
+		categoryWidget.labelsStartPosFrame:SetPoint("TOPLEFT", categoryWidget.hoverFrame, "TOPRIGHT", 5, 0) -- 5 bc 6-width => 6-1 => 5 bc "RIGHT"
+		print("show")
+	end)
+	categoryWidget.hoverFrame:SetScript("OnHide", function(self)
+		categoryWidget.labelsStartPosFrame:ClearPoint("TOPLEFT")
+		categoryWidget.labelsStartPosFrame:SetPoint("TOPLEFT", categoryWidget.interactiveLabel.Text, "TOPRIGHT", 5, 0) -- 5 bc 6-width => 6-1 => 5 bc "RIGHT"
+		print("hide")
+	end)
+	categoryWidget.hoverFrame:SetScript("OnLeave", function(self)
+		if not categoryWidget.hoverFrame:IsMouseOver() then
+			print("leave")
+			self:Hide()
+		end
+	end)
+	categoryWidget.interactiveLabel.Button:HookScript("OnEnter", function(self)
+		if dragndrop.dragging then return end
+		categoryWidget.hoverFrame:SetShown(not catData.closedInTabIDs[database.ctab()])
+	end)
+	categoryWidget.interactiveLabel.Button:HookScript("OnLeave", function(self)
+		categoryWidget.hoverFrame:GetScript("OnLeave")(categoryWidget.hoverFrame)
+	end)
+	categoryWidget.interactiveLabel.Button:HookScript("OnShow", function(self)
+		if categoryWidget.hoverFrame:IsMouseOver() then
+			if dragndrop.dragging then return end
+			categoryWidget.hoverFrame:SetShown(not catData.closedInTabIDs[database.ctab()])
+		end
+	end)
+	categoryWidget.hoverFrame:Hide()
+
+	local a = categoryWidget.hoverFrame:CreateFontString(nil)
+	a:SetPoint("RIGHT", categoryWidget.hoverFrame)
+	a:SetSize(100, 16)
+	a:SetJustifyH("RIGHT")
+	a:SetFontObject("GameFontNormalLarge")
+	a:SetText("hey")
 
 	-- / addEditBox
 	categoryWidget.addEditBox = widgets:NoPointsCatEditBox("NysTDL_"..catID.."_widget_addEditBox", categoryWidget)

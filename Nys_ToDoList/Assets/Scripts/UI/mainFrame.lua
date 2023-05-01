@@ -250,10 +250,10 @@ function mainFrame:UpdateRemainingNumberLabels()
 		catWidget.originalTabLabel:SetPoint("RIGHT", catWidget.interactiveLabel, "RIGHT", 0, 0)
 		if not catData.closedInTabIDs[tabID] or text == "" then -- if the category is opened or the fav label shows nothing
 			catWidget.favsRemainingLabel:Hide()
-			catWidget.originalTabLabel:SetPoint("TOPLEFT", catWidget.interactiveLabel.Text, "TOPRIGHT", 6, 0)
+			catWidget.originalTabLabel:SetPoint("LEFT", catWidget.labelsStartPosFrame, "RIGHT", 0, 0)
 		else -- if the category is closed and the fav label shows something
 			catWidget.favsRemainingLabel:Show()
-			catWidget.originalTabLabel:SetPoint("TOPLEFT", catWidget.interactiveLabel.Text, "TOPRIGHT", 6+6+catWidget.favsRemainingLabel:GetStringWidth(), 0)
+			catWidget.originalTabLabel:SetPoint("LEFT", catWidget.labelsStartPosFrame, "RIGHT", catWidget.favsRemainingLabel:GetStringWidth()+6, 0)
 		end
 	end
 end

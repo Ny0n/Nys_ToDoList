@@ -490,6 +490,7 @@ function private:DragMouseStart()
 		draggingWidget.emptyLabel.labelFrame:SetWidth(draggingWidget.emptyLabel.labelFrame.Text:GetWrappedWidth())
 		draggingWidget.hiddenLabel.labelFrame:ClearPoint("RIGHT")
 		draggingWidget.hiddenLabel.labelFrame:SetWidth(draggingWidget.hiddenLabel.labelFrame.Text:GetWrappedWidth())
+		draggingWidget.hoverFrame:Hide()
 		draggingWidget.favsRemainingLabel:Hide()
 		draggingWidget.originalTabLabel:Hide()
 	end
