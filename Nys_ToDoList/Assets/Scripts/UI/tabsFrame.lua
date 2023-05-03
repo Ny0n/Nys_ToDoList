@@ -31,6 +31,7 @@ tabsFrame.authorized = true -- can it call Refresh() ? (just there for optimizat
 local overflowButtonSize = 31
 local listButtonWidgetHeight = 12
 
+local rightEdgeOffset = -2
 local inBetweenTabOffset = 5 -- POSITIVE, is part of the real tab size
 local sidesBonusOffset = 2 -- POSITIVE
 local MIN_TAB_SIZE, MAX_TAB_SIZE = 72, 90
@@ -86,7 +87,7 @@ end
 
 local function getTabRight(tabWidget)
 	local offset = utils:IsDF() and inBetweenTabOffset or -6
-	return tabWidget:GetRight() + offset
+	return tabWidget:GetRight() + offset + rightEdgeOffset
 end
 
 --/*******************/ ANIMATION /*************************/--
@@ -341,7 +342,7 @@ function private:RefreshSize()
 		rightOffset = -overflowButtonWidth*2
 	end
 
-	scrollFrame:SetPoint("BOTTOMRIGHT", mainFrame.tdlFrame, "BOTTOMRIGHT", rightOffset, -40)
+	scrollFrame:SetPoint("BOTTOMRIGHT", mainFrame.tdlFrame, "BOTTOMRIGHT", rightOffset+rightEdgeOffset, -40)
 
 	private:SnapToTab(tabToSnapTo)
 
@@ -477,8 +478,6 @@ function private:TabWidget(tabID, parentFrame)
 
 	tabWidget:SetFrameLevel(tabWidget:GetFrameLevel()+1)
 	tabWidget.backdrop:SetFrameLevel(tabWidget:GetFrameLevel()-1)
-
-	-- TODO jouer avec edgesize
 
 	-- // data
 

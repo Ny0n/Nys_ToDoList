@@ -1215,6 +1215,8 @@ function optionsManager:ToggleOptions(fromFrame)
 		-- end
 		Settings.OpenToCategory(optionsManager.optionsFrameID)
 	end
+
+	AceConfigRegistry:NotifyChange(addonName)
 end
 
 --/*******************/ INITIALIZATION /*************************/--
