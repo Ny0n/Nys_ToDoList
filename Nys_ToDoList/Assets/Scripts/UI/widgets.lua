@@ -461,9 +461,8 @@ function widgets:NoPointsInteractiveLabel(parent, pointLeft, pointRight, name, t
 
 	interactiveLabel.Text:SetFontObject(fontObjectString)
 	interactiveLabel.Text:SetText(text)
-	interactiveLabel.Text:SetMaxLines(3)
 
-	interactiveLabel:SetScript("OnSizeChanged", function(self, width, height)
+	interactiveLabel:SetScript("OnSizeChanged", function(self, width)
 		if width < 18 then width = 18 end
 
 		interactiveLabel.Text:SetWidth(width) -- we do it a first time to update the wrapped state
@@ -991,10 +990,13 @@ function private:Category_SetEditMode(state)
 		self.editModeFrame:Show()
 		self.startPosFrame:SetPoint("LEFT", self, "LEFT", enums.ofsxItemIcons-3, 0)
 		self.interactiveLabel.Button:GetScript("OnLeave")(self.interactiveLabel.Button)
+		self.interactiveLabel.Text:SetMaxLines(math.min(self.interactiveLabel.Text:GetNumLines(), enums.maxWordWrapLines))
 	else
 		self.editModeFrame:Hide()
 		self.startPosFrame:SetPoint("LEFT", self, "LEFT", 0, 0)
+		self.interactiveLabel.Text:SetMaxLines(enums.maxWordWrapLines)
 	end
+	self.interactiveLabel:GetScript("OnSizeChanged")(self.interactiveLabel, self.interactiveLabel:GetWidth())
 end
 
 function widgets:CategoryWidget(catID, parentFrame)
@@ -1272,6 +1274,7 @@ function private:Item_SetEditMode(state)
 		self.startPosFrame:SetPoint("LEFT", self, "LEFT", enums.ofsxItemIcons*3, 0)
 
 		self.interactiveLabel.Button:Show()
+		self.interactiveLabel.Text:SetMaxLines(math.min(self.interactiveLabel.Text:GetNumLines(), enums.maxWordWrapLines))
 	else
 		self.editModeFrame:Hide()
 
@@ -1283,7 +1286,9 @@ function private:Item_SetEditMode(state)
 		self.startPosFrame:SetPoint("LEFT", self, "LEFT", enums.ofsxItemIcons, 0)
 
 		self.interactiveLabel.Button:Hide()
+		self.interactiveLabel.Text:SetMaxLines(enums.maxWordWrapLines)
 	end
+	self.interactiveLabel:GetScript("OnSizeChanged")(self.interactiveLabel, self.interactiveLabel:GetWidth())
 	self.favoriteBtn:EnableMouse(not not state)
 	private.Item_SetCheckBtnExtended(self, not state)
 	mainFrame:UpdateItemButtons(self.itemID)

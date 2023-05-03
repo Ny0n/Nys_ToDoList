@@ -64,6 +64,7 @@ enums.ofsyContentCat = 10
 enums.ofsyContent = 6
 enums.ofsxItemIcons = 20
 
+enums.maxWordWrapLines = 3
 enums.maxDescriptionCharCount = 10000
 enums.maxQuantities = {
 	[false] = { -- profile
