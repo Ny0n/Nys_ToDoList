@@ -1148,7 +1148,9 @@ function mainFrame:CreateTDLFrame()
 		self:GetScript("OnMouseUp")(self, "LeftButton")
 	end)
 	tdlFrame.resizeButton:RegisterForClicks("RightButtonUp")
-	tdlFrame.resizeButton:HookScript("OnClick", function() -- reset size
+	tdlFrame.resizeButton:HookScript("OnClick", function(self) -- reset size
+		self:GetScript("OnMouseUp")(self, "LeftButton")
+
 		-- we resize and scale the frame
 		tdlFrame:SetSize(enums.tdlFrameDefaultWidth, enums.tdlFrameDefaultHeight)
 
