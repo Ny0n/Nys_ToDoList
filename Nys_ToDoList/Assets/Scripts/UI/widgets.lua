@@ -461,13 +461,7 @@ function widgets:NoPointsInteractiveLabel(parent, pointLeft, pointRight, name, t
 
 	interactiveLabel.Text:SetFontObject(fontObjectString)
 	interactiveLabel.Text:SetText(text)
-	-- interactiveLabel.Text:SetWordWrap(false)
-	-- interactiveLabel.Text:SetIndentedWordWrap(true)
-	-- interactiveLabel.Text:SetNonSpaceWrap(true)
-
-	local limitWrapLineCount = 2
-	local height = limitWrapLineCount * interactiveLabel.Text:GetLineHeight() + (limitWrapLineCount-1) * interactiveLabel.Text:GetSpacing()
-	interactiveLabel.Text:SetHeight(height)
+	interactiveLabel.Text:SetMaxLines(3)
 
 	interactiveLabel:SetScript("OnSizeChanged", function(self, width, height)
 		if width < 18 then width = 18 end
@@ -489,7 +483,7 @@ function widgets:NoPointsInteractiveLabel(parent, pointLeft, pointRight, name, t
 		-- 	interactiveLabel.Text:ClearPoint("TOPLEFT")
 		-- end
 
-		parent.heightFrame:SetHeight(self.Text:GetStringHeight())
+		parent.heightFrame:SetHeight(interactiveLabel.Text:GetStringHeight())
 
 		if parent.enum == enums.item then
 			private.Item_SetCheckBtnExtended(parent, not mainFrame.editMode)
@@ -523,13 +517,7 @@ function widgets:AutoWrapCatSubLabel(parent, label, pointRight)
 	widget.labelFrame.Text:SetPoint("TOPLEFT", widget.labelFrame)
 	widget.labelFrame.Text:SetJustifyV("TOP")
 	widget.labelFrame.Text:SetJustifyH("LEFT")
-	-- widget.labelFrame.Text:SetWordWrap(false)
-	-- widget.labelFrame.Text:SetIndentedWordWrap(true)
-	-- widget.labelFrame.Text:SetNonSpaceWrap(true)
-
-	local limitWrapLineCount = 2
-	local height = limitWrapLineCount * widget.labelFrame.Text:GetLineHeight() + (limitWrapLineCount-1) * widget.labelFrame.Text:GetSpacing()
-	widget.labelFrame.Text:SetHeight(height)
+	widget.labelFrame.Text:SetMaxLines(3)
 
 	widget.labelFrame:SetScript("OnSizeChanged", function(self, width, height)
 		if width < 18 then width = 18 end

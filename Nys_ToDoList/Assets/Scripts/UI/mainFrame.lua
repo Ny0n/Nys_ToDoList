@@ -1057,8 +1057,9 @@ function mainFrame:CreateTDLFrame()
 	local function StopMoving(self)
 		self.isMouseDown = false
 		if self.hasMoved == true then
-			self:StopMovingOrSizing()
 			self.hasMoved = false
+
+			self:StopMovingOrSizing()
 			local points, _ = NysTDL.acedb.profile.framePos, nil
 			points.point, _, points.relativePoint, points.xOffset, points.yOffset = self:GetPoint()
 		end
@@ -1136,13 +1137,15 @@ function mainFrame:CreateTDLFrame()
 	tdlFrame.resizeButton:SetScript("OnMouseUp", function(self, button)
 		if button == "LeftButton" then
 			tdlFrame:StopMovingOrSizing()
+			local points, _ = NysTDL.acedb.profile.framePos, nil
+			points.point, _, points.relativePoint, points.xOffset, points.yOffset = tdlFrame:GetPoint()
+
 			self:GetHighlightTexture():Show()
 			if self.tooltip and self.tooltip.Show then self.tooltip:Show() end
 		end
 	end)
 	tdlFrame.resizeButton:SetScript("OnHide", function(self)  -- same as on mouse up, just security
-		tdlFrame:StopMovingOrSizing()
-		self:GetHighlightTexture():Show()
+		self:GetScript("OnMouseUp")(self, "LeftButton")
 	end)
 	tdlFrame.resizeButton:RegisterForClicks("RightButtonUp")
 	tdlFrame.resizeButton:HookScript("OnClick", function() -- reset size
@@ -1154,7 +1157,6 @@ function mainFrame:CreateTDLFrame()
 		tdlFrame:ClearAllPoints()
 		tdlFrame:SetPoint(points.point, nil, points.relativePoint, points.xOffset, points.yOffset) -- relativeFrame = nil -> entire screen
 	end)
-	-- tutorialsManager:SetPoint("editmode", "resize", "LEFT", tdlFrame.resizeButton, "RIGHT", 0, 0) TDLATER?
 
 	-- // inside the scroll frame
 
