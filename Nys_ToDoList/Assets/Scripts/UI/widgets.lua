@@ -989,7 +989,7 @@ contentWidgets = {
 function private:Category_SetEditMode(state)
 	if state then
 		self.editModeFrame:Show()
-		self.startPosFrame:SetPoint("LEFT", self, "LEFT", enums.ofsxItemIcons, 0)
+		self.startPosFrame:SetPoint("LEFT", self, "LEFT", enums.ofsxItemIcons-3, 0)
 		self.interactiveLabel.Button:GetScript("OnLeave")(self.interactiveLabel.Button)
 	else
 		self.editModeFrame:Hide()
@@ -1062,7 +1062,7 @@ function widgets:CategoryWidget(catID, parentFrame)
 
 	-- / removeBtn
 	categoryWidget.removeBtn = widgets:RemoveButton(categoryWidget, emf)
-	categoryWidget.removeBtn:SetPoint("LEFT", emf, "LEFT", 0, -1)
+	categoryWidget.removeBtn:SetPoint("LEFT", emf, "LEFT", 0, 0)
 	categoryWidget.removeBtn:SetScript("OnClick", function() dataManager:DeleteCat(catID) end)
 
 	categoryWidget.labelsStartPosFrame = CreateFrame("Frame", nil, categoryWidget) -- frame to determine where we start the checkbox, or the label if we are in a non-checkable item
@@ -1156,7 +1156,7 @@ function widgets:CategoryWidget(catID, parentFrame)
 
 	-- / addItemBtn
 	categoryWidget.addItemBtn = widgets:AddButton(categoryWidget, categoryWidget.hoverFrame)
-	categoryWidget.addItemBtn:SetPoint("TOPLEFT", categoryWidget.hoverFrame, "TOPRIGHT", -hoverFrameExtent+5, -2)
+	categoryWidget.addItemBtn:SetPoint("TOPLEFT", categoryWidget.hoverFrame, "TOPRIGHT", -hoverFrameExtent+5, -1)
 	categoryWidget.addItemBtn:SetScript("OnClick", function()
 		if not widgets.aebShown[catID] then widgets.aebShown[catID] = 0 end
 
