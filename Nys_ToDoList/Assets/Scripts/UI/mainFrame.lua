@@ -1032,10 +1032,10 @@ function mainFrame:CreateTDLFrame()
 	tdlFrame:SetClampedToScreen(true)
 	tdlFrame:SetResizable(true)
 	if tdlFrame.SetResizeBounds then
-		tdlFrame:SetResizeBounds(90, 180, 600, 1000)
+		tdlFrame:SetResizeBounds(90, 180, 600, 800)
 	else
 		tdlFrame:SetMinResize(90, 180)
-		tdlFrame:SetMaxResize(600, 1000)
+		tdlFrame:SetMaxResize(600, 800)
 	end
 	tdlFrame:SetToplevel(true)
 
@@ -1125,7 +1125,7 @@ function mainFrame:CreateTDLFrame()
 	tdlFrame.ScrollFrame.ScrollBar:Hide()
 
 	-- resize button
-	tdlFrame.resizeButton = widgets:IconTooltipButton(tdlFrame, "NysTDL_TooltipResizeButton", L["Left-Click"].." - "..L["Resize the list"].."\n"..L["Right-Click"].." - "..L["Reset"])
+	tdlFrame.resizeButton = widgets:IconTooltipButton(tdlFrame, "NysTDL_TooltipResizeButton", L["Left-Click"].." - "..L["Resize"].."\n"..L["Right-Click"].." - "..L["Reset"])
 	tdlFrame.resizeButton:SetPoint("BOTTOMRIGHT", -3, 3)
 	tdlFrame.resizeButton:SetScript("OnMouseDown", function(self, button)
 		if button == "LeftButton" then

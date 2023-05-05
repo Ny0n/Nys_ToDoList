@@ -39,9 +39,9 @@ local descFrames = { -- all opened description frames
 	-- ...
 }
 local descFrameInfo = {
-	width = 180,
-	height = 110,
-	buttons = 75, -- the additional space to account for the buttons at the right of the title
+	width = 250,
+	height = 100,
+	buttons = 50,
 	font = "ChatFontNormal"
 }
 
@@ -152,18 +152,7 @@ function widgets:UpdateDescFramesTitle()
 			descFrame.title:SetText(descFrame.itemData.name)
 			descFrame.title:SetTextColor(contentWidgets[descFrame.itemID].interactiveLabel.Text:GetTextColor())
 			descFrame.title:SetAlpha(NysTDL.acedb.profile.descFrameContentAlpha/100)
-
-			local w = widgets:GetWidth(descFrame.itemData.name)
-
-			if descFrame.SetResizeBounds then
-				descFrame:SetResizeBounds(math.max(180+75, w+75), 110)
-			else
-				descFrame:SetMinResize(math.max(180+75, w+75), 110)
-			end
-
-			if descFrame:GetWidth() < w+75 then
-				descFrame:SetSize(w+75, 110)
-			end
+			ExecuteFrameScript(descFrame.widthFrame, "OnSizeChanged", descFrame.widthFrame:GetWidth())
 		end
 	end
 end
@@ -206,8 +195,6 @@ function widgets:DescriptionFrame(itemWidget)
 
 	-- we create the mini frame holding the name of the item and his description in an edit box
 	local descFrame = CreateFrame("Frame", nil, UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil)
-	local w = widgets:GetWidth(itemData.name)
-	descFrame:SetSize(w < descFrameInfo.width and descFrameInfo.width+descFrameInfo.buttons or w+descFrameInfo.buttons, descFrameInfo.height)
 
 	-- background
 	descFrame:SetBackdrop(enums.backdrop)
@@ -223,16 +210,10 @@ function widgets:DescriptionFrame(itemWidget)
 	descFrame:SetMovable(true)
 	descFrame:SetClampedToScreen(true)
 	descFrame:SetResizable(true)
-	if descFrame.SetResizeBounds then
-		descFrame:SetResizeBounds(descFrame:GetWidth(), descFrame:GetHeight())
-	else
-		descFrame:SetMinResize(descFrame:GetWidth(), descFrame:GetHeight())
-	end
 	descFrame:SetToplevel(true)
-	widgets:SetHyperlinksEnabled(descFrame, true)
 
-	-- frame vars
-	descFrame.opening = 0 -- for the scrolling up on opening
+	-- -- frame vars
+	-- descFrame.opening = 0 -- for the scrolling up on opening
 
 	-- to move the frame
 	descFrame:SetScript("OnMouseDown", function(self, button)
@@ -242,64 +223,112 @@ function widgets:DescriptionFrame(itemWidget)
 	end)
 	descFrame:SetScript("OnMouseUp", descFrame.StopMovingOrSizing)
 
-	-- OnUpdate script
-	descFrame:SetScript("OnUpdate", function(self)
-		-- we update non-stop the width of the description edit box to match that of the frame if we resize it, and when the scrollbar kicks in. (this is the secret to make it work)
-		self.descriptionEditBox.EditBox:SetWidth(self.descriptionEditBox:GetWidth() - (self.descriptionEditBox.ScrollBar:IsShown() and 15 or 0))
+	-- -- OnUpdate script
+	-- descFrame:SetScript("OnUpdate", function(self)
+	-- 	-- we update non-stop the width of the description edit box to match that of the frame if we resize it, and when the scrollbar kicks in. (this is the secret to make it work)
+	-- 	self.descriptionEditBox.EditBox:SetWidth(self.descriptionEditBox:GetWidth() - (self.descriptionEditBox.ScrollBar:IsShown() and 15 or 0))
 
-		if self.opening < 5 then -- doing this only on the 5 first updates after creating the frame, I won't go into the details but updating the vertical scroll of this template is a real fucker :D
-			self.descriptionEditBox:SetVerticalScroll(0)
-			self.opening = self.opening + 1
-		end
-	end)
-
-	-- position
-	descFrame:SetPoint("BOTTOMRIGHT", itemWidget.descBtn, "TOPRIGHT", 0, 0) -- we spawn it basically where we clicked
-
-	-- to unlink it from the itemWidget
-	descFrame:StartMoving()
-	descFrame:StopMovingOrSizing()
+	-- 	if self.opening < 5 then -- doing this only on the 5 first updates after creating the frame, I won't go into the details but updating the vertical scroll of this template is a real fucker :D
+	-- 		self.descriptionEditBox:SetVerticalScroll(0)
+	-- 		self.opening = self.opening + 1
+	-- 	end
+	-- end)
 
 	-- / content of the frame / --
 
 	-- / resize button
-	descFrame.resizeButton = CreateFrame("Button", nil, descFrame, "NysTDL_ResizeButton")
+	descFrame.resizeButton = widgets:IconTooltipButton(descFrame, "NysTDL_TooltipResizeButton", L["Left-Click"].." - "..L["Resize"].."\n"..L["Right-Click"].." - "..L["Reset"])
 	descFrame.resizeButton:SetPoint("BOTTOMRIGHT")
 	descFrame.resizeButton:SetScript("OnMouseDown", function(self, button)
 		if button == "LeftButton" then
 			descFrame:StartSizing("BOTTOMRIGHT")
 			self:GetHighlightTexture():Hide() -- more noticeable
+			if self.tooltip and self.tooltip.Hide then self.tooltip:Hide() end
 		end
 	end)
-	descFrame.resizeButton:SetScript("OnMouseUp", function(self)
-		descFrame:StopMovingOrSizing()
-		self:GetHighlightTexture():Show()
+	descFrame.resizeButton:SetScript("OnMouseUp", function(self, button)
+		if button == "LeftButton" then
+			descFrame:StopMovingOrSizing()
+			self:GetHighlightTexture():Show()
+			if self.tooltip and self.tooltip.Show then self.tooltip:Show() end
+		end
+	end)
+	descFrame.resizeButton:SetScript("OnHide", function(self)  -- same as on mouse up, just security
+		self:GetScript("OnMouseUp")(self, "LeftButton")
+	end)
+	descFrame.resizeButton:RegisterForClicks("RightButtonUp")
+	descFrame.resizeButton:HookScript("OnClick", function(self) -- reset size
+		self:GetScript("OnMouseUp")(self, "LeftButton")
+		descFrame:SetSize(descFrameInfo.width, descFrameInfo.height+descFrame.heightFrame:GetHeight())
 	end)
 
 	-- / close button
 	descFrame.closeButton = CreateFrame("Button", nil, descFrame, "NysTDL_CloseButton")
-	descFrame.closeButton:SetPoint("TOPRIGHT", descFrame, "TOPRIGHT", -2, -2)
+	descFrame.closeButton:SetPoint("TOPRIGHT", descFrame, "TOPRIGHT", -4, -3)
 	descFrame.closeButton:SetScript("OnClick", function() widgets:DescFrameHide(itemID) end)
 
 	-- / clear button
 	descFrame.clearButton = widgets:IconTooltipButton(descFrame, "NysTDL_ClearButton", L["Clear"].." ("..L["Right-Click"]..")")
-	descFrame.clearButton:SetPoint("TOPRIGHT", descFrame, "TOPRIGHT", -24, -2)
+	descFrame.clearButton:SetPoint("TOPRIGHT", descFrame.closeButton, "TOPLEFT", 2, 0)
 	descFrame.clearButton:RegisterForClicks("RightButtonUp") -- only responds to right-clicks
 	descFrame.clearButton:SetScript("OnClick", function(self)
 		self:GetParent().descriptionEditBox.EditBox:SetText("")
 	end)
 
-	-- / item label
+	-- / item name label
+	widgets:SetHyperlinksEnabled(descFrame, true)
+	descFrame.widthFrame = CreateFrame("Frame", nil, descFrame)
+	descFrame.widthFrame:SetPoint("TOPLEFT", descFrame, "TOPLEFT", 7, -6)
+	descFrame.widthFrame:SetPoint("TOPRIGHT", descFrame, "TOPRIGHT", -7-descFrameInfo.buttons, -6)
+	descFrame.widthFrame:SetHeight(1)
+
+	descFrame.heightFrame = CreateFrame("Frame", nil, descFrame.widthFrame)
+	descFrame.heightFrame:SetPoint("TOPLEFT", descFrame.widthFrame)
+	descFrame.heightFrame:SetWidth(1)
+
 	descFrame.title = descFrame:CreateFontString(nil)
 	descFrame.title:SetFontObject("GameFontNormalLarge")
-	descFrame.title:SetPoint("TOPLEFT", descFrame, "TOPLEFT", 7, -6)
+	descFrame.title:SetPoint("TOPLEFT", descFrame.widthFrame)
 	descFrame.title:SetText(itemData.name)
 	descFrame.title:SetTextColor(itemWidget.interactiveLabel.Text:GetTextColor())
+	descFrame.title:SetJustifyV("TOP")
+	descFrame.title:SetJustifyH("LEFT")
+	descFrame.title:SetMaxLines(enums.maxWordWrapLines)
+
+	descFrame.widthFrame:SetScript("OnSizeChanged", function(self, width)
+		if width < 18 then width = 18 end
+		descFrame.title:SetWidth(width)
+		descFrame.heightFrame:SetHeight(descFrame.title:GetStringHeight())
+
+		local minHeight = descFrameInfo.height+descFrame.heightFrame:GetHeight()
+		descFrame:SetHeight(math.max(minHeight, descFrame:GetHeight()))
+		if descFrame.SetResizeBounds then
+			descFrame:SetResizeBounds(75, minHeight, 600, 800)
+		else
+			descFrame:SetMinResize(75, minHeight)
+			descFrame:SetMaxResize(600, 800)
+		end
+	end)
+
+	-- / size
+	descFrame:SetWidth(descFrameInfo.width)
+	ExecuteFrameScript(descFrame.widthFrame, "OnSizeChanged", descFrame.widthFrame:GetWidth())
+
+	-- / position
+	descFrame:SetPoint("BOTTOMRIGHT", itemWidget.descBtn, "TOPRIGHT", 0, 0) -- we spawn it basically where we clicked
+
+	-- to unlink it from the itemWidget
+	RunNextFrame(function()
+		descFrame:StartMoving()
+		descFrame:StopMovingOrSizing()
+	end)
 
 	-- / description edit box
 	descFrame.descriptionEditBox = CreateFrame("ScrollFrame", nil, descFrame, "NysTDL_InputScrollFrameTemplate")
-	descFrame.descriptionEditBox:SetPoint("TOPLEFT", descFrame, "TOPLEFT", 10, -30)
+	descFrame.descriptionEditBox:SetPoint("TOP", descFrame.heightFrame, "BOTTOM", 0, -10)
+	descFrame.descriptionEditBox:SetPoint("LEFT", descFrame, "LEFT", 10, 0)
 	descFrame.descriptionEditBox:SetPoint("BOTTOMRIGHT", descFrame, "BOTTOMRIGHT", -10, 10)
+	descFrame.descriptionEditBox.EditBox:SetAllPoints(descFrame.descriptionEditBox)
 	descFrame.descriptionEditBox.EditBox:SetFontObject(descFrameInfo.font)
 	descFrame.descriptionEditBox.EditBox:SetAutoFocus(false)
 
@@ -310,6 +339,7 @@ function widgets:DescriptionFrame(itemWidget)
 	-- /-> hint
 	descFrame.descriptionEditBox.EditBox.Instructions:SetFontObject("GameFontNormal")
 	descFrame.descriptionEditBox.EditBox.Instructions:SetText(L["Add a description"].."...\n("..L["Automatically saved"]..")")
+	descFrame.descriptionEditBox.EditBox.Instructions:SetPoint("RIGHT", descFrame.descriptionEditBox.EditBox)
 
 	-- /-> scripts
 	descFrame.descriptionEditBox.EditBox:HookScript("OnTextChanged", function(self)
@@ -518,7 +548,7 @@ function widgets:AutoWrapCatSubLabel(parent, label, pointRight)
 	widget.labelFrame.Text:SetJustifyH("LEFT")
 	widget.labelFrame.Text:SetMaxLines(3)
 
-	widget.labelFrame:SetScript("OnSizeChanged", function(self, width, height)
+	widget.labelFrame:SetScript("OnSizeChanged", function(self, width)
 		if width < 18 then width = 18 end
 
 		widget.labelFrame.Text:SetWidth(width)
@@ -824,14 +854,10 @@ function widgets:DescButton(widget, parent)
 		-- we're good to go
 		btn.tooltip = widgets:AcquireTooltip("NysTDL_Tooltip_DescButton", self)
 
-		-- we use the same code to set the description frame's width
-		local w = widgets:GetWidth(widget.itemData.name)
-		local width = w < descFrameInfo.width and descFrameInfo.width+descFrameInfo.buttons or w+descFrameInfo.buttons
-
 		btn.tooltip:SetFont(descFrameInfo.font)
 
 		btn.tooltip:AddLine()
-		btn.tooltip:SetCell(1, 1, widget.itemData.description, nil, nil, nil, nil, nil, nil, width-20)
+		btn.tooltip:SetCell(1, 1, widget.itemData.description, nil, nil, nil, nil, nil, nil, descFrameInfo.width-20)
 
 		btn.tooltip:SetShown(btn.isTooltipShown())
 	end)
@@ -1423,7 +1449,7 @@ function widgets:NoPointsCatEditBox(parent, hint, fullWidget, pointRight)
 	widget.widthFrame:HookScript("OnSizeChanged", function(self, width)
 		if width < 22 then width = 22 end
 		widget.edb:SetWidth(width)
-		widget.edb:SetShown(widget.widthFrame:GetLeft() >= widget.startPosFrame:GetRight()-1)
+		widget.edb:SetShown(math.floor(widget.widthFrame:GetLeft()) >= math.floor(widget.startPosFrame:GetRight()-1))
 	end)
 
 	widget.removeBtn = CreateFrame("Button", nil, widget, "NysTDL_RemoveButton")

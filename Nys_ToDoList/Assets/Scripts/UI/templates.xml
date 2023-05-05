@@ -413,14 +413,6 @@
 		</HighlightTexture>
 	</Button>
 
-	<!-- resize button -->
-	<Button name="NysTDL_ResizeButton" virtual="true">
-		<Size x="16" y="16"/> <!-- Size of interactable zone -->
-		<NormalTexture file="Interface\ChatFrame\UI-ChatIM-SizeGrabber-Up"/>
-		<PushedTexture file="Interface\ChatFrame\UI-ChatIM-SizeGrabber-Down"/>
-		<HighlightTexture file="Interface\ChatFrame\UI-ChatIM-SizeGrabber-Highlight" alphaMode="ADD"/>
-	</Button>
-
 	<!-- resize button with tooltip -->
 	<Button name="NysTDL_TooltipResizeButton" virtual="true">
 		<Size x="16" y="16"/> <!-- Size of interactable zone -->

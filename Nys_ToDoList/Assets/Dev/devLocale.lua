@@ -23,12 +23,14 @@ L["Change the opacity for texts, buttons and other elements"] = true
 L["Name"] = true
 L["Name is too large"] = true
 L["Frame options"] = true
+L["Resize the list"] = true
 
 L["Cannot import, data comes from a newer addon version (%s), please update and try again"] = true
 L["Press enter to add"] = true
 L["Add an item"] = true
 L["Font size"] = true
 L["Toggle menu"] = true
+L["Resize"] = true
 
 L["Open addon options"] = true
 L["Open behavior on login"] = true
@@ -195,7 +197,6 @@ L["Reorder/Sort the list"] = true
 L["Reset"] = true
 L["Reset days"] = true
 L["Resetting this profile will also clear the list"] = true
-L["Resize the list"] = true
 L["Right-Click"] = true
 L["Right-click on the category names to add new items"] = true
 L["Same each day"] = true

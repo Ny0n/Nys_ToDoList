@@ -211,7 +211,7 @@ chat.commands = {
 		chat:CustomPrintForced("- "..L["Favorite and add descriptions on items"], true)
 		chat:CustomPrintForced("- "..L["Rename items and categories"].." ("..L["Double-Click"]..")", true)
 		chat:CustomPrintForced("- "..L["Reorder/Sort the list"].." ("..L["Drag and Drop"]..")", true)
-		chat:CustomPrintForced("- "..L["Resize the list"].." ("..L["Button in the bottom-right"]..")", true)
+		chat:CustomPrintForced("- "..L["Resize"].." ("..L["Button in the bottom-right"]..")", true)
 		chat:CustomPrintForced("- "..utils:SafeStringFormat(L["Access new buttons: %s and %s"], "\""..L["Undo last remove"].."\"", "\""..L["Tab actions"].."\""), true)
 		tutorialsManager:Validate("introduction", "editmodeChat")
 	end,
