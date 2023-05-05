@@ -212,9 +212,6 @@ function widgets:DescriptionFrame(itemWidget)
 	descFrame:SetResizable(true)
 	descFrame:SetToplevel(true)
 
-	-- -- frame vars
-	-- descFrame.opening = 0 -- for the scrolling up on opening
-
 	-- to move the frame
 	descFrame:SetScript("OnMouseDown", function(self, button)
 		if button == "LeftButton" then
@@ -223,16 +220,17 @@ function widgets:DescriptionFrame(itemWidget)
 	end)
 	descFrame:SetScript("OnMouseUp", descFrame.StopMovingOrSizing)
 
-	-- -- OnUpdate script
-	-- descFrame:SetScript("OnUpdate", function(self)
-	-- 	-- we update non-stop the width of the description edit box to match that of the frame if we resize it, and when the scrollbar kicks in. (this is the secret to make it work)
-	-- 	self.descriptionEditBox.EditBox:SetWidth(self.descriptionEditBox:GetWidth() - (self.descriptionEditBox.ScrollBar:IsShown() and 15 or 0))
+	-- OnUpdate script
+	descFrame.opening = 0 -- for the scrolling up on opening
+	descFrame:SetScript("OnUpdate", function(self)
+		-- we update non-stop the width of the description edit box to match that of the frame if we resize it, and when the scrollbar kicks in. (this is the secret to make it work)
+		self.descriptionEditBox.EditBox:SetWidth(self.descriptionEditBox:GetWidth() - (self.descriptionEditBox.ScrollBar:IsShown() and 15 or 0))
 
-	-- 	if self.opening < 5 then -- doing this only on the 5 first updates after creating the frame, I won't go into the details but updating the vertical scroll of this template is a real fucker :D
-	-- 		self.descriptionEditBox:SetVerticalScroll(0)
-	-- 		self.opening = self.opening + 1
-	-- 	end
-	-- end)
+		if self.opening < 5 then -- doing this only on the 5 first updates after creating the frame, I won't go into the details but updating the vertical scroll of this template is a real fucker :D
+			self.descriptionEditBox:SetVerticalScroll(0)
+			self.opening = self.opening + 1
+		end
+	end)
 
 	-- / content of the frame / --
 
@@ -328,13 +326,13 @@ function widgets:DescriptionFrame(itemWidget)
 	descFrame.descriptionEditBox:SetPoint("TOP", descFrame.heightFrame, "BOTTOM", 0, -10)
 	descFrame.descriptionEditBox:SetPoint("LEFT", descFrame, "LEFT", 10, 0)
 	descFrame.descriptionEditBox:SetPoint("BOTTOMRIGHT", descFrame, "BOTTOMRIGHT", -10, 10)
-	descFrame.descriptionEditBox.EditBox:SetAllPoints(descFrame.descriptionEditBox)
 	descFrame.descriptionEditBox.EditBox:SetFontObject(descFrameInfo.font)
 	descFrame.descriptionEditBox.EditBox:SetAutoFocus(false)
+	descFrame.descriptionEditBox.EditBox:SetTextInsets(0, 0, 0, 16) -- secret #2 ;)
 
 	-- /-> char count
 	descFrame.descriptionEditBox.EditBox:SetMaxLetters(enums.maxDescriptionCharCount)
-	descFrame.descriptionEditBox.CharCount:Hide() -- TDLATER polish
+	descFrame.descriptionEditBox.CharCount:Hide()
 
 	-- /-> hint
 	descFrame.descriptionEditBox.EditBox.Instructions:SetFontObject("GameFontNormal")
@@ -353,6 +351,9 @@ function widgets:DescriptionFrame(itemWidget)
 	if itemData.description then -- if there is already a description for this item, we write it on frame creation
 		descFrame.descriptionEditBox.EditBox:SetText(itemData.description)
 	end
+
+	-- init width
+	descFrame.descriptionEditBox.EditBox:SetWidth(descFrame.descriptionEditBox:GetWidth() - (descFrame.descriptionEditBox.ScrollBar:IsShown() and 15 or 0))
 
 	descFrames[itemID] = descFrame -- we save it for access, hide, and alpha purposes
 
