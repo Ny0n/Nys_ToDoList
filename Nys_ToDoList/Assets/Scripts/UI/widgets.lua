@@ -211,6 +211,9 @@ function widgets:DescriptionFrame(itemWidget)
 	descFrame:SetClampedToScreen(true)
 	descFrame:SetResizable(true)
 	descFrame:SetToplevel(true)
+	if not utils:IsDF() then
+		descFrame:SetScale(0.95)
+	end
 
 	-- to move the frame
 	descFrame:SetScript("OnMouseDown", function(self, button)
