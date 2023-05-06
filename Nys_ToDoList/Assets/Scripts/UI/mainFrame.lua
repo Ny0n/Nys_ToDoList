@@ -397,12 +397,6 @@ function mainFrame:ToggleEditMode(state, forceUpdate)
 	end
 	if not forceUpdate and orig == mainFrame.editMode then return end
 
-	if mainFrame.editMode then
-		tutorialsManager:SetPoint("introduction", "editmodeChat", "RIGHT", tdlFrame, "LEFT", -18, 0)
-	else
-		tutorialsManager:SetPoint("introduction", "editmodeChat", "CENTER", nil, "CENTER", 0, 0)
-	end
-
 	-- // start
 
 	local menu = tdlFrame.content.menu
@@ -911,7 +905,7 @@ function private:GenerateFrameContent()
 		SlashCmdList.NysTDL(L["info"])
 		tutorialsManager:Validate("introduction", "getMoreInfo")
 	end)
-	tutorialsManager:SetPoint("introduction", "getMoreInfo", "LEFT", menu.helpButton, "RIGHT", 18, 0)
+	tutorialsManager:SetPoint("introduction", "getMoreInfo", "RIGHT", menu.helpButton, "LEFT", -18, 0)
 
 	-- edit mode button
 	menu.editModeButton = widgets:IconTooltipButton(menu, "NysTDL_EditModeButton", L["Toggle edit mode"])
@@ -921,7 +915,6 @@ function private:GenerateFrameContent()
 		mainFrame:ToggleEditMode()
 	end)
 	tutorialsManager:SetPoint("introduction", "editmode", "BOTTOM", menu.editModeButton, "TOP", 0, 18)
-	-- tutorialsManager:SetPoint("editmode", "editmodeBtn", "BOTTOM", menu.editModeButton, "TOP", 0, 18) -- TDLATER
 
 	-- category menu button
 	menu.categoryButton = widgets:IconTooltipButton(menu, "NysTDL_CategoryButton", L["Add a category"])
@@ -956,7 +949,6 @@ function private:GenerateFrameContent()
 	menu.frameOptionsButton:SetScript("OnClick", function()
 		optionsManager:ToggleOptions(true)
 	end)
-	tutorialsManager:SetPoint("introduction", "accessOptions", "BOTTOM", menu.frameOptionsButton, "TOP", 0, 18)
 
 	-- remaining numbers labels
 	menu.remaining = widgets:Dummy(menu.helpButton)
@@ -1054,6 +1046,8 @@ function mainFrame:CreateTDLFrame()
 		end
 	end)
 
+	tutorialsManager:SetPoint("introduction", "editmodeChat", "RIGHT", tdlFrame, "LEFT", -18, 0)
+
 	-- to move the frame AND NOT HAVE THE PRB WITH THE RESIZE so it's custom moving
 	tdlFrame.isMouseDown = false
 	tdlFrame.hasMoved = false
@@ -1091,8 +1085,11 @@ function mainFrame:CreateTDLFrame()
 	-- view button
 	tdlFrame.viewButton = widgets:IconTooltipButton(tdlFrame, "NysTDL_ViewButton", L["Toggle menu"])
 	tdlFrame.viewButton:SetPoint("TOPRIGHT", tdlFrame, "TOPRIGHT", -6, -26)
-	tdlFrame.viewButton:SetScript("OnClick", function() mainFrame:ToggleMinimalistView() end)
-	tutorialsManager:SetPoint("introduction", "viewButton", "LEFT", tdlFrame.viewButton, "RIGHT", 18, 0)
+	tdlFrame.viewButton:SetScript("OnClick", function()
+		mainFrame:ToggleMinimalistView()
+		tutorialsManager:Validate("introduction", "miniView")
+	end)
+	tutorialsManager:SetPoint("introduction", "miniView", "LEFT", tdlFrame.viewButton, "RIGHT", 18, 0)
 
 	tdlFrame.ScrollBar:ClearAllPoints()
 	tdlFrame.ScrollBar:SetPoint("TOPLEFT", tdlFrame, "TOPRIGHT", -23, -54)

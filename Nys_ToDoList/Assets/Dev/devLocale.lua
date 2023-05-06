@@ -25,7 +25,9 @@ L["Name is too large"] = true
 L["Frame options"] = true
 L["Resize the list"] = true
 L["To add new items to existing categories, just right-click the category names"] = true
+L["You can access the options from here"] = true
 
+L["One last thing: you can hide the menu using this button. It's up to you now!"] = true
 L["Cannot import, data comes from a newer addon version (%s), please update and try again"] = true
 L["Press enter to add"] = true
 L["Add an item"] = true
@@ -259,7 +261,6 @@ L["Wednesday"] = true
 L["Weekly"] = true
 L["When clicking on edit boxes, automatically highlights the text inside"] = true
 L["Yes"] = true
-L["You can access the options from here"] = true
 L["You can add descriptions on items!"] = true
 L["You can add hyperlinks in the list!"] = true
 L["You can click on any name to put it in the input field below, you can then Ctrl+C/Ctrl+V"] = true
