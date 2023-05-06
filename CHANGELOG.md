@@ -1,3 +1,7 @@
+#### **6.11.1**
+
+- Bump interface number
+
 #### **6.11**
 
 - Added support for patch 10.1.0
