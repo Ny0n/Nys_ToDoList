@@ -11,6 +11,7 @@ NysTDL.tutorialsManager = tutorialsManager
 local core = NysTDL.core
 local libs = NysTDL.libs
 local chat = NysTDL.chat
+local enums = NysTDL.enums
 local utils = NysTDL.utils
 local widgets = NysTDL.widgets
 local mainFrame = NysTDL.mainFrame
@@ -346,7 +347,7 @@ function private:CreateTutorials()
 
 	private:CreateTutoFrame(cat, "addNewCat", false, "UP", L["Start by adding a new category!"], 190)
 	private:CreateTutoFrame(cat, "addCat", true, "UP", L["This will add your category to the current tab"], 240)
-	private:CreateTutoFrame(cat, "addItem", false, "RIGHT", L["To add new items to existing categories, just right-click the category names"], 220)
+	private:CreateTutoFrame(cat, "addItem", false, "RIGHT", utils:SafeStringFormat(L["To add new items, hover the category names and press the %s icon"], enums.icons.add.texHyperlink), 270)
 	private:CreateTutoFrame(cat, "accessOptions", false, "DOWN", L["You can access the options from here"], 220)
 	private:CreateTutoFrame(cat, "getMoreInfo", false, "LEFT", L["If you're having any problems or you just want more information, you can always click here to print help in the chat!"], 275)
 	private:CreateTutoFrame(cat, "editmode", false, "DOWN", L["To delete items and do a lot more, you can right-click anywhere on the list or click on this button to toggle the edit mode"], 275)

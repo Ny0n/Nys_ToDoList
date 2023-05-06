@@ -134,7 +134,7 @@ function private:MenuClick(menuEnum)
 	local selected = menuFrames.selected
 
 	-- like updating the color to white-out the selected menu button, so first we reset them all
-	menu.categoryButton.Icon:SetDesaturated(nil) menu.categoryButton.Icon:SetVertexColor(0.85, 1, 1) -- here we change the vertex color because the original icon is a bit reddish
+	menu.categoryButton.Icon:SetDesaturated(nil) menu.categoryButton.Icon:SetVertexColor(0.85, 0.85, 0.0)
 	menu.tabActionsButton.Icon:SetDesaturated(nil)
 
 	-- and other things
@@ -925,6 +925,9 @@ function private:GenerateFrameContent()
 
 	-- category menu button
 	menu.categoryButton = widgets:IconTooltipButton(menu, "NysTDL_CategoryButton", L["Add a category"])
+	menu.categoryButton.Icon:SetTexture((enums.icons.add.info()))
+	menu.categoryButton.Icon:SetSize(select(2, enums.icons.add.info()))
+	menu.categoryButton.Icon:SetTexCoord(unpack(enums.icons.add.texCoords))
 	menu.categoryButton:SetPoint("CENTER", menu.editModeButton, "CENTER", spacing, 0)
 	menu.categoryButton:SetScript("OnClick", function()
 		private:MenuClick(enums.menus.addcat)

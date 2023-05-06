@@ -24,6 +24,7 @@ L["Name"] = true
 L["Name is too large"] = true
 L["Frame options"] = true
 L["Resize the list"] = true
+L["To add new items to existing categories, just right-click the category names"] = true
 
 L["Cannot import, data comes from a newer addon version (%s), please update and try again"] = true
 L["Press enter to add"] = true
@@ -31,6 +32,7 @@ L["Add an item"] = true
 L["Font size"] = true
 L["Toggle menu"] = true
 L["Resize"] = true
+L["To add new items, hover the category names and press the %s icon"] = true
 
 L["Open addon options"] = true
 L["Open behavior on login"] = true
@@ -233,7 +235,6 @@ L["This action will overwrite your settings, including the list"] = true
 L["This name already exists"] = true
 L["This will add your category to the current tab"] = true
 L["Thursday"] = true
-L["To add new items to existing categories, just right-click the category names"] = true
 L["To delete items and do a lot more, you can right-click anywhere on the list or click on this button to toggle the edit mode"] = true
 L["To toggle the list, you have several ways"] = true
 L["toggle"] = true

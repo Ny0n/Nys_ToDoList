@@ -882,7 +882,9 @@ function widgets:AddButton(widget, parent)
 
 	-- // Appearance
 
-	-- btn.Icon:SetDesaturated(true)
+	btn.Icon:SetTexture((enums.icons.add.info()))
+	btn.Icon:SetSize(select(2, enums.icons.add.info()))
+	btn.Icon:SetTexCoord(unpack(enums.icons.add.texCoords))
 
 	-- these are for changing the color depending on the mouse actions (since they are custom xml)
 	-- and yea, this one's a bit complicated too because it works in very specific ways

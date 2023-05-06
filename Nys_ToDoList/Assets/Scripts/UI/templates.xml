@@ -110,10 +110,7 @@
 		</KeyValues>
 		<Layers>
 			<Layer level="OVERLAY">
-				<Texture parentKey="Icon" file="Interface\BUTTONS\UI-PlusMinus-Buttons">
-					<TexCoords left="0" right="0.5" top="0" bottom="0.5"/>
-					<Size x="12.5" y="12.5"/>
-					<Color r="0.85" g="1" b="1"/> <!-- a bit less red -->
+				<Texture parentKey="Icon">
 					<Anchors>
 						<Anchor point="CENTER"/>
 					</Anchors>
@@ -359,8 +356,7 @@
 		</KeyValues>
 		<Layers>
 			<Layer level="OVERLAY">
-				<Texture parentKey="Icon" atlas="ui-hud-minimap-zoom-in">
-					<Size x="17" y="17"/>
+				<Texture parentKey="Icon">
 					<Anchors>
 						<Anchor point="CENTER"/>
 					</Anchors>
