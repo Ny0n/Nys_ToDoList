@@ -46,7 +46,7 @@ local selectedTabBackdropHeight = 9
 local unselectedTabBackdropWidth = 2
 local unselectedTabBackdropHeight = 2
 local selectedTabBackdropOffsetX = -1
-local unselectedTabBackdropOffsetX = 0
+local unselectedTabBackdropOffsetX = -1
 local selectedTabBackdropOffsetY = 4
 local unselectedTabBackdropOffsetY = 4
 local tabsOffsetY = 1
@@ -60,12 +60,12 @@ if not utils:IsDF() then -- classic
 	rightScrollFrameOffset = sidesBonusOffset
 	overflowButtonRightOffsetX = rightScrollFrameOffset
 	overflowButtonWidth = overflowButtonRightOffsetX + overflowButtonSize
-	selectedTabBackdropWidth = -16
+	selectedTabBackdropWidth = -17
 	selectedTabBackdropHeight = 0
-	unselectedTabBackdropWidth = -16
-	unselectedTabBackdropHeight = 0
-	selectedTabBackdropOffsetX = 8
-	unselectedTabBackdropOffsetX = 0
+	unselectedTabBackdropWidth = -17
+	unselectedTabBackdropHeight = -1
+	selectedTabBackdropOffsetX = 9
+	unselectedTabBackdropOffsetX = 9
 	selectedTabBackdropOffsetY = 4
 	unselectedTabBackdropOffsetY = 4
 	tabsOffsetY = 0
@@ -470,7 +470,7 @@ function private:TabWidget(tabID, parentFrame)
 	-- it's mimicking the tabs appeareance, so that it's almost invisible
 
 	tabWidget.backdropClip = CreateFrame("Frame", nil, tabWidget)
-	tabWidget.backdropClip:SetSize(tabWidget:GetSize())
+	tabWidget.backdropClip:SetSize(tabWidget:GetWidth()+10, tabWidget:GetHeight()+10)
 	tabWidget.backdropClip:SetPoint("TOP", tabWidget, "TOP", 0, -2)
 	tabWidget.backdropClip:SetClipsChildren(true)
 
@@ -490,7 +490,7 @@ function private:TabWidget(tabID, parentFrame)
 		self.backdrop.savedWidth = unselectedTabBackdropWidth
 		self.backdrop.savedHeight = unselectedTabBackdropHeight
 		self.backdrop:ClearAllPoints()
-		self.backdrop:SetPoint("TOP", self, "TOP", unselectedTabBackdropOffsetX, unselectedTabBackdropOffsetY)
+		self.backdrop:SetPoint("TOPLEFT", self, "TOPLEFT", unselectedTabBackdropOffsetX, unselectedTabBackdropOffsetY)
 		self.backdrop:SetSize(self:GetWidth()+self.backdrop.savedWidth, self:GetHeight()+self.backdrop.savedHeight)
 	end
 	tabWidget:HookScript("OnEnable", onEnable)
@@ -501,7 +501,7 @@ function private:TabWidget(tabID, parentFrame)
 	end)
 
 	tabWidget:SetFrameLevel(tabWidget:GetFrameLevel()+1)
-	tabWidget.backdrop:SetFrameLevel(tabWidget:GetFrameLevel()-1)
+	tabWidget.backdropClip:SetFrameLevel(tabWidget:GetFrameLevel()-1)
 
 	-- // data
 

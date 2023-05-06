@@ -753,13 +753,7 @@
 				</KeyValues>
 				<Layers>
 					<Layer level="OVERLAY">
-						<FontString parentKey="Text" inherits="GameFontNormal" wordwrap="false">
-							<Anchors>
-								<Anchor point="TOP" x="0" y="-5"/>
-								<Anchor point="LEFT"/>
-								<Anchor point="RIGHT"/>
-							</Anchors>
-						</FontString>
+						<FontString parentKey="TitleText" inherits="GameFontNormal" wordwrap="false"/>
 					</Layer>
 				</Layers>
 			</Frame>
@@ -775,33 +769,6 @@
 	</Frame>
 
 	<!-- The main frame (Classic) -->
-	<Frame name="NysTDL_MainFrameClassic" inherits="BasicFrameTemplate" virtual="true">
-		<!-- <Frames>
-			<Frame parentKey="NineSlice" useParentLevel="true" inherits="NineSlicePanelTemplate">
-				<KeyValues>
-					<KeyValue key="layoutType" value="ButtonFrameTemplateNoPortrait" type="string"/>
-				</KeyValues>
-				<Layers>
-					<Layer level="OVERLAY">
-						<FontString parentKey="Text" inherits="GameFontNormal" wordwrap="false">
-							<Anchors>
-								<Anchor point="TOP" x="0" y="-5"/>
-								<Anchor point="LEFT"/>
-								<Anchor point="RIGHT"/>
-							</Anchors>
-						</FontString>
-					</Layer>
-				</Layers>
-			</Frame>
-			<Button parentKey="CloseButton" inherits="UIPanelCloseButtonDefaultAnchors">
-				<Scripts>
-					<OnClick>
-						self:GetParent():Hide()
-					</OnClick>
-				</Scripts>
-			</Button>
-			<EventFrame parentKey="ScrollBar" inherits="MinimalScrollBar"/>
-		</Frames> -->
-	</Frame>
+	<Frame name="NysTDL_MainFrameClassic" inherits="BasicFrameTemplate" virtual="true"/>
 
 </Ui>

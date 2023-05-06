@@ -1492,10 +1492,12 @@ end
 
 function widgets:HorizontalDivider(parentFrame, width, height)
 	local divider = parentFrame:CreateTexture()
+
 	divider:SetTexture((enums.icons.divider.info()))
 	divider:SetTexCoord(unpack(enums.icons.divider.texCoords))
 	local defaultWidth, defaultHeight = select(2, enums.icons.divider.info())
 	divider:SetSize(width or defaultWidth, height or defaultHeight)
+
 	return divider
 end
 

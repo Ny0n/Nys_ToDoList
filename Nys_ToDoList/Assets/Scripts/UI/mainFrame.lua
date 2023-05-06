@@ -83,9 +83,10 @@ contentWidgets = {
 
 -- these are for code comfort
 
-local loadOriginOffset = { 14, -12 }
 local cursorX, cursorY, cursorDist = 0, 0, 10 -- for my special drag
-local lineBottom = { x = 12, y = -45 }
+local loadOriginOffset, loadOriginOffsetClassic = { 14, -12 }, { 14, -12 }
+local lineBottom, lineBottomClassic = { x = 12, y = -45 }, { x = 12, y = -45 }
+local menuOrigin, menuOriginClassic = { 25, -22 }, { 25, -22 }
 
 -- // WoW & Lua APIs
 
@@ -421,12 +422,10 @@ function mainFrame:ToggleEditMode(state, forceUpdate)
 	-- resize button
 	tdlFrame.resizeButton:SetShown(mainFrame.editMode)
 
-	-- -- scroll bar
-	-- if mainFrame.editMode then
-	-- 	tdlFrame.ScrollBar:SetPoint("BOTTOMLEFT", tdlFrame.ScrollFrame, "BOTTOMRIGHT", -20, 15)
-	-- else
-	-- 	tdlFrame.ScrollBar:SetPoint("BOTTOMLEFT", tdlFrame.ScrollFrame, "BOTTOMRIGHT", -20, 7)
-	-- end
+	-- scroll bar
+	local offsetY = mainFrame.editMode and 8 or 0
+	offsetY = offsetY + (utils:IsDF() and 7 or 20)
+	tdlFrame.ScrollFrame.ScrollBar:SetPoint("BOTTOMRIGHT", tdlFrame.ScrollFrame, "BOTTOMRIGHT", 0, offsetY)
 
 	-- // refresh
 	private:MenuClick() -- to close any opened sub-menu
@@ -502,16 +501,17 @@ function mainFrame:Event_FrameContentAlphaSlider_OnValueChanged(value)
 	-- itemsList frame part
 	NysTDL.acedb.profile.frameContentAlpha = value
 	tdlFrame.ScrollFrame:SetAlpha(value/100)
+	tdlFrame.ScrollFrame.ScrollBar:SetAlpha(value/100)
 	tdlFrame.resizeButton:SetAlpha(value/100)
 	tdlFrame.viewButton:SetAlpha(value/100)
 	tdlFrame.CloseButton:SetAlpha(value/100)
-	-- tdlFrame.ScrollBar:SetAlpha(value/100)
 
 	-- and that's why the min opacity is 0.6!
 	if utils:IsDF() then
 		tdlFrame.NineSlice:SetAlpha(value/100)
 	else
 		tdlFrame.TitleBg:SetAlpha(value/100)
+		tdlFrame.TitleText:SetAlpha(value/100)
 	end
 
 	-- description frames part
@@ -780,11 +780,7 @@ function mainFrame:UpdateVisuals()
 		title = title.." - "..(dataManager:IsGlobal(database.ctab()) and L["Global tabs"] or L["Profile tabs"])
 	end
 	-- title = title..dataManager:GetName(database.ctab())
-	if utils:IsDF() then
-		mainFrame.tdlFrame.NineSlice.Text:SetText(title)
-	else
-		mainFrame.tdlFrame.TitleText:SetText(title)
-	end
+	mainFrame.tdlFrame.TitleText:SetText(title)
 end
 
 function mainFrame:DontRefreshNextTime(nb)
@@ -906,11 +902,10 @@ function private:GenerateFrameContent()
 	local menu = content.menu
 
 	local spacing = 30
-	local origin = { 25, -22 }
 
 	-- help button
 	menu.helpButton = widgets:HelpButton(menu, L["Information"])
-	menu.helpButton:SetPoint("CENTER", menu, "TOPLEFT", unpack(origin))
+	menu.helpButton:SetPoint("CENTER", menu, "TOPLEFT", unpack(menuOrigin))
 	menu.helpButton:SetScript("OnClick", function()
 		SlashCmdList.NysTDL(L["info"])
 		tutorialsManager:Validate("introduction", "getMoreInfo")
@@ -1056,20 +1051,31 @@ function mainFrame:CreateTDLFrame()
 		end
 	end)
 
+
+
+	-- title
 	if utils:IsDF() then
-		-- tdlFrame.NineSlice.Text:SetText(title) -- TODO
-		-- tdlFrame.TitleText:SetPoint("LEFT", tdlFrame, "LEFT", 5, 0)
-		-- tdlFrame.TitleText:SetPoint("RIGHT", tdlFrame.CloseButton, "LEFT")
-		-- tdlFrame.TitleText:SetWordWrap(false)
+		tdlFrame.TitleText = tdlFrame.NineSlice.TitleText
+		tdlFrame.TitleText:ClearAllPoints()
+		tdlFrame.TitleText:SetPoint("TOP", tdlFrame, "TOP", 0, -5)
+		tdlFrame.TitleText:SetPoint("LEFT", tdlFrame, "LEFT", 10, 0)
+		tdlFrame.TitleText:SetPoint("RIGHT", tdlFrame.CloseButton, "LEFT")
 	else
-		tdlFrame.Bg:SetTexture("Interface\\FrameGeneral\\UI-Background-Marble")
-		tdlFrame.Bg:SetHorizTile(false)
-		tdlFrame.Bg:SetVertTile(false)
 		tdlFrame.TitleText:ClearAllPoints()
 		tdlFrame.TitleText:SetPoint("TOP", tdlFrame, "TOP", 0, -6)
 		tdlFrame.TitleText:SetPoint("LEFT", tdlFrame, "LEFT", 5, 0)
 		tdlFrame.TitleText:SetPoint("RIGHT", tdlFrame.CloseButton, "LEFT")
 		tdlFrame.TitleText:SetWordWrap(false)
+
+		-- background
+		tdlFrame.Bg:SetTexture("Interface\\FrameGeneral\\UI-Background-Marble")
+		tdlFrame.Bg:SetHorizTile(false)
+		tdlFrame.Bg:SetVertTile(false)
+
+		-- offset
+		loadOriginOffset = loadOriginOffsetClassic
+		lineBottom = lineBottomClassic
+		menuOrigin = menuOriginClassic
 	end
 
 	tutorialsManager:SetPoint("introduction", "editmodeChat", "RIGHT", tdlFrame, "LEFT", -18, 0)
@@ -1102,11 +1108,23 @@ function mainFrame:CreateTDLFrame()
 
 	-- // scroll frame (almost everything will be inside of it using a scroll child frame, see private:GenerateFrameContent())
 
-	tdlFrame.ScrollFrame = CreateFrame("ScrollFrame", nil, tdlFrame, "UIPanelScrollFrameTemplate")
+	tdlFrame.ScrollFrame = CreateFrame("ScrollFrame", nil, tdlFrame, utils:IsDF() and "ScrollFrameTemplate" or "UIPanelScrollFrameTemplate")
 	tdlFrame.ScrollFrame:SetPoint("TOPLEFT", tdlFrame, "TOPLEFT", 4, -24)
 	tdlFrame.ScrollFrame:SetPoint("BOTTOMRIGHT", tdlFrame, "BOTTOMRIGHT", -4 -34, 4)
 	tdlFrame.ScrollFrame:SetScript("OnMouseWheel", mainFrame.Event_ScrollFrame_OnMouseWheel)
 	tdlFrame.ScrollFrame:SetClipsChildren(true)
+
+	-- scrollbar
+	tdlFrame.ScrollFrame.ScrollBar:ClearAllPoints()
+	tdlFrame.ScrollFrame.ScrollBar:SetParent(tdlFrame) -- so that it's not clipped
+	tdlFrame.ScrollFrame.ScrollBar.GetParent = function() -- go along now, you didn't see anything
+		return tdlFrame.ScrollFrame
+	end
+	if utils:IsDF() then
+		tdlFrame.ScrollFrame.ScrollBar:SetPoint("TOPLEFT", tdlFrame.ScrollFrame, "TOPRIGHT", 38, -30)
+	else
+		tdlFrame.ScrollFrame.ScrollBar:SetPoint("TOPLEFT", tdlFrame.ScrollFrame, "TOPRIGHT", 38, -45)
+	end
 
 	-- view button
 	tdlFrame.viewButton = widgets:IconTooltipButton(tdlFrame, "NysTDL_ViewButton", L["Toggle menu"])
@@ -1118,38 +1136,7 @@ function mainFrame:CreateTDLFrame()
 	end)
 	tutorialsManager:SetPoint("introduction", "miniView", "LEFT", tdlFrame.viewButton, "RIGHT", 18, 0)
 
-	-- tdlFrame.ScrollBar:ClearAllPoints()
-	-- tdlFrame.ScrollBar:SetPoint("TOPLEFT", tdlFrame, "TOPRIGHT", -23, -54)
-	-- tdlFrame.ScrollBar:Init(0.1, 0.1)
-
-	-- tdlFrame.ScrollBar:RegisterCallback("OnScroll", function(_, scrollPercentage)
-	-- 	tdlFrame.ScrollFrame:SetVerticalScroll(tdlFrame.ScrollFrame:GetVerticalScrollRange()*scrollPercentage)
-	-- end)
-
-	-- -- Set the min and max values of a scroll bar (Slider) based on the scroll range
-	-- tdlFrame.ScrollFrame:SetScript("OnScrollRangeChanged", function(self, x, y)
-	-- 	local contentHeight = y+tdlFrame.ScrollFrame:GetHeight()
-
-	-- 	local visibleExtentPercentage = 0
-	-- 	if contentHeight > 0 then
-	-- 		local visibleExtent = tdlFrame.ScrollFrame:GetHeight()
-	-- 		visibleExtentPercentage = visibleExtent/contentHeight
-	-- 	end
-
-	-- 	tdlFrame.ScrollBar:SetVisibleExtentPercentage(visibleExtentPercentage)
-	-- 	tdlFrame.ScrollBar:SetScrollPercentage(tdlFrame.ScrollFrame:GetVerticalScroll()/tdlFrame.ScrollFrame:GetVerticalScrollRange())
-	-- end)
-
-	-- tdlFrame.ScrollFrame:SetScript("OnVerticalScroll", function(self, newVerticalScroll)
-	-- 	tdlFrame.ScrollBar:SetScrollPercentage(newVerticalScroll/tdlFrame.ScrollFrame:GetVerticalScrollRange())
-	-- end)
-
-	-- tdlFrame.ScrollBar:SetVisibleExtentPercentage(0) -- init
-
 	-- -- // outside the scroll frame
-
-	-- -- old scroll bar
-	-- tdlFrame.ScrollFrame.ScrollBar:Hide()
 
 	-- resize button
 	tdlFrame.resizeButton = widgets:IconTooltipButton(tdlFrame, "NysTDL_TooltipResizeButton", L["Left-Click"].." - "..L["Resize"].."\n"..L["Right-Click"].." - "..L["Reset"])
