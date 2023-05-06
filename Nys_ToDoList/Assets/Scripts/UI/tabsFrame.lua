@@ -41,15 +41,34 @@ local overflowButtonRightOffsetX = rightScrollFrameOffset + inBetweenTabOffset
 local overflowButtonOffsetY = 2
 local overflowButtonWidth = overflowButtonRightOffsetX + overflowButtonSize
 local inBetweenButtonOffset = 5
+local selectedTabBackdropWidth = 2
+local selectedTabBackdropHeight = 9
+local unselectedTabBackdropWidth = 2
+local unselectedTabBackdropHeight = 2
+local selectedTabBackdropOffsetX = -1
+local unselectedTabBackdropOffsetX = 0
+local selectedTabBackdropOffsetY = 4
+local unselectedTabBackdropOffsetY = 4
+local tabsOffsetY = 1
 
-if not utils:IsDF() then
+if not utils:IsDF() then -- classic
+	overflowButtonSize = 30
 	inBetweenTabOffset = -12
 	sidesBonusOffset = 10
 	MIN_TAB_SIZE, MAX_TAB_SIZE = 90, 110
-	leftScrollFrameOffset = sidesBonusOffset
+	leftScrollFrameOffset = sidesBonusOffset - 5
 	rightScrollFrameOffset = sidesBonusOffset
-	overflowButtonRightOffsetX = rightScrollFrameOffset + 4
+	overflowButtonRightOffsetX = rightScrollFrameOffset
 	overflowButtonWidth = overflowButtonRightOffsetX + overflowButtonSize
+	selectedTabBackdropWidth = -16
+	selectedTabBackdropHeight = 0
+	unselectedTabBackdropWidth = -16
+	unselectedTabBackdropHeight = 0
+	selectedTabBackdropOffsetX = 8
+	unselectedTabBackdropOffsetX = 0
+	selectedTabBackdropOffsetY = 4
+	unselectedTabBackdropOffsetY = 4
+	tabsOffsetY = 0
 end
 --** ************** **--
 
@@ -371,7 +390,7 @@ function private:RefreshPoints()
 	for _,tabID in ipairs(tabsList.orderedTabIDs) do
 		if tabWidgets[tabID] then
 			if not lastWidget then
-				tabWidgets[tabID]:SetPoint("TOPLEFT", content, "TOPLEFT", 0, 1)
+				tabWidgets[tabID]:SetPoint("TOPLEFT", content, "TOPLEFT", 0, tabsOffsetY)
 			else
 				if lastWidget ~= tabWidgets[tabID] then
 					tabWidgets[tabID]:SetPoint("TOPLEFT", lastWidget, "TOPRIGHT", inBetweenTabOffset, 0)
@@ -443,30 +462,35 @@ function private:TabWidget(tabID, parentFrame)
 	local tabData = select(3, dataManager:Find(tabID))
 
 	_currentID = _currentID + 1
-	local parentName = parentFrame:GetName()
-	local tabWidget = CreateFrame("Button", parentName.."Tab".._currentID, parentFrame, utils:IsDF() and "CharacterFrameTabTemplate" or "CharacterFrameTabButtonTemplate")
+	local parentName = parentFrame:GetName() or "NysTDL_tdlFrame"
+	local tabWidget = CreateFrame("Button", parentName.."Tab"..tostring(_currentID), parentFrame, utils:IsDF() and "CharacterFrameTabTemplate" or "CharacterFrameTabButtonTemplate")
 
 	-- // backdrop
 	-- I'm adding a backdrop only for the edge, so that we still see it when we lower the frame opacity
 	-- it's mimicking the tabs appeareance, so that it's almost invisible
 
-	tabWidget.backdrop = CreateFrame("Frame", nil, tabWidget, BackdropTemplateMixin and "BackdropTemplate" or nil)
+	tabWidget.backdropClip = CreateFrame("Frame", nil, tabWidget)
+	tabWidget.backdropClip:SetSize(tabWidget:GetSize())
+	tabWidget.backdropClip:SetPoint("TOP", tabWidget, "TOP", 0, -2)
+	tabWidget.backdropClip:SetClipsChildren(true)
+
+	tabWidget.backdrop = CreateFrame("Frame", nil, tabWidget.backdropClip, BackdropTemplateMixin and "BackdropTemplate" or nil)
 	tabWidget.backdrop:SetBackdrop(enums.backdrop)
 	tabWidget.backdrop.Center:SetAlpha(0)
 	tabWidget.backdrop:SetBackdropBorderColor(utils:ThemeDownTo01(enums.backdropBorderColor, true))
 
 	tabWidget:HookScript("OnDisable", function(self) -- when selected
-		self.backdrop.savedWidth = 2
-		self.backdrop.savedHeight = 9
+		self.backdrop.savedWidth = selectedTabBackdropWidth
+		self.backdrop.savedHeight = selectedTabBackdropHeight
 		self.backdrop:ClearAllPoints()
-		self.backdrop:SetPoint("TOPLEFT", self, "TOPLEFT", -1, 4)
+		self.backdrop:SetPoint("TOPLEFT", self, "TOPLEFT", selectedTabBackdropOffsetX, selectedTabBackdropOffsetY)
 		self.backdrop:SetSize(self:GetWidth()+self.backdrop.savedWidth, self:GetHeight()+self.backdrop.savedHeight)
 	end)
 	local onEnable = function(self) -- when unselected
-		self.backdrop.savedWidth = 2
-		self.backdrop.savedHeight = 2
+		self.backdrop.savedWidth = unselectedTabBackdropWidth
+		self.backdrop.savedHeight = unselectedTabBackdropHeight
 		self.backdrop:ClearAllPoints()
-		self.backdrop:SetPoint("TOP", self, "TOP", 0, 4)
+		self.backdrop:SetPoint("TOP", self, "TOP", unselectedTabBackdropOffsetX, unselectedTabBackdropOffsetY)
 		self.backdrop:SetSize(self:GetWidth()+self.backdrop.savedWidth, self:GetHeight()+self.backdrop.savedHeight)
 	end
 	tabWidget:HookScript("OnEnable", onEnable)
@@ -553,7 +577,7 @@ function tabsFrame:SetAlpha(alpha)
 			_G[name.."MiddleDisabled"]:SetAlpha(alpha)
 			_G[name.."Right"]:SetAlpha(alpha)
 			_G[name.."RightDisabled"]:SetAlpha(alpha)
-			_G[name.."HighlightTexture"]:SetAlpha(alpha)
+			_G[name.."HighlightTexture"]:SetAlpha(0.5+alpha/2)
 		end
 	end
 

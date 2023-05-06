@@ -33,7 +33,7 @@ local private = {}
 -- THE frame
 local tdlFrame
 local function createFrame()
-	mainFrame.tdlFrame = CreateFrame("Frame", nil, UIParent, "NysTDL_MainFrame")
+	mainFrame.tdlFrame = CreateFrame("Frame", nil, UIParent, utils:IsDF() and "NysTDL_MainFrameRetail" or "NysTDL_MainFrameClassic")
 	tdlFrame = mainFrame.tdlFrame
 end
 table.insert(core.Event_OnInitialize_Start, createFrame)
@@ -421,12 +421,12 @@ function mainFrame:ToggleEditMode(state, forceUpdate)
 	-- resize button
 	tdlFrame.resizeButton:SetShown(mainFrame.editMode)
 
-	-- scroll bar
-	if mainFrame.editMode then
-		tdlFrame.ScrollBar:SetPoint("BOTTOMLEFT", tdlFrame.ScrollFrame, "BOTTOMRIGHT", -20, 15)
-	else
-		tdlFrame.ScrollBar:SetPoint("BOTTOMLEFT", tdlFrame.ScrollFrame, "BOTTOMRIGHT", -20, 7)
-	end
+	-- -- scroll bar
+	-- if mainFrame.editMode then
+	-- 	tdlFrame.ScrollBar:SetPoint("BOTTOMLEFT", tdlFrame.ScrollFrame, "BOTTOMRIGHT", -20, 15)
+	-- else
+	-- 	tdlFrame.ScrollBar:SetPoint("BOTTOMLEFT", tdlFrame.ScrollFrame, "BOTTOMRIGHT", -20, 7)
+	-- end
 
 	-- // refresh
 	private:MenuClick() -- to close any opened sub-menu
@@ -504,9 +504,15 @@ function mainFrame:Event_FrameContentAlphaSlider_OnValueChanged(value)
 	tdlFrame.ScrollFrame:SetAlpha(value/100)
 	tdlFrame.resizeButton:SetAlpha(value/100)
 	tdlFrame.viewButton:SetAlpha(value/100)
-	tdlFrame.ScrollBar:SetAlpha(value/100)
 	tdlFrame.CloseButton:SetAlpha(value/100)
-	tdlFrame.NineSlice:SetAlpha(value/100) -- that's why the min opacity is 0.6!
+	-- tdlFrame.ScrollBar:SetAlpha(value/100)
+
+	-- and that's why the min opacity is 0.6!
+	if utils:IsDF() then
+		tdlFrame.NineSlice:SetAlpha(value/100)
+	else
+		tdlFrame.TitleBg:SetAlpha(value/100)
+	end
 
 	-- description frames part
 	widgets:SetDescFramesContentAlpha(value)
@@ -774,7 +780,11 @@ function mainFrame:UpdateVisuals()
 		title = title.." - "..(dataManager:IsGlobal(database.ctab()) and L["Global tabs"] or L["Profile tabs"])
 	end
 	-- title = title..dataManager:GetName(database.ctab())
-	mainFrame.tdlFrame.NineSlice.Text:SetText(title)
+	if utils:IsDF() then
+		mainFrame.tdlFrame.NineSlice.Text:SetText(title)
+	else
+		mainFrame.tdlFrame.TitleText:SetText(title)
+	end
 end
 
 function mainFrame:DontRefreshNextTime(nb)
@@ -1046,6 +1056,22 @@ function mainFrame:CreateTDLFrame()
 		end
 	end)
 
+	if utils:IsDF() then
+		-- tdlFrame.NineSlice.Text:SetText(title) -- TODO
+		-- tdlFrame.TitleText:SetPoint("LEFT", tdlFrame, "LEFT", 5, 0)
+		-- tdlFrame.TitleText:SetPoint("RIGHT", tdlFrame.CloseButton, "LEFT")
+		-- tdlFrame.TitleText:SetWordWrap(false)
+	else
+		tdlFrame.Bg:SetTexture("Interface\\FrameGeneral\\UI-Background-Marble")
+		tdlFrame.Bg:SetHorizTile(false)
+		tdlFrame.Bg:SetVertTile(false)
+		tdlFrame.TitleText:ClearAllPoints()
+		tdlFrame.TitleText:SetPoint("TOP", tdlFrame, "TOP", 0, -6)
+		tdlFrame.TitleText:SetPoint("LEFT", tdlFrame, "LEFT", 5, 0)
+		tdlFrame.TitleText:SetPoint("RIGHT", tdlFrame.CloseButton, "LEFT")
+		tdlFrame.TitleText:SetWordWrap(false)
+	end
+
 	tutorialsManager:SetPoint("introduction", "editmodeChat", "RIGHT", tdlFrame, "LEFT", -18, 0)
 
 	-- to move the frame AND NOT HAVE THE PRB WITH THE RESIZE so it's custom moving
@@ -1084,6 +1110,7 @@ function mainFrame:CreateTDLFrame()
 
 	-- view button
 	tdlFrame.viewButton = widgets:IconTooltipButton(tdlFrame, "NysTDL_ViewButton", L["Toggle menu"])
+	tdlFrame.viewButton.Icon:SetTexture((enums.icons.view.info()))
 	tdlFrame.viewButton:SetPoint("TOPRIGHT", tdlFrame, "TOPRIGHT", -6, -26)
 	tdlFrame.viewButton:SetScript("OnClick", function()
 		mainFrame:ToggleMinimalistView()
@@ -1091,38 +1118,38 @@ function mainFrame:CreateTDLFrame()
 	end)
 	tutorialsManager:SetPoint("introduction", "miniView", "LEFT", tdlFrame.viewButton, "RIGHT", 18, 0)
 
-	tdlFrame.ScrollBar:ClearAllPoints()
-	tdlFrame.ScrollBar:SetPoint("TOPLEFT", tdlFrame, "TOPRIGHT", -23, -54)
-	tdlFrame.ScrollBar:Init(0.1, 0.1)
+	-- tdlFrame.ScrollBar:ClearAllPoints()
+	-- tdlFrame.ScrollBar:SetPoint("TOPLEFT", tdlFrame, "TOPRIGHT", -23, -54)
+	-- tdlFrame.ScrollBar:Init(0.1, 0.1)
 
-	tdlFrame.ScrollBar:RegisterCallback("OnScroll", function(_, scrollPercentage)
-		tdlFrame.ScrollFrame:SetVerticalScroll(tdlFrame.ScrollFrame:GetVerticalScrollRange()*scrollPercentage)
-	end)
+	-- tdlFrame.ScrollBar:RegisterCallback("OnScroll", function(_, scrollPercentage)
+	-- 	tdlFrame.ScrollFrame:SetVerticalScroll(tdlFrame.ScrollFrame:GetVerticalScrollRange()*scrollPercentage)
+	-- end)
 
-	-- Set the min and max values of a scroll bar (Slider) based on the scroll range
-	tdlFrame.ScrollFrame:SetScript("OnScrollRangeChanged", function(self, x, y)
-		local contentHeight = y+tdlFrame.ScrollFrame:GetHeight()
+	-- -- Set the min and max values of a scroll bar (Slider) based on the scroll range
+	-- tdlFrame.ScrollFrame:SetScript("OnScrollRangeChanged", function(self, x, y)
+	-- 	local contentHeight = y+tdlFrame.ScrollFrame:GetHeight()
 
-		local visibleExtentPercentage = 0
-		if contentHeight > 0 then
-			local visibleExtent = tdlFrame.ScrollFrame:GetHeight()
-			visibleExtentPercentage = visibleExtent/contentHeight
-		end
+	-- 	local visibleExtentPercentage = 0
+	-- 	if contentHeight > 0 then
+	-- 		local visibleExtent = tdlFrame.ScrollFrame:GetHeight()
+	-- 		visibleExtentPercentage = visibleExtent/contentHeight
+	-- 	end
 
-		tdlFrame.ScrollBar:SetVisibleExtentPercentage(visibleExtentPercentage)
-		tdlFrame.ScrollBar:SetScrollPercentage(tdlFrame.ScrollFrame:GetVerticalScroll()/tdlFrame.ScrollFrame:GetVerticalScrollRange())
-	end)
+	-- 	tdlFrame.ScrollBar:SetVisibleExtentPercentage(visibleExtentPercentage)
+	-- 	tdlFrame.ScrollBar:SetScrollPercentage(tdlFrame.ScrollFrame:GetVerticalScroll()/tdlFrame.ScrollFrame:GetVerticalScrollRange())
+	-- end)
 
-	tdlFrame.ScrollFrame:SetScript("OnVerticalScroll", function(self, newVerticalScroll)
-		tdlFrame.ScrollBar:SetScrollPercentage(newVerticalScroll/tdlFrame.ScrollFrame:GetVerticalScrollRange())
-	end)
+	-- tdlFrame.ScrollFrame:SetScript("OnVerticalScroll", function(self, newVerticalScroll)
+	-- 	tdlFrame.ScrollBar:SetScrollPercentage(newVerticalScroll/tdlFrame.ScrollFrame:GetVerticalScrollRange())
+	-- end)
 
-	tdlFrame.ScrollBar:SetVisibleExtentPercentage(0) -- init
+	-- tdlFrame.ScrollBar:SetVisibleExtentPercentage(0) -- init
 
-	-- // outside the scroll frame
+	-- -- // outside the scroll frame
 
-	-- old scroll bar
-	tdlFrame.ScrollFrame.ScrollBar:Hide()
+	-- -- old scroll bar
+	-- tdlFrame.ScrollFrame.ScrollBar:Hide()
 
 	-- resize button
 	tdlFrame.resizeButton = widgets:IconTooltipButton(tdlFrame, "NysTDL_TooltipResizeButton", L["Left-Click"].." - "..L["Resize"].."\n"..L["Right-Click"].." - "..L["Reset"])

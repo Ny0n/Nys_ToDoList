@@ -316,10 +316,10 @@ function widgets:DescriptionFrame(itemWidget)
 	descFrame:SetPoint("BOTTOMRIGHT", itemWidget.descBtn, "TOPRIGHT", 0, 0) -- we spawn it basically where we clicked
 
 	-- to unlink it from the itemWidget
-	RunNextFrame(function()
+	AceTimer:ScheduleTimer(function() -- next frame
 		descFrame:StartMoving()
 		descFrame:StopMovingOrSizing()
-	end)
+	end, 0)
 
 	-- / description edit box
 	descFrame.descriptionEditBox = CreateFrame("ScrollFrame", nil, descFrame, "NysTDL_InputScrollFrameTemplate")
@@ -485,6 +485,7 @@ function widgets:NoPointsInteractiveLabel(parent, pointLeft, pointRight, name, t
 	interactiveLabel:SetPoint("LEFT", pointLeft, "RIGHT", 0, 0) -- width
 	interactiveLabel:SetPoint("RIGHT", pointRight, "RIGHT", 0, 0) -- width
 	interactiveLabel:SetHeight(parent:GetHeight()) -- height
+	interactiveLabel.pointLeft = pointLeft
 
 	parent.heightFrame = CreateFrame("Frame", nil, parent)
 	parent.heightFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
@@ -510,7 +511,7 @@ function widgets:NoPointsInteractiveLabel(parent, pointLeft, pointRight, name, t
 		-- if self:GetLeft() >= pointLeft:GetRight() then
 		-- 	interactiveLabel.Text:SetPoint("TOPLEFT", interactiveLabel)
 		-- else
-		-- 	interactiveLabel.Text:ClearPoint("TOPLEFT")
+		-- 	interactiveLabel.Text:ClearPoint("TOPLEFT") --> ClearAllPoints for classic
 		-- end
 
 		parent.heightFrame:SetHeight(interactiveLabel.Text:GetStringHeight())
@@ -558,7 +559,7 @@ function widgets:AutoWrapCatSubLabel(parent, label, pointRight)
 		-- if widget.labelFrame:GetLeft() >= widget.startPosFrame:GetRight() then
 		-- 	widget.labelFrame.Text:SetPoint("TOPLEFT", widget.labelFrame)
 		-- else
-		-- 	widget.labelFrame.Text:ClearPoint("TOPLEFT")
+		-- 	widget.labelFrame.Text:ClearPoint("TOPLEFT") --> ClearAllPoints for classic
 		-- end
 
 		widget.heightFrame:SetHeight(widget.labelFrame.Text:GetStringHeight())
@@ -1096,7 +1097,7 @@ function widgets:CategoryWidget(catID, parentFrame)
 	categoryWidget.removeBtn:SetPoint("LEFT", emf, "LEFT", 0, 0)
 	categoryWidget.removeBtn:SetScript("OnClick", function() dataManager:DeleteCat(catID) end)
 
-	categoryWidget.labelsStartPosFrame = CreateFrame("Frame", nil, categoryWidget) -- frame to determine where we start the checkbox, or the label if we are in a non-checkable item
+	categoryWidget.labelsStartPosFrame = CreateFrame("Frame", nil, categoryWidget) -- frame to determine where we start the category labels (favsRemainingLabel & originalTabLabel)
 	categoryWidget.labelsStartPosFrame:SetPoint("TOPLEFT", categoryWidget.interactiveLabel.Text, "TOPRIGHT", 5, 0) -- 5 bc 6-width => 6-1 => 5 bc "RIGHT"
 	categoryWidget.labelsStartPosFrame:SetSize(categoryWidget:GetSize())
 
@@ -1133,11 +1134,11 @@ function widgets:CategoryWidget(catID, parentFrame)
 
 	categoryWidget.hoverTimerID = -1
 	categoryWidget.hoverFrame:SetScript("OnShow", function(self)
-		categoryWidget.labelsStartPosFrame:ClearPoint("TOPLEFT")
+		categoryWidget.labelsStartPosFrame:ClearAllPoints()
 		categoryWidget.labelsStartPosFrame:SetPoint("TOPLEFT", categoryWidget.hoverFrame, "TOPRIGHT", 0, 0)
 	end)
 	categoryWidget.hoverFrame:SetScript("OnHide", function(self)
-		categoryWidget.labelsStartPosFrame:ClearPoint("TOPLEFT")
+		categoryWidget.labelsStartPosFrame:ClearAllPoints()
 		categoryWidget.labelsStartPosFrame:SetPoint("TOPLEFT", categoryWidget.interactiveLabel.Text, "TOPRIGHT", 5, 0) -- 5 bc 6-width => 6-1 => 5 bc "RIGHT"
 	end)
 	categoryWidget.hoverFrame:SetScript("OnEnter", function(self)
@@ -1491,8 +1492,10 @@ end
 
 function widgets:HorizontalDivider(parentFrame, width, height)
 	local divider = parentFrame:CreateTexture()
-	divider:SetAtlas("Options_HorizontalDivider", true)
-	divider:SetSize(width or 200, height or 2)
+	divider:SetTexture((enums.icons.divider.info()))
+	divider:SetTexCoord(unpack(enums.icons.divider.texCoords))
+	local defaultWidth, defaultHeight = select(2, enums.icons.divider.info())
+	divider:SetSize(width or defaultWidth, height or defaultHeight)
 	return divider
 end
 

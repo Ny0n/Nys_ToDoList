@@ -266,7 +266,7 @@
 		</KeyValues>
 		<Layers>
 			<Layer level="OVERLAY">
-				<Texture parentKey="Icon" file="Interface\UIEditorIcons\UIEditorIcons">
+				<Texture parentKey="Icon">
 					<Size x="14" y="14"/>
 					<Anchors>
 						<Anchor point="CENTER"/>
@@ -738,8 +738,8 @@
 		<Color r="1.0" g="0" b="0"/>
 	</Font>
 
-	<!-- The main frame -->
-	<Frame name="NysTDL_MainFrame" virtual="true">
+	<!-- The main frame (Retail) -->
+	<Frame name="NysTDL_MainFrameRetail" virtual="true">
 		<Frames>
 			<Frame parentKey="Bg" inherits="FlatPanelBackgroundTemplate" frameLevel="0">
 				<Anchors>
@@ -772,7 +772,36 @@
 			</Button>
 			<EventFrame parentKey="ScrollBar" inherits="MinimalScrollBar"/>
 		</Frames>
+	</Frame>
 
+	<!-- The main frame (Classic) -->
+	<Frame name="NysTDL_MainFrameClassic" inherits="BasicFrameTemplate" virtual="true">
+		<!-- <Frames>
+			<Frame parentKey="NineSlice" useParentLevel="true" inherits="NineSlicePanelTemplate">
+				<KeyValues>
+					<KeyValue key="layoutType" value="ButtonFrameTemplateNoPortrait" type="string"/>
+				</KeyValues>
+				<Layers>
+					<Layer level="OVERLAY">
+						<FontString parentKey="Text" inherits="GameFontNormal" wordwrap="false">
+							<Anchors>
+								<Anchor point="TOP" x="0" y="-5"/>
+								<Anchor point="LEFT"/>
+								<Anchor point="RIGHT"/>
+							</Anchors>
+						</FontString>
+					</Layer>
+				</Layers>
+			</Frame>
+			<Button parentKey="CloseButton" inherits="UIPanelCloseButtonDefaultAnchors">
+				<Scripts>
+					<OnClick>
+						self:GetParent():Hide()
+					</OnClick>
+				</Scripts>
+			</Button>
+			<EventFrame parentKey="ScrollBar" inherits="MinimalScrollBar"/>
+		</Frames> -->
 	</Frame>
 
 </Ui>

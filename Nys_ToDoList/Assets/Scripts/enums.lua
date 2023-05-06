@@ -9,6 +9,7 @@ NysTDL.enums = enums
 
 local libs = NysTDL.libs
 local core = NysTDL.core
+local utils = NysTDL.utils
 
 -- Secondary aliases
 
@@ -105,6 +106,10 @@ enums.icons = {
 		info = function() return enums.artPath.."UIMicroMenu2x", 14, 16.5 end,
 		texCoords = { 0.328, 0.438, 0.438, 0.502 },
 	},
+	divider = {
+		info = function() return enums.artPath.."Options", 200, 2 end,
+		texCoords = { 0.000976562, 0.616211, 0.749023, 0.75 },
+	},
 	add = {
 		info = function() return enums.artPath.."UIMinimap", 17, 17 end,
 		texCoords = { 0.00390625, 0.0703125, 0.548828, 0.582031 },
@@ -120,16 +125,27 @@ enums.icons = {
 	dropArrow = {
 		info = function() return enums.artPath.."Azerite" end,
 	},
+	view = {
+		info = function() return enums.artPath.."UIEditorIcons" end,
+	},
 }
 
-enums.backdropColor = { 55, 53, 48 }
-enums.backdropBorderColor = { 140, 140, 140 }
-enums.backdrop = {
-	bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
-	edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-	tile = false, tileSize = 1, edgeSize = 14,
-	insets = { left = 2, right = 2, top = 2, bottom = 2 }
-}
+-- addon common backdrop template
+table.insert(core.Event_OnInitialize_Start, function() -- wait for oninitialize so that we have access to utils
+	enums.backdropBorderColor = { 140, 140, 140 }
+	enums.backdrop = {
+		bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+		edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+		tile = false, tileSize = 1, edgeSize = 14,
+		insets = { left = 2, right = 2, top = 2, bottom = 2 }
+	}
+
+	if utils:IsDF() then
+		enums.backdropColor = { 55, 53, 48 } -- more grey-ish
+	else
+		enums.backdropColor = { 0, 0, 0 }
+	end
+end)
 
 -- dynamic values (still, accessible by all files)
 
