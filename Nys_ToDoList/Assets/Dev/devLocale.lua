@@ -30,7 +30,7 @@ L["Right-click on the category names to add new items"] = true
 L["Access new buttons: %s and %s"] = true
 L["They are automatically saved"] = true
 
-L["One last thing: you can hide the menu using this button. It's up to you now!"] = true
+L["One last thing: you can change what you see using this button. It's up to you now!"] = true
 L["Cannot import, data comes from a newer addon version (%s), please update and try again"] = true
 L["Press enter to add"] = true
 L["Add an item"] = true
