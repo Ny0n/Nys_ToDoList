@@ -368,7 +368,7 @@ function private:CreateTutorials()
 
 	private:CreateTutoFrame(cat, "addNewCat", false, "UP", L["Start by adding a new category!"], 240)
 	private:CreateTutoFrame(cat, "addCat", true, "UP", L["This will add your category to the current tab"], 240)
-	private:CreateTutoFrame(cat, "addItem", false, "RIGHT", utils:SafeStringFormat(L["To add new items, hover the category names and press the %s icon"], enums.icons.add.texHyperlink), 270)
+	private:CreateTutoFrame(cat, "addItem", false, "RIGHT", utils:SafeStringFormat(L["To add new items, hover the category names and press the %s icon"], enums.icons.add.texHyperlinkTuto), 270)
 	private:CreateTutoFrame(cat, "editmode", false, "DOWN", L["To delete items and do a lot more, you can right-click anywhere on the list or click on this button to toggle the edit mode"], 300)
 	private:CreateTutoFrame(cat, "editmodeChat", true, "RIGHT", utils:SafeStringFormat(L["Please type %s and read the chat message for more information about this mode"], "\""..chat.slashCommand..' '..L["editmode"].."\""), 275)
 	private:CreateTutoFrame(cat, "getMoreInfo", false, "RIGHT", L["If you're having any problems or you just want more information, you can always click here to print help in the chat!"], 290)

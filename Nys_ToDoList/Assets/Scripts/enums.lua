@@ -108,7 +108,8 @@ enums.icons = {
 	add = {
 		info = function() return enums.artPath.."UIMinimap", 17, 17 end,
 		texCoords = { 0.00390625, 0.0703125, 0.548828, 0.582031 },
-		texHyperlink = "|T"..enums.artPath.."UIMinimap:18:18:1:-5:256:512:0:18:280:298|t", -- |TtexturePath:width(px):Height(px):offsetX(px):offsetY(px):textureFileWidth(px):textureFileHeight(px):texCoordsStartX(px):texCoordsEndX(px):texCoordsStartY(px):texCoordsEndY(px)|t
+		texHyperlinkTuto = "|T"..enums.artPath.."UIMinimap:18:18:1:-5:256:512:0:18:280:298|t", -- |TtexturePath:width(px):Height(px):offsetX(px):offsetY(px):textureFileWidth(px):textureFileHeight(px):texCoordsStartX(px):texCoordsEndX(px):texCoordsStartY(px):texCoordsEndY(px)|t
+		texHyperlinkChat = "|T"..enums.artPath.."UIMinimap:18:18:1:-1:256:512:0:18:280:298|t",
 	},
 	minimap = {
 		info = function() return enums.artPath.."70_professions_scroll_03" end,
