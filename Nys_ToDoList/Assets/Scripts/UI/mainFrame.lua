@@ -1051,22 +1051,18 @@ function mainFrame:CreateTDLFrame()
 		end
 	end)
 
-
-
 	-- title
 	if utils:IsDF() then
 		tdlFrame.TitleText = tdlFrame.NineSlice.TitleText
-		tdlFrame.TitleText:ClearAllPoints()
-		tdlFrame.TitleText:SetPoint("TOP", tdlFrame, "TOP", 0, -5)
-		tdlFrame.TitleText:SetPoint("LEFT", tdlFrame, "LEFT", 10, 0)
-		tdlFrame.TitleText:SetPoint("RIGHT", tdlFrame.CloseButton, "LEFT")
-	else
-		tdlFrame.TitleText:ClearAllPoints()
-		tdlFrame.TitleText:SetPoint("TOP", tdlFrame, "TOP", 0, -6)
-		tdlFrame.TitleText:SetPoint("LEFT", tdlFrame, "LEFT", 5, 0)
-		tdlFrame.TitleText:SetPoint("RIGHT", tdlFrame.CloseButton, "LEFT")
-		tdlFrame.TitleText:SetWordWrap(false)
+	end
 
+	tdlFrame.TitleText:ClearAllPoints()
+	tdlFrame.TitleText:SetPoint("TOP", tdlFrame, "TOP", 0, -5)
+	tdlFrame.TitleText:SetPoint("LEFT", tdlFrame, "LEFT", 10, 0)
+	tdlFrame.TitleText:SetPoint("RIGHT", tdlFrame.CloseButton, "LEFT")
+	tdlFrame.TitleText:SetWordWrap(false)
+
+	if not utils:IsDF() then
 		-- background
 		tdlFrame.Bg:SetTexture("Interface\\FrameGeneral\\UI-Background-Marble")
 		tdlFrame.Bg:SetHorizTile(false)
@@ -1076,6 +1072,9 @@ function mainFrame:CreateTDLFrame()
 		loadOriginOffset = loadOriginOffsetClassic
 		lineBottom = lineBottomClassic
 		menuOrigin = menuOriginClassic
+
+		-- only for classic, we scale down the frame a bit (it looks better this way)
+		tdlFrame:SetScale(0.95)
 	end
 
 	tutorialsManager:SetPoint("introduction", "editmodeChat", "RIGHT", tdlFrame, "LEFT", -18, 0)

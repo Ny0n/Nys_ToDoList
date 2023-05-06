@@ -753,7 +753,7 @@
 				</KeyValues>
 				<Layers>
 					<Layer level="OVERLAY">
-						<FontString parentKey="TitleText" inherits="GameFontNormal" wordwrap="false"/>
+						<FontString parentKey="TitleText" inherits="GameFontNormal"/>
 					</Layer>
 				</Layers>
 			</Frame>
