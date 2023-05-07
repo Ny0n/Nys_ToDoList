@@ -38,7 +38,7 @@ L["Font size"] = true
 L["Toggle menu"] = true
 L["Resize"] = true
 L["To add new items, hover the category names and press the %s icon"] = true
-L["Access new buttons: %s"] = true
+L["Access new buttons"] = true
 
 L["Automatically saved"] = true
 L["Open addon options"] = true

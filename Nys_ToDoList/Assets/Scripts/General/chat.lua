@@ -212,7 +212,7 @@ chat.commands = {
 		chat:CustomPrintForced("- "..L["Rename items and categories"].." ("..L["Double-Click"]..")", true)
 		chat:CustomPrintForced("- "..L["Reorder/Sort the list"].." ("..L["Drag and Drop"]..")", true)
 		chat:CustomPrintForced("- "..L["Resize"].." ("..L["Button in the bottom-right"]..")", true)
-		chat:CustomPrintForced("- "..utils:SafeStringFormat(L["Access new buttons: %s"], "\""..L["Tab actions"].."\", \""..L["Undo last remove"].."\", \""..L["Open addon options"].."\""), true)
+		chat:CustomPrintForced("- "..L["Access new buttons"].." (\""..L["Tab actions"].."\", \""..L["Undo last remove"].."\", \""..L["Open addon options"].."\")", true)
 		tutorialsManager:Validate("introduction", "editmodeChat")
 	end,
 
