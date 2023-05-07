@@ -84,9 +84,12 @@ contentWidgets = {
 -- these are for code comfort
 
 local cursorX, cursorY, cursorDist = 0, 0, 10 -- for my special drag
-local loadOriginOffset, loadOriginOffsetClassic = { 14, -12 }, { 14, -12 }
-local lineBottom, lineBottomClassic = { x = 12, y = -45 }, { x = 12, y = -45 }
-local menuOrigin, menuOriginClassic = { 25, -22 }, { 25, -22 }
+local loadOriginSpec, loadOriginSpecClassic = { x = 0, y = 0 }, { x = -4, y = 0 }
+local sWidth, sWidthClassic = 34, 38
+
+local loadOriginOffset, loadOriginOffsetClassic = { 14 + loadOriginSpec.x, -12 + loadOriginSpec.y }, { 14 + loadOriginSpecClassic.x, -12 + loadOriginSpecClassic.y }
+local lineBottom, lineBottomClassic = { x = 12 + loadOriginSpec.x, y = -45 + loadOriginSpec.y }, { x = 12 + loadOriginSpecClassic.x, y = -45 + loadOriginSpecClassic.y }
+local menuOrigin, menuOriginClassic = { 25 + loadOriginSpec.x, -22 + loadOriginSpec.y }, { 25 + loadOriginSpecClassic.x, -22 + loadOriginSpecClassic.y }
 
 -- // WoW & Lua APIs
 
@@ -423,8 +426,9 @@ function mainFrame:ToggleEditMode(state, forceUpdate)
 	tdlFrame.resizeButton:SetShown(mainFrame.editMode)
 
 	-- scroll bar
-	local offsetY = mainFrame.editMode and 8 or 0
-	offsetY = offsetY + (utils:IsDF() and 7 or 20)
+	local emOffset = utils:IsDF() and 8 or 12
+	local offsetY = mainFrame.editMode and emOffset or 0
+	offsetY = offsetY + (utils:IsDF() and 7 or 17)
 	tdlFrame.ScrollFrame.ScrollBar:SetPoint("BOTTOMRIGHT", tdlFrame.ScrollFrame, "BOTTOMRIGHT", 0, offsetY)
 
 	-- // refresh
@@ -463,7 +467,7 @@ function mainFrame:RefreshScale()
 	local scale = NysTDL.acedb.profile.frameScale
 
 	tdlFrame.content:SetScale(scale)
-	dragndrop:SetScale(scale)
+	dragndrop:SetScale(scale*tdlFrame:GetScale())
 
 	-- tutorialsManager:SetFramesScale(scale)
 end
@@ -537,7 +541,7 @@ function mainFrame:Event_TDLFrame_OnSizeChanged(width, height)
 	NysTDL.acedb.profile.frameSize.height = height
 
 	-- tell the content to resize (not using points because it's the scroll child of the scroll frame)
-	tdlFrame.scrollChild:SetWidth(width-8-34)
+	tdlFrame.scrollChild:SetWidth(width-8-sWidth)
 
 	-- and tell the tabs to resize as well
 	local scale = width/enums.tdlFrameDefaultWidth
@@ -1065,6 +1069,9 @@ function mainFrame:CreateTDLFrame()
 	if not utils:IsDF() then
 		-- background
 		tdlFrame.Bg:SetTexture("Interface\\FrameGeneral\\UI-Background-Marble")
+		-- tdlFrame.Bg:SetTexture("Interface\\Tooltips\\UI-Tooltip-Background")
+		-- tdlFrame.Bg:SetVertexColor(0, 0, 0)
+		tdlFrame.Bg:SetVertexColor(0.5, 0.5, 0.5)
 		tdlFrame.Bg:SetHorizTile(false)
 		tdlFrame.Bg:SetVertTile(false)
 
@@ -1107,9 +1114,11 @@ function mainFrame:CreateTDLFrame()
 
 	-- // scroll frame (almost everything will be inside of it using a scroll child frame, see private:GenerateFrameContent())
 
+	sWidth = utils:IsDF() and sWidth or sWidthClassic
+
 	tdlFrame.ScrollFrame = CreateFrame("ScrollFrame", nil, tdlFrame, utils:IsDF() and "ScrollFrameTemplate" or "UIPanelScrollFrameTemplate")
 	tdlFrame.ScrollFrame:SetPoint("TOPLEFT", tdlFrame, "TOPLEFT", 4, -24)
-	tdlFrame.ScrollFrame:SetPoint("BOTTOMRIGHT", tdlFrame, "BOTTOMRIGHT", -4 -34, 4)
+	tdlFrame.ScrollFrame:SetPoint("BOTTOMRIGHT", tdlFrame, "BOTTOMRIGHT", -4 -sWidth, 4)
 	tdlFrame.ScrollFrame:SetScript("OnMouseWheel", mainFrame.Event_ScrollFrame_OnMouseWheel)
 	tdlFrame.ScrollFrame:SetClipsChildren(true)
 
@@ -1122,13 +1131,18 @@ function mainFrame:CreateTDLFrame()
 	if utils:IsDF() then
 		tdlFrame.ScrollFrame.ScrollBar:SetPoint("TOPLEFT", tdlFrame.ScrollFrame, "TOPRIGHT", 38, -30)
 	else
-		tdlFrame.ScrollFrame.ScrollBar:SetPoint("TOPLEFT", tdlFrame.ScrollFrame, "TOPRIGHT", 38, -45)
+		tdlFrame.ScrollFrame.ScrollBar:SetScale(1.05)
+		tdlFrame.ScrollFrame.ScrollBar:SetPoint("TOPLEFT", tdlFrame.ScrollFrame, "TOPRIGHT", 51, -37)
 	end
 
 	-- view button
 	tdlFrame.viewButton = widgets:IconTooltipButton(tdlFrame, "NysTDL_ViewButton", L["Toggle menu"])
 	tdlFrame.viewButton.Icon:SetTexture((enums.icons.view.info()))
-	tdlFrame.viewButton:SetPoint("TOPRIGHT", tdlFrame, "TOPRIGHT", -6, -26)
+	if utils:IsDF() then
+		tdlFrame.viewButton:SetPoint("TOPRIGHT", tdlFrame, "TOPRIGHT", -6, -26)
+	else
+		tdlFrame.viewButton:SetPoint("TOPRIGHT", tdlFrame, "TOPRIGHT", -2.5, -21)
+	end
 	tdlFrame.viewButton:SetScript("OnClick", function()
 		mainFrame:ToggleMinimalistView()
 		tutorialsManager:Validate("introduction", "miniView")
