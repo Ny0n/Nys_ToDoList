@@ -217,18 +217,30 @@ function tutorialsManager:SetPoint(tutoCategory, tutoName, point, relativeTo, re
 		tutoFrame:SetPoint(point, relativeTo, relativePoint, ofsx, ofsy)
 
 		if relativeTo and relativeTo.HookScript and relativeTo.IsVisible then
-			relativeTo:HookScript("OnShow", function(self)
-				if tutorialFramesTarget[frameName] == self and tutorialFrames[frameName] then
-					if tutorialFrames[frameName].shouldBeShown then
-						tutorialFrames[frameName]:Show()
+			-- bind visibility scripts (only once!)
+			if relativeTo.boundTutorialFrameName == nil then -- this means our visibility scripts were never bound to this frame
+				relativeTo:HookScript("OnShow", function(self)
+					local frameName = self.boundTutorialFrameName
+					if type(frameName) ~= "string" then return end
+
+					if tutorialFramesTarget[frameName] == self and tutorialFrames[frameName] then
+						if tutorialFrames[frameName].shouldBeShown then
+							tutorialFrames[frameName]:Show()
+						end
 					end
-				end
-			end)
-			relativeTo:HookScript("OnHide", function(self)
-				if tutorialFramesTarget[frameName] == self and tutorialFrames[frameName] then
-					tutorialFrames[frameName]:Hide()
-				end
-			end)
+				end)
+				relativeTo:HookScript("OnHide", function(self)
+					local frameName = self.boundTutorialFrameName
+					if type(frameName) ~= "string" then return end
+
+					if tutorialFramesTarget[frameName] == self and tutorialFrames[frameName] then
+						tutorialFrames[frameName]:Hide()
+					end
+				end)
+			end
+
+			relativeTo.boundTutorialFrameName = frameName -- update target
+
 			tutoFrame:SetShown(tutoFrame.shouldBeShown and relativeTo:IsVisible())
 		else
 			tutoFrame:Hide()
