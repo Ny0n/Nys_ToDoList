@@ -374,7 +374,7 @@ function publish()
 
 		# make sure we are on the dev branch
 		echo ""
-		git checkout "$devbranch" || errormsg "The develop branch needs to be checked out" || return
+		test "$devbranch" == "$(git branch --show-current)" || errormsg "The develop branch needs to be checked out" || return
 
 		stepmsg 1 11 "Start release"
 		git flow release start "$version" || return
