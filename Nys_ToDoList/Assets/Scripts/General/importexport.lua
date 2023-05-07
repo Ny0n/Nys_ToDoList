@@ -241,7 +241,7 @@ function importexport:LaunchImportProcess(encodedData)
 
 	local dataAddonVersion = data.addonVersion or "6.8"
 	if utils:IsVersionOlderThan(NysTDL.acedb.global.latestVersion, dataAddonVersion) then
-		chat:PrintForced(utils:SafeStringFormat(L["Cannot import, data comes from a newer addon version (%s), please update and try again"], dataAddonVersion))
+		chat:PrintForced(utils:SafeStringFormat(L["Data comes from a newer addon version (%s), please update and try again"], dataAddonVersion))
 		return
 	end
 
