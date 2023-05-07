@@ -88,12 +88,11 @@ function private:GlobalNewVersion()
 		end
     end
 
-	-- new way to do it
-    -- if utils:IsVersionOlderThan(NysTDL.acedb.global.latestVersion, "6.6") then
-    --     if NysTDL.acedb.global.tutorials_progression["introduction"] == true then -- if we already completed the tutorial
-	-- 		NysTDL.acedb.global.tutorials_progression["introduction"] = 5
-	-- 	end
-    -- end
+    if utils:IsVersionOlderThan(NysTDL.acedb.global.latestVersion, "7.0-alpha") then
+        if NysTDL.acedb.global.tutorials_progression["introduction"] == true then -- if we already completed the tutorial
+			NysTDL.acedb.global.tutorials_progression["introduction"] = 2 -- restart it from the moment where we add new items
+		end
+    end
 end
 
 function private:ProfileNewVersion()

@@ -470,7 +470,7 @@ function private:TabWidget(tabID, parentFrame)
 	-- it's mimicking the tabs appeareance, so that it's almost invisible
 
 	tabWidget.backdropClip = CreateFrame("Frame", nil, tabWidget)
-	tabWidget.backdropClip:SetSize(tabWidget:GetWidth()+10, tabWidget:GetHeight()+10)
+	tabWidget.backdropClip:SetSize(MAX_TAB_SIZE*2, 50)
 	tabWidget.backdropClip:SetPoint("TOP", tabWidget, "TOP", 0, -2)
 	tabWidget.backdropClip:SetClipsChildren(true)
 
