@@ -492,9 +492,10 @@ function private:DragMouseStart()
 	local ofsx, ofsy = clickX - widgetX, clickY - widgetY -- here we take the offset between the original click's pos (dragMouseDown) and the widget's center
 
 	-- update points of the interactive label (valid for item & cat widgets)
+	local width = draggingWidget.interactiveLabel:GetWidth()
 	draggingWidget.interactiveLabel:ClearAllPoints()
 	draggingWidget.interactiveLabel:SetPoint("LEFT", draggingWidget.interactiveLabel.pointLeft, "RIGHT", 0, 0)
-	draggingWidget.interactiveLabel:SetWidth(draggingWidget.interactiveLabel.Text:GetWrappedWidth())
+	draggingWidget.interactiveLabel:SetWidth(width)
 
 	local cursorX, cursorY = private:GetCursorScaledPosition() -- UIPARENT CS
 	draggingWidget:ClearAllPoints()
