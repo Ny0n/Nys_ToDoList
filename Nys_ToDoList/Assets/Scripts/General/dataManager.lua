@@ -1395,18 +1395,6 @@ function private:CheckName(name, enum)
 	if #name == 0 then -- empty
 		chat:Print(L["Name cannot be empty"])
 		return false
-	else
-		local w, mw = math.floor(widgets:GetWidth(name)), enums.maxNameWidth[enum]
-		if w > mw then -- width
-			if utils:HasHyperlink(name) then -- this is for making more space for items that have hyperlinks in them
-				mw = mw + enums.hyperlinkNameBonus
-		    if w <= mw then
-					return true
-				end
-			end
-			chat:Print(L["Name is too large"]..string.format(" (%i/%i)", w, mw))
-			return false
-		end
 	end
 
 	-- TDLATER temp?
@@ -1594,6 +1582,8 @@ function dataManager:ToggleClosed(catID, tabID, state)
 	elseif state == true then
 		catData.closedInTabIDs[tabID] = nil
 	end
+
+	widgets.aebShown[catID] = 0 -- hide the category's add edit boxes
 
 	-- refresh the mainFrame
 	mainFrame:Refresh()

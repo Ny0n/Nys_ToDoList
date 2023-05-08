@@ -221,6 +221,7 @@ function importexport:LaunchImportProcess(encodedData)
 	if type(data) ~= "table" then return end
 	--[[
 		data = {
+			addonVersion = string,
 			isMigration = bool,
 			orderedTabIDs = {
 				[true] = {...},
@@ -237,6 +238,12 @@ function importexport:LaunchImportProcess(encodedData)
 			}
 		}
 	]]
+
+	local dataAddonVersion = data.addonVersion or "6.8"
+	if utils:IsVersionOlderThan(NysTDL.acedb.global.latestVersion, dataAddonVersion) then
+		chat:PrintForced(utils:SafeStringFormat(L["Data comes from a newer addon version (%s), please update and try again"], dataAddonVersion))
+		return
+	end
 
 	-- // Part 2: Replace all IDs by new ones
 	local idMap = {
@@ -360,8 +367,6 @@ function importexport:LaunchImportProcess(encodedData)
 		local global, profile = NysTDL.acedb.global, NysTDL.acedb.profile
 		global.itemsList, global.categoriesList, global.tabsList = g_itemsList, g_categoriesList, g_tabsList
 		profile.itemsList, profile.categoriesList, profile.tabsList = p_itemsList, p_categoriesList, p_tabsList
-
-		chat:PrintForced(L["Invalid import text"])
 		return
 	end
 
@@ -418,6 +423,7 @@ function importexport:LaunchExportProcess(tabsToMigrate, onlyReturn)
 
 	-- // Part 2: Create the export table
 	local exportData = {
+		addonVersion = NysTDL.acedb.global.latestVersion,
 		isMigration = not not tabsToMigrate,
 		orderedTabIDs = {
 			[true] = {}, -- global

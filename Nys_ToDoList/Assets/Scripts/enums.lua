@@ -9,6 +9,7 @@ NysTDL.enums = enums
 
 local libs = NysTDL.libs
 local core = NysTDL.core
+local utils = NysTDL.utils
 
 -- Secondary aliases
 
@@ -32,7 +33,7 @@ enums.tab = "ENUMS_TAB"
 ---@class enums.menus
 enums.menus = {
 	addcat = "ENUMS_MENUS_1", -- addcat menu
-	frameopt = "ENUMS_MENUS_2", -- frameopt menu
+	frameopt = "ENUMS_MENUS_2", -- frameopt menu UNUSED
 	tabact = "ENUMS_MENUS_3", -- tabactions menu
 }
 
@@ -57,21 +58,14 @@ enums.tdlFrameDefaultWidth = 340
 enums.tdlFrameDefaultHeight = 400
 enums.rightPointDistance = 297
 
-enums.loadOriginOffset = { -32, -28 }
-enums.ofsxContent = 30
-enums.ofsyCatContent = 27
-enums.ofsyCat = 26
-enums.ofsyContentCat = 27
-enums.ofsyContent = 22
-enums.ofsxItemIcons = -18
+enums.ofsxContent = 15
+enums.ofsyCatContent = 10
+enums.ofsyCat = 5
+enums.ofsyContentCat = 10
+enums.ofsyContent = 6
+enums.ofsxItemIcons = 20
 
-enums.hyperlinkNameBonus = 65
-enums.maxNameWidth = {
-	[enums.item] = 240,
-	[enums.category] = 220,
-	[enums.tab] = 150,
-}
-
+enums.maxWordWrapLines = 3
 enums.maxDescriptionCharCount = 10000
 enums.maxQuantities = {
 	[false] = { -- profile
@@ -109,8 +103,18 @@ enums.icons = {
 		texCoords = { 0.328, 0.436, 0.015, 0.074 },
 	},
 	profile = {
-		info = function() return enums.artPath.."UIMicroMenu2x", 14, 18 end,
-		texCoords = { 0.328, 0.438, 0.43, 0.502 },
+		info = function() return enums.artPath.."UIMicroMenu2x", 14, 16.5 end,
+		texCoords = { 0.328, 0.438, 0.438, 0.502 },
+	},
+	divider = {
+		info = function() return enums.artPath.."Options", 200, 2 end,
+		texCoords = { 0.000976562, 0.616211, 0.749023, 0.75 },
+	},
+	add = {
+		info = function() return enums.artPath.."UIMinimap", 17, 17 end,
+		texCoords = { 0.00390625, 0.0703125, 0.548828, 0.582031 },
+		texHyperlinkTuto = "|T"..enums.artPath.."UIMinimap:18:18:1:-4:256:512:0:18:280:298|t", -- |TtexturePath:width(px):Height(px):offsetX(px):offsetY(px):textureFileWidth(px):textureFileHeight(px):texCoordsStartX(px):texCoordsEndX(px):texCoordsStartY(px):texCoordsEndY(px)|t
+		texHyperlinkChat = "|T"..enums.artPath.."UIMinimap:18:18:1:0:256:512:0:18:280:298|t",
 	},
 	minimap = {
 		info = function() return enums.artPath.."70_professions_scroll_03" end,
@@ -121,7 +125,27 @@ enums.icons = {
 	dropArrow = {
 		info = function() return enums.artPath.."Azerite" end,
 	},
+	view = {
+		info = function() return enums.artPath.."UIEditorIcons" end,
+	},
 }
+
+-- addon common backdrop template
+table.insert(core.Event_OnInitialize_Start, function() -- wait for oninitialize so that we have access to utils
+	enums.backdropBorderColor = { 140, 140, 140 }
+	enums.backdrop = {
+		bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+		edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+		tile = false, tileSize = 1, edgeSize = 14,
+		insets = { left = 2, right = 2, top = 2, bottom = 2 }
+	}
+
+	if utils:IsDF() then
+		enums.backdropColor = { 55, 53, 48 } -- more grey-ish
+	else
+		enums.backdropColor = { 0, 0, 0 }
+	end
+end)
 
 -- dynamic values (still, accessible by all files)
 

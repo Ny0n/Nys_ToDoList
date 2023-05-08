@@ -31,7 +31,13 @@ local L = libs.L
 local private = {}
 
 -- THE frame
-mainFrame.tdlFrame = CreateFrame("Frame", nil, UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil)
+local tdlFrame
+local function createFrame()
+	mainFrame.tdlFrame = CreateFrame("Frame", nil, UIParent, utils:IsDF() and "NysTDL_MainFrameRetail" or "NysTDL_MainFrameClassic")
+	tdlFrame = mainFrame.tdlFrame
+end
+table.insert(core.Event_OnInitialize_Start, createFrame)
+
 mainFrame.editMode = false
 
 -- profile-dependant variables (those are reset in mainFrame:Init())
@@ -77,12 +83,13 @@ contentWidgets = {
 
 -- these are for code comfort
 
-local tdlFrame = mainFrame.tdlFrame
-
-local centerXOffset = 165
-local lineOffset = 120
 local cursorX, cursorY, cursorDist = 0, 0, 10 -- for my special drag
-local lineBottomY = -80
+local loadOriginSpec, loadOriginSpecClassic = { x = 0, y = 0 }, { x = -4, y = 0 }
+local sWidth, sWidthClassic = 34, 38
+
+local loadOriginOffset, loadOriginOffsetClassic = { 14 + loadOriginSpec.x, -12 + loadOriginSpec.y }, { 14 + loadOriginSpecClassic.x, -12 + loadOriginSpecClassic.y }
+local lineBottom, lineBottomClassic = { x = 12 + loadOriginSpec.x, y = -45 + loadOriginSpec.y }, { x = 12 + loadOriginSpecClassic.x, y = -45 + loadOriginSpecClassic.y }
+local menuOrigin, menuOriginClassic = { 25 + loadOriginSpec.x, -22 + loadOriginSpec.y }, { 25 + loadOriginSpecClassic.x, -22 + loadOriginSpecClassic.y }
 
 -- // WoW & Lua APIs
 
@@ -94,7 +101,9 @@ local GetCursorPosition = GetCursorPosition
 
 function private:MenuClick(menuEnum)
 	-- controls what should be done when we click on menu buttons
-	local menuFrames = tdlFrame.content.menuFrames
+	local content = tdlFrame.content
+	local menu = content.menu
+	local menuFrames = menu.menuFrames
 
 	-- // we update the selected menu (toggle mode)
 	if menuFrames.selected == menuEnum then
@@ -103,45 +112,43 @@ function private:MenuClick(menuEnum)
 		menuFrames.selected = menuEnum
 	end
 
-	mainFrame:Refresh() -- we reload the frame to display the changes
+	-- so first we hide each of them
+	for submenuEnum, submenuFrame in pairs(menuFrames) do
+		if submenuEnum ~= "selected" then submenuFrame:Hide() end
+	end
+
+	-- and then we show the good one, if there is one to show
+	local bottom = 0
+	if menuFrames.selected then
+		local submenu = menuFrames[menuFrames.selected]
+		submenu:Show()
+
+		bottom = lineBottom.y - submenu:GetHeight()
+	else
+		bottom = lineBottom.y
+	end
+	menu.lineTopSubMenu:SetShown(not not menuFrames.selected)
+	menu.lineBottom:SetPoint("TOPLEFT", content, "TOPLEFT", lineBottom.x, bottom)
+
+	-- bottomOrigin
+	if NysTDL.acedb.profile.isInMiniView then bottom = 2 end
+	content.bottomOrigin:SetPoint("TOPLEFT", content, "TOPLEFT", 0, bottom)
 
 	-- // we do specific things afterwards
 	local selected = menuFrames.selected
 
 	-- like updating the color to white-out the selected menu button, so first we reset them all
-	tdlFrame.content.categoryButton.Icon:SetDesaturated(nil) tdlFrame.content.categoryButton.Icon:SetVertexColor(0.85, 1, 1) -- here we change the vertex color because the original icon is a bit reddish
-	tdlFrame.content.frameOptionsButton.Icon:SetDesaturated(nil)
-	tdlFrame.content.tabActionsButton.Icon:SetDesaturated(nil)
+	menu.categoryButton.Icon:SetDesaturated(nil) menu.categoryButton.Icon:SetVertexColor(0.85, 0.85, 0.0)
+	menu.tabActionsButton.Icon:SetDesaturated(nil)
 
 	-- and other things
 	if selected == enums.menus.addcat then -- add a category menu
-		tdlFrame.content.categoryButton.Icon:SetDesaturated(1) tdlFrame.content.categoryButton.Icon:SetVertexColor(1, 1, 1)
+		menu.categoryButton.Icon:SetDesaturated(1) menu.categoryButton.Icon:SetVertexColor(1, 1, 1)
 		widgets:SetFocusEditBox(menuFrames[enums.menus.addcat].categoryEditBox)
 		tutorialsManager:Validate("introduction", "addNewCat") -- tutorial
-	elseif selected == enums.menus.frameopt then -- frame options menu
-		tdlFrame.content.frameOptionsButton.Icon:SetDesaturated(1)
-		tutorialsManager:Validate("introduction", "accessOptions") -- tutorial
 	elseif selected == enums.menus.tabact then -- tab actions menu
-		tdlFrame.content.tabActionsButton.Icon:SetDesaturated(1)
+		menu.tabActionsButton.Icon:SetDesaturated(1)
 	end
-end
-
-function private:SetDoubleLinePoints(lineLeft, lineRight, l, y)
-	local lineMinWidth = 5
-	local semiLength = l/2 + 10
-
-	if semiLength + lineMinWidth >= lineOffset then
-		lineLeft:Hide()
-		lineRight:Hide()
-		return
-	end
-
-	lineLeft:SetStartPoint("TOPLEFT", centerXOffset-lineOffset, y)
-	lineLeft:SetEndPoint("TOPLEFT", centerXOffset-l/2 - 10, y)
-	lineRight:SetStartPoint("TOPLEFT", centerXOffset+l/2 + 10, y)
-	lineRight:SetEndPoint("TOPLEFT", centerXOffset+lineOffset, y)
-	lineLeft:Show()
-	lineRight:Show()
 end
 
 function private:SubMenuNameFormat(name)
@@ -164,6 +171,7 @@ function mainFrame:Toggle()
 end
 
 function mainFrame:ChangeTab(newTabID)
+	wipe(widgets.aebShown) -- hide all add edit boxes
 	database.ctab(newTabID)
 	mainFrame:Refresh()
 end
@@ -226,28 +234,15 @@ function mainFrame:UpdateRemainingNumberLabels()
 	local tabID = database.ctab()
 
 	-- we update the numbers of remaining things to do in total for the current tab
+	local menu = tdlFrame.content.menu
+
 	local numbers = dataManager:GetRemainingNumbers(nil, tabID)
-	local remainingNumberText = (numbers.totalUnchecked > 0 and "|cffffffff" or "|cff00ff00")..numbers.totalUnchecked.."|r"
-	tdlFrame.content.remainingNumber:SetText(remainingNumberText)
-	local remainingFavsNumber = numbers.uncheckedFav > 0 and "("..numbers.uncheckedFav..")" or ""
-	tdlFrame.content.remainingFavsNumber:SetText(remainingFavsNumber)
-
-	-- now we check the length of the whole "Remaining: x (x)" text,
-	-- and we scale it down if it's too long, to maxWidth.
-	-- (this is mainly to adapt for locales that are bigger than english)
-	local maxWidth = 150
-
-	local full = tdlFrame.content.remaining:GetText() .. " " .. remainingNumberText .. (#remainingFavsNumber > 0 and " "..remainingFavsNumber or "")
-	local width = widgets:GetWidth(full, "GameFontNormalLarge")
-
-	local scale = 1
-	if width > maxWidth then
-		scale = maxWidth/width
-	end
-
-	tdlFrame.content.remaining:SetTextScale(scale)
-	tdlFrame.content.remainingNumber:SetTextScale(scale)
-	tdlFrame.content.remainingFavsNumber:SetTextScale(scale)
+	local checkedNonFav = numbers.totalChecked-numbers.checkedFav
+	if (numbers.totalUnchecked-numbers.uncheckedFav > 0) then checkedNonFav = "|cffffffff"..checkedNonFav.."|r" end
+	menu.remainingNumber:SetText(checkedNonFav.."/"..(numbers.total-numbers.totalFav))
+	local checkedFav = numbers.checkedFav
+	if (numbers.uncheckedFav > 0) then checkedFav = "|cffffffff"..checkedFav.."|r" end
+	menu.remainingFavsNumber:SetText((numbers.totalFav > 0) and checkedFav.."/"..numbers.totalFav or "")
 
 	-- we update the remaining numbers of every category in the tab
 	for catID,catData in dataManager:ForEach(enums.category, tabID) do
@@ -256,21 +251,23 @@ function mainFrame:UpdateRemainingNumberLabels()
 
 		local catWidget = contentWidgets[catID]
 		catWidget.favsRemainingLabel:SetText(text)
-		if not catData.closedInTabIDs[tabID] or text == "" then -- if the category is opened or the label shows nothing
+		catWidget.originalTabLabel:ClearAllPoints()
+		catWidget.originalTabLabel:SetPoint("RIGHT", catWidget.interactiveLabel, "RIGHT", 0, 0)
+		if not catData.closedInTabIDs[tabID] or text == "" then -- if the category is opened or the fav label shows nothing
 			catWidget.favsRemainingLabel:Hide()
-			catWidget.originalTabLabel:ClearAllPoints()
-			catWidget.originalTabLabel:SetPoint("LEFT", catWidget.interactiveLabel, "RIGHT", 6, 0)
-		else -- if the category is closed and the label shows something
+			catWidget.originalTabLabel:SetPoint("LEFT", catWidget.labelsStartPosFrame, "RIGHT", -1, 0)
+		else -- if the category is closed and the fav label shows something
 			catWidget.favsRemainingLabel:Show()
-			catWidget.originalTabLabel:ClearAllPoints()
-			catWidget.originalTabLabel:SetPoint("LEFT", catWidget.favsRemainingLabel, "RIGHT", 6, 0)
+			catWidget.originalTabLabel:SetPoint("LEFT", catWidget.labelsStartPosFrame, "RIGHT", catWidget.favsRemainingLabel:GetStringWidth()+6, 0)
 		end
 	end
 end
 
 function mainFrame:UpdateFavsRemainingNumbersColor()
 	-- this updates the favorite color for every favorites remaining number label
-	tdlFrame.content.remainingFavsNumber:SetTextColor(unpack(NysTDL.acedb.profile.favoritesColor))
+	local menu = tdlFrame.content.menu
+
+	menu.remainingFavsNumber:SetTextColor(unpack(NysTDL.acedb.profile.favoritesColor))
 	for _, contentWidget in pairs(contentWidgets) do
 		if contentWidget.enum == enums.category then -- for every category widgets
 			contentWidget.favsRemainingLabel:SetTextColor(unpack(NysTDL.acedb.profile.favoritesColor))
@@ -402,20 +399,16 @@ function mainFrame:ToggleEditMode(state, forceUpdate)
 	else
 		mainFrame.editMode = not mainFrame.editMode
 	end
-	if not forceUpdate and orig == mainFrame.editMode then return end -- if we didn't change the edit mode
-
-	if mainFrame.editMode then
-		tutorialsManager:SetPoint("introduction", "editmodeChat", "RIGHT", tdlFrame, "LEFT", -18, 0)
-	else
-		tutorialsManager:SetPoint("introduction", "editmodeChat", "CENTER", nil, "CENTER", 0, 0)
-	end
+	if not forceUpdate and orig == mainFrame.editMode then return end
 
 	-- // start
 
+	local menu = tdlFrame.content.menu
+
 	-- edit mode button
-	tdlFrame.content.editModeButton:GetNormalTexture():SetDesaturated(mainFrame.editMode and 1 or nil)
-	tdlFrame.content.editModeButton:GetPushedTexture():SetDesaturated(mainFrame.editMode and 1 or nil)
-	tdlFrame.content.editModeButton.Glow:SetShown(mainFrame.editMode)
+	menu.editModeButton:GetNormalTexture():SetDesaturated(mainFrame.editMode and 1 or nil)
+	menu.editModeButton:GetPushedTexture():SetDesaturated(mainFrame.editMode and 1 or nil)
+	menu.editModeButton.Glow:SetShown(mainFrame.editMode)
 
 	-- content widgets buttons
 	for _,contentWidget in pairs(contentWidgets) do
@@ -423,23 +416,60 @@ function mainFrame:ToggleEditMode(state, forceUpdate)
 	end
 
 	-- we switch the category and frame options buttons for the undo and frame action ones and vice versa
-	tdlFrame.content.categoryButton:SetShown(not mainFrame.editMode)
-	tdlFrame.content.frameOptionsButton:SetShown(not mainFrame.editMode)
-	tdlFrame.content.tabActionsButton:SetShown(mainFrame.editMode)
-	tdlFrame.content.undoButton:SetShown(mainFrame.editMode)
+	menu.tabActionsButton:SetShown(mainFrame.editMode)
+	menu.undoButton:SetShown(mainFrame.editMode)
+	menu.frameOptionsButton:SetShown(mainFrame.editMode)
+
+	menu.remaining:SetPoint("LEFT", menu.helpButton, "CENTER", mainFrame.editMode and 170 or 80, 1)
 
 	-- resize button
 	tdlFrame.resizeButton:SetShown(mainFrame.editMode)
 
 	-- scroll bar
-	if mainFrame.editMode then
-		tdlFrame.ScrollFrame.ScrollBar:SetPoint("BOTTOMRIGHT", tdlFrame.ScrollFrame, "BOTTOMRIGHT", - 7, 32)
-	else
-		tdlFrame.ScrollFrame.ScrollBar:SetPoint("BOTTOMRIGHT", tdlFrame.ScrollFrame, "BOTTOMRIGHT", - 7, 17)
-	end
+	local emOffset = utils:IsDF() and 8 or 12
+	local offsetY = mainFrame.editMode and emOffset or 0
+	offsetY = offsetY + (utils:IsDF() and 7 or 17)
+	tdlFrame.ScrollFrame.ScrollBar:SetPoint("BOTTOMRIGHT", tdlFrame.ScrollFrame, "BOTTOMRIGHT", 0, offsetY)
 
 	-- // refresh
-	private:MenuClick() -- to close any opened menu and refresh the list
+	private:MenuClick() -- to close any opened sub-menu
+	mainFrame:Refresh()
+end
+
+function mainFrame:ToggleMinimalistView(state, forceUpdate)
+	local orig = NysTDL.acedb.profile.isInMiniView
+	if type(state) == "boolean" then
+		NysTDL.acedb.profile.isInMiniView = state
+	else
+		NysTDL.acedb.profile.isInMiniView = not orig
+	end
+	if not forceUpdate and orig == NysTDL.acedb.profile.isInMiniView then return end
+
+	-- // start
+
+	local miniView = NysTDL.acedb.profile.isInMiniView
+
+	-- view button
+	tdlFrame.viewButton.Icon:SetDesaturated(miniView and 1 or nil)
+
+	-- menu
+	local content = tdlFrame.content
+	local menu = content.menu
+	menu:SetShown(not miniView)
+
+	-- // refresh
+	private:MenuClick()
+end
+
+function mainFrame:RefreshScale()
+	-- // content font size (scale)
+
+	local scale = NysTDL.acedb.profile.frameScale
+
+	tdlFrame.content:SetScale(scale)
+	dragndrop:SetScale(scale*tdlFrame:GetScale())
+
+	-- tutorialsManager:SetFramesScale(scale)
 end
 
 --/*******************/ EVENTS /*************************/--
@@ -462,9 +492,7 @@ end
 function mainFrame:Event_FrameAlphaSlider_OnValueChanged(value)
 	-- itemsList frame part
 	NysTDL.acedb.profile.frameAlpha = value
-	tdlFrame.content.menuFrames[enums.menus.frameopt].frameAlphaSliderValue:SetText(value)
-	tdlFrame:SetBackdropColor(0, 0, 0, value/100)
-	tdlFrame:SetBackdropBorderColor(1, 1, 1, value/100)
+	tdlFrame.Bg:SetAlpha(value/100)
 
 	-- description frames part
 	widgets:SetDescFramesAlpha(value)
@@ -476,10 +504,19 @@ end
 function mainFrame:Event_FrameContentAlphaSlider_OnValueChanged(value)
 	-- itemsList frame part
 	NysTDL.acedb.profile.frameContentAlpha = value
-	tdlFrame.content.menuFrames[enums.menus.frameopt].frameContentAlphaSliderValue:SetText(value)
 	tdlFrame.ScrollFrame:SetAlpha(value/100)
-	tdlFrame.closeButton:SetAlpha(value/100)
+	tdlFrame.ScrollFrame.ScrollBar:SetAlpha(value/100)
 	tdlFrame.resizeButton:SetAlpha(value/100)
+	tdlFrame.viewButton:SetAlpha(value/100)
+	tdlFrame.CloseButton:SetAlpha(value/100)
+
+	-- and that's why the min opacity is 0.6!
+	if utils:IsDF() then
+		tdlFrame.NineSlice:SetAlpha(value/100)
+	else
+		tdlFrame.TitleBg:SetAlpha(value/100)
+		tdlFrame.TitleText:SetAlpha(value/100)
+	end
 
 	-- description frames part
 	widgets:SetDescFramesContentAlpha(value)
@@ -490,7 +527,9 @@ end
 
 function mainFrame:Event_TDLFrame_OnVisibilityUpdate()
 	-- things to do when we hide/show the list
-	private:MenuClick() -- to close any opened menu and refresh the list
+	wipe(widgets.aebShown) -- hide all add edit boxes
+	private:MenuClick() -- to close any opened menu
+	mainFrame:Refresh()
 	NysTDL.acedb.profile.lastListVisibility = tdlFrame:IsShown()
 	if dragndrop.dragging then dragndrop:CancelDragging() end
 	mainFrame:ToggleEditMode(false)
@@ -501,14 +540,12 @@ function mainFrame:Event_TDLFrame_OnSizeChanged(width, height)
 	NysTDL.acedb.profile.frameSize.width = width
 	NysTDL.acedb.profile.frameSize.height = height
 
-	-- scaling
+	-- tell the content to resize (not using points because it's the scroll child of the scroll frame)
+	tdlFrame.scrollChild:SetWidth(width-8-sWidth)
+
+	-- and tell the tabs to resize as well
 	local scale = width/enums.tdlFrameDefaultWidth
-	self.ScrollFrame:SetScale(scale)
-	self.closeButton:SetScale(scale)
-	self.resizeButton:SetScale(scale)
-	dragndrop:SetScale(scale)
 	tabsFrame:SetScale(scale)
-	tutorialsManager:SetFramesScale(scale)
 end
 
 function mainFrame:Event_TDLFrame_OnUpdate()
@@ -573,32 +610,11 @@ end
 function private:LoadContent()
 	-- // reloading of elements that need updates
 
-	-- // we show the good sub-menu (add a category, frame options, tab actions, ...)
-	local menuFrames = tdlFrame.content.menuFrames
-	-- so first we hide each of them
-	for menuEnum, menuFrame in pairs(menuFrames) do
-		if menuEnum ~= "selected" then menuFrame:Hide() end
-	end
-
-	-- and then we show the good one, if there is one to show
-	if menuFrames.selected then
-		local menu = menuFrames[menuFrames.selected]
-		menu:Show()
-		tdlFrame.content.lineBottom:SetStartPoint("TOPLEFT", centerXOffset-lineOffset, lineBottomY - menu:GetHeight())
-		tdlFrame.content.lineBottom:SetEndPoint("TOPLEFT", centerXOffset+lineOffset, lineBottomY - menu:GetHeight())
-	else
-		tdlFrame.content.lineBottom:SetStartPoint("TOPLEFT", centerXOffset-lineOffset, lineBottomY)
-		tdlFrame.content.lineBottom:SetEndPoint("TOPLEFT", centerXOffset+lineOffset, lineBottomY)
-	end
-
 	local tabID = database.ctab()
 	local tabData = (select(3, dataManager:Find(tabID)))
 
 	-- // nothingLabel
-	tdlFrame.content.nothingLabel:Hide() -- we hide it by default
-	if not next(tabData.orderedCatIDs) then -- we show it if the tab has no categories
-		tdlFrame.content.nothingLabel:Show()
-	end
+	tdlFrame.content.nothingLabel:SetShown(not next(tabData.orderedCatIDs)) -- we show it if the tab has no categories
 
 	-- // hiddenLabel
 	tdlFrame.content.hiddenLabel:Hide() -- we hide it by default
@@ -615,22 +631,34 @@ end
 
 function private:RecursiveLoad(tabID, tabData, catWidget, p)
 	local catData = catWidget.catData
-	catWidget.addEditBox:Hide() -- we always hide every addEditBox on list Refresh
+	catWidget.addEditBox:Hide()
 	catWidget.emptyLabel:Hide()
 	catWidget.hiddenLabel:Hide()
 
 	-- if the cat is closed, ignore it
 	if catData.closedInTabIDs[tabID] then
-		p.newY = p.newY - enums.ofsyCat
+		p:SetY(-enums.ofsyCat)
 		return
 	end
 
-	p.newY = p.newY - enums.ofsyCatContent
+	p:SetX(enums.ofsxContent)
+	p:SetY(-enums.ofsyCatContent)
+
+	-- add edit boxes : check for the flags and show them accordingly
+	local isAddBoxShown = widgets.aebShown[catWidget.catID] and bit.band(widgets.aebShown[catWidget.catID], widgets.aebShownFlags.item) ~= 0
+	if isAddBoxShown then -- item add edit box
+		p:ShowFrame(catWidget.addEditBox)
+
+		p:SetX(0)
+		p:SetY(-enums.ofsyContent-3)
+	end
 
 	-- emptyLabel : we show it if there's nothing in the category
 	if not next(catData.orderedContentIDs) then
-		catWidget.emptyLabel:Show()
-		p.newY = p.newY - enums.ofsyContentCat
+		p:ShowFrame(catWidget.emptyLabel)
+
+		p:SetX(-enums.ofsxContent)
+		p:SetY(-enums.ofsyContentCat)
 		return
 	end
 
@@ -639,8 +667,10 @@ function private:RecursiveLoad(tabID, tabData, catWidget, p)
 		if tabData.hideCheckedItems then
 			if not dataManager:IsParent(catWidget.catID) then
 				if dataManager:IsCategoryCompleted(catWidget.catID) then
-					catWidget.hiddenLabel:Show()
-					p.newY = p.newY - enums.ofsyContentCat
+					p:ShowFrame(catWidget.hiddenLabel)
+
+					p:SetX(-enums.ofsxContent)
+					p:SetY(-enums.ofsyContentCat)
 					return
 				end
 			end
@@ -648,24 +678,24 @@ function private:RecursiveLoad(tabID, tabData, catWidget, p)
 	end
 
 	-- then we show everything there is to show in the category
-	p.newX = p.newX + enums.ofsxContent
 	for contentOrder,contentID in ipairs(catData.orderedContentIDs) do -- for everything in a category
 		local contentWidget = contentWidgets[contentID]
 		if not dataManager:IsHidden(contentID, tabID) then -- if it's not hidden, we show the corresponding widget
-			contentWidget:SetPoint("TOPLEFT", tdlFrame.content.loadOrigin, "TOPLEFT", p.newX, p.newY)
-			contentWidget:Show()
+			p:ShowFrame(contentWidget)
+			p:SetX(0)
 
 			if contentWidget.enum == enums.category then -- sub-category
 				private:RecursiveLoad(tabID, tabData, contentWidget, p)
 			elseif contentWidget.enum == enums.item then -- item
-				p.newY = p.newY - enums.ofsyContent
+				p:SetY(-enums.ofsyContent)
 			end
 		end
 	end
-	p.newX = p.newX - enums.ofsxContent
 
-	p.newY = p.newY + enums.ofsyContent -- TDLATER take last used offset for sub-cats? (not sure of this comment tho)
-	p.newY = p.newY - enums.ofsyContentCat
+	-- p.offsetY = enums.ofsyContent -- TDLATER take last used offset for sub-cats? (not sure of this comment tho)
+
+	p:SetX(-enums.ofsxContent)
+	p:SetY(-enums.ofsyContentCat)
 end
 
 function private:LoadList()
@@ -681,9 +711,27 @@ function private:LoadList()
 	-- let's go!
 	local tabID = database.ctab()
 	local tabData = select(3, dataManager:Find(tabID))
-	local p = { -- pos table
-		newX = 0,
-		newY = 0,
+	local p = { -- pos table TDLATER declare out of here for opti?
+		relativeFrame = tdlFrame.content.loadOrigin,
+		offsetX = 0,
+		offsetY = 0,
+		ShowFrame = function(self, frame)
+			frame:SetPoint("TOPLEFT", self.relativeFrame, "BOTTOMLEFT", self.offsetX, self.offsetY)
+			frame:Show()
+			self.relativeFrame = frame.heightFrame
+		end,
+		SetX = function(self, value)
+			self.offsetX = value
+		end,
+		SetY = function(self, value)
+			self.offsetY = value
+		end,
+		AddX = function(self, value)
+			self.offsetX = self.offsetX + value
+		end,
+		AddY = function(self, value)
+			self.offsetY = self.offsetY + value
+		end
 	}
 
 	-- base category widgets loop
@@ -691,16 +739,11 @@ function private:LoadList()
 		local catWidget = contentWidgets[catID]
 
 		if not dataManager:IsHidden(catID, tabID) then
-			catWidget:SetPoint("TOPLEFT", tdlFrame.content.loadOrigin, "TOPLEFT", p.newX, p.newY)
-			catWidget:Show()
+			p:ShowFrame(catWidget)
+			p:SetX(0)
 
 			if catOrder == 1 then -- if it's the first loaded cat widget
 				tutorialsManager:SetPoint("introduction", "addItem", "RIGHT", catWidget, "LEFT", -23, 0) -- we put the corresponding tuto on it
-				-- local firstItemWidget = mainFrame:GetFirstShownItemWidget()
-				-- tutorialsManager:SetPoint("editmode", "delete", "RIGHT", firstItemWidget, "LEFT", 0, 0)
-				-- tutorialsManager:SetPoint("editmode", "favdesc", "RIGHT", firstItemWidget, "LEFT", math.abs(enums.ofsxItemIcons), 0)
-				-- tutorialsManager:SetPoint("editmode", "rename", "TOP", firstItemWidget.interactiveLabel, "BOTTOM", 0, 0)
-				-- tutorialsManager:SetPoint("editmode", "sort", "BOTTOM", firstItemWidget.interactiveLabel, "TOP", 0, 0)
 			end
 
 			if catWidget.catData.originalTabID == tabID then
@@ -714,7 +757,7 @@ function private:LoadList()
 		end
 	end
 
-	tdlFrame.content.dummyBottomFrame:SetPoint("TOPLEFT", tdlFrame.content.loadOrigin, "TOPLEFT", p.newX, p.newY)
+	p:ShowFrame(tdlFrame.content.dummyBottomFrame) -- add a bit of space at the bottom
 
 	-- drag&drop
 	if dragndrop.dragging then
@@ -734,6 +777,14 @@ function mainFrame:UpdateVisuals()
 	-- mainFrame:UpdateCategoryNamesColor()
 	widgets:UpdateDescFramesTitle()
 	widgets:UpdateTDLButtonColor()
+
+	-- list's title
+	local title = string.gsub(core.toc.title, "Ny's ", "")
+	if dataManager:HasGlobalData() then
+		title = title.." - "..(dataManager:IsGlobal(database.ctab()) and L["Global tabs"] or L["Profile tabs"])
+	end
+	-- title = title..dataManager:GetName(database.ctab())
+	mainFrame.tdlFrame.TitleText:SetText(title)
 end
 
 function mainFrame:DontRefreshNextTime(nb)
@@ -777,7 +828,7 @@ end
 -- // Content generation
 
 function private:GenerateMenuAddACategory()
-	local menuframe = tdlFrame.content.menuFrames[enums.menus.addcat]
+	local menuframe = tdlFrame.content.menu.menuFrames[enums.menus.addcat]
 
 	local function addCat() -- DRY
 		if dataManager:CreateCategory(menuframe.categoryEditBox:GetText(), database.ctab()) then
@@ -790,247 +841,137 @@ function private:GenerateMenuAddACategory()
 	--/************************************************/--
 
 	-- title
-	menuframe.menuTitle = widgets:NoPointsLabel(menuframe, nil, string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), private:SubMenuNameFormat(L["Add a category"])))
-	menuframe.menuTitle:SetPoint("CENTER", menuframe, "TOPLEFT", centerXOffset, 0)
-	-- left/right lines
-	menuframe.menuTitleLL = widgets:ThemeLine(menuframe, database.themes.theme, 0.7)
-	menuframe.menuTitleLR = widgets:ThemeLine(menuframe, database.themes.theme, 0.7)
-	private:SetDoubleLinePoints(menuframe.menuTitleLL, menuframe.menuTitleLR, menuframe.menuTitle:GetWidth(), 0)
+	menuframe.menuTitle = widgets:NoPointsLabel(menuframe, nil, L["Add a category"])
+	menuframe.menuTitle:SetPoint("TOPLEFT", tdlFrame.content.menu.lineTopSubMenu, "TOPLEFT", 3, -13)
 
 	--/************************************************/--
 
-	menuframe.labelCategoryName = widgets:NoPointsLabel(menuframe, nil, L["Name"]..":")
-	menuframe.labelCategoryName:SetPoint("TOPLEFT", menuframe.menuTitle, "TOP", -140, -32)
-
-	menuframe.categoryEditBox = CreateFrame("EditBox", nil, menuframe, "InputBoxTemplate") -- edit box to put the new category name
-	menuframe.categoryEditBox:SetPoint("RIGHT", menuframe, "RIGHT", -3, 0)
-	menuframe.categoryEditBox:SetPoint("LEFT", menuframe.labelCategoryName, "RIGHT", 10, 0)
-	menuframe.categoryEditBox:SetHeight(30)
-	menuframe.categoryEditBox:SetAutoFocus(false)
-	menuframe.categoryEditBox:SetScript("OnEnterPressed", addCat) -- if we press enter, it's like we clicked on the add button
-	menuframe.categoryEditBox:HookScript("OnEditFocusGained", function(self)
-		-- since this edit box stays there, even when we lose the focus,
-		-- I have to reapply the highlight depending on the SV
-		-- when clicking on it
-		if NysTDL.acedb.profile.highlightOnFocus then
-			self:HighlightText()
-		else
-			self:HighlightText(self:GetCursorPosition(), self:GetCursorPosition())
-		end
-	end)
-
-	menuframe.addBtn = widgets:Button("NysTDL_category_addButton", menuframe, L["Add"], nil, nil, 40)
-	menuframe.addBtn:SetPoint("TOP", menuframe.menuTitle, "TOP", 0, -65)
-	menuframe.addBtn:SetScript("OnClick", addCat)
-
-	tutorialsManager:SetPoint("introduction", "addCat", "TOP", menuframe.addBtn, "BOTTOM", 0, -22)
-end
-
-function private:GenerateMenuFrameOptions()
-	local menuframe = tdlFrame.content.menuFrames[enums.menus.frameopt]
-
-	--/************************************************/--
-
-	-- title
-	menuframe.menuTitle = widgets:NoPointsLabel(menuframe, nil, string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), private:SubMenuNameFormat(L["Frame options"])))
-	menuframe.menuTitle:SetPoint("CENTER", menuframe, "TOPLEFT", centerXOffset, 0)
-	-- left/right lines
-	menuframe.menuTitleLL = widgets:ThemeLine(menuframe, database.themes.theme, 0.7)
-	menuframe.menuTitleLR = widgets:ThemeLine(menuframe, database.themes.theme, 0.7)
-	private:SetDoubleLinePoints(menuframe.menuTitleLL, menuframe.menuTitleLR, menuframe.menuTitle:GetWidth(), 0)
-
-	--/************************************************/--
-
-	menuframe.frameAlphaSlider = CreateFrame("Slider", "NysTDL_mainFrame_frameAlphaSlider", menuframe, "OptionsSliderTemplate") -- NAME IS MANDATORY
-	menuframe.frameAlphaSlider:SetPoint("TOP", menuframe.menuTitle, "TOP", 0, -45)
-	menuframe.frameAlphaSlider:SetWidth(200)
-	-- menuframe.frameAlphaSlider:SetHeight(17)
-	-- menuframe.frameAlphaSlider:SetOrientation('HORIZONTAL')
-
-	menuframe.frameAlphaSlider:SetMinMaxValues(0, 100)
-	menuframe.frameAlphaSlider:SetValue(NysTDL.acedb.profile.frameAlpha)
-	menuframe.frameAlphaSlider:SetValueStep(1)
-	menuframe.frameAlphaSlider:SetObeyStepOnDrag(true)
-
-	menuframe.frameAlphaSlider.tooltipText = L["Change the background opacity"] -- creates a tooltip on mouseover
-	_G[menuframe.frameAlphaSlider:GetName() .. 'Low']:SetText((select(1,menuframe.frameAlphaSlider:GetMinMaxValues()))..'%') -- sets the left-side slider text (default is "Low")
-	_G[menuframe.frameAlphaSlider:GetName() .. 'High']:SetText((select(2,menuframe.frameAlphaSlider:GetMinMaxValues()))..'%') -- sets the right-side slider text (default is "High")
-	_G[menuframe.frameAlphaSlider:GetName() .. 'Text']:SetText(L["Frame opacity"]) -- sets the "title" text (top-center of slider)
-	menuframe.frameAlphaSlider:SetScript("OnValueChanged", mainFrame.Event_FrameAlphaSlider_OnValueChanged)
-
-	menuframe.frameAlphaSliderValue = menuframe.frameAlphaSlider:CreateFontString("NysTDL_mainFrame_frameAlphaSliderValue") -- the font string to see the current value -- NAME IS MANDATORY
-	menuframe.frameAlphaSliderValue:SetPoint("TOP", menuframe.frameAlphaSlider, "BOTTOM", 0, 0)
-	menuframe.frameAlphaSliderValue:SetFontObject("GameFontNormalSmall")
-	menuframe.frameAlphaSliderValue:SetText(menuframe.frameAlphaSlider:GetValue())
-
-	--/************************************************/--
-
-	menuframe.frameContentAlphaSlider = CreateFrame("Slider", "NysTDL_mainFrame_frameContentAlphaSlider", menuframe, "OptionsSliderTemplate") -- NAME IS MANDATORY
-	menuframe.frameContentAlphaSlider:SetPoint("TOP", menuframe.frameAlphaSlider, "TOP", 0, -50)
-	menuframe.frameContentAlphaSlider:SetWidth(200)
-	-- menuframe.frameContentAlphaSlider:SetHeight(17)
-	-- menuframe.frameContentAlphaSlider:SetOrientation('HORIZONTAL')
-
-	menuframe.frameContentAlphaSlider:SetMinMaxValues(60, 100)
-	menuframe.frameContentAlphaSlider:SetValue(NysTDL.acedb.profile.frameContentAlpha)
-	menuframe.frameContentAlphaSlider:SetValueStep(1)
-	menuframe.frameContentAlphaSlider:SetObeyStepOnDrag(true)
-
-	menuframe.frameContentAlphaSlider.tooltipText = L["Change the opacity for texts, buttons and other elements"] --Creates a tooltip on mouseover.
-	_G[menuframe.frameContentAlphaSlider:GetName() .. 'Low']:SetText((select(1,menuframe.frameContentAlphaSlider:GetMinMaxValues()))..'%') --Sets the left-side slider text (default is "Low").
-	_G[menuframe.frameContentAlphaSlider:GetName() .. 'High']:SetText((select(2,menuframe.frameContentAlphaSlider:GetMinMaxValues()))..'%') --Sets the right-side slider text (default is "High").
-	_G[menuframe.frameContentAlphaSlider:GetName() .. 'Text']:SetText(L["Frame content opacity"]) --Sets the "title" text (top-centre of slider).
-	menuframe.frameContentAlphaSlider:SetScript("OnValueChanged", mainFrame.Event_FrameContentAlphaSlider_OnValueChanged)
-
-	menuframe.frameContentAlphaSliderValue = menuframe.frameContentAlphaSlider:CreateFontString("NysTDL_mainFrame_frameContentAlphaSliderValue") -- the font string to see the current value -- NAME IS MANDATORY
-	menuframe.frameContentAlphaSliderValue:SetPoint("TOP", menuframe.frameContentAlphaSlider, "BOTTOM", 0, 0)
-	menuframe.frameContentAlphaSliderValue:SetFontObject("GameFontNormalSmall")
-	menuframe.frameContentAlphaSliderValue:SetText(menuframe.frameContentAlphaSlider:GetValue())
-
-	--/************************************************/--
-
-	menuframe.affectDesc = CreateFrame("CheckButton", nil, menuframe, "ChatConfigCheckButtonTemplate")
-	menuframe.affectDesc.tooltip = L["Share the opacity options of the list to the description frames"].." ("..L["Only when checked"]..")"
-	menuframe.affectDesc:SetPoint("TOP", menuframe.frameContentAlphaSlider, "TOP", 0, -40)
-	menuframe.affectDesc.Text:SetText(L["Apply to description frames"])
-	menuframe.affectDesc.Text:SetFontObject("GameFontHighlight")
-	menuframe.affectDesc.Text:ClearAllPoints()
-	menuframe.affectDesc.Text:SetPoint("TOP", menuframe.affectDesc, "BOTTOM")
-	menuframe.affectDesc:SetHitRectInsets(0, 0, 0, 0)
-	menuframe.affectDesc:SetScript("OnClick", function(self)
-		NysTDL.acedb.profile.affectDesc = not NysTDL.acedb.profile.affectDesc
-		self:SetChecked(NysTDL.acedb.profile.affectDesc)
-		mainFrame:Event_FrameAlphaSlider_OnValueChanged(NysTDL.acedb.profile.frameAlpha)
-		mainFrame:Event_FrameContentAlphaSlider_OnValueChanged(NysTDL.acedb.profile.frameContentAlpha)
-	end)
-	menuframe.affectDesc:SetChecked(NysTDL.acedb.profile.affectDesc)
-
-	--/************************************************/--
-
-	menuframe.btnAddonOptions = widgets:Button("addonOptionsButton", menuframe, L["Open addon options"], "Interface\\Buttons\\UI-OptionsButton")
-	menuframe.btnAddonOptions:SetPoint("TOP", menuframe.affectDesc, "TOP", 0, -55)
-	menuframe.btnAddonOptions:SetScript("OnClick", function() if not optionsManager:ToggleOptions(true) then tdlFrame:Hide() end end)
+	menuframe.categoryEditBox = widgets:NoPointsCatEditBox(menuframe, L["Press enter to add"])
+	menuframe.categoryEditBox:SetPoint("TOPLEFT", menuframe.menuTitle, "BOTTOMLEFT", 5, -13)
+	menuframe.categoryEditBox:SetWidth(200)
+	menuframe.categoryEditBox:SetScript("OnEnterPressed", addCat)
+	tutorialsManager:SetPoint("introduction", "addCat", "TOP", menuframe.categoryEditBox, "BOTTOM", 0, -22)
 end
 
 function private:GenerateMenuTabActions()
-	local menuframe = tdlFrame.content.menuFrames[enums.menus.tabact]
+	local menuframe = tdlFrame.content.menu.menuFrames[enums.menus.tabact]
 
 	--/************************************************/--
 
 	-- title
-	menuframe.menuTitle = widgets:NoPointsLabel(menuframe, nil, string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), private:SubMenuNameFormat(L["Tab actions"])))
-	menuframe.menuTitle:SetPoint("CENTER", menuframe, "TOPLEFT", centerXOffset, 0)
-	-- left/right lines
-	menuframe.menuTitleLL = widgets:ThemeLine(menuframe, database.themes.theme, 0.7)
-	menuframe.menuTitleLR = widgets:ThemeLine(menuframe, database.themes.theme, 0.7)
-	private:SetDoubleLinePoints(menuframe.menuTitleLL, menuframe.menuTitleLR, menuframe.menuTitle:GetWidth(), 0)
+	menuframe.menuTitle = widgets:NoPointsLabel(menuframe, nil, L["Tab actions"])
+	menuframe.menuTitle:SetPoint("TOPLEFT", tdlFrame.content.menu.lineTopSubMenu, "TOPLEFT", 3, -13)
 
 	--/************************************************/--
 
+	local spacingY = -6
+
 	menuframe.btnCheck = widgets:Button("NysTDL_menuframe_btnCheck", menuframe, L["Check"], "Interface\\BUTTONS\\UI-CheckBox-Check")
-	menuframe.btnCheck:SetPoint("TOP", menuframe.menuTitle, "TOP", 0, -35)
+	menuframe.btnCheck:SetPoint("TOPLEFT", menuframe.menuTitle, "BOTTOMLEFT", 3, -10)
 	menuframe.btnCheck:SetScript("OnClick", function() dataManager:ToggleTabChecked(database.ctab(), true) end)
 
 	menuframe.btnUncheck = widgets:Button("NysTDL_menuframe_btnUncheck", menuframe, L["Uncheck"], "Interface\\BUTTONS\\UI-CheckBox-Check-Disabled")
-	menuframe.btnUncheck:SetPoint("TOP", menuframe.btnCheck, "TOP", 0, -40)
+	menuframe.btnUncheck:SetPoint("TOPLEFT", menuframe.btnCheck, "BOTTOMLEFT", 0, spacingY)
 	menuframe.btnUncheck:SetScript("OnClick", function() dataManager:ToggleTabChecked(database.ctab(), false) end)
 
 	menuframe.btnCloseCat = widgets:Button("NysTDL_menuframe_btnCloseCat", menuframe, L["Close All"], "Interface\\BUTTONS\\Arrow-Up-Disabled")
-	menuframe.btnCloseCat:SetPoint("TOP", menuframe.btnUncheck, "TOP", 0, -40)
+	menuframe.btnCloseCat:SetPoint("TOPLEFT", menuframe.btnUncheck, "BOTTOMLEFT", 0, spacingY)
 	menuframe.btnCloseCat:SetScript("OnClick", function() dataManager:ToggleTabClosed(database.ctab(), false) end)
 
 	menuframe.btnOpenCat = widgets:Button("NysTDL_menuframe_btnOpenCat", menuframe, L["Open All"], "Interface\\BUTTONS\\Arrow-Down-Up")
-	menuframe.btnOpenCat:SetPoint("TOP", menuframe.btnCloseCat, "TOP", 0, -40)
+	menuframe.btnOpenCat:SetPoint("TOPLEFT", menuframe.btnCloseCat, "BOTTOMLEFT", 0, spacingY)
 	menuframe.btnOpenCat:SetScript("OnClick", function() dataManager:ToggleTabClosed(database.ctab(), true) end)
 
 	menuframe.btnClear = widgets:Button("NysTDL_menuframe_btnClear", menuframe, L["Clear"], "Interface\\GLUES\\LOGIN\\Glues-CheckBox-Check")
-	menuframe.btnClear:SetPoint("TOP", menuframe.btnOpenCat, "TOP", 0, -40)
+	menuframe.btnClear:SetPoint("TOPLEFT", menuframe.btnOpenCat, "BOTTOMLEFT", 0, spacingY)
 	menuframe.btnClear:SetScript("OnClick", function() dataManager:ClearTab(database.ctab()) end)
 end
 
 function private:GenerateFrameContent()
 	-- // generating the content (top to bottom)
 
-	-- creating content, scroll child of ScrollFrame (everything will be inside of it)
-	tdlFrame.content = CreateFrame("Frame", nil, tdlFrame.ScrollFrame)
-	tdlFrame.content:SetSize(enums.tdlFrameDefaultWidth-30, 1) -- y is determined by the elements inside of it
-	tdlFrame.ScrollFrame:SetScrollChild(tdlFrame.content)
+	-- creating the scroll child, whose width will be manually controlled for word wrap purposes
+	tdlFrame.scrollChild = CreateFrame("Frame", nil, tdlFrame.ScrollFrame)
+	tdlFrame.scrollChild:SetHeight(1) -- y is determined by the elements inside of it, this is just to make the frame visible. Also, x is set on resize so no need to set it here
+	tdlFrame.ScrollFrame:SetScrollChild(tdlFrame.scrollChild)
+
+	-- creating content, child of scrollChild which is scroll child of ScrollFrame (everything will be inside of content)
+	tdlFrame.content = CreateFrame("Frame", nil, tdlFrame.scrollChild)
+	tdlFrame.content:SetAllPoints(tdlFrame.scrollChild)
 	local content = tdlFrame.content
 
-	-- title
-	content.title = widgets:NoPointsLabel(content, nil, string.gsub(core.toc.title, "Ny's ", ""))
-	content.title:SetPoint("CENTER", content, "TOPLEFT", centerXOffset, -18)
-	content.title:SetFontObject("GameFontNormalLarge")
-	-- left/right lines
-	content.titleLL = widgets:ThemeLine(content, database.themes.theme_yellow, 0.8)
-	content.titleLR = widgets:ThemeLine(content, database.themes.theme_yellow, 0.8)
-	private:SetDoubleLinePoints(content.titleLL, content.titleLR, content.title:GetWidth(), -20)
+	content.menu = CreateFrame("Frame", nil, content)
+	content.menu:SetAllPoints(content)
+	content.menu:SetSize(content:GetSize())
+	local menu = content.menu
 
-	-- remaining numbers labels
-	content.remaining = widgets:NoPointsLabel(content, nil, L["Remaining"]..":")
-	content.remaining:SetPoint("LEFT", content.title, "TOP", -140, -40)
-	content.remaining:SetFontObject("GameFontNormalLarge")
-	content.remainingNumber = widgets:NoPointsLabel(content, nil, "...")
-	content.remainingNumber:SetPoint("LEFT", content.remaining, "RIGHT", 3, 0)
-	content.remainingNumber:SetFontObject("GameFontNormalLarge")
-	content.remainingFavsNumber = widgets:NoPointsLabel(content, nil, "...")
-	content.remainingFavsNumber:SetPoint("LEFT", content.remainingNumber, "RIGHT", 3, 0)
-	content.remainingFavsNumber:SetFontObject("GameFontNormalLarge")
+	local spacing = 30
 
 	-- help button
-	content.helpButton = widgets:HelpButton(content)
-	content.helpButton:SetPoint("RIGHT", content.title, "TOP", 140, -40)
-	content.helpButton:SetScript("OnClick", function()
+	menu.helpButton = widgets:HelpButton(menu, L["Information"])
+	menu.helpButton:SetPoint("CENTER", menu, "TOPLEFT", unpack(menuOrigin))
+	menu.helpButton:SetScript("OnClick", function()
 		SlashCmdList.NysTDL(L["info"])
 		tutorialsManager:Validate("introduction", "getMoreInfo")
 	end)
-	tutorialsManager:SetPoint("introduction", "getMoreInfo", "LEFT", content.helpButton, "RIGHT", 18, 0)
+	tutorialsManager:SetPoint("introduction", "getMoreInfo", "RIGHT", menu.helpButton, "LEFT", -18, 0)
 
 	-- edit mode button
-	content.editModeButton = widgets:IconTooltipButton(content, "NysTDL_EditModeButton", L["Toggle edit mode"])
-	content.editModeButton:SetPoint("RIGHT", content.helpButton, "LEFT", 2, 0)
-	content.editModeButton:SetScript("OnClick", function()
+	menu.editModeButton = widgets:IconTooltipButton(menu, "NysTDL_EditModeButton", L["Toggle edit mode"])
+	menu.editModeButton:SetPoint("CENTER", menu.helpButton, "CENTER", spacing, 0)
+	menu.editModeButton:SetScript("OnClick", function()
 		tutorialsManager:Validate("introduction", "editmode") -- I need to place this here to be sure it was a user action
 		mainFrame:ToggleEditMode()
 	end)
-	tutorialsManager:SetPoint("introduction", "editmode", "BOTTOM", content.editModeButton, "TOP", 0, 18)
-	-- tutorialsManager:SetPoint("editmode", "editmodeBtn", "BOTTOM", content.editModeButton, "TOP", 0, 18) -- TDLATER
-
-	-- frame options menu button
-	content.frameOptionsButton = widgets:IconTooltipButton(content, "NysTDL_FrameOptionsButton", L["Frame options"])
-	content.frameOptionsButton:SetPoint("RIGHT", content.editModeButton, "LEFT", 2, 0)
-	content.frameOptionsButton:SetScript("OnClick", function()
-		private:MenuClick(enums.menus.frameopt)
-	end)
-	tutorialsManager:SetPoint("introduction", "accessOptions", "BOTTOM", content.frameOptionsButton, "TOP", 0, 18)
+	tutorialsManager:SetPoint("introduction", "editmode", "BOTTOM", menu.editModeButton, "TOP", 0, 18)
 
 	-- category menu button
-	content.categoryButton = widgets:IconTooltipButton(content, "NysTDL_CategoryButton", L["Add a category"])
-	content.categoryButton:SetPoint("RIGHT", content.frameOptionsButton, "LEFT", 2, 0)
-	content.categoryButton:SetScript("OnClick", function()
+	menu.categoryButton = widgets:IconTooltipButton(menu, "NysTDL_CategoryButton", L["Add a category"])
+	menu.categoryButton.Icon:SetTexture((enums.icons.add.info()))
+	menu.categoryButton.Icon:SetSize(select(2, enums.icons.add.info()))
+	menu.categoryButton.Icon:SetTexCoord(unpack(enums.icons.add.texCoords))
+	menu.categoryButton:SetPoint("CENTER", menu.editModeButton, "CENTER", spacing, 0)
+	menu.categoryButton:SetScript("OnClick", function()
 		private:MenuClick(enums.menus.addcat)
 	end)
-	tutorialsManager:SetPoint("introduction", "addNewCat", "TOP", content.categoryButton, "BOTTOM", 0, -18)
+	tutorialsManager:SetPoint("introduction", "addNewCat", "TOP", menu.categoryButton, "BOTTOM", 0, -18)
 
 	-- tab actions menu button
-	content.tabActionsButton = widgets:IconTooltipButton(content, "NysTDL_TabActionsButton", L["Tab actions"])
-	content.tabActionsButton:SetPoint("RIGHT", content.editModeButton, "LEFT", 2, 0)
-	content.tabActionsButton:SetScript("OnClick", function()
+	menu.tabActionsButton = widgets:IconTooltipButton(menu, "NysTDL_TabActionsButton", L["Tab actions"])
+	menu.tabActionsButton:SetPoint("CENTER", menu.categoryButton, "CENTER", 30, 0)
+	menu.tabActionsButton:SetScript("OnClick", function()
 		private:MenuClick(enums.menus.tabact)
 	end)
-	content.tabActionsButton:Hide()
+	menu.tabActionsButton:Hide()
 
 	-- undo button
-	content.undoButton = widgets:IconTooltipButton(content, "NysTDL_UndoButton", L["Undo last remove"].."\n".."("..L["Item"]:lower().."/"..L["Category"]:lower().."/"..L["Tab"]:lower()..")")
-	content.undoButton:SetPoint("RIGHT", content.tabActionsButton, "LEFT", 2, 0)
-	content.undoButton:SetScript("OnClick", function() dataManager:Undo() end)
-	content.undoButton:Hide()
-	-- tutorialsManager:SetPoint("editmode", "buttons", "BOTTOM", content.undoButton, "TOP", -15, 18)
-	-- tutorialsManager:SetPoint("editmode", "undo", "BOTTOM", content.undoButton, "TOP", 0, 18)
+	menu.undoButton = widgets:IconTooltipButton(menu, "NysTDL_UndoButton", L["Undo last remove"].."\n".."("..L["Item"]:lower().."/"..L["Category"]:lower().."/"..L["Tab"]:lower()..")")
+	menu.undoButton:SetPoint("CENTER", menu.tabActionsButton, "CENTER", spacing, 0)
+	menu.undoButton:SetScript("OnClick", function() dataManager:Undo() end)
+	menu.undoButton:Hide()
+	-- tutorialsManager:SetPoint("editmode", "buttons", "BOTTOM", menu.undoButton, "TOP", -15, 18)
+	-- tutorialsManager:SetPoint("editmode", "undo", "BOTTOM", menu.undoButton, "TOP", 0, 18)
+
+	-- addon options button
+	menu.frameOptionsButton = widgets:IconTooltipButton(menu, "NysTDL_FrameOptionsButton", L["Open addon options"])
+	menu.frameOptionsButton:SetPoint("CENTER", menu.undoButton, "CENTER", spacing, 0)
+	menu.frameOptionsButton:SetScript("OnClick", function()
+		optionsManager:ToggleOptions(true)
+	end)
+
+	-- remaining numbers labels
+	menu.remaining = widgets:Dummy(menu.helpButton)
+	menu.remaining:ClearAllPoints() -- points set on edit mode toggle
+	menu.remainingNumber = widgets:NoPointsLabel(menu, nil, "...")
+	menu.remainingNumber:SetPoint("LEFT", menu.remaining, "RIGHT", 0, 0)
+	menu.remainingNumber:SetFontObject("GameFontNormalLarge")
+	menu.remainingFavsNumber = widgets:NoPointsLabel(menu, nil, "...")
+	menu.remainingFavsNumber:SetPoint("LEFT", menu.remainingNumber, "RIGHT", 7, 0)
+	menu.remainingFavsNumber:SetFontObject("GameFontNormalLarge")
 
 	-- // menus
-	local contentWidth, menuEnum = content:GetWidth()
-	content.menuFrames = {
+	local menuWidth, menuEnum = menu:GetWidth()
+	menu.menuFrames = {
 		-- these will be replaced in the code,
 		-- but I'm putting them here just so I can remember how this table works
 		-- --> selected = enums.menus.xxx,
@@ -1041,41 +982,44 @@ function private:GenerateFrameContent()
 
 	-- / add a category sub-menu
 
+	menu.lineTopSubMenu = widgets:HorizontalDivider(menu)
+	menu.lineTopSubMenu:SetPoint("TOPLEFT", content, "TOPLEFT", lineBottom.x, lineBottom.y)
+
 	menuEnum = enums.menus.addcat
-	content.menuFrames[menuEnum] = CreateFrame("Frame", nil, tdlFrame.content)
-	content.menuFrames[menuEnum]:SetPoint("TOPLEFT", tdlFrame.content, "TOPLEFT", 0, lineBottomY)
-	content.menuFrames[menuEnum]:SetSize(contentWidth, 110) -- CVAL (coded value, non automatic)
+	menu.menuFrames[menuEnum] = CreateFrame("Frame", nil, menu)
+	menu.menuFrames[menuEnum]:SetPoint("TOPLEFT", menu, "TOPLEFT", 0, lineBottom.y)
+	menu.menuFrames[menuEnum]:SetSize(menuWidth, 75) -- CVAL (coded value, non automatic)
 	private:GenerateMenuAddACategory()
-
-	-- / frame options sub-menu
-
-	menuEnum = enums.menus.frameopt
-	content.menuFrames[menuEnum] = CreateFrame("Frame", nil, tdlFrame.content)
-	content.menuFrames[menuEnum]:SetPoint("TOPLEFT", tdlFrame.content, "TOPLEFT", 0, lineBottomY)
-	content.menuFrames[menuEnum]:SetSize(contentWidth, 235) -- CVAL
-	private:GenerateMenuFrameOptions()
 
 	-- / tab actions sub-menu
 
 	menuEnum = enums.menus.tabact
-	content.menuFrames[menuEnum] = CreateFrame("Frame", nil, tdlFrame.content)
-	content.menuFrames[menuEnum]:SetPoint("TOPLEFT", tdlFrame.content, "TOPLEFT", 0, lineBottomY)
-	content.menuFrames[menuEnum]:SetSize(contentWidth, 240) -- CVAL
+	menu.menuFrames[menuEnum] = CreateFrame("Frame", nil, menu)
+	menu.menuFrames[menuEnum]:SetPoint("TOPLEFT", menu, "TOPLEFT", 0, lineBottom.y)
+	menu.menuFrames[menuEnum]:SetSize(menuWidth, 242) -- CVAL
 	private:GenerateMenuTabActions()
 
-	-- below the menus
-	content.lineBottom = widgets:ThemeLine(content, database.themes.theme, 0.7)
+	menu.lineBottom = widgets:HorizontalDivider(menu)
 
-	content.nothingLabel = widgets:HintLabel(content, nil, L["Empty tab"].."\n\n"..L["Start by adding a new category!"])
-	content.nothingLabel:SetPoint("TOP", content.lineBottom, "TOP", 0, -20)
-	content.nothingLabel:SetWidth(220)
+	-- // the content, below the menu
+
+	content.bottomOrigin = widgets:Dummy(content, content, 0, 0)
+
+	content.loadOrigin = widgets:Dummy(content, content, 0, 0)
+	content.loadOrigin:SetPoint("TOPLEFT", content.bottomOrigin, "TOPLEFT", unpack(loadOriginOffset))
+
+	content.nothingLabel = widgets:HintLabel(content, nil, L["Empty tab"].."\n"..L["Start by adding a new category!"])
+	content.nothingLabel:SetPoint("TOPLEFT", content.loadOrigin, "TOPLEFT", 0, 0)
+	content.nothingLabel:SetPoint("RIGHT", content, "RIGHT", 0, 0)
+	content.nothingLabel:SetJustifyH("LEFT")
+	content.nothingLabel:SetJustifyV("TOP")
+	content.nothingLabel:SetSpacing(4)
 
 	content.hiddenLabel = widgets:HintLabel(content, nil, L["Completed tab"])
-	content.hiddenLabel:SetPoint("TOP", content.lineBottom, "TOP", 0, -20)
-	content.hiddenLabel:SetWidth(220)
-
-	content.loadOrigin = widgets:Dummy(content, content.lineBottom, 0, 0)
-	content.loadOrigin:SetPoint("TOPLEFT", content.lineBottom, "TOPLEFT", unpack(enums.loadOriginOffset))
+	content.hiddenLabel:SetPoint("TOPLEFT", content.loadOrigin, "TOPLEFT", 0, 0)
+	content.hiddenLabel:SetPoint("RIGHT", content, "RIGHT", 0, 0)
+	content.hiddenLabel:SetJustifyH("LEFT")
+	content.hiddenLabel:SetJustifyV("TOP")
 
 	content.dummyBottomFrame = widgets:Dummy(content, content, 0, 0) -- this one if for putting a margin at the bottom of the content (mainly to leave space for the dropping of cat)
 end
@@ -1085,14 +1029,6 @@ end
 function mainFrame:CreateTDLFrame()
 	-- // we create the list
 
-	-- background
-	tdlFrame:SetBackdrop({
-		bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
-		edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-		tile = false, tileSize = 1, edgeSize = 12,
-		insets = { left = 2, right = 2, top = 2, bottom = 2 }
-	})
-
 	-- properties
 	tdlFrame:SetFrameStrata("LOW")
 	tdlFrame:EnableMouse(true)
@@ -1100,10 +1036,10 @@ function mainFrame:CreateTDLFrame()
 	tdlFrame:SetClampedToScreen(true)
 	tdlFrame:SetResizable(true)
 	if tdlFrame.SetResizeBounds then
-		tdlFrame:SetResizeBounds(90, 180, 600, 1000)
+		tdlFrame:SetResizeBounds(90, 180, 600, 800)
 	else
 		tdlFrame:SetMinResize(90, 180)
-		tdlFrame:SetMaxResize(600, 1000)
+		tdlFrame:SetMaxResize(600, 800)
 	end
 	tdlFrame:SetToplevel(true)
 
@@ -1111,6 +1047,7 @@ function mainFrame:CreateTDLFrame()
 	tdlFrame:HookScript("OnShow", mainFrame.Event_TDLFrame_OnVisibilityUpdate)
 	tdlFrame:HookScript("OnHide", mainFrame.Event_TDLFrame_OnVisibilityUpdate)
 	tdlFrame:HookScript("OnSizeChanged", mainFrame.Event_TDLFrame_OnSizeChanged)
+	tdlFrame:HookScript("OnMouseWheel", mainFrame.Event_ScrollFrame_OnMouseWheel)
 	tdlFrame:HookScript("OnMouseUp", function(self, button) -- toggle edit mode
 		if button == "RightButton" then
 			tutorialsManager:Validate("introduction", "editmode")
@@ -1118,14 +1055,46 @@ function mainFrame:CreateTDLFrame()
 		end
 	end)
 
+	-- title
+	if utils:IsDF() then
+		tdlFrame.TitleText = tdlFrame.NineSlice.TitleText
+	end
+
+	tdlFrame.TitleText:ClearAllPoints()
+	tdlFrame.TitleText:SetPoint("TOP", tdlFrame, "TOP", 0, -5)
+	tdlFrame.TitleText:SetPoint("LEFT", tdlFrame, "LEFT", 10, 0)
+	tdlFrame.TitleText:SetPoint("RIGHT", tdlFrame.CloseButton, "LEFT")
+	tdlFrame.TitleText:SetWordWrap(false)
+
+	if not utils:IsDF() then
+		-- background
+		tdlFrame.Bg:SetTexture("Interface\\FrameGeneral\\UI-Background-Marble")
+		-- tdlFrame.Bg:SetTexture("Interface\\Tooltips\\UI-Tooltip-Background")
+		-- tdlFrame.Bg:SetVertexColor(0, 0, 0)
+		tdlFrame.Bg:SetVertexColor(0.5, 0.5, 0.5)
+		tdlFrame.Bg:SetHorizTile(false)
+		tdlFrame.Bg:SetVertTile(false)
+
+		-- offset
+		loadOriginOffset = loadOriginOffsetClassic
+		lineBottom = lineBottomClassic
+		menuOrigin = menuOriginClassic
+
+		-- only for classic, we scale down the frame a bit (it looks better this way)
+		tdlFrame:SetScale(0.95)
+	end
+
+	tutorialsManager:SetPoint("introduction", "editmodeChat", "RIGHT", tdlFrame, "LEFT", -18, 0)
+
 	-- to move the frame AND NOT HAVE THE PRB WITH THE RESIZE so it's custom moving
 	tdlFrame.isMouseDown = false
 	tdlFrame.hasMoved = false
 	local function StopMoving(self)
 		self.isMouseDown = false
 		if self.hasMoved == true then
-			self:StopMovingOrSizing()
 			self.hasMoved = false
+
+			self:StopMovingOrSizing()
 			local points, _ = NysTDL.acedb.profile.framePos, nil
 			points.point, _, points.relativePoint, points.xOffset, points.yOffset = self:GetPoint()
 		end
@@ -1145,47 +1114,70 @@ function mainFrame:CreateTDLFrame()
 
 	-- // scroll frame (almost everything will be inside of it using a scroll child frame, see private:GenerateFrameContent())
 
-	tdlFrame.ScrollFrame = CreateFrame("ScrollFrame", nil, tdlFrame, "UIPanelScrollFrameTemplate")
-	tdlFrame.ScrollFrame:SetPoint("TOPLEFT", tdlFrame, "TOPLEFT", 4, - 4)
-	tdlFrame.ScrollFrame:SetPoint("BOTTOMRIGHT", tdlFrame, "BOTTOMRIGHT", - 4, 4)
+	sWidth = utils:IsDF() and sWidth or sWidthClassic
+
+	tdlFrame.ScrollFrame = CreateFrame("ScrollFrame", nil, tdlFrame, utils:IsDF() and "ScrollFrameTemplate" or "UIPanelScrollFrameTemplate")
+	tdlFrame.ScrollFrame:SetPoint("TOPLEFT", tdlFrame, "TOPLEFT", 4, -24)
+	tdlFrame.ScrollFrame:SetPoint("BOTTOMRIGHT", tdlFrame, "BOTTOMRIGHT", -4 -sWidth, 4)
 	tdlFrame.ScrollFrame:SetScript("OnMouseWheel", mainFrame.Event_ScrollFrame_OnMouseWheel)
 	tdlFrame.ScrollFrame:SetClipsChildren(true)
 
-	-- // outside the scroll frame
-
-	-- scroll bar
+	-- scrollbar
 	tdlFrame.ScrollFrame.ScrollBar:ClearAllPoints()
-	tdlFrame.ScrollFrame.ScrollBar:SetPoint("TOPLEFT", tdlFrame.ScrollFrame, "TOPRIGHT", - 12, - 38) -- the bottomright is updated in the OnUpdate (to manage the resize button)
+	tdlFrame.ScrollFrame.ScrollBar:SetParent(tdlFrame) -- so that it's not clipped
+	tdlFrame.ScrollFrame.ScrollBar.GetParent = function() -- go along now, you didn't see anything
+		return tdlFrame.ScrollFrame
+	end
+	if utils:IsDF() then
+		tdlFrame.ScrollFrame.ScrollBar:SetPoint("TOPLEFT", tdlFrame.ScrollFrame, "TOPRIGHT", 38, -30)
+	else
+		tdlFrame.ScrollFrame.ScrollBar:SetScale(1.05)
+		tdlFrame.ScrollFrame.ScrollBar:SetPoint("TOPLEFT", tdlFrame.ScrollFrame, "TOPRIGHT", 51, -37)
+	end
 
-	-- close button
-	tdlFrame.closeButton = CreateFrame("Button", nil, tdlFrame, "NysTDL_CloseButton")
-	tdlFrame.closeButton:SetPoint("TOPRIGHT", tdlFrame, "TOPRIGHT", -1, -1)
-	tdlFrame.closeButton:SetScript("onClick", function(self) self:GetParent():Hide() end)
+	-- view button
+	tdlFrame.viewButton = widgets:IconTooltipButton(tdlFrame, "NysTDL_ViewButton", L["Toggle menu"])
+	tdlFrame.viewButton.Icon:SetTexture((enums.icons.view.info()))
+	if utils:IsDF() then
+		tdlFrame.viewButton:SetPoint("TOPRIGHT", tdlFrame, "TOPRIGHT", -6, -26)
+	else
+		tdlFrame.viewButton:SetPoint("TOPRIGHT", tdlFrame, "TOPRIGHT", -2.5, -21)
+	end
+	tdlFrame.viewButton:SetScript("OnClick", function()
+		mainFrame:ToggleMinimalistView()
+		tutorialsManager:Validate("introduction", "miniView")
+	end)
+	tutorialsManager:SetPoint("introduction", "miniView", "LEFT", tdlFrame.viewButton, "RIGHT", 18, 0)
+
+	-- -- // outside the scroll frame
 
 	-- resize button
-	tdlFrame.resizeButton = CreateFrame("Button", nil, tdlFrame, "NysTDL_TooltipResizeButton")
-	tdlFrame.resizeButton.tooltip = L["Left-Click"].." - "..L["Resize the list"].."\n"..L["Right-Click"].." - "..L["Reset"]
+	tdlFrame.resizeButton = widgets:IconTooltipButton(tdlFrame, "NysTDL_TooltipResizeButton", L["Left-Click"].." - "..L["Resize"].."\n"..L["Right-Click"].." - "..L["Reset"])
 	tdlFrame.resizeButton:SetPoint("BOTTOMRIGHT", -3, 3)
 	tdlFrame.resizeButton:SetScript("OnMouseDown", function(self, button)
 		if button == "LeftButton" then
 			tdlFrame:StartSizing("BOTTOMRIGHT")
 			self:GetHighlightTexture():Hide() -- more noticeable
-			self.Tooltip:Hide()
+			if self.tooltip and self.tooltip.Hide then self.tooltip:Hide() end
 		end
 	end)
 	tdlFrame.resizeButton:SetScript("OnMouseUp", function(self, button)
 		if button == "LeftButton" then
 			tdlFrame:StopMovingOrSizing()
+			local points, _ = NysTDL.acedb.profile.framePos, nil
+			points.point, _, points.relativePoint, points.xOffset, points.yOffset = tdlFrame:GetPoint()
+
 			self:GetHighlightTexture():Show()
-			self.Tooltip:Show()
+			if self.tooltip and self.tooltip.Show then self.tooltip:Show() end
 		end
 	end)
 	tdlFrame.resizeButton:SetScript("OnHide", function(self)  -- same as on mouse up, just security
-		tdlFrame:StopMovingOrSizing()
-		self:GetHighlightTexture():Show()
+		self:GetScript("OnMouseUp")(self, "LeftButton")
 	end)
 	tdlFrame.resizeButton:RegisterForClicks("RightButtonUp")
-	tdlFrame.resizeButton:HookScript("OnClick", function() -- reset size
+	tdlFrame.resizeButton:HookScript("OnClick", function(self) -- reset size
+		self:GetScript("OnMouseUp")(self, "LeftButton")
+
 		-- we resize and scale the frame
 		tdlFrame:SetSize(enums.tdlFrameDefaultWidth, enums.tdlFrameDefaultHeight)
 
@@ -1194,7 +1186,6 @@ function mainFrame:CreateTDLFrame()
 		tdlFrame:ClearAllPoints()
 		tdlFrame:SetPoint(points.point, nil, points.relativePoint, points.xOffset, points.yOffset) -- relativeFrame = nil -> entire screen
 	end)
-	-- tutorialsManager:SetPoint("editmode", "resize", "LEFT", tdlFrame.resizeButton, "RIGHT", 0, 0) TDLATER?
 
 	-- // inside the scroll frame
 
@@ -1221,6 +1212,7 @@ function mainFrame:Init()
 
 	-- we resize and scale the frame
 	tdlFrame:SetSize(NysTDL.acedb.profile.frameSize.width, NysTDL.acedb.profile.frameSize.height)
+	mainFrame:RefreshScale()
 
 	-- we reposition the frame
 	local points = NysTDL.acedb.profile.framePos
@@ -1230,17 +1222,13 @@ function mainFrame:Init()
 	-- and update its elements opacity
 	mainFrame:Event_FrameAlphaSlider_OnValueChanged(NysTDL.acedb.profile.frameAlpha)
 	mainFrame:Event_FrameContentAlphaSlider_OnValueChanged(NysTDL.acedb.profile.frameContentAlpha)
-	-- as well as updating the elements needing an update
-	local frameopt = tdlFrame.content.menuFrames[enums.menus.frameopt]
-	frameopt.frameAlphaSlider:SetValue(NysTDL.acedb.profile.frameAlpha)
-	frameopt.frameContentAlphaSlider:SetValue(NysTDL.acedb.profile.frameContentAlpha)
-	frameopt.affectDesc:SetChecked(NysTDL.acedb.profile.affectDesc)
 
 	-- we generate the widgets once
 	private:LoadWidgets()
 
-	-- we reset the edit mode state
+	-- we reset the edit mode & view state
 	mainFrame:ToggleEditMode(false, true)
+	mainFrame:ToggleMinimalistView(NysTDL.acedb.profile.isInMiniView, true)
 
 	--widgets:SetEditBoxesHyperlinksEnabled(true) -- see func details for why I'm not using it
 

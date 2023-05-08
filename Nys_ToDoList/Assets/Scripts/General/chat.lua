@@ -182,7 +182,7 @@ chat.commands = {
 	[L["categories"]] = function()
 		chat:CustomPrintForced(L["Information on categories"]..":")
 		chat:CustomPrintForced("- "..L["Left-click on the category names to expand or shrink their content"]..".", true)
-		chat:CustomPrintForced("- "..L["Right-click on the category names to add new items"]..".", true)
+		chat:CustomPrintForced("- "..utils:SafeStringFormat(L["To add new items, hover the category names and press the %s icon"], enums.icons.add.texHyperlinkChat)..".", true)
 	end,
 
 	[L["favorites"]] = function()
@@ -195,7 +195,7 @@ chat.commands = {
 
 	[L["descriptions"]] = function()
 		chat:CustomPrintForced(L["You can add descriptions on items!"].." ("..L["Toggle the edit mode to do so"]..")")
-		chat:CustomPrintForced("- "..L["They are automatically saved"], true)
+		chat:CustomPrintForced("- "..L["Automatically saved"], true)
 		chat:CustomPrintForced("- "..utils:SafeStringFormat(L["You can write up to %i characters"], enums.maxDescriptionCharCount), true)
 	end,
 
@@ -211,8 +211,8 @@ chat.commands = {
 		chat:CustomPrintForced("- "..L["Favorite and add descriptions on items"], true)
 		chat:CustomPrintForced("- "..L["Rename items and categories"].." ("..L["Double-Click"]..")", true)
 		chat:CustomPrintForced("- "..L["Reorder/Sort the list"].." ("..L["Drag and Drop"]..")", true)
-		chat:CustomPrintForced("- "..L["Resize the list"].." ("..L["Button in the bottom-right"]..")", true)
-		chat:CustomPrintForced("- "..utils:SafeStringFormat(L["Access new buttons: %s and %s"], "\""..L["Undo last remove"].."\"", "\""..L["Tab actions"].."\""), true)
+		chat:CustomPrintForced("- "..L["Resize"].." ("..L["Button in the bottom-right"]..")", true)
+		chat:CustomPrintForced("- "..L["Access new buttons"].." (\""..L["Tab actions"].."\", \""..L["Undo last remove"].."\", \""..L["Open addon options"].."\")", true)
 		tutorialsManager:Validate("introduction", "editmodeChat")
 	end,
 

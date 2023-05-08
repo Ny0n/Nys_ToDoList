@@ -98,6 +98,7 @@ database.defaults = {
 		currentProfileTab = "", -- updated each time we change tabs
 
 		databrokerMode = enums.databrokerModes.simple,
+		isInMiniView = false,
 		lastListVisibility = false,
 		lockList = false,
 		lockTdlButton = false,
@@ -105,10 +106,10 @@ database.defaults = {
 		-- // Frame Options
 		framePos = { point = "CENTER", relativePoint = "CENTER", xOffset = 0, yOffset = 0 },
 		frameSize = { width = enums.tdlFrameDefaultWidth, height = enums.tdlFrameDefaultHeight },
-		frameAlpha = 65,
+		frameAlpha = 75,
 		frameContentAlpha = 100,
 		affectDesc = true,
-		descFrameAlpha = 65,
+		descFrameAlpha = 75,
 		descFrameContentAlpha = 100,
 
 		-- // Addon Options
@@ -116,13 +117,14 @@ database.defaults = {
 		--'General' tab
 		minimap = { hide = false, minimapPos = 241, lock = false, tooltip = true }, -- for LibDBIcon
 		tdlButton = { show = false, red = false, points = { point = "CENTER", relativePoint = "CENTER", xOffset = 0, yOffset = 0 } },
-		favoritesColor = { 1, 0.5, 0.6 },
+		favoritesColor = { 1, 0.5843137254901961, 0.996078431372549 },
 		rainbow = false,
 		rainbowSpeed = 2,
 		rememberUndo = true,
 		highlightOnFocus = true,
 		descriptionTooltip = true,
 		openBehavior = 1,
+		frameScale = 1,
 
 		--'Tabs' tab
 		instantRefresh = false, -- profile-wide
@@ -179,6 +181,9 @@ function private:DBInit(profile)
 	end
 
 	-- // initialization of elements that need to be updated correctly when the profile changes
+
+	-- WARNING: Right now I'm only using the "profile" var to know if we are coming from a profile change or grom the importexport code,
+	-- I don't care about what's inside of it, I only need to know if it is set or not
 
 	-- remember undos
 	if profile and not NysTDL.acedb.profile.rememberUndo then
@@ -292,7 +297,7 @@ end
 function database:Initialize()
 	-- Saved variable database
 	NysTDL.acedb = LibStub("AceDB-3.0"):New("NysToDoListDB", database.defaults)
-	private:DBInit() -- initialization for some elements of the current acedb
+	private:DBInit(true) -- initialization for some elements of the current acedb
 
 	-- callbacks for database changes
 	NysTDL.acedb.RegisterCallback(database, "OnProfileChanged", "ProfileChanged")

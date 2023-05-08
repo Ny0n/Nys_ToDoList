@@ -698,11 +698,6 @@ function private:CreateAddonOptionsTable()
 
 							-- / options widgets / --
 
-							lockList = {
-								order = 1.3,
-								type = "toggle",
-								name = L["Lock position"],
-							}, -- lockList
 							openBehavior = {
 								order = 1.2,
 								type = "select",
@@ -717,6 +712,56 @@ function private:CreateAddonOptionsTable()
 									return openBehaviors
 								end,
 							}, -- openBehavior
+							lockList = {
+								order = 1.4,
+								type = "toggle",
+								name = L["Lock position"],
+							}, -- lockList
+							frameScale = {
+								order = 1.3,
+								type = "range",
+								name = L["Font size"],
+								min = 0.5,
+								max = 2,
+								step = 0.01,
+								set = function(info, value)
+									NysTDL.acedb.profile.frameScale = value
+									mainFrame:RefreshScale()
+								end,
+							}, -- frameScale
+							frameAlpha = {
+								order = 1.5,
+								type = "range",
+								name = L["Frame opacity"],
+								min = 0,
+								max = 100,
+								step = 1,
+								set = function(info, value)
+									mainFrame:Event_FrameAlphaSlider_OnValueChanged(value)
+								end,
+							}, -- frameAlpha
+							frameContentAlpha = {
+								order = 1.6,
+								type = "range",
+								name = L["Frame content opacity"],
+								min = 60,
+								max = 100,
+								step = 1,
+								set = function(info, value)
+									mainFrame:Event_FrameContentAlphaSlider_OnValueChanged(value)
+								end,
+							}, -- frameContentAlpha
+							affectDesc = {
+								order = 1.7,
+								type = "toggle",
+								name = L["Apply to description frames"],
+								desc = L["Share the opacity options of the list to the description frames"].." ("..L["Only when checked"]..")",
+								set = function(info, value)
+									NysTDL.acedb.profile.affectDesc = value
+									mainFrame:Event_FrameAlphaSlider_OnValueChanged(NysTDL.acedb.profile.frameAlpha)
+									mainFrame:Event_FrameContentAlphaSlider_OnValueChanged(NysTDL.acedb.profile.frameContentAlpha)
+								end
+							}, -- affectDesc
 							rememberUndo = {
 								order = 3.6,
 								type = "toggle",
@@ -866,11 +911,17 @@ function private:CreateAddonOptionsTable()
 
 							-- spacers
 							spacer111 = {
-								order = 1.11,
+								order = 1.21,
 								type = "description",
 								width = "full",
 								name = "",
 							}, -- spacer199
+							spacer131 = {
+								order = 1.41,
+								type = "description",
+								width = "full",
+								name = "",
+							}, -- spacer131
 							spacer199 = {
 								order = 1.99,
 								type = "description",
@@ -1164,6 +1215,8 @@ function optionsManager:ToggleOptions(fromFrame)
 		-- end
 		Settings.OpenToCategory(optionsManager.optionsFrameID)
 	end
+
+	AceConfigRegistry:NotifyChange(addonName)
 end
 
 --/*******************/ INITIALIZATION /*************************/--

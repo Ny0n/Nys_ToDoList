@@ -274,10 +274,6 @@ function checkExecution()
 	devbranch=$(git config --get "gitflow.branch.develop")
 	test -n "$mainbranch" || errormsg "Could not figure out the master branch's name (git flow config)" || return
 	test -n "$devbranch" || errormsg "Could not figure out the develop branch's name (git flow config)" || return
-
-	# make sure we are on the dev branch
-	echo ""
-	git checkout "$devbranch" || errormsg "The develop branch needs to be checked out" || return
 }
 
 function package()
@@ -292,7 +288,7 @@ function package()
 		prepRelease || return
 
 		# do a temp commit of the changes, or the packaging script won't work
-		stepmsg 2 12 "Commit temp changes to $devbranch branch"
+		stepmsg 2 12 "Commit temp changes to current branch ($(git branch --show-current))"
 		git add "$addondir" || return
 		git commit -m "temp" || return
 
@@ -375,6 +371,10 @@ function publish()
 	{
 		# will cancel the execution if something isn't available
 		checkExecution || return
+
+		# make sure we are on the dev branch
+		echo ""
+		test "$devbranch" == "$(git branch --show-current)" || errormsg "The develop branch needs to be checked out" || return
 
 		stepmsg 1 11 "Start release"
 		git flow release start "$version" || return

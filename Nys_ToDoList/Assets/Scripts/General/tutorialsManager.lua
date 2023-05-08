@@ -11,6 +11,7 @@ NysTDL.tutorialsManager = tutorialsManager
 local core = NysTDL.core
 local libs = NysTDL.libs
 local chat = NysTDL.chat
+local enums = NysTDL.enums
 local utils = NysTDL.utils
 local widgets = NysTDL.widgets
 local mainFrame = NysTDL.mainFrame
@@ -139,10 +140,7 @@ function tp:GenerateTutoTable(tutoCategory, defaultTable)
 	end
 
 	if not defaultTable.OnFinish then
-		defaultTable.OnFinish = function(self)
-			NysTDL.acedb.global.tutorials_progression[self.tutoCategory] = true
-			tutorialsManager:Refresh()
-		end
+		defaultTable.OnFinish = function(self) end
 	end
 
 	if not defaultTable.tutosOrdered then
@@ -183,6 +181,7 @@ function tp:GenerateTutoTable(tutoCategory, defaultTable)
 			NysTDL.acedb.global.tutorials_progression[self.tutoCategory] = newProgress
 
 			if tp:IsProgressAtLeast(self.tutoCategory, true) then
+				NysTDL.acedb.global.tutorials_progression[self.tutoCategory] = true
 				self:OnFinish()
 			end
 
@@ -218,18 +217,30 @@ function tutorialsManager:SetPoint(tutoCategory, tutoName, point, relativeTo, re
 		tutoFrame:SetPoint(point, relativeTo, relativePoint, ofsx, ofsy)
 
 		if relativeTo and relativeTo.HookScript and relativeTo.IsVisible then
-			relativeTo:HookScript("OnShow", function(self)
-				if tutorialFramesTarget[frameName] == self and tutorialFrames[frameName] then
-					if tutorialFrames[frameName].shouldBeShown then
-						tutorialFrames[frameName]:Show()
+			-- bind visibility scripts (only once!)
+			if relativeTo.boundTutorialFrameName == nil then -- this means our visibility scripts were never bound to this frame
+				relativeTo:HookScript("OnShow", function(self)
+					local frameName = self.boundTutorialFrameName
+					if type(frameName) ~= "string" then return end
+
+					if tutorialFramesTarget[frameName] == self and tutorialFrames[frameName] then
+						if tutorialFrames[frameName].shouldBeShown then
+							tutorialFrames[frameName]:Show()
+						end
 					end
-				end
-			end)
-			relativeTo:HookScript("OnHide", function(self)
-				if tutorialFramesTarget[frameName] == self and tutorialFrames[frameName] then
-					tutorialFrames[frameName]:Hide()
-				end
-			end)
+				end)
+				relativeTo:HookScript("OnHide", function(self)
+					local frameName = self.boundTutorialFrameName
+					if type(frameName) ~= "string" then return end
+
+					if tutorialFramesTarget[frameName] == self and tutorialFrames[frameName] then
+						tutorialFrames[frameName]:Hide()
+					end
+				end)
+			end
+
+			relativeTo.boundTutorialFrameName = frameName -- update target
+
 			tutoFrame:SetShown(tutoFrame.shouldBeShown and relativeTo:IsVisible())
 		else
 			tutoFrame:Hide()
@@ -326,6 +337,25 @@ end
 function private:CreateTutorials()
 	local cat = ""
 
+	-- // Example tutorial table
+	-- tp:GenerateTutoTable("example",
+	-- 	{
+	-- 		IsEnabled = function(self)
+	-- 			return tp:ValueBool("otherTutorialCategory")
+	-- 			and not tp:ValueBool(self.tutoCategory)
+	-- 		end,
+	-- 		tutosOrdered = {
+	-- 			"tuto1",
+	-- 			"tuto2",
+	-- 			"tuto3",
+	-- 		},
+	-- 		OnFinish = function(self)
+	-- 			mainFrame:Event_TDLFrame_OnVisibilityUpdate()
+	-- 			mainFrame:GetFrame().ScrollFrame:SetVerticalScroll(0)
+	-- 		end,
+	-- 	}
+	-- )
+
 	-- // ******************** // --
 
 	cat = "introduction"
@@ -336,21 +366,25 @@ function private:CreateTutorials()
 				"addNewCat",
 				"addCat",
 				"addItem",
-				"accessOptions",
-				"getMoreInfo",
 				"editmode",
 				"editmodeChat",
+				"getMoreInfo",
+				"miniView",
 			},
+			OnFinish = function(self)
+				mainFrame:Event_TDLFrame_OnVisibilityUpdate()
+				mainFrame:GetFrame().ScrollFrame:SetVerticalScroll(0)
+			end,
 		}
 	)
 
-	private:CreateTutoFrame(cat, "addNewCat", false, "UP", L["Start by adding a new category!"], 190)
+	private:CreateTutoFrame(cat, "addNewCat", false, "UP", L["Start by adding a new category!"], 240)
 	private:CreateTutoFrame(cat, "addCat", true, "UP", L["This will add your category to the current tab"], 240)
-	private:CreateTutoFrame(cat, "addItem", false, "RIGHT", L["To add new items to existing categories, just right-click the category names"], 220)
-	private:CreateTutoFrame(cat, "accessOptions", false, "DOWN", L["You can access the options from here"], 220)
-	private:CreateTutoFrame(cat, "getMoreInfo", false, "LEFT", L["If you're having any problems or you just want more information, you can always click here to print help in the chat!"], 275)
-	private:CreateTutoFrame(cat, "editmode", false, "DOWN", L["To delete items and do a lot more, you can right-click anywhere on the list or click on this button to toggle the edit mode"], 275)
+	private:CreateTutoFrame(cat, "addItem", false, "RIGHT", utils:SafeStringFormat(L["To add new items, hover the category names and press the %s icon"], enums.icons.add.texHyperlinkTuto), 270)
+	private:CreateTutoFrame(cat, "editmode", false, "DOWN", L["To delete items and do a lot more, you can right-click anywhere on the list or click on this button to toggle the edit mode"], 300)
 	private:CreateTutoFrame(cat, "editmodeChat", true, "RIGHT", utils:SafeStringFormat(L["Please type %s and read the chat message for more information about this mode"], "\""..chat.slashCommand..' '..L["editmode"].."\""), 275)
+	private:CreateTutoFrame(cat, "getMoreInfo", false, "RIGHT", L["If you're having any problems or you just want more information, you can always click here to print help in the chat!"], 290)
+	private:CreateTutoFrame(cat, "miniView", true, "LEFT", L["One last thing: you can change what you see using this button. It's up to you now!"], 240)
 
 	-- // ******************** // --
 

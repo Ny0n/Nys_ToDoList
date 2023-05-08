@@ -4,6 +4,7 @@
 
 -- Primary aliases
 
+local core = NysTDL.core
 local libs = NysTDL.libs
 local chat = NysTDL.chat
 local database = NysTDL.database
@@ -21,7 +22,6 @@ local dragndrop = NysTDL.dragndrop
 local mainFrame = NysTDL.mainFrame
 local tabsFrame = NysTDL.tabsFrame
 local widgets = NysTDL.widgets
-local core = NysTDL.core
 
 -- Secondary aliases
 
@@ -107,10 +107,43 @@ local backdrop_tests = {
 	insets = { left = 0, right = 0, top = 0, bottom = 0 }
 }
 
--- // Secure action button test
--- local macroBtn = CreateFrame("Button", "myMacroButton", UIParent, "SecureActionButtonTemplate")
--- macroBtn:SetAttribute("type1", "macro") -- left click causes macro
--- macroBtn:SetAttribute("macrotext1", "/say test") -- text for macro on left click
--- macroBtn:SetSize(100, 100)
--- macroBtn:SetPoint("CENTER")
--- macroBtn:RegisterForClicks("LeftButtonDown")
+local function tests()
+	-- local macroBtn = CreateFrame("Button", "myMacroButton", UIParent, "InsecureActionButtonTemplate")
+	-- macroBtn:SetAttribute("type1", "macro") -- left click causes macro
+	-- macroBtn:SetAttribute("macrotext1", "/s hey!") -- text for macro on left click
+	-- macroBtn:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+	-- macroBtn:SetSize(150, 50)
+	-- macroBtn:SetText("btn1")
+	-- macroBtn:HookScript("OnClick", function()
+	-- 	-- TargetUnit(UnitName("player"))
+	-- 	print(1)
+	-- end)
+	-- macroBtn:Show()
+	hooksecurefunc("SecureActionButton_OnClick", function()
+		print("listen!")
+	end)
+	-- local btn = CreateFrame("Button", nil, UIParent, "UIPanelButtonTemplate")
+	-- btn:SetPoint("CENTER", UIParent, "CENTER", 0, -100)
+	-- btn:SetSize(150, 50)
+	-- btn:SetText("btn1")
+	-- btn:SetScript("OnClick", function()
+	-- 	SecureActionButton_OnClick(macroBtn, "LeftButton", 1)
+	-- end)
+	-- Create the macro to use
+
+local myMacro = [=[
+/tar frostwall
+]=]
+
+	-- Create the secure frame to activate the macro
+	local frame = CreateFrame("Button", "myMacroButton", UIParent, "SecureActionButtonTemplate");
+	frame:SetPoint("CENTER")
+	frame:SetSize(100, 100);
+	-- frame:SetAttribute("type1", "target") -- left click causes macro
+	-- frame:SetAttribute("unit", "frostwall") -- text for macro on left click
+	frame:SetAttribute("type", "macro")
+	frame:SetAttribute("macrotext", myMacro);
+	frame:RegisterForClicks("LeftButtonDown");
+end
+
+-- table.insert(core.Event_OnInitialize_Start, tests)
