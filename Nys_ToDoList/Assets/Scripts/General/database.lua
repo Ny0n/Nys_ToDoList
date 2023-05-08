@@ -117,7 +117,7 @@ database.defaults = {
 		--'General' tab
 		minimap = { hide = false, minimapPos = 241, lock = false, tooltip = true }, -- for LibDBIcon
 		tdlButton = { show = false, red = false, points = { point = "CENTER", relativePoint = "CENTER", xOffset = 0, yOffset = 0 } },
-		favoritesColor = { 1, 0.5, 0.6 },
+		favoritesColor = { 1, 0.5843137254901961, 0.996078431372549 },
 		rainbow = false,
 		rainbowSpeed = 2,
 		rememberUndo = true,
