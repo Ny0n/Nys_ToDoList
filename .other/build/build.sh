@@ -121,7 +121,7 @@ function makeLinks()
 			fi
 
 			to="${toPath:?}/${addonname:?}$2"
-			test ! -d "$to" || rm -rf "$to"
+			test ! -f "$to" -a ! -d "$to" -a ! -L "$to" || rm -rf "$to"
 
 			ln -s "$1" "$to" || return
 			echo -e "\e[32m+\e[0m \"$to\" (symlink) --> (target) \"$1\""
@@ -214,6 +214,12 @@ function makeLinks()
 
 		echo -e "Creating \e[4mdirectory\e[0m symlinks for the \e[4m$devword\e[0m addon version..."
 		internalDir "$addondir" "$devword" || errormsg "Could not create symbolic links for the $devword addon version" || return
+
+		backupaddondir="$(realpath "$builddir/../../Nys_ToDoList_Backup")"
+		test -d "$backupaddondir" || errormsg "Could not find the backup addon folder" || return
+
+		echo -e "Creating \e[4mdirectory\e[0m symlinks for the \e[4mBackup\e[0m addon..."
+		internalDir "$backupaddondir" "_Backup" || errormsg "Could not create symbolic links for the Backup addon" || return
 	fi
 
 	if [ "$canDoSavedDir" -eq 0 ]; then

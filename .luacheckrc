@@ -36,6 +36,10 @@ globals = {
 	-- Libs globals
 	"LibStub",
 
+	-- misc
+	"NysTDLBackup",
+	"NysToDoListBackupDB",
+
 	-- ** WoW / Lua globals **
 
 	-- misc
