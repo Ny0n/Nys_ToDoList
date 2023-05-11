@@ -6,5 +6,6 @@
 	<Script file="Scripts\data.lua"/>
 	<Script file="Scripts\list.lua"/>
 	<Script file="Scripts\utils.lua"/>
+	<Include file="Scripts\templates.xml"/>
 
 </Ui>

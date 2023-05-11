@@ -8,6 +8,8 @@ addonTable.utils = {}
 
 local core = addonTable.core
 local data = addonTable.data
+local list = addonTable.list
+local utils = addonTable.utils
 
 NysTDLBackup = {}
 
@@ -50,6 +52,8 @@ function core:ADDON_LOADED(event, addOnName)
 	print("backup: \""..tostring(NysToDoListBackupDB).."\"")
 
 	data:Initialize()
+
+	list:CreateBackupFrame()
 
 	print(core.toc.title..": Addon loaded (v"..core.toc.version..")") -- TODO to be removed
 end
