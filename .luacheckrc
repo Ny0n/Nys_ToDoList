@@ -39,6 +39,7 @@ globals = {
 	-- misc
 	"NysTDLBackup",
 	"NysToDoListBackupDB",
+	"NysToDoListDB",
 
 	-- ** WoW / Lua globals **
 
