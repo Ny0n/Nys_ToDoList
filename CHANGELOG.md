@@ -1,6 +1,6 @@
 #### **7.0**
 
-This major update introduces a reworked UI:
+Introducing a brand new and reworked UI!
 
 - Updated the interface to be more in the Dragonflight theme (more in the Classic theme for classic versions)
 - Added word wrapping. This means no more entry size limit! (though they will only wrap for a maximum of 3 lines)
