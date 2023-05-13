@@ -38,8 +38,10 @@ data.backupCount = {
 function data:GetDefaults()
 	-- globally saved
 	local defaults = {
-		lastAutoDaily = date("*t"),
-		lastAutoWeekly = date("*t"),
+		autoSaveInfos = {
+			lastAutoDaily = nil,
+			lastAutoWeekly = nil,
+		},
 		backups = {
 			-- [backupType] = {
 				-- [1] = backupTable
@@ -59,7 +61,8 @@ function data:Initialize()
 		end
 	end
 
-	NysToDoListBackupDB = utils:Deepcopy(data.db) -- always do this when we change the data
+	-- TODO check saved var out of memory exception wow
+	NysToDoListBackupDB = utils:Deepcopy(data.db) -- TODO always do this when we change the data
 end
 
 function data:Uninitialize()
@@ -72,6 +75,28 @@ end
 
 --/*******************/ Backups /*************************/--
 
+function data:CheckForAutomaticSaves()
+	if type(data.db.autoSaveInfos) ~= "table" then data.db.autoSaveInfos = {} end
+	local infos = data.db.autoSaveInfos
+
+	if type(infos.lastAutoDaily) ~= "number" then infos.lastAutoDaily = 0 end
+	if type(infos.lastAutoWeekly) ~= "number" then infos.lastAutoWeekly = 0 end
+
+	local yday = date("*t").yday -- TODO modulo 365
+
+	if infos.lastAutoDaily + 1 <= yday then
+		data:ScrollBackups(data.backupType.autoDaily, 1)
+		data:WriteBackupToSlot(data.backupType.autoDaily, 1, true)
+		infos.lastAutoDaily = yday
+	end
+
+	if infos.lastAutoWeekly + 7 <= yday then -- TODO recheck 7 or 8 ?
+		data:ScrollBackups(data.backupType.autoWeekly, 1)
+		data:WriteBackupToSlot(data.backupType.autoWeekly, 1, true)
+		infos.lastAutoWeekly = yday
+	end
+end
+
 function data:CreateNewBackup()
 	local backup = {
 		name = tostring(date()),
@@ -80,6 +105,24 @@ function data:CreateNewBackup()
 	}
 
 	return backup
+end
+
+function data:ScrollBackups(backupType, slotScrollCount)
+	slotScrollCount = slotScrollCount or 1
+	if not data.backupType[backupType] then -- TODO do everywhere or nowhere?
+		print("backupType Error")
+		return
+	end
+
+	if not data.db.backups[backupType] then
+		data.db.backups[backupType] = {}
+	end
+
+	for i=1, slotScrollCount, 1 do
+		for slot=data.backupCount[backupType], 1, -1 do
+			data.db.backups[backupType][slot] = data.db.backups[backupType][slot-1]
+		end
+	end
 end
 
 function data:WriteBackupToSlot(backupType, backupSlot, forced)

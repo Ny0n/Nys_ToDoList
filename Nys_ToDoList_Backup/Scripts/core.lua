@@ -55,6 +55,8 @@ function core:ADDON_LOADED(event, addOnName)
 
 	list:CreateBackupFrame()
 
+	data:CheckForAutomaticSaves()
+
 	print(core.toc.title..": Addon loaded (v"..core.toc.version..")") -- TODO to be removed
 end
 
