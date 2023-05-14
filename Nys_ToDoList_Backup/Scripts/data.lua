@@ -7,24 +7,27 @@ local utils = addonTable.utils
 
 --/*******************/ Saved Data /*************************/--
 
+local private = {}
+
 --[[
 	defaults = {
 		selectedProfile = profileID,
-		profilesOrder = { profileID, ... }, -- ipairs
+		profilesOrdered = { profileID, ... }, -- ipairs
 		profiles = { -- pairs
 			[profileID] = { -- profileTable
 				name = "foo",
-				savedVars = { "bar", ... }, -- ipairs
+				savedVarsOrdered = { "bar", ... }, -- ipairs
+				character =  false | utils:GetCurrentPlayerName(),
 				autoSaveInfos = {
 					lastDaily = date("*t").yday,
 					lastWeekly = date("*t").yday,
 				},
-				backups = {
+				backups = { -- pairs
 					[backupType] = { -- ipairs
 						[backupSlot] = { -- backupTable
 							name = "",
 							addonVersion = "", -- TODO only for this backup addon version?
-							savedVarsOrder = utils:Deepcopy(profiles[profileID].savedVars), -- ipairs
+							savedVarsOrdered = utils:Deepcopy(profiles[profileID].savedVarsOrdered), -- ipairs
 							savedVars = { -- pairs
 								["savedVar"] = utils:Deepcopy(savedVar),
 								...
@@ -48,8 +51,8 @@ local utils = addonTable.utils
 	-- TODO foreach pour profiles / autre?
 ]]
 
----@class backupType
-data.backupType = {
+---@class backupTypes
+data.backupTypes = {
 	autoDaily = "autoDaily",
 	autoWeekly = "autoWeekly",
 	autoPreImport = "autoPreImport",
@@ -57,48 +60,208 @@ data.backupType = {
 	manual = "manual"
 }
 
-data.backupCount = {
-	[data.backupType.autoDaily] = 4,
-	[data.backupType.autoWeekly] = 4,
-	[data.backupType.autoPreImport] = 2,
-	[data.backupType.autoPreApplyBackup] = 1,
-	[data.backupType.manual] = 5,
+-- order of backup types
+data.backupTypesOrdered = {
+	data.backupTypes.manual,
+	data.backupTypes.autoDaily,
+	data.backupTypes.autoWeekly,
+	data.backupTypes.autoPreImport,
+	data.backupTypes.autoPreApplyBackup
 }
 
---/*******************/ Functions /*************************/--
+data.backupCounts = {
+	[data.backupTypes.autoDaily] = 4,
+	[data.backupTypes.autoWeekly] = 4,
+	[data.backupTypes.autoPreImport] = 2,
+	[data.backupTypes.autoPreApplyBackup] = 1,
+	[data.backupTypes.manual] = 5,
+}
 
-function data:GetDefaults()
+--/*******************/ Initialization /*************************/--
+
+function private:GetDefaults()
 	-- globally saved
 	local defaults = {
-		selectedProfile = nil,
-		profiles = {
-			ordered = {}
-		},
-		backups = {}
+		currentProfile = nil,
+		profilesOrdered = { },
+		profiles = { },
 	}
 
 	return defaults
 end
 
-function data:Initialize()
-	NysToDoListBackupDB = NysToDoListBackupDB or {}
-	data.db = utils:Deepcopy(NysToDoListBackupDB)
-	for k,v in pairs(data:GetDefaults()) do
-		if data.db[k] == nil then
-			data.db[k] = v
+function private:ApplyDefaults(db, defaults)
+	if type(db) ~= "table" or type(defaults) ~= "table" then
+		error("Error: ApplyDefaults args")
+		return
+	end
+
+	for k,v in pairs(defaults) do
+		if type(db[k]) ~= type(v) then
+			db[k] = utils:Deepcopy(v)
+			if type(db[k]) =="table" then
+				private:ApplyDefaults(db[k], v)
+			end
+		end
+	end
+end
+
+function private:VerifyIntegrity()
+	-- // check the profiles & backups to make sure the Ordered tables and their data counterpart are correct
+
+	local ordered
+
+	-- // profiles
+
+	-- verify that each profile found in data.db.profilesOrdered exists in data.db.profiles,
+	-- and if not, remove it from data.db.profilesOrdered
+	ordered = data.db.profilesOrdered
+	for i = #ordered, 1, -1 do
+		if type(data.db.profiles[ordered[i]]) ~= "table" then
+			data.db.profiles[ordered[i]] = nil
+			table.remove(ordered, i)
 		end
 	end
 
-	-- TODO check saved var out of memory exception wow
-	NysToDoListBackupDB = utils:Deepcopy(data.db) -- TODO always do this when we change the data
+	-- verify that each profile found in data.db.profiles exists in data.db.profilesOrdered,
+	-- and if not, add it to data.db.profilesOrdered
+	ordered = data.db.profilesOrdered
+	for profileID in pairs(data.db.profiles) do
+		if not utils:HasValue(ordered, profileID) then
+			table.insert(ordered, profileID)
+		end
+	end
+
+	-- // backups
+
+	-- verify that each savedVars found in profiles.backups. exists in data.db.profiles,
+	-- and if not, remove it from data.db.profilesOrdered
+
+end
+
+function data:Initialize()
+	NysToDoListBackupDB = NysToDoListBackupDB or {}
+	data.db = utils:Deepcopy(NysToDoListBackupDB)
+	private:ApplyDefaults(data.db, private:GetDefaults())
+	private:VerifyIntegrity()
+	data:OnDBUpdate()
 end
 
 function data:Uninitialize()
 	NysToDoListBackupDB = data.db or NysToDoListBackupDB -- back to the global env to be saved
 end
 
-function data:GetBackup(backupID)
-	return data.db.backups[backupID]
+function data:OnDBUpdate()
+	-- when the local DB changes, wy apply those changes to the globally saved variable
+	-- (for added security in case the client crashes)
+	NysToDoListBackupDB = utils:Deepcopy(data.db)
+end
+
+--/*******************/ Data Access /*************************/--
+
+function data:GetValidProfile(profileID)
+	return type(profileID) == "string" and utils:HasValue(data.db.profilesOrdered, profileID) and type(data.db.profiles[profileID]) == "table" and data.db.profiles[profileID]
+end
+
+function data:IsProfileRelevant(profileID)
+	local profileTable = data:GetValidProfile(profileID)
+	return profileTable and type(profileTable.character) == "string" and profileTable.character == utils:GetCurrentPlayerName()
+end
+
+function data:IsValidBackupType(backupType)
+	return type(backupType) == "string" and not not data.backupTypes[backupType]
+end
+
+function data:IsValidBackupSlot(backupType, backupSlot)
+	return data:IsValidBackupType(backupType) and type(backupSlot) == "number" and backupSlot > 0 and backupSlot <= data.backupCounts[backupType]
+end
+
+function data:GetValidProfileBackupType(profileID, backupType)
+	local profileTable = data:GetValidProfile(profileID)
+	return profileTable and data:IsValidBackupType(backupType) and type(profileTable.backups[backupType]) =="table" and profileTable.backups[backupType]
+end
+
+function data:GetValidBackup(profileID, backupType, backupSlot)
+	local profileBackupTypeTable = data:GetValidProfileBackupType(profileID, backupType)
+	return profileBackupTypeTable and data:IsValidBackupSlot(backupType, backupSlot) and type(profileBackupTypeTable[backupSlot]) == "table" and profileBackupTypeTable[backupSlot]
+end
+
+function data:ForEachProfile(callback)
+	--[[
+		--- if callback is a function ---
+
+		callback(profileID, profileTable) -- /!\ only calls for valid profiles /!\
+
+		--- if callback is not function ---
+
+		for profileID, profileTable in data:ForEachProfile() do
+			-- /!\ only loops through valid profiles /!\
+		end
+	]]
+
+	if type(callback) == "function" then
+		for profileID, profileTable in ipairs(data.db.profilesOrdered) do
+			if not not data:GetValidProfile(profileID) then
+				callback(profileID, profileTable)
+			end
+		end
+
+		return
+	end
+
+	local index, profileID
+	return function() -- iterator
+		repeat
+			index, profileID = next(data.db.profilesOrdered, index)
+			local redo = not not data:GetValidProfile(profileID)
+		until not redo
+
+		return index, profileID
+	end
+end
+
+function data:ForEachBackupSlot(callback)
+	--[[
+		--- if callback is a function ---
+
+		callback(backupType, backupSlot) -- ordered for all backupType and backupSlot
+
+		--- if callback is not function ---
+
+		for backupType, backupSlot in data:ForEachBackupSlot() do
+			 -- ordered for all backupType and backupSlot
+		end
+	]]
+
+	if type(callback) == "function" then
+		for _, backupType in ipairs(data.backupTypeOrdered) do
+			for backupSlot = 1, data.backupCounts[backupType], 1 do
+				callback(backupType, backupSlot)
+			end
+		end
+
+		return
+	end
+
+	local indexType, backupType, backupSlot
+	return function() -- iterator
+		repeat
+			if not backupSlot then
+				indexType = (indexType or 0) + 1
+				backupType = data.backupTypeOrdered[indexType]
+				if not data:IsValidBackupType(backupType) then
+					return
+				end
+			end
+
+			backupSlot = (backupSlot or 0) + 1
+			if not data:IsValidBackupSlot(backupType, backupSlot) then
+				backupSlot = nil
+			end
+		until backupType and backupSlot
+
+		return backupType, backupSlot
+	end
 end
 
 --/*******************/ Backups /*************************/--
