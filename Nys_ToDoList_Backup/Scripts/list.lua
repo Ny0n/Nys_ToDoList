@@ -82,7 +82,7 @@ function list:BackupButton(backupType, backupSlot, isWriteable)
 		if button == "LeftButton" then
 			local hasBackup = not not data:ReadBackupFromSlot(backupType, backupSlot)
 			if isWriteable and (not hasBackup or IsShiftKeyDown()) then
-				data:WriteBackupToSlot(backupType, backupSlot)
+				data:MakeBackup(backupType, backupSlot)
 			else
 				data:ApplyBackupFromSlot(backupType, backupSlot)
 			end
