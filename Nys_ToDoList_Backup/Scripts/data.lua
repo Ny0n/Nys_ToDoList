@@ -393,7 +393,7 @@ function private:CreateNewBackup(profileID, nameOverride)
 	return backupTable
 end
 
-function data:ScrollBackupType(profileID, backupType, scrollCount)
+function data:ScrollProfileBackupType(profileID, backupType, scrollCount)
 	scrollCount = type(scrollCount) == "number" and math.floor(scrollCount) or 1
 	if scrollCount < 1 then
 		return
