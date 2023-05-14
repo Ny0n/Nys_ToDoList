@@ -8,12 +8,44 @@ local utils = addonTable.utils
 --/*******************/ Saved Data /*************************/--
 
 --[[
-	backupTable =
-	{
-		name = "",
-		addonVersion = "", -- Nys_ToDoList addon version
-		data = NysToDoListDB
+	defaults = {
+		selectedProfile = profileID,
+		profilesOrder = { profileID, ... }, -- ipairs
+		profiles = { -- pairs
+			[profileID] = { -- profileTable
+				name = "foo",
+				savedVars = { "bar", ... }, -- ipairs
+				autoSaveInfos = {
+					lastDaily = date("*t").yday,
+					lastWeekly = date("*t").yday,
+				},
+				backups = {
+					[backupType] = { -- ipairs
+						[backupSlot] = { -- backupTable
+							name = "",
+							addonVersion = "", -- TODO only for this backup addon version?
+							savedVarsOrder = utils:Deepcopy(profiles[profileID].savedVars), -- ipairs
+							savedVars = { -- pairs
+								["savedVar"] = utils:Deepcopy(savedVar),
+								...
+							}
+						}
+					},
+					...
+				}
+			},
+			...
+		},
 	}
+
+	data:CreateNewProfile(name, isChar, savedVarNames):profileID, profileTable
+	data:CreateNewBackup(profileID):backupTable
+
+	-- TODO redo data:GetDefaults()
+	-- TODO rajouter partout profileID (ou tenter avec une table ?)
+	-- TODO enlever "autoPreApplyBackup" ? (ou passer en "custom" ? idk)
+	-- TODO fonctions pour profile (delete / rename / changeVars, reorder)
+	-- TODO foreach pour profiles / autre?
 ]]
 
 ---@class backupType
@@ -38,15 +70,11 @@ data.backupCount = {
 function data:GetDefaults()
 	-- globally saved
 	local defaults = {
-		autoSaveInfos = {
-			lastAutoDaily = nil,
-			lastAutoWeekly = nil,
+		selectedProfile = nil,
+		profiles = {
+			ordered = {}
 		},
-		backups = {
-			-- [backupType] = {
-				-- [1] = backupTable
-			-- }
-		}
+		backups = {}
 	}
 
 	return defaults
@@ -82,19 +110,48 @@ function data:CheckForAutomaticSaves()
 	if type(infos.lastAutoDaily) ~= "number" then infos.lastAutoDaily = 0 end
 	if type(infos.lastAutoWeekly) ~= "number" then infos.lastAutoWeekly = 0 end
 
-	local yday = date("*t").yday -- TODO modulo 365
+	local yday = date("*t").yday
 
-	if infos.lastAutoDaily + 1 <= yday then
+	if yday >= ((infos.lastAutoDaily + 1) % 365) then
 		data:ScrollBackups(data.backupType.autoDaily, 1)
 		data:WriteBackupToSlot(data.backupType.autoDaily, 1, true)
 		infos.lastAutoDaily = yday
 	end
 
-	if infos.lastAutoWeekly + 7 <= yday then -- TODO recheck 7 or 8 ?
+	if yday >= ((infos.lastAutoWeekly + 7) % 365) then
 		data:ScrollBackups(data.backupType.autoWeekly, 1)
 		data:WriteBackupToSlot(data.backupType.autoWeekly, 1, true)
 		infos.lastAutoWeekly = yday
 	end
+end
+
+function data:CreateNewProfile(name, isChar, savedVarNames)
+	if type(name) ~= "string" or not string.match(name, "%S") then
+		print("Error: Invalid name for profile")
+		return
+	end
+	if type(isChar) ~= "boolean" then
+		print("Error: Invalid isChar for profile")
+		return
+	end
+	if type(savedVarNames) ~= "table" or #savedVarNames < 1 then
+		print("Error: Invalid savedVarNames for profile")
+		return
+	end
+	for _,varName in ipairs(savedVarNames) do
+		if not utils:IsValidVariableName(varName) then
+			print("Error: Invalid savedVarNames for profile")
+			return
+		end
+	end
+
+	local profile = {
+		name = name,
+		character = isChar and utils:GetCurrentPlayerName(),
+		savedVars = savedVarNames
+	}
+
+	return profile
 end
 
 function data:CreateNewBackup()

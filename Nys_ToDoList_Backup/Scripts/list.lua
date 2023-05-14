@@ -4,11 +4,13 @@ local _, addonTable = ...
 local data = addonTable.data
 local list = addonTable.list
 
---/*******************/ Functions /*************************/--
+--/*******************/ Variables /*************************/--
 
 local listButtons = {}
 local lastWidget = nil
 local tooltipFrame = nil
+
+--/*******************/ Functions /*************************/--
 
 function NysTDLBackup:ToggleList()
 	if not list.frame then
@@ -173,11 +175,11 @@ function list:CreateBackupFrame()
 
 	-- display order
 	local ordered = {
+		data.backupType.manual,
 		data.backupType.autoDaily,
 		data.backupType.autoWeekly,
 		data.backupType.autoPreImport,
 		data.backupType.autoPreApplyBackup,
-		data.backupType.manual
 	}
 
 	for _, backupType in ipairs(ordered) do

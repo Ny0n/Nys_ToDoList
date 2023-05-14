@@ -5,6 +5,15 @@ local utils = addonTable.utils
 
 --/*******************/ Functions /*************************/--
 
+function utils:GetCurrentPlayerName()
+	local playerName, realmName = UnitFullName("player")
+	return playerName.."-"..realmName
+end
+
+function utils:IsValidVariableName(name)
+	return not not (type(name) == "string" and name:match("^[%a_]+") and name:match("^[%w_]*$"))
+end
+
 ---Compares the release type of both versions to figure out if v1's release type is older than v2.
 ---@param v1 string
 ---@param v2 string
