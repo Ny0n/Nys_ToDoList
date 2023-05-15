@@ -11,6 +11,7 @@ local private = {}
 
 --[[
 	defaults = {
+		nextProfileID = "1",
 		selectedProfile = profileID,
 		profilesOrdered = { profileID, ... }, -- ipairs
 		profiles = { -- pairs
@@ -42,17 +43,14 @@ local private = {}
 		},
 	}
 
-	data:CreateNewProfile(name, isChar, savedVarNames):profileID, profileTable
-
-	-- TODO redo data:GetDefaults()
-	-- TODO rajouter partout profileID (ou tenter avec une table ?)
 	-- TODO enlever "autoPreApplyBackup" ? (ou passer en "custom" ? idk)
-	-- TODO fonctions pour profile (delete / rename / changeVars, reorder)
-	-- TODO foreach pour profiles / autre?
-
-	-- TODO profile management
 	-- TODO list re-adaptation
 ]]
+
+---@class backupTable
+---@class profileBackupTypeTable
+---@class profileTable
+---@class profileID
 
 ---@class backupTypes
 data.backupTypes = {
@@ -93,6 +91,7 @@ data.backupTypesDisplayNames = {
 function private:GetDefaults()
 	-- globally saved
 	local defaults = {
+		nextProfileID = nil, -- more optimized if we save it
 		currentProfile = nil,
 		profilesOrdered = { },
 		profiles = { },
@@ -156,6 +155,12 @@ function data:Initialize()
 	private:ApplyDefaults(data.db, private:GetDefaults())
 	private:VerifyIntegrity()
 	data:OnDBUpdate()
+
+	-- default for Nys_ToDoList
+	if not data:GetCurrentProfile() then
+		local profileID = data:CreateNewProfile("Ny's To-Do List", false, { "NysToDoListDB" })
+		data:SetCurrentProfile(profileID)
+	end
 end
 
 function data:Uninitialize()
@@ -170,6 +175,31 @@ end
 
 --/*******************/ Data Access /*************************/--
 
+---@return profileTable
+---@return profileID, profileTable
+function data:GetCurrentProfile(withID)
+	withID = type(withID) == "boolean" and withID or false
+
+	local profileID, profileTable = data.db.currentProfile, data:GetValidProfile(data.db.currentProfile)
+	if withID then
+		return profileID, profileTable
+	else
+		return profileTable
+	end
+end
+
+---@return boolean success
+function data:SetCurrentProfile(profileID)
+	local profileTable = data:GetValidProfile(profileID)
+
+	if profileTable then
+		data.db.currentProfile = profileID
+	end
+
+	return not not profileTable
+end
+
+---@return profileTable | nil
 function data:GetValidProfile(profileID)
 	return type(profileID) == "string"
 		and utils:HasValue(data.db.profilesOrdered, profileID)
@@ -177,6 +207,7 @@ function data:GetValidProfile(profileID)
 		and data.db.profiles[profileID]
 end
 
+---@return boolean
 function data:IsProfileRelevant(profileID)
 	local profileTable = data:GetValidProfile(profileID)
 	return profileTable
@@ -184,11 +215,13 @@ function data:IsProfileRelevant(profileID)
 		and profileTable.character == utils:GetCurrentPlayerName()
 end
 
+---@return boolean
 function data:IsValidBackupType(backupType)
 	return type(backupType) == "string"
 		and not not data.backupTypes[backupType]
 end
 
+---@return boolean
 function data:IsValidBackupSlot(backupType, backupSlot)
 	return data:IsValidBackupType(backupType)
 		and type(backupSlot) == "number"
@@ -196,6 +229,7 @@ function data:IsValidBackupSlot(backupType, backupSlot)
 		and backupSlot <= data.backupCounts[backupType]
 end
 
+---@return profileBackupTypeTable | nil
 function data:GetValidProfileBackupType(profileID, backupType)
 	local profileTable = data:GetValidProfile(profileID)
 	return profileTable
@@ -204,6 +238,7 @@ function data:GetValidProfileBackupType(profileID, backupType)
 		and profileTable.backups[backupType]
 end
 
+---@return boolean
 function data:IsValidBackupTable(backupTable)
 	-- @see private:CreateNewBackup
 	return type(backupTable) == "table"
@@ -215,11 +250,13 @@ function data:IsValidBackupTable(backupTable)
 		and next(backupTable.savedVars) ~= nil
 end
 
+---@return backupTable | nil
 function data:GetValidBackup(profileID, backupType, backupSlot)
 	local profileBackupTypeTable = data:GetValidProfileBackupType(profileID, backupType)
 	return profileBackupTypeTable and data:IsValidBackupSlot(backupType, backupSlot) and data:IsValidBackupTable(profileBackupTypeTable[backupSlot]) and profileBackupTypeTable[backupSlot]
 end
 
+---@return function Iterator(profileID, profileTable) ordered
 function data:ForEachProfile(callback)
 	--[[
 		--- if callback is a function ---
@@ -254,6 +291,7 @@ function data:ForEachProfile(callback)
 	end
 end
 
+---@return function Iterator(backupType, backupSlot) ordered
 function data:ForEachBackupSlot(callback)
 	--[[
 		--- if callback is a function ---
@@ -300,6 +338,30 @@ end
 
 --/*******************/ Profiles Management /*************************/--
 
+---@return string profileID
+function private:NewProfileID()
+	local profileID = type(data.db.nextProfileID) == "string"
+		and type((select(2, pcall(tonumber, data.db.nextProfileID)))) == "number"
+		and data.db.nextProfileID
+
+	if type(profileID) ~= "string" then
+		-- init profileID
+		profileID = 0
+		repeat
+			profileID = profileID + 1
+		until not utils:HasValue(data.db.profilesOrdered, tostring(profileID))
+
+		data.db.nextProfileID = tostring(profileID)
+		profileID = data.db.nextProfileID
+	end
+
+	data.db.nextProfileID = tostring(tonumber(profileID) + 1) -- up the next ID by one
+
+	return profileID
+end
+
+---@return profileID, profileTable
+---@return nil
 function data:CreateNewProfile(name, isChar, savedVarNames)
 	if type(name) ~= "string" or not string.match(name, "%S") then
 		print("Error: Invalid name for profile")
@@ -320,39 +382,59 @@ function data:CreateNewProfile(name, isChar, savedVarNames)
 		end
 	end
 
-	local profile = {
+	local profileTable = {
 		name = name,
-		character = isChar and utils:GetCurrentPlayerName(),
-		savedVars = savedVarNames
+		character = isChar and tostring(utils:GetCurrentPlayerName()),
+		savedVarsOrdered = utils:Deepcopy(savedVarNames),
+		autoSaveInfos = { -- @see data:CheckForAutomaticSaves
+			lastDaily = nil,
+			lastWeekly = nil,
+		},
+		backups = { },
 	}
 
-	return profile
+	local profileID = private:NewProfileID()
+	if type(profileID) ~= "string" then
+		print("Error: data:CreateNewProfile #1")
+		return
+	end
+
+	-- add to db
+	table.insert(data.db.profilesOrdered, profileID)
+	data.db.profiles[profileID] = profileTable
+
+	return profileID, profileTable
 end
 
 function data:CheckForAutomaticSaves()
-	if type(data.db.autoSaveInfos) ~= "table" then data.db.autoSaveInfos = {} end
-	local infos = data.db.autoSaveInfos
+	for profileID, profileTable in data:ForEachProfile() do
+		if data:IsProfileRelevant(profileID) then
+			if type(profileTable.autoSaveInfos) ~= "table" then profileTable.autoSaveInfos = {} end
+			local infos = profileTable.autoSaveInfos
 
-	if type(infos.lastAutoDaily) ~= "number" then infos.lastAutoDaily = 0 end
-	if type(infos.lastAutoWeekly) ~= "number" then infos.lastAutoWeekly = 0 end
+			if type(infos.lastDaily) ~= "number" then infos.lastDaily = nil end
+			if type(infos.lastWeekly) ~= "number" then infos.lastWeekly = nil end
 
-	local yday = date("*t").yday
+			local yday = date("*t").yday
 
-	if yday >= ((infos.lastAutoDaily + 1) % 365) then
-		data:ScrollBackups(data.backupType.autoDaily, 1)
-		data:MakeBackup(data.backupType.autoDaily, 1, true)
-		infos.lastAutoDaily = yday
-	end
+			if yday >= (((infos.lastDaily or -1) + 1) % 365) then
+				data:ScrollProfileBackupType(profileID, data.backupType.autoDaily, 1)
+				data:MakeBackup(profileID, data.backupType.autoDaily, 1, true)
+				infos.lastDaily = yday
+			end
 
-	if yday >= ((infos.lastAutoWeekly + 7) % 365) then
-		data:ScrollBackups(data.backupType.autoWeekly, 1)
-		data:MakeBackup(data.backupType.autoWeekly, 1, true)
-		infos.lastAutoWeekly = yday
+			if yday >= (((infos.lastWeekly or -7) + 7) % 365) then
+				data:ScrollProfileBackupType(profileID, data.backupType.autoWeekly, 1)
+				data:MakeBackup(profileID, data.backupType.autoWeekly, 1, true)
+				infos.lastWeekly = yday
+			end
+		end
 	end
 end
 
 --/*******************/ Backups Management /*************************/--
 
+---@return backupTable | nil
 function private:CreateNewBackup(profileID, nameOverride)
 	local profileTable = data:GetValidProfile(profileID)
 	if not profileTable then
@@ -411,6 +493,7 @@ function data:ScrollProfileBackupType(profileID, backupType, scrollCount)
 	end
 end
 
+---@return boolean popupWasShown
 function data:MakeBackup(profileID, backupType, backupSlot, forced)
 	forced = type(forced) == "boolean" and forced or false
 
@@ -453,6 +536,7 @@ function data:MakeBackup(profileID, backupType, backupSlot, forced)
 	end
 end
 
+---@return boolean popupWasShown
 function data:DeleteBackup(profileID, backupType, backupSlot)
 	local backupTable = data:GetValidBackup(profileID, backupType, backupSlot)
 	if backupTable then
@@ -476,6 +560,7 @@ function data:DeleteBackup(profileID, backupType, backupSlot)
 	return false
 end
 
+---@return boolean popupWasShown
 function data:ApplyBackup(profileID, backupType, backupSlot)
 	local backupTable = data:GetValidBackup(profileID, backupType, backupSlot)
 	if backupTable then
