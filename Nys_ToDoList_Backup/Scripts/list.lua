@@ -12,43 +12,28 @@ local tooltipFrame = nil
 
 --/*******************/ Functions /*************************/--
 
-function NysTDLBackup:ToggleList()
+function NysTDLBackup:OpenList()
 	if not list.frame then
 		print("Backup list not initialized")
 		return
 	end
 
-	list.frame:SetShown(not list.frame:IsShown())
+	list.frame:Show()
 end
 
----List generation
----@param backupType backupType
 ---@return FontString
 function list:BackupCategoryLabel(backupType)
-	local name = nil
-	if backupType == data.backupType.autoDaily then
-		name = "Automatic (Daily)"
-	elseif backupType == data.backupType.autoWeekly then
-		name = "Automatic (Weekly)"
-	elseif backupType == data.backupType.autoPreImport then
-		name = "Automatic (Before Import)"
-	elseif backupType == data.backupType.autoPreApplyBackup then
-		name = "Before last backup"
-	elseif backupType == data.backupType.manual then
-		name = "Manual"
-	end
-
-	-- // UI & actions
-
 	local listWidget = list.frame:CreateFontString(nil)
+
 	listWidget:SetFontObject("GameFontNormalSmall")
-	listWidget:SetText(name)
+	listWidget:SetText(data.backupTypesDisplayNames[backupType])
 	listWidget:SetSize(list.frame:GetWidth()-12, 12)
 	listWidget:SetWordWrap(false)
 
 	return listWidget
 end
 
+---@return Button
 function list:BackupButton(backupType, backupSlot, isWriteable)
 	if not backupType or not backupSlot then return end
 	isWriteable = isWriteable or false
@@ -60,9 +45,9 @@ function list:BackupButton(backupType, backupSlot, isWriteable)
 	-- // UI & actions
 
 	listButtonWidget.Refresh = function(self)
-		local backup = data:ReadBackupFromSlot(backupType, backupSlot)
-		if backup then
-			listButtonWidget:GetFontString():SetText(backup.name)
+		local backupTable = data:GetValidBackup(data:GetCurrentProfile(), backupType, backupSlot)
+		if backupTable then
+			listButtonWidget:GetFontString():SetText(backupTable.timestamp)
 			listButtonWidget:GetFontString():SetTextColor(1, 1, 1)
 		else
 			listButtonWidget:GetFontString():SetText(isWriteable and "Create new" or "Empty")
@@ -71,24 +56,25 @@ function list:BackupButton(backupType, backupSlot, isWriteable)
 
 		listButtonWidget:SetHeight(listButtonWidget:GetFontString():GetHeight()+8)
 
-		listButtonWidget:SetEnabled(not not backup or isWriteable)
+		listButtonWidget:SetEnabled(not not backupTable or isWriteable)
 		self:RefreshTooltip()
 	end
 
 	listButtonWidget:SetWidth(list.frame:GetWidth()-12)
 	listButtonWidget:GetFontString():SetWidth(listButtonWidget:GetWidth()-5)
+	listButtonWidget:GetFontString():SetWordWrap(true)
 	listButtonWidget:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 	listButtonWidget:SetScript("OnClick", function(self, button)
 		if button == "LeftButton" then
-			local hasBackup = not not data:ReadBackupFromSlot(backupType, backupSlot)
+			local hasBackup = not not data:GetValidBackup(data:GetCurrentProfile(), backupType, backupSlot)
 			if isWriteable and (not hasBackup or IsShiftKeyDown()) then
-				data:MakeBackup(backupType, backupSlot)
+				data:MakeBackup(data:GetCurrentProfile(), backupType, backupSlot)
 			else
-				data:ApplyBackupFromSlot(backupType, backupSlot)
+				data:ApplyBackup(data:GetCurrentProfile(), backupType, backupSlot)
 			end
 		elseif button == "RightButton" then
 			if isWriteable then
-				data:DeleteBackupFromSlot(backupType, backupSlot)
+				data:DeleteBackup(data:GetCurrentProfile(), backupType, backupSlot)
 			end
 		end
 	end)
@@ -98,17 +84,30 @@ function list:BackupButton(backupType, backupSlot, isWriteable)
 			if tooltipFrame:GetOwner() == self then
 				tooltipFrame:ClearLines()
 
-				local hasBackup = not not data:ReadBackupFromSlot(backupType, backupSlot)
+				local backupTable = data:GetValidBackup(data:GetCurrentProfile(), backupType, backupSlot)
 
-				if not hasBackup and isWriteable then
-					tooltipFrame:AddLine("Left-Click - Create new", 1, 1, 1)
+				if not backupTable and isWriteable then
+					tooltipFrame.TextLeft1:SetFontObject("GameTooltipText") -- header
+					tooltipFrame.TextRight1:SetFontObject("GameTooltipText") -- header
+					tooltipFrame:AddLine("Left-Click - Create new", 0, 1, 0)
 				end
 
-				if hasBackup then
-					tooltipFrame:AddLine("Left-Click - Apply", 1, 1, 1)
+				if backupTable then
+					tooltipFrame.TextLeft1:SetFontObject("GameTooltipHeaderText") -- header
+					tooltipFrame.TextRight1:SetFontObject("GameTooltipHeaderText") -- header
+					tooltipFrame:AddLine(data:GetCurrentProfile(true).name.." ("..backupTable.addonVersion..")", 1, 1, 1) -- TDLATER
+					tooltipFrame:AddLine(backupTable.timestamp, 1, 1, 1)
+					tooltipFrame:AddLine(" ")
+					-- tooltipFrame:AddLine("Saved Vars:", 1, 1, 1) -- TDLATER
+					-- for _, savedVar in ipairs(backupTable.savedVarsOrdered) do
+					-- 	tooltipFrame:AddLine("    - "..savedVar, 1, 1, 1)
+					-- end
+					-- tooltipFrame:AddLine(" ")
+
+					tooltipFrame:AddLine("Left-Click - Apply", 0, 1, 0)
 					if isWriteable then
-						tooltipFrame:AddLine("Shift-Click - Overwrite", 1, 1, 1)
-						tooltipFrame:AddLine("Right-Click - Delete", 1, 1, 1)
+						tooltipFrame:AddLine("Shift-Click - Overwrite", 1, 0.6, 0.4)
+						tooltipFrame:AddLine("Right-Click - Delete", 1, 0.2, 0.2)
 					end
 				end
 
@@ -147,7 +146,7 @@ function list:CreateBackupFrame()
 	frame:SetBackdropColor(0, 0, 0, 0.75)
 	frame:SetBackdropBorderColor(140, 140, 140, 0.75)
 	frame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
-	frame:SetSize(200, 1) -- the height is updated dynamically
+	frame:SetSize(220, 1) -- the height is updated dynamically
 	frame:EnableMouse(true)
 	frame:SetClampedToScreen(true)
 	frame:SetFrameStrata("HIGH")
@@ -167,46 +166,25 @@ function list:CreateBackupFrame()
 	-- pcall(function()
 		tooltipFrame = CreateFrame("GameTooltip", "NysTDLBackup_tooltipFrame", UIParent, "GameTooltipTemplate")
 		tooltipFrame:Hide()
-		tooltipFrame.TextLeft1:SetFontObject("GameTooltipText") -- header
-		tooltipFrame.TextRight1:SetFontObject("GameTooltipText") -- header
 	-- end)
 
-	-- creating the fixed spots
+	-- creating the FIXED spots
 
-	-- display order
-	local ordered = {
-		data.backupType.manual,
-		data.backupType.autoDaily,
-		data.backupType.autoWeekly,
-		data.backupType.autoPreImport,
-		data.backupType.autoPreApplyBackup,
-	}
-
-	for _, backupType in ipairs(ordered) do
-		local cat = list:BackupCategoryLabel(backupType)
-
-		if not lastWidget then
-			cat:SetPoint("TOP", content.title, "BOTTOM", 0, -5)
-		else
+	local lastBackupType = nil
+	lastWidget = content.title
+	for backupType, backupSlot in data:ForEachBackupSlot() do
+		if lastBackupType ~= backupType then
+			local cat = list:BackupCategoryLabel(backupType)
 			cat:SetPoint("TOP", lastWidget, "BOTTOM", 0, -2)
+
+			lastBackupType = backupType
+			lastWidget = cat
 		end
 
-		lastWidget = cat
-
-		if (data.backupCount[backupType] or 0) > 0 then
-			for i=1, data.backupCount[backupType] do
-				local button = list:BackupButton(backupType, i, backupType == data.backupType.manual)
-				button:SetPoint("TOP", lastWidget, "BOTTOM", 0, -2)
-				table.insert(listButtons, button)
-				lastWidget = button
-			end
-		else
-			local empty = content:CreateFontString(nil)
-			empty:SetFontObject("GameFontHighlightSmall")
-			empty:SetText("Empty")
-			empty:SetPoint("TOP", lastWidget, "BOTTOM", 0, -2)
-			lastWidget = empty
-		end
+		local button = list:BackupButton(backupType, backupSlot, backupType == data.backupTypes.manual)
+		button:SetPoint("TOP", lastWidget, "BOTTOM", 0, -2)
+		table.insert(listButtons, button)
+		lastWidget = button
 	end
 
 	list:Refresh()

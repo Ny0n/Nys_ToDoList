@@ -144,7 +144,7 @@ function utils:SafeStringFormat(str, ...)
 			if (string.find(dup, toMatch)) then
 				dup = string.gsub(dup, toMatch, "", 1)
 			else
-				return str.." "..enums.translationErrMsg
+				return str.." << TRANSLATION ERROR"
 			end
 		end
 	end

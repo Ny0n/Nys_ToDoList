@@ -27,8 +27,8 @@ local private = {}
 					[backupType] = { -- numbered indexes but can have empty slots (never ipairs/pairs on this table directly, use numbered iterations)
 						[backupSlot] = { -- backupTable
 							name = "",
-							date = tostring(date()),
-							addonVersion = "", -- TODO only for this backup addon version?
+							timestamp = tostring(date()),
+							addonVersion = "", -- TDLATER
 							savedVarsOrdered = utils:Deepcopy(profiles[profileID].savedVarsOrdered), -- ipairs
 							savedVars = { -- pairs
 								["savedVar"] = utils:Deepcopy(savedVar),
@@ -43,8 +43,8 @@ local private = {}
 		},
 	}
 
-	-- TODO enlever "autoPreApplyBackup" ? (ou passer en "custom" ? idk)
-	-- TODO list re-adaptation
+	-- TODO data:OnDBUpdate()
+	-- TODO data:VerifyIntegrity() backups
 ]]
 
 ---@class backupTable
@@ -56,7 +56,6 @@ local private = {}
 data.backupTypes = {
 	autoDaily = "autoDaily",
 	autoWeekly = "autoWeekly",
-	autoPreImport = "autoPreImport",
 	autoPreApplyBackup = "autoPreApplyBackup",
 	manual = "manual"
 }
@@ -66,14 +65,12 @@ data.backupTypesOrdered = {
 	data.backupTypes.manual,
 	data.backupTypes.autoDaily,
 	data.backupTypes.autoWeekly,
-	data.backupTypes.autoPreImport,
 	data.backupTypes.autoPreApplyBackup
 }
 
 data.backupCounts = {
 	[data.backupTypes.autoDaily] = 4,
 	[data.backupTypes.autoWeekly] = 4,
-	[data.backupTypes.autoPreImport] = 2,
 	[data.backupTypes.autoPreApplyBackup] = 1,
 	[data.backupTypes.manual] = 5,
 }
@@ -81,7 +78,6 @@ data.backupCounts = {
 data.backupTypesDisplayNames = {
 	[data.backupTypes.autoDaily] = "Automatic (Daily)",
 	[data.backupTypes.autoWeekly] = "Automatic (Weekly)",
-	[data.backupTypes.autoPreImport] = "Automatic (Before Import)",
 	[data.backupTypes.autoPreApplyBackup] = "Before last backup",
 	[data.backupTypes.manual] = "Manual",
 }
@@ -177,14 +173,14 @@ end
 
 ---@return profileTable
 ---@return profileID, profileTable
-function data:GetCurrentProfile(withID)
-	withID = type(withID) == "boolean" and withID or false
+function data:GetCurrentProfile(onlyTable)
+	onlyTable = type(onlyTable) == "boolean" and onlyTable or false
 
 	local profileID, profileTable = data.db.currentProfile, data:GetValidProfile(data.db.currentProfile)
-	if withID then
-		return profileID, profileTable
-	else
+	if onlyTable then
 		return profileTable
+	else
+		return profileID, profileTable
 	end
 end
 
@@ -211,8 +207,8 @@ end
 function data:IsProfileRelevant(profileID)
 	local profileTable = data:GetValidProfile(profileID)
 	return profileTable
-		and type(profileTable.character) == "string"
-		and profileTable.character == utils:GetCurrentPlayerName()
+		and (not profileTable.character
+		or profileTable.character == utils:GetCurrentPlayerName())
 end
 
 ---@return boolean
@@ -244,6 +240,7 @@ function data:IsValidBackupTable(backupTable)
 	return type(backupTable) == "table"
 		and type(backupTable.name) == "string"
 		and type(backupTable.addonVersion) == "string" -- TDLATER
+		and type(backupTable.timestamp) == "string"
 		and type(backupTable.savedVarsOrdered) == "table"
 		and #backupTable.savedVarsOrdered > 0
 		and type(backupTable.savedVars) == "table"
@@ -271,8 +268,9 @@ function data:ForEachProfile(callback)
 	]]
 
 	if type(callback) == "function" then
-		for profileID, profileTable in ipairs(data.db.profilesOrdered) do
-			if not not data:GetValidProfile(profileID) then
+		for _, profileID in ipairs(data.db.profilesOrdered) do
+			local profileTable = data:GetValidProfile(profileID)
+			if profileTable then
 				callback(profileID, profileTable)
 			end
 		end
@@ -280,14 +278,18 @@ function data:ForEachProfile(callback)
 		return
 	end
 
-	local index, profileID
+	local index, profileID, profileTable
 	return function() -- iterator
 		repeat
 			index, profileID = next(data.db.profilesOrdered, index)
-			local redo = not not data:GetValidProfile(profileID)
-		until not redo
+			if not index then
+				return
+			end
 
-		return index, profileID
+			profileTable = data:GetValidProfile(profileID)
+		until profileTable
+
+		return profileID, profileTable
 	end
 end
 
@@ -306,7 +308,7 @@ function data:ForEachBackupSlot(callback)
 	]]
 
 	if type(callback) == "function" then
-		for _, backupType in ipairs(data.backupTypeOrdered) do
+		for _, backupType in ipairs(data.backupTypesOrdered) do
 			for backupSlot = 1, data.backupCounts[backupType], 1 do
 				callback(backupType, backupSlot)
 			end
@@ -320,7 +322,7 @@ function data:ForEachBackupSlot(callback)
 		repeat
 			if not backupSlot then
 				indexType = (indexType or 0) + 1
-				backupType = data.backupTypeOrdered[indexType]
+				backupType = data.backupTypesOrdered[indexType]
 				if not data:IsValidBackupType(backupType) then
 					return
 				end
@@ -418,14 +420,14 @@ function data:CheckForAutomaticSaves()
 			local yday = date("*t").yday
 
 			if yday >= (((infos.lastDaily or -1) + 1) % 365) then
-				data:ScrollProfileBackupType(profileID, data.backupType.autoDaily, 1)
-				data:MakeBackup(profileID, data.backupType.autoDaily, 1, true)
+				data:ScrollProfileBackupType(profileID, data.backupTypes.autoDaily, 1)
+				data:MakeBackup(profileID, data.backupTypes.autoDaily, 1, true)
 				infos.lastDaily = yday
 			end
 
 			if yday >= (((infos.lastWeekly or -7) + 7) % 365) then
-				data:ScrollProfileBackupType(profileID, data.backupType.autoWeekly, 1)
-				data:MakeBackup(profileID, data.backupType.autoWeekly, 1, true)
+				data:ScrollProfileBackupType(profileID, data.backupTypes.autoWeekly, 1)
+				data:MakeBackup(profileID, data.backupTypes.autoWeekly, 1, true)
 				infos.lastWeekly = yday
 			end
 		end
@@ -435,7 +437,7 @@ end
 --/*******************/ Backups Management /*************************/--
 
 ---@return backupTable | nil
-function private:CreateNewBackup(profileID, nameOverride)
+function private:CreateNewBackup(profileID)
 	local profileTable = data:GetValidProfile(profileID)
 	if not profileTable then
 		print("Error: private:CreateNewBackup #1")
@@ -443,7 +445,7 @@ function private:CreateNewBackup(profileID, nameOverride)
 	end
 
 	local savedVarsOrdered = utils:Deepcopy(profileTable.savedVarsOrdered)
-	if savedVarsOrdered ~= "table" or #savedVarsOrdered < 1 then
+	if type(savedVarsOrdered) ~= "table" or #savedVarsOrdered < 1 then
 		print("Error: private:CreateNewBackup #2")
 		return
 	end
@@ -459,11 +461,17 @@ function private:CreateNewBackup(profileID, nameOverride)
 		return
 	end
 
+	local addonName = tostring(GetAddOnMetadata("Nys_ToDoList", "Title") or GetAddOnMetadata("Nys_ToDoListWIP", "Title") or "Nys_ToDoList") -- TDLATER
+	local addonVersion = tostring(GetAddOnMetadata("Nys_ToDoList", "Version") or GetAddOnMetadata("Nys_ToDoListWIP", "Version") or "0") -- TDLATER
+
+	local timestamp = tostring(date())
+	local name = addonName.." ("..addonVersion..") - "..timestamp
+
 	-- @see data:IsValidBackupTable
 	local backupTable = {
-		name = type(nameOverride) == "string" and nameOverride or tostring(profileTable.name).." - "..tostring(date()),
-		date = tostring(date()),
-		addonVersion = tostring(GetAddOnMetadata("Nys_ToDoList", "Version") or GetAddOnMetadata("Nys_ToDoListWIP", "Version") or "0"), -- TDLATER
+		name = name,
+		addonVersion = addonVersion,
+		timestamp = timestamp,
 		savedVarsOrdered = savedVarsOrdered,
 		savedVars = { },
 	}
@@ -499,15 +507,20 @@ function data:MakeBackup(profileID, backupType, backupSlot, forced)
 
 	local createAndMakeBackup = function()
 		local profileTable = data:GetValidProfile(profileID)
-		if not profileTable or not data:IsValidBackupSlot(backupType, backupSlot) then
+
+		if not profileTable then
 			print("Error: data:MakeBackup #1")
 			return false
 		end
 
-		local nameOverride = tostring(profileTable.name).." - "..tostring(data.backupTypesDisplayNames[backupType]).." - #"..tostring(backupSlot)
-		local backupTable = private:CreateNewBackup(profileID, nameOverride)
-		if not data:IsValidBackupTable(backupTable) then
+		if not data:IsValidBackupSlot(backupType, backupSlot) then
 			print("Error: data:MakeBackup #2")
+			return false
+		end
+
+		local backupTable = private:CreateNewBackup(profileID)
+		if not data:IsValidBackupTable(backupTable) then
+			print("Error: data:MakeBackup #3")
 			return false
 		end
 
@@ -567,16 +580,16 @@ function data:ApplyBackup(profileID, backupType, backupSlot)
 		data:CreateStaticPopup(
 			"APPLY backup \""..backupTable.name.."\" now?\n**This action will reload your UI**",
 			function()
-				-- make a backup of the current state before proceeding
-				local success = data:MakeBackup(profileID, data.backupType.autoPreApplyBackup, 1, true)
-				if not success then
+				-- recheck validity because we waited for an user action
+				backupTable = data:GetValidBackup(profileID, backupType, backupSlot)
+				if not backupTable then
 					print("Error: data:ApplyBackup #1")
 					return
 				end
 
-				-- recheck validity because we waited for an user action
-				backupTable = data:GetValidBackup(profileID, backupType, backupSlot)
-				if not backupTable then
+				-- make a backup of the current state before proceeding
+				local success = data:MakeBackup(profileID, data.backupTypes.autoPreApplyBackup, 1, true)
+				if not success then
 					print("Error: data:ApplyBackup #2")
 					return
 				end
