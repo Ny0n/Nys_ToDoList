@@ -42,9 +42,6 @@ local private = {}
 			...
 		},
 	}
-
-	-- TODO data:OnDBUpdate()
-	-- TODO data:VerifyIntegrity() backups
 ]]
 
 ---@class backupTable

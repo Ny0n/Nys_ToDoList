@@ -39,19 +39,29 @@ end
 
 core.loadFrame:SetScript("OnEvent", core.OnEvent)
 core.loadFrame:RegisterEvent("ADDON_LOADED")
-core.loadFrame:RegisterEvent("PLAYER_LOGOUT")
 
 --/*******************/ Functions /*************************/--
 
-function core:ADDON_LOADED(event, addOnName)
-	if addOnName ~= core.addonName then
+local backupLoaded, listLoaded = false, false
+function core:ADDON_LOADED(event, addonName)
+	if addonName == core.addonName then
+		backupLoaded = true
+	end
+
+	if addonName == "Nys_ToDoList" or addonName == "Nys_ToDoListWIP" then
+		listLoaded = true
+	end
+
+	if not backupLoaded or not listLoaded then
 		return
 	end
 
-	core.loadFrame:UnregisterEvent(event)
+	core.loadFrame:UnregisterEvent(event) -- stop calling this func
+	core.loadFrame:RegisterEvent("PLAYER_LOGOUT")
 
 	print("Backup ADDON_LOADED")
 	print("backup: \""..tostring(NysToDoListBackupDB).."\"")
+	print("list: \""..tostring(NysToDoListDB).."\"")
 
 	data:Initialize()
 

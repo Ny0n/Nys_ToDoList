@@ -9,10 +9,11 @@
 ## Author: Nyony (on Twitch)
 ## Title: Ny's To-Do List Backup
 
-## DefaultState: enabled
+## Notes: A backup manager for Ny's To-Do List
+
 ## SavedVariables: NysToDoListBackupDB
 
-## Dependencies: Nys_ToDoListWIP
-# LoadOnDemand: 1
+## DefaultState: enabled
+## LoadOnDemand: 1
 
 Main.xml
