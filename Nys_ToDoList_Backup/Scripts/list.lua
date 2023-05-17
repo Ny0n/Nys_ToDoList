@@ -27,8 +27,7 @@ function list:BackupCategoryLabel(backupType)
 
 	listWidget:SetFontObject("GameFontNormalSmall")
 	listWidget:SetText(data.backupTypesDisplayNames[backupType])
-	listWidget:SetSize(list.frame:GetWidth()-12, 12)
-	listWidget:SetWordWrap(false)
+	listWidget:SetWidth(list.frame:GetWidth()-40)
 
 	return listWidget
 end
@@ -87,14 +86,10 @@ function list:BackupButton(backupType, backupSlot, isWriteable)
 				local backupTable = data:GetValidBackup(data:GetCurrentProfile(), backupType, backupSlot)
 
 				if not backupTable and isWriteable then
-					tooltipFrame.TextLeft1:SetFontObject("GameTooltipText") -- header
-					tooltipFrame.TextRight1:SetFontObject("GameTooltipText") -- header
 					tooltipFrame:AddLine("Left-Click - Create new", 0, 1, 0)
 				end
 
 				if backupTable then
-					tooltipFrame.TextLeft1:SetFontObject("GameTooltipHeaderText") -- header
-					tooltipFrame.TextRight1:SetFontObject("GameTooltipHeaderText") -- header
 					tooltipFrame:AddLine(data:GetCurrentProfile(true).name.." ("..backupTable.addonVersion..")", 1, 1, 1) -- TDLATER
 					tooltipFrame:AddLine(backupTable.timestamp, 1, 1, 1)
 					tooltipFrame:AddLine(" ")

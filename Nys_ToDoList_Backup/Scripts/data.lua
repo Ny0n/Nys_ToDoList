@@ -73,13 +73,13 @@ data.backupCounts = {
 	[data.backupTypes.autoDaily] = 3,
 	[data.backupTypes.autoWeekly] = 3,
 	[data.backupTypes.autoPreApplyBackup] = 1,
-	[data.backupTypes.manual] = 6,
+	[data.backupTypes.manual] = 5,
 }
 
 data.backupTypesDisplayNames = {
 	[data.backupTypes.autoDaily] = "Automatic (Daily)",
 	[data.backupTypes.autoWeekly] = "Automatic (Weekly)",
-	[data.backupTypes.autoPreApplyBackup] = "Before last backup",
+	[data.backupTypes.autoPreApplyBackup] = "Automatic (Pre-Backup)",
 	[data.backupTypes.manual] = "Manual",
 }
 
@@ -540,7 +540,7 @@ function data:MakeBackup(profileID, backupType, backupSlot, forced)
 	local backupTable = data:GetValidBackup(profileID, backupType, backupSlot)
 	if backupTable and not forced then
 		data:CreateStaticPopup(
-			"OVERWRITE backup \""..backupTable.name.."\" now?\n(you cannot undo this action)",
+			"OVERWRITE backup \""..backupTable.name.."\" now?\n\n(You cannot undo this action)",
 			createAndMakeBackup,
 			true
 		)
@@ -555,7 +555,7 @@ function data:DeleteBackup(profileID, backupType, backupSlot)
 	local backupTable = data:GetValidBackup(profileID, backupType, backupSlot)
 	if backupTable then
 		data:CreateStaticPopup(
-			"DELETE backup \""..backupTable.name.."\" now?\n(you cannot undo this action)",
+			"DELETE backup \""..backupTable.name.."\" now?\n\n(You cannot undo this action)",
 			function()
 				local profileBackupTypeTable = data:GetValidProfileBackupType(profileID, backupType)
 				if not profileBackupTypeTable then
@@ -579,7 +579,7 @@ function data:ApplyBackup(profileID, backupType, backupSlot)
 	local backupTable = data:GetValidBackup(profileID, backupType, backupSlot)
 	if backupTable then
 		data:CreateStaticPopup(
-			"APPLY backup \""..backupTable.name.."\" now?\n**This action will reload your UI**",
+			"APPLY backup \""..backupTable.name.."\" now?\n\nThe current data will be backed up under the \""..data.backupTypesDisplayNames[data.backupTypes.autoPreApplyBackup].."\" section.\n\n** This action will reload your UI **",
 			function()
 				-- recheck validity because we waited for an user action
 				backupTable = data:GetValidBackup(profileID, backupType, backupSlot)
