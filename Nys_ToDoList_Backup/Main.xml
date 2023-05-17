@@ -5,6 +5,7 @@
 	<Script file="Scripts\core.lua"/> <!-- #1 to be loaded -->
 	<Script file="Scripts\data.lua"/>
 	<Script file="Scripts\list.lua"/>
+	<Script file="Scripts\options.lua"/>
 	<Script file="Scripts\utils.lua"/>
 	<Include file="Scripts\templates.xml"/>
 

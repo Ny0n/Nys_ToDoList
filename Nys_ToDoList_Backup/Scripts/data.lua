@@ -68,11 +68,12 @@ data.backupTypesOrdered = {
 	data.backupTypes.autoPreApplyBackup
 }
 
+-- TODO what happens if this shrinks ? do they get deleted ?
 data.backupCounts = {
-	[data.backupTypes.autoDaily] = 4,
-	[data.backupTypes.autoWeekly] = 4,
+	[data.backupTypes.autoDaily] = 3,
+	[data.backupTypes.autoWeekly] = 3,
 	[data.backupTypes.autoPreApplyBackup] = 1,
-	[data.backupTypes.manual] = 5,
+	[data.backupTypes.manual] = 6,
 }
 
 data.backupTypesDisplayNames = {

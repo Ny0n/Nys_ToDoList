@@ -4,11 +4,13 @@ local addonName, addonTable = ...
 addonTable.core = {}
 addonTable.data = {}
 addonTable.list = {}
+addonTable.options = {}
 addonTable.utils = {}
 
 local core = addonTable.core
 local data = addonTable.data
 local list = addonTable.list
+local options = addonTable.options
 local utils = addonTable.utils
 
 NysTDLBackup = {}
@@ -53,7 +55,10 @@ function core:ADDON_LOADED(event, addOnName)
 
 	data:Initialize()
 
-	list:CreateBackupFrame()
+	list:Initialize()
+
+	options:Initialize()
+	-- pcall(function() options:Initialize() end) -- optionnal, don't crash the whole addon if there's ever a problem
 
 	data:CheckForAutomaticSaves()
 

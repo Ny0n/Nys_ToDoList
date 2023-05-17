@@ -133,34 +133,26 @@ function list:BackupButton(backupType, backupSlot, isWriteable)
 	return listButtonWidget
 end
 
-function list:CreateBackupFrame()
-	list.frame = CreateFrame("Frame", nil, UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil)
+function list:Initialize()
+	list.frame = CreateFrame("Frame", nil, UIParent, "BasicFrameTemplate")
 	local frame = list.frame
 
-	frame:SetBackdrop({
-		bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
-		edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-		tile = false, tileSize = 1, edgeSize = 14,
-		insets = { left = 2, right = 2, top = 2, bottom = 2 }
-	})
-	frame:SetBackdropColor(0, 0, 0, 0.75)
-	frame:SetBackdropBorderColor(140, 140, 140, 0.75)
+	-- frame properties
 	frame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
-	frame:SetSize(220, 1) -- the height is updated dynamically
+	frame:SetSize(220, 50) -- the height is updated dynamically
 	frame:EnableMouse(true)
 	frame:SetClampedToScreen(true)
 	frame:SetFrameStrata("HIGH")
 	frame:SetToplevel(true)
 
+	-- visual
+	frame.Bg:SetVertexColor(0, 0, 0, 1)
+
+	-- content
 	frame.content = CreateFrame("Frame", nil, frame)
-	frame.content:SetPoint("TOPLEFT", frame, "TOPLEFT")
+	frame.content:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, -25)
 	frame.content:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT")
 	local content = frame.content
-
-	content.title = content:CreateFontString(nil)
-	content.title:SetPoint("TOP", content, "TOP", 0, -5)
-	content.title:SetFontObject("GameFontHighlight")
-	content.title:SetText("Backup list")
 
 	-- tooltip
 	-- pcall(function()
@@ -168,32 +160,43 @@ function list:CreateBackupFrame()
 		tooltipFrame:Hide()
 	-- end)
 
-	-- creating the FIXED spots
+	-- // creating the FIXED content (backups)
 
 	local lastBackupType = nil
-	lastWidget = content.title
 	for backupType, backupSlot in data:ForEachBackupSlot() do
 		if lastBackupType ~= backupType then
+			-- backupType label
 			local cat = list:BackupCategoryLabel(backupType)
-			cat:SetPoint("TOP", lastWidget, "BOTTOM", 0, -2)
+			if not lastWidget then
+				cat:SetPoint("TOP", content, "TOP", 0, 0)
+			else
+				cat:SetPoint("TOP", lastWidget, "BOTTOM", 0, -2)
+			end
 
 			lastBackupType = backupType
 			lastWidget = cat
 		end
 
+		-- backupSlot button
 		local button = list:BackupButton(backupType, backupSlot, backupType == data.backupTypes.manual)
 		button:SetPoint("TOP", lastWidget, "BOTTOM", 0, -2)
 		table.insert(listButtons, button)
 		lastWidget = button
 	end
 
-	list:Refresh()
+	frame:SetScript("OnShow", function()
+		list:Refresh()
+	end)
+
+	frame:Hide()
 end
 
 function list:Refresh()
 	for _,button in pairs(listButtons) do
 		button:Refresh()
 	end
+
+	list.frame.TitleText:SetText(data:GetCurrentProfile(true).name.." Backups")
 
 	local top, bottom = list.frame:GetTop(), lastWidget:GetBottom()-8
 	list.frame:SetHeight(top-bottom)
