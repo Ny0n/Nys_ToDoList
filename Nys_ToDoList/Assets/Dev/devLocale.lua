@@ -30,6 +30,8 @@ L["Right-click on the category names to add new items"] = true
 L["Access new buttons: %s and %s"] = true
 L["They are automatically saved"] = true
 
+L["Got a lot of data? Don't forget to make some backups from time to time!"] = true
+L["Open backup list"] = true
 L["One last thing: you can change what you see using this button. It's up to you now!"] = true
 L["Data comes from a newer addon version (%s), please update and try again"] = true
 L["Press enter to add"] = true

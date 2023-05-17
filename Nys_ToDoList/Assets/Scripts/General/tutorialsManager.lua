@@ -286,8 +286,10 @@ end
 function tutorialsManager:Validate(tutoCategory, tutoName)
 	-- completes the "tutoName" tutorial in the "tutoCategory" category, only if it was active
 	if tutorials[tutoCategory] then
-		if tutorials[tutoCategory]:GetCurrentTutoName() == tutoName then
-			tutorialsManager:Progress(tutoCategory)
+		if tutorials[tutoCategory]:IsEnabled() then
+			if tutorials[tutoCategory]:GetCurrentTutoName() == tutoName then
+				tutorialsManager:Progress(tutoCategory)
+			end
 		end
 	end
 end
@@ -399,6 +401,25 @@ function private:CreateTutorials()
 	)
 
 	private:CreateTutoFrame(cat, "explainSwitchButton", true, "LEFT", L["You can click on this button to switch between global and profile tabs"], 285)
+
+	-- // ******************** // --
+
+	cat = "backup"
+
+	tp:GenerateTutoTable(cat,
+		{
+			IsEnabled = function(self)
+				return tp:ValueBool("introduction")
+				and not tp:ValueBool(self.tutoCategory)
+				and enums.quantities.total() > 15
+			end,
+			tutosOrdered = {
+				"optionsButton",
+			},
+		}
+	)
+
+	private:CreateTutoFrame(cat, "optionsButton", true, "DOWN", L["Got a lot of data? Don't forget to make some backups from time to time!"], 240)
 
 	-- // ******************** // --
 

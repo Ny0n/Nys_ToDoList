@@ -521,11 +521,11 @@ function dataManager:AddItem(itemID, itemData)
 	local itemOrder = dataManager:GetNextFavPos(itemData.catID)
 	tinsert(categoriesList[itemData.catID].orderedContentIDs, itemOrder, itemID)
 
+	dataManager:AddQuantity(enums.item, isGlobal, 1)
+
 	-- refresh the mainFrame
 	mainFrame:UpdateWidget(itemID, enums.item)
 	mainFrame:Refresh()
-
-	dataManager:AddQuantity(enums.item, isGlobal, 1)
 
 	return itemID, itemData
 end
@@ -598,11 +598,11 @@ function dataManager:AddCategory(catID, catData)
 		tinsert(categoriesList[catData.parentCatID].orderedContentIDs, catOrder, catID)
 	end
 
+	dataManager:AddQuantity(enums.category, isGlobal, 1)
+
 	-- refresh the mainFrame
 	mainFrame:UpdateWidget(catID, enums.category)
 	mainFrame:Refresh()
-
-	dataManager:AddQuantity(enums.category, isGlobal, 1)
 
 	return catID, catData
 end
@@ -681,6 +681,8 @@ function dataManager:AddTab(tabID, tabData, isGlobal)
 	end
 	tinsert(tabsList.orderedTabIDs, tabID) -- position (last)
 
+	dataManager:AddQuantity(enums.tab, isGlobal, 1)
+
 	-- refresh the mainFrame
 	database.ctab(tabID)
 	mainFrame:Refresh()
@@ -688,8 +690,6 @@ function dataManager:AddTab(tabID, tabData, isGlobal)
 	-- AND refresh the tabsFrame & tab options
 	tabsFrame:UpdateTab(tabID)
 	AceConfigRegistry:NotifyChange(addonName)
-
-	dataManager:AddQuantity(enums.tab, isGlobal, 1)
 
 	return tabID, tabData
 end
@@ -1011,7 +1011,7 @@ end
 
 -- luacheck: push ignore
 
----Future function used to move a tab from global to profile and vice versa.
+---Future function used to move a tab from global to profile and vice versa. TODO already done, move code to here?
 ---@param tabID string
 ---@param newGlobalState boolean true = global, false = profile
 function dataManager:ChangeTabGlobalState(tabID, newGlobalState)
@@ -1049,11 +1049,11 @@ function dataManager:DeleteItem(itemID)
 	-- we hide a potentially opened desc frame
 	widgets:DescFrameHide(itemID)
 
+	dataManager:AddQuantity(enums.item, isGlobal, -1)
+
 	-- refresh the mainFrame
 	mainFrame:DeleteWidget(itemID)
 	mainFrame:Refresh()
-
-	dataManager:AddQuantity(enums.item, isGlobal, -1)
 
 	return true
 end
