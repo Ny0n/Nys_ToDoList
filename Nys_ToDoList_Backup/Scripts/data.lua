@@ -26,9 +26,9 @@ local private = {}
 				backups = { -- pairs
 					[backupType] = { -- numbered indexes but can have empty slots (never ipairs/pairs on this table directly, use numbered iterations)
 						[backupSlot] = { -- backupTable
-							name = "",
-							timestamp = tostring(date()),
+							addonName = "", -- TDLATER
 							addonVersion = "", -- TDLATER
+							timestamp = time(),
 							savedVarsOrdered = utils:Deepcopy(profiles[profileID].savedVarsOrdered), -- ipairs
 							savedVars = { -- pairs
 								["savedVar"] = utils:Deepcopy(savedVar),
@@ -236,9 +236,10 @@ end
 function data:IsValidBackupTable(backupTable)
 	-- @see private:CreateNewBackup
 	return type(backupTable) == "table"
-		and type(backupTable.name) == "string"
+		and type(backupTable.addonName) == "string" -- TDLATER
 		and type(backupTable.addonVersion) == "string" -- TDLATER
-		and type(backupTable.timestamp) == "string"
+		and type(backupTable.timestamp) == "number"
+		and backupTable.timestamp >= 0
 		and type(backupTable.savedVarsOrdered) == "table"
 		and #backupTable.savedVarsOrdered > 0
 		and type(backupTable.savedVars) == "table"
@@ -434,6 +435,21 @@ end
 
 --/*******************/ Backups Management /*************************/--
 
+function data:GetBackupDisplayName(backupTable, full)
+	if not data:IsValidBackupTable(backupTable) then
+		print("Error: data:GetBackupDisplayName #1")
+		return
+	end
+
+	local timestampFormatted = date("%d-%b-%y %X", backupTable.timestamp)
+
+	if full then
+		return timestampFormatted.." - "..backupTable.addonName.." ("..backupTable.addonVersion..")"
+	else
+		return timestampFormatted
+	end
+end
+
 ---@return backupTable | nil
 function private:CreateNewBackup(profileID)
 	local profileTable = data:GetValidProfile(profileID)
@@ -459,17 +475,18 @@ function private:CreateNewBackup(profileID)
 		return
 	end
 
-	local addonName = tostring(GetAddOnMetadata("Nys_ToDoList", "Title") or GetAddOnMetadata("Nys_ToDoListWIP", "Title") or "Nys_ToDoList") -- TDLATER
-	local addonVersion = tostring(GetAddOnMetadata("Nys_ToDoList", "Version") or GetAddOnMetadata("Nys_ToDoListWIP", "Version") or "0") -- TDLATER
-
-	local timestamp = tostring(date())
-	local name = addonName.." ("..addonVersion..") - "..timestamp
+	-- TDLATER only profileID.name
+	local addonLoaded = (IsAddOnLoaded("Nys_ToDoList") and "Nys_ToDoList") or (IsAddOnLoaded("Nys_ToDoListWIP") and "Nys_ToDoListWIP")
+	if not addonLoaded then
+		print("Error: private:CreateNewBackup #4 (addon not loaded)")
+		return
+	end
 
 	-- @see data:IsValidBackupTable
 	local backupTable = {
-		name = name,
-		addonVersion = addonVersion,
-		timestamp = timestamp,
+		addonName = tostring(GetAddOnMetadata(addonLoaded, "Title")),
+		addonVersion = tostring(GetAddOnMetadata(addonLoaded, "Version")),
+		timestamp = time(),
 		savedVarsOrdered = savedVarsOrdered,
 		savedVars = { },
 	}
@@ -531,13 +548,21 @@ function data:MakeBackup(profileID, backupType, backupSlot, forced)
 		profileBackupTypeTable[backupSlot] = backupTable
 		collectgarbage()
 		list:Refresh()
+
+		if not forced then
+			-- pcall(function()
+				UIErrorsFrame:AddMessage("Backup Created", YELLOW_FONT_COLOR:GetRGB())
+			-- end)
+		end
+
 		return true
 	end
 
 	local backupTable = data:GetValidBackup(profileID, backupType, backupSlot)
 	if backupTable and not forced then
 		data:CreateStaticPopup(
-			"OVERWRITE backup \""..backupTable.name.."\" now?\n\n(You cannot undo this action)",
+			"OVERWRITE backup \""..data:GetBackupDisplayName(backupTable, true).."\" now?\n\n(You cannot undo this action)",
+			nil,
 			createAndMakeBackup,
 			true
 		)
@@ -552,7 +577,8 @@ function data:DeleteBackup(profileID, backupType, backupSlot)
 	local backupTable = data:GetValidBackup(profileID, backupType, backupSlot)
 	if backupTable then
 		data:CreateStaticPopup(
-			"DELETE backup \""..backupTable.name.."\" now?\n\n(You cannot undo this action)",
+			"DELETE backup \""..data:GetBackupDisplayName(backupTable, true).."\" now?\n\n(You cannot undo this action)",
+			nil,
 			function()
 				local profileBackupTypeTable = data:GetValidProfileBackupType(profileID, backupType)
 				if not profileBackupTypeTable then
@@ -576,7 +602,8 @@ function data:ApplyBackup(profileID, backupType, backupSlot)
 	local backupTable = data:GetValidBackup(profileID, backupType, backupSlot)
 	if backupTable then
 		data:CreateStaticPopup(
-			"APPLY backup \""..backupTable.name.."\" now?\n\nThe current data will be backed up under the \""..data.backupTypesDisplayNames[data.backupTypes.autoPreApplyBackup].."\" section.\n\n** This action will reload your UI **",
+			"APPLY backup \""..data:GetBackupDisplayName(backupTable, true).."\" now?\n\n** This action will reload your UI **",
+			"The current data will be backed up under the \""..data.backupTypesDisplayNames[data.backupTypes.autoPreApplyBackup].."\" section.",
 			function()
 				-- recheck validity because we waited for an user action
 				backupTable = data:GetValidBackup(profileID, backupType, backupSlot)
@@ -608,11 +635,12 @@ end
 
 --/*******************/ Other /*************************/--
 
-function data:CreateStaticPopup(text, onAccept, showAlert)
+function data:CreateStaticPopup(text, subText, onAccept, showAlert)
 	local disabled = false
 	StaticPopup_Hide("NysTDLBackup_StaticPopupDialog")
 	StaticPopupDialogs["NysTDLBackup_StaticPopupDialog"] = {
-		text = tostring(text),
+		text = text,
+		subText = subText,
 		button1 = YES,
 		button2 = NO,
 		OnAccept = function()

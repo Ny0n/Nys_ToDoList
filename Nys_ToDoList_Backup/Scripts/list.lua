@@ -48,7 +48,7 @@ function list:BackupButton(backupType, backupSlot, isWriteable)
 	listButtonWidget.Refresh = function(self)
 		local backupTable = data:GetValidBackup(data:GetCurrentProfile(), backupType, backupSlot)
 		if backupTable then
-			listButtonWidget:GetFontString():SetText(backupTable.timestamp)
+			listButtonWidget:GetFontString():SetText(data:GetBackupDisplayName(backupTable))
 			listButtonWidget:GetFontString():SetTextColor(1, 1, 1)
 		else
 			listButtonWidget:GetFontString():SetText(isWriteable and "Create new" or "Empty")
@@ -88,12 +88,12 @@ function list:BackupButton(backupType, backupSlot, isWriteable)
 				local backupTable = data:GetValidBackup(data:GetCurrentProfile(), backupType, backupSlot)
 
 				if not backupTable and isWriteable then
-					tooltipFrame:AddLine("Left-Click - Create new", 0, 1, 0)
+					tooltipFrame:AddLine("Left-Click - Create new", 0.2, 1, 0.2)
 				end
 
 				if backupTable then
-					tooltipFrame:AddLine(data:GetCurrentProfile(true).name.." ("..backupTable.addonVersion..")", 1, 1, 1) -- TDLATER
-					tooltipFrame:AddLine(backupTable.timestamp, 1, 1, 1)
+					tooltipFrame:AddLine(backupTable.addonName.." ("..backupTable.addonVersion..")", 1, 1, 1) -- TDLATER
+					tooltipFrame:AddLine(data:GetBackupDisplayName(backupTable), 1, 1, 1)
 					tooltipFrame:AddLine(" ")
 					-- tooltipFrame:AddLine("Saved Vars:", 1, 1, 1) -- TDLATER
 					-- for _, savedVar in ipairs(backupTable.savedVarsOrdered) do
@@ -101,9 +101,9 @@ function list:BackupButton(backupType, backupSlot, isWriteable)
 					-- end
 					-- tooltipFrame:AddLine(" ")
 
-					tooltipFrame:AddLine("Left-Click - Apply", 0, 1, 0)
+					tooltipFrame:AddLine("Left-Click - Apply", 0.2, 1, 0.2)
 					if isWriteable then
-						tooltipFrame:AddLine("Shift-Click - Overwrite", 1, 0.6, 0.4)
+						tooltipFrame:AddLine("Shift-Click - Overwrite", 1, 1, 0.2)
 						tooltipFrame:AddLine("Right-Click - Delete", 1, 0.2, 0.2)
 					end
 				end
