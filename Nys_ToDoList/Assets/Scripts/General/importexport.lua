@@ -147,8 +147,11 @@ function importexport:SwitchTabs(tabsToMigrate)
 end
 
 ---Shows an editbox where the player can copy or paste serialized data
-function importexport:ShowIEFrame(isImport, data)
+function importexport:ShowIEFrame(isImport, data, setFocus)
 	if IEFrame then return end
+	if type(setFocus) ~= "boolean" then
+		setFocus = true
+	end
 
 	IEFrame = AceGUI:Create("Frame")
 	IEFrame:SetTitle(isImport and L["Import"] or L["Export"])
@@ -208,7 +211,9 @@ function importexport:ShowIEFrame(isImport, data)
 			widgets:SetFocusEditBox(editbox.editBox, true)
 		end)
 	end
-	widgets:SetFocusEditBox(editbox.editBox, true)
+	if setFocus then
+		widgets:SetFocusEditBox(editbox.editBox, true)
+	end
 end
 
 --/***************/ Data Import /*****************/--

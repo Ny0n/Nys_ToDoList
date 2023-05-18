@@ -610,6 +610,7 @@ end
 
 function data:CreateStaticPopup(text, onAccept, showAlert)
 	local disabled = false
+	StaticPopup_Hide("NysTDLBackup_StaticPopupDialog")
 	StaticPopupDialogs["NysTDLBackup_StaticPopupDialog"] = {
 		text = tostring(text),
 		button1 = YES,
@@ -624,7 +625,7 @@ function data:CreateStaticPopup(text, onAccept, showAlert)
 		whileDead = true,
 		hideOnEscape = true,
 		showAlert = not not showAlert,
-		preferredIndex = 3,  -- avoid some UI taint, see http://www.wowace.com/announcements/how-to-avoid-some-ui-taint/
+		preferredIndex = 3,
 		OnHide = function()
 			disabled = true
 		end

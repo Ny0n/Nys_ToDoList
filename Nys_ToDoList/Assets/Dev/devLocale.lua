@@ -30,6 +30,7 @@ L["Right-click on the category names to add new items"] = true
 L["Access new buttons: %s and %s"] = true
 L["They are automatically saved"] = true
 
+L["Do you want to create a backup before proceeding?"] = true
 L["Got a lot of data? Don't forget to make some backups from time to time!"] = true
 L["Open backup list"] = true
 L["One last thing: you can change what you see using this button. It's up to you now!"] = true

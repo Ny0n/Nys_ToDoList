@@ -137,7 +137,7 @@ function list:Initialize()
 	frame:SetSize(220, 50) -- the height is updated dynamically
 	frame:EnableMouse(true)
 	frame:SetClampedToScreen(true)
-	frame:SetFrameStrata("HIGH")
+	frame:SetFrameStrata("TOOLTIP")
 	frame:SetToplevel(true)
 
 	-- visual
@@ -151,7 +151,8 @@ function list:Initialize()
 
 	-- tooltip
 	-- pcall(function()
-		tooltipFrame = CreateFrame("GameTooltip", "NysTDLBackup_tooltipFrame", UIParent, "GameTooltipTemplate")
+		tooltipFrame = CreateFrame("GameTooltip", "NysTDLBackup_tooltipFrame", frame, "GameTooltipTemplate")
+		tooltipFrame:SetFrameLevel(frame:GetFrameLevel()+100)
 		tooltipFrame:Hide()
 	-- end)
 
