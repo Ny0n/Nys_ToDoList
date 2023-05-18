@@ -28,6 +28,7 @@ function list:BackupCategoryLabel(backupType)
 	listWidget:SetFontObject("GameFontNormalSmall")
 	listWidget:SetText(data.backupTypesDisplayNames[backupType])
 	listWidget:SetWidth(list.frame:GetWidth()-40)
+	listWidget:SetWordWrap(true)
 
 	return listWidget
 end
@@ -37,9 +38,10 @@ function list:BackupButton(backupType, backupSlot, isWriteable)
 	if not backupType or not backupSlot then return end
 	isWriteable = isWriteable or false
 
-	local listButtonWidget = CreateFrame("Button", nil, list.frame, "NysTDLBackup_ListButton")
-	listButtonWidget.ArrowLEFT:Hide()
-	listButtonWidget.ArrowRIGHT:Hide()
+	local listButtonWidget = CreateFrame("Button", nil, list.frame)
+	listButtonWidget:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight", "ADD")
+	listButtonWidget:SetFontString(listButtonWidget:CreateFontString())
+	listButtonWidget:SetNormalFontObject("GameFontNormalSmall")
 
 	-- // UI & actions
 
@@ -60,7 +62,7 @@ function list:BackupButton(backupType, backupSlot, isWriteable)
 	end
 
 	listButtonWidget:SetWidth(list.frame:GetWidth()-12)
-	listButtonWidget:GetFontString():SetWidth(listButtonWidget:GetWidth()-5)
+	listButtonWidget:GetFontString():SetWidth(listButtonWidget:GetWidth()-20)
 	listButtonWidget:GetFontString():SetWordWrap(true)
 	listButtonWidget:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 	listButtonWidget:SetScript("OnClick", function(self, button)
@@ -142,6 +144,13 @@ function list:Initialize()
 
 	-- visual
 	frame.Bg:SetVertexColor(0, 0, 0, 1)
+
+	-- title
+	frame.TitleText:ClearAllPoints()
+	frame.TitleText:SetPoint("TOP", frame, "TOP", 0, -5)
+	frame.TitleText:SetPoint("LEFT", frame, "LEFT", 5, 0)
+	frame.TitleText:SetPoint("RIGHT", frame.CloseButton, "LEFT", -5, 0)
+	frame.TitleText:SetWordWrap(false)
 
 	-- content
 	frame.content = CreateFrame("Frame", nil, frame)
