@@ -111,7 +111,7 @@ function private:ApplyDefaults(db, defaults)
 end
 
 function private:VerifyIntegrity()
-	-- // check the profiles & backups to make sure the Ordered tables and their data counterpart are correct
+	-- // check the profiles (& backups TDLATER) to make sure the Ordered tables and their data counterpart are correct
 
 	local ordered
 
@@ -135,12 +135,6 @@ function private:VerifyIntegrity()
 			table.insert(ordered, profileID)
 		end
 	end
-
-	-- // backups
-
-	-- verify that each savedVars found in profiles.backups. exists in data.db.profiles,
-	-- and if not, remove it from data.db.profilesOrdered
-
 end
 
 function data:Initialize()
@@ -162,9 +156,10 @@ function data:Uninitialize()
 end
 
 function data:OnDBUpdate()
-	-- when the local DB changes, wy apply those changes to the globally saved variable
+	-- when the local DB changes, we apply those changes to the globally saved variable
 	-- (for added security in case the client crashes)
 	NysToDoListBackupDB = utils:Deepcopy(data.db)
+	collectgarbage() -- also used for garbage collection
 end
 
 --/*******************/ Data Access /*************************/--
@@ -190,6 +185,7 @@ function data:SetCurrentProfile(profileID, refreshList)
 
 	if profileTable then
 		data.db.currentProfile = profileID
+		data:OnDBUpdate()
 		if refreshList then
 			list:Refresh()
 		end
@@ -409,6 +405,8 @@ function data:CreateNewProfile(name, isChar, savedVarNames)
 	table.insert(data.db.profilesOrdered, profileID)
 	data.db.profiles[profileID] = profileTable
 
+	data:OnDBUpdate()
+
 	return profileID, profileTable
 end
 
@@ -424,15 +422,15 @@ function data:CheckForAutomaticSaves()
 			local yday = date("*t").yday
 
 			if yday >= (((infos.lastDaily or -1) + 1) % 365) then
+				infos.lastDaily = yday
 				data:ScrollProfileBackupType(profileID, data.backupTypes.autoDaily, 1)
 				data:MakeBackup(profileID, data.backupTypes.autoDaily, 1, true)
-				infos.lastDaily = yday
 			end
 
 			if yday >= (((infos.lastWeekly or -7) + 7) % 365) then
+				infos.lastWeekly = yday
 				data:ScrollProfileBackupType(profileID, data.backupTypes.autoWeekly, 1)
 				data:MakeBackup(profileID, data.backupTypes.autoWeekly, 1, true)
-				infos.lastWeekly = yday
 			end
 		end
 	end
@@ -519,6 +517,8 @@ function data:ScrollProfileBackupType(profileID, backupType, scrollCount)
 			profileBackupTypeTable[backupSlot] = profileBackupTypeTable[backupSlot-1]
 		end
 	end
+
+	data:OnDBUpdate()
 end
 
 ---@return boolean popupWasShown
@@ -551,7 +551,7 @@ function data:MakeBackup(profileID, backupType, backupSlot, forced)
 		end
 
 		profileBackupTypeTable[backupSlot] = backupTable
-		collectgarbage()
+		data:OnDBUpdate()
 		list:Refresh()
 
 		if not forced then
@@ -592,8 +592,12 @@ function data:DeleteBackup(profileID, backupType, backupSlot)
 				end
 
 				profileBackupTypeTable[backupSlot] = nil
-				collectgarbage()
+				data:OnDBUpdate()
 				list:Refresh()
+
+				-- pcall(function()
+					UIErrorsFrame:AddMessage("Backup Deleted", YELLOW_FONT_COLOR:GetRGB())
+				-- end)
 			end,
 			true
 		)
