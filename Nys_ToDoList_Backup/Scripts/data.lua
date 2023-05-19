@@ -153,7 +153,7 @@ function data:Initialize()
 	-- default for Nys_ToDoList
 	if not data:GetCurrentProfile() then
 		local profileID = data:CreateNewProfile("Ny's To-Do List", false, { "NysToDoListDB" })
-		data:SetCurrentProfile(profileID)
+		data:SetCurrentProfile(profileID, false)
 	end
 end
 
@@ -182,12 +182,17 @@ function data:GetCurrentProfile(onlyTable)
 	end
 end
 
+---@param refreshList boolean Defaults to true
 ---@return boolean success
-function data:SetCurrentProfile(profileID)
+function data:SetCurrentProfile(profileID, refreshList)
+	if type(refreshList) ~= "boolean" then refreshList = true end
 	local profileTable = data:GetValidProfile(profileID)
 
 	if profileTable then
 		data.db.currentProfile = profileID
+		if refreshList then
+			list:Refresh()
+		end
 	end
 
 	return not not profileTable
