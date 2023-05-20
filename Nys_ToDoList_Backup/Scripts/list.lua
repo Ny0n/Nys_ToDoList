@@ -164,7 +164,7 @@ function list:Initialize()
 	-- tooltip
 	pcall(function()
 		tooltipFrame = CreateFrame("GameTooltip", "NysTDLBackup_tooltipFrame", frame, "GameTooltipTemplate")
-		tooltipFrame:SetFrameLevel(frame:GetFrameLevel()+100)
+		tooltipFrame:SetFrameLevel(frame:GetFrameLevel()+1000)
 		tooltipFrame:Hide()
 	end)
 
