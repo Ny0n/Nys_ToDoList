@@ -138,10 +138,16 @@ function private:VerifyIntegrity()
 end
 
 function data:Initialize()
-	NysToDoListBackupDB = NysToDoListBackupDB or {}
+	-- NysToDoListBackupDB
+	NysToDoListBackupDB = type(NysToDoListBackupDB) ~= "table" and {} or NysToDoListBackupDB
 	data.db = utils:Deepcopy(NysToDoListBackupDB)
+	NysToDoListBackupDB = nil
+
+	-- defaults
 	private:ApplyDefaults(data.db, private:GetDefaults())
 	private:VerifyIntegrity()
+
+	-- free up memory
 	collectgarbage()
 
 	-- default for Nys_ToDoList
