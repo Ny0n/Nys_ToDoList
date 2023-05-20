@@ -84,7 +84,7 @@ function list:BackupButton(backupType, backupSlot, isWriteable)
 	end)
 
 	listButtonWidget.RefreshTooltip = function(self)
-		-- pcall(function()
+		pcall(function()
 			if tooltipFrame:GetOwner() == self then
 				tooltipFrame:ClearLines()
 
@@ -113,19 +113,19 @@ function list:BackupButton(backupType, backupSlot, isWriteable)
 
 				tooltipFrame:Show()
 			end
-		-- end)
+		end)
 	end
 
 	listButtonWidget:HookScript("OnEnter", function(self)
-		-- pcall(function() -- TDSEC
+		pcall(function()
 			tooltipFrame:SetOwner(self, "ANCHOR_TOPLEFT")
 			self:RefreshTooltip()
-		-- end)
+		end)
 	end)
 	listButtonWidget:HookScript("OnLeave", function(self)
-		-- pcall(function()
+		pcall(function()
 			tooltipFrame:Hide()
-		-- end)
+		end)
 	end)
 
 	listButtonWidget:Refresh()
@@ -162,11 +162,11 @@ function list:Initialize()
 	local content = frame.content
 
 	-- tooltip
-	-- pcall(function()
+	pcall(function()
 		tooltipFrame = CreateFrame("GameTooltip", "NysTDLBackup_tooltipFrame", frame, "GameTooltipTemplate")
 		tooltipFrame:SetFrameLevel(frame:GetFrameLevel()+100)
 		tooltipFrame:Hide()
-	-- end)
+	end)
 
 	-- // creating the FIXED content (backups)
 

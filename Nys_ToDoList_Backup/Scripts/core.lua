@@ -79,8 +79,7 @@ function core:ADDON_LOADED(event, addonName)
 
 	list:Initialize()
 
-	options:Initialize()
-	-- pcall(function() options:Initialize() end) -- optionnal, don't crash the whole addon if there's ever a problem
+	pcall(function() options:Initialize() end) -- optionnal, don't crash the whole addon if there's ever a problem in the options
 
 	data:CheckForAutomaticSaves()
 end

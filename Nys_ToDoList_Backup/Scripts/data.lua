@@ -68,7 +68,6 @@ data.backupTypesOrdered = {
 	data.backupTypes.autoPreApplyBackup
 }
 
--- TODO what happens if this shrinks ? do they get deleted ?
 data.backupCounts = {
 	[data.backupTypes.autoDaily] = 3,
 	[data.backupTypes.autoWeekly] = 3,
@@ -92,7 +91,7 @@ end
 
 function private:ApplyDefaults(db, defaults)
 	if type(db) ~= "table" or type(defaults) ~= "table" then
-		error("Error: private:ApplyDefaults #1") -- TODO recheck if error() or print()
+		error("Error: private:ApplyDefaults #1")
 		return
 	end
 
@@ -556,9 +555,9 @@ function data:MakeBackup(profileID, backupType, backupSlot, forced)
 		list:Refresh()
 
 		if not forced then
-			-- pcall(function()
+			pcall(function()
 				UIErrorsFrame:AddMessage(L["Backup Created"], YELLOW_FONT_COLOR:GetRGB())
-			-- end)
+			end)
 		end
 
 		return true
@@ -597,9 +596,9 @@ function data:DeleteBackup(profileID, backupType, backupSlot)
 
 				list:Refresh()
 
-				-- pcall(function()
+				pcall(function()
 					UIErrorsFrame:AddMessage(L["Backup Deleted"], YELLOW_FONT_COLOR:GetRGB())
-				-- end)
+				end)
 			end,
 			true
 		)
