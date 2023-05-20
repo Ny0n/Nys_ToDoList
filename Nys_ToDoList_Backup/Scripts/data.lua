@@ -1,9 +1,12 @@
 -- Namespace
 local _, addonTable = ...
 
+local core = addonTable.core
 local data = addonTable.data
 local list = addonTable.list
 local utils = addonTable.utils
+
+local L = core.L
 
 --/*******************/ Saved Data /*************************/--
 
@@ -73,13 +76,6 @@ data.backupCounts = {
 	[data.backupTypes.manual] = 5,
 }
 
-data.backupTypesDisplayNames = {
-	[data.backupTypes.autoDaily] = "Automatic (Daily)",
-	[data.backupTypes.autoWeekly] = "Automatic (Weekly)",
-	[data.backupTypes.autoPreApplyBackup] = "Automatic (Pre-Backup)",
-	[data.backupTypes.manual] = "Manual",
-}
-
 --/*******************/ Initialization /*************************/--
 
 function private:GetDefaults()
@@ -141,14 +137,22 @@ function data:Initialize()
 	-- NysToDoListBackupDB
 	NysToDoListBackupDB = type(NysToDoListBackupDB) ~= "table" and {} or NysToDoListBackupDB
 	data.db = utils:Deepcopy(NysToDoListBackupDB)
-	NysToDoListBackupDB = nil
 
 	-- defaults
 	private:ApplyDefaults(data.db, private:GetDefaults())
 	private:VerifyIntegrity()
 
 	-- free up memory
+	NysToDoListBackupDB = nil
 	collectgarbage()
+
+	-- locales (we have to wait for the ADDON_LOADED event before we can use the "L" table)
+	data.backupTypesDisplayNames = {
+		[data.backupTypes.autoDaily] = L["Automatic"].." ("..L["Daily"]..")",
+		[data.backupTypes.autoWeekly] = L["Automatic"].." ("..L["Weekly"]..")",
+		[data.backupTypes.autoPreApplyBackup] = L["Automatic"].." ("..L["Pre-Backup"]..")",
+		[data.backupTypes.manual] = L["Manual"],
+	}
 
 	-- default for Nys_ToDoList
 	if not data:GetCurrentProfile() then
@@ -553,7 +557,7 @@ function data:MakeBackup(profileID, backupType, backupSlot, forced)
 
 		if not forced then
 			-- pcall(function()
-				UIErrorsFrame:AddMessage("Backup Created", YELLOW_FONT_COLOR:GetRGB())
+				UIErrorsFrame:AddMessage(L["Backup Created"], YELLOW_FONT_COLOR:GetRGB())
 			-- end)
 		end
 
@@ -563,7 +567,7 @@ function data:MakeBackup(profileID, backupType, backupSlot, forced)
 	local backupTable = data:GetValidBackup(profileID, backupType, backupSlot)
 	if backupTable and not forced then
 		data:CreateStaticPopup(
-			"OVERWRITE backup \""..data:GetBackupDisplayName(backupTable, true).."\" now?\n\n(You cannot undo this action)",
+			L["OVERWRITE this backup now?"].."\n".."\""..data:GetBackupDisplayName(backupTable, true).."\"".."\n\n("..L["You cannot undo this action"]..")",
 			nil,
 			createAndMakeBackup,
 			true
@@ -579,7 +583,7 @@ function data:DeleteBackup(profileID, backupType, backupSlot)
 	local backupTable = data:GetValidBackup(profileID, backupType, backupSlot)
 	if backupTable then
 		data:CreateStaticPopup(
-			"DELETE backup \""..data:GetBackupDisplayName(backupTable, true).."\" now?\n\n(You cannot undo this action)",
+			L["DELETE this backup now?"].."\n".."\""..data:GetBackupDisplayName(backupTable, true).."\"".."\n\n("..L["You cannot undo this action"]..")",
 			nil,
 			function()
 				local profileBackupTypeTable = data:GetValidProfileBackupType(profileID, backupType)
@@ -594,7 +598,7 @@ function data:DeleteBackup(profileID, backupType, backupSlot)
 				list:Refresh()
 
 				-- pcall(function()
-					UIErrorsFrame:AddMessage("Backup Deleted", YELLOW_FONT_COLOR:GetRGB())
+					UIErrorsFrame:AddMessage(L["Backup Deleted"], YELLOW_FONT_COLOR:GetRGB())
 				-- end)
 			end,
 			true
@@ -609,8 +613,8 @@ function data:ApplyBackup(profileID, backupType, backupSlot)
 	local backupTable = data:GetValidBackup(profileID, backupType, backupSlot)
 	if backupTable then
 		data:CreateStaticPopup(
-			"APPLY backup \""..data:GetBackupDisplayName(backupTable, true).."\" now?\n\n** This action will reload your UI **",
-			"The current data will be backed up under the \""..data.backupTypesDisplayNames[data.backupTypes.autoPreApplyBackup].."\" section.",
+			L["APPLY this backup now?"].."\n".."\""..data:GetBackupDisplayName(backupTable, true).."\"".."\n\n** "..L["This action will reload your UI"].." **",
+			utils:SafeStringFormat(L["The current data will be backed up under the %s section"]..".", "\""..data.backupTypesDisplayNames[data.backupTypes.autoPreApplyBackup].."\""),
 			function()
 				-- recheck validity because we waited for an user action
 				backupTable = data:GetValidBackup(profileID, backupType, backupSlot)

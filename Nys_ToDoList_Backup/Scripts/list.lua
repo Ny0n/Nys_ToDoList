@@ -1,8 +1,11 @@
 -- Namespace
 local _, addonTable = ...
 
+local core = addonTable.core
 local data = addonTable.data
 local list = addonTable.list
+
+local L = core.L
 
 --/*******************/ Variables /*************************/--
 
@@ -51,7 +54,7 @@ function list:BackupButton(backupType, backupSlot, isWriteable)
 			listButtonWidget:GetFontString():SetText(data:GetBackupDisplayName(backupTable))
 			listButtonWidget:GetFontString():SetTextColor(1, 1, 1)
 		else
-			listButtonWidget:GetFontString():SetText(isWriteable and "Create new" or "Empty")
+			listButtonWidget:GetFontString():SetText(isWriteable and L["Create new"] or L["Empty"])
 			listButtonWidget:GetFontString():SetTextColor(0.5, 0.5, 0.5)
 		end
 
@@ -88,7 +91,7 @@ function list:BackupButton(backupType, backupSlot, isWriteable)
 				local backupTable = data:GetValidBackup(data:GetCurrentProfile(), backupType, backupSlot)
 
 				if not backupTable and isWriteable then
-					tooltipFrame:AddLine("Left-Click - Create new", 0.2, 1, 0.2)
+					tooltipFrame:AddLine(L["Left-Click"].." - "..L["Create new"], 0.2, 1, 0.2)
 				end
 
 				if backupTable then
@@ -101,10 +104,10 @@ function list:BackupButton(backupType, backupSlot, isWriteable)
 					-- end
 					-- tooltipFrame:AddLine(" ")
 
-					tooltipFrame:AddLine("Left-Click - Apply", 0.2, 1, 0.2)
+					tooltipFrame:AddLine(L["Left-Click"].." - "..L["Apply"], 0.2, 1, 0.2)
 					if isWriteable then
-						tooltipFrame:AddLine("Shift-Click - Overwrite", 1, 1, 0.2)
-						tooltipFrame:AddLine("Right-Click - Delete", 1, 0.2, 0.2)
+						tooltipFrame:AddLine(L["Shift-Click"].." - "..L["Overwrite"], 1, 1, 0.2)
+						tooltipFrame:AddLine(L["Right-Click"].." - "..L["Delete"], 1, 0.2, 0.2)
 					end
 				end
 
@@ -201,7 +204,7 @@ function list:Refresh()
 		button:Refresh()
 	end
 
-	list.frame.TitleText:SetText(data:GetCurrentProfile(true).name.." Backups")
+	list.frame.TitleText:SetText(data:GetCurrentProfile(true).name.." "..L["Backups"])
 
 	local top, bottom = list.frame:GetTop(), lastWidget:GetBottom()-8
 	list.frame:SetHeight(top-bottom)

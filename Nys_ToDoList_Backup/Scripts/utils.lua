@@ -1,7 +1,10 @@
 -- Namespace
 local _, addonTable = ...
 
+local core = addonTable.core
 local utils = addonTable.utils
+
+local L = core.L
 
 --/*******************/ Functions /*************************/--
 
@@ -144,7 +147,7 @@ function utils:SafeStringFormat(str, ...)
 			if (string.find(dup, toMatch)) then
 				dup = string.gsub(dup, toMatch, "", 1)
 			else
-				return str.." << TRANSLATION ERROR"
+				return str.." ".."|cffffff00".."Translation error".."|r".." ".."|cffffcc00".."("..tostring(GetLocale())..")".."|r"
 			end
 		end
 	end

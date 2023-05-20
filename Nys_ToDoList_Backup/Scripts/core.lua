@@ -15,6 +15,22 @@ local utils = addonTable.utils
 
 NysTDLBackup = {}
 
+-- we get the locales from Nys_ToDoList if the addon is loaded
+core.L = setmetatable({}, {
+	__index = function(_, key)
+		if type(NysTDL) == "table"
+		and type(NysTDL.libs) == "table"
+		and type(NysTDL.libs.L) == "table"
+		then
+			return NysTDL.libs.L[key]
+		else
+			return key
+		end
+	end,
+})
+
+local L = core.L
+
 --/***************************************************************************/--
 
 -- data (from toc file)
@@ -59,10 +75,6 @@ function core:ADDON_LOADED(event, addonName)
 	core.loadFrame:UnregisterEvent(event) -- stop calling this func
 	core.loadFrame:RegisterEvent("PLAYER_LOGOUT")
 
-	print("Backup ADDON_LOADED")
-	print("backup: \""..tostring(NysToDoListBackupDB).."\"")
-	print("list: \""..tostring(NysToDoListDB).."\"")
-
 	data:Initialize()
 
 	list:Initialize()
@@ -71,8 +83,6 @@ function core:ADDON_LOADED(event, addonName)
 	-- pcall(function() options:Initialize() end) -- optionnal, don't crash the whole addon if there's ever a problem
 
 	data:CheckForAutomaticSaves()
-
-	print(core.toc.title..": Addon loaded (v"..core.toc.version..")") -- TODO to be removed
 end
 
 function core:PLAYER_LOGOUT(event)

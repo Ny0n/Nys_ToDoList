@@ -3,6 +3,9 @@ local _, addonTable = ...
 
 local core = addonTable.core
 local options = addonTable.options
+local utils = addonTable.utils
+
+local L = core.L
 
 --/*******************/ Options Panel /*************************/--
 
@@ -33,7 +36,7 @@ function options:Initialize()
 	-- open list button
 	panel.openListButton = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
 	panel.openListButton:SetPoint("TOPLEFT", panel.titleText, "TOPLEFT", 5, -35)
-	panel.openListButton:SetText("Open backup list")
+	panel.openListButton:SetText(L["Open backup list"])
 	panel.openListButton:SetWidth(panel.openListButton:GetFontString():GetWidth()+40)
 	panel.openListButton:SetHeight(panel.openListButton:GetFontString():GetHeight()+12)
 	panel.openListButton:SetScript("OnClick", function()
@@ -44,7 +47,7 @@ function options:Initialize()
 	panel.openListText = panel:CreateFontString()
 	panel.openListText:SetPoint("TOPLEFT", panel.openListButton, "BOTTOMLEFT", 5, -15)
 	panel.openListText:SetFontObject("GameFontNormal")
-	panel.openListText:SetText("You can also use the \""..options.chatCommand.."\" chat command")
+	panel.openListText:SetText(utils:SafeStringFormat(L["You can also use the %s chat command"], "\""..options.chatCommand.."\""))
 
 	InterfaceOptions_AddCategory(panel)
 end

@@ -49,6 +49,7 @@ globals = {
 	"Settings",
 
 	-- FrameXML misc
+	"InterfaceOptions_AddCategory",
 	"ExecuteFrameScript",
 	"MinimalSliderWithSteppersMixin",
 	"EncounterJournal",
@@ -90,6 +91,7 @@ globals = {
 	"SmoothStatusBarMixin",
 	"STATICPOPUP_NUMDIALOGS",
 	"StaticPopup_Show",
+	"StaticPopup_Hide",
 	"StaticPopupDialogs",
 	"tIndexOf",
 	"UISpecialFrames",

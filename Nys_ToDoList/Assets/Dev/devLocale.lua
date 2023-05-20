@@ -30,9 +30,31 @@ L["Right-click on the category names to add new items"] = true
 L["Access new buttons: %s and %s"] = true
 L["They are automatically saved"] = true
 
+-- == Nys_ToDoList_Backup locales (Nys_ToDoList backup related locales) == --
+L["The current data will be backed up under the %s section"] = true
+L["APPLY this backup now?"] = true
+L["OVERWRITE this backup now?"] = true
+L["DELETE this backup now?"] = true
+L["This action will reload your UI"] = true
+L["You cannot undo this action"] = true
+L["Backup Deleted"] = true
+L["Backup Created"] = true
+L["Pre-Backup"] = true
+L["Automatic"] = true
+L["Manual"] = true
+L["Backups"] = true
+L["Delete"] = true
+L["Overwrite"] = true
+L["Apply"] = true
+L["Empty"] = true
+L["Create new"] = true
+L["You can also use the %s chat command"] = true
+
 L["Do you want to create a backup before proceeding?"] = true
 L["Got a lot of data? Don't forget to make some backups from time to time!"] = true
 L["Open backup list"] = true
+-- ================================= --
+
 L["One last thing: you can change what you see using this button. It's up to you now!"] = true
 L["Data comes from a newer addon version (%s), please update and try again"] = true
 L["Press enter to add"] = true
