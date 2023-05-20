@@ -76,10 +76,6 @@ function core:ADDON_LOADED(event, addonName)
 end
 
 function core:PLAYER_LOGOUT(event)
-	core.loadFrame:UnregisterEvent(event)
-
 	data:Uninitialize()
-
-	print("Backup PLAYER_LOGOUT")
-	print("backup: \""..tostring(NysToDoListBackupDB).."\"")
+	core.loadFrame:UnregisterEvent(event)
 end

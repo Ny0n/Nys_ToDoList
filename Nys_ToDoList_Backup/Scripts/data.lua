@@ -142,7 +142,7 @@ function data:Initialize()
 	data.db = utils:Deepcopy(NysToDoListBackupDB)
 	private:ApplyDefaults(data.db, private:GetDefaults())
 	private:VerifyIntegrity()
-	data:OnDBUpdate()
+	collectgarbage()
 
 	-- default for Nys_ToDoList
 	if not data:GetCurrentProfile() then
@@ -152,14 +152,7 @@ function data:Initialize()
 end
 
 function data:Uninitialize()
-	NysToDoListBackupDB = data.db or NysToDoListBackupDB -- back to the global env to be saved
-end
-
-function data:OnDBUpdate()
-	-- when the local DB changes, we apply those changes to the globally saved variable
-	-- (for added security in case the client crashes)
-	NysToDoListBackupDB = utils:Deepcopy(data.db)
-	collectgarbage() -- also used for garbage collection
+	NysToDoListBackupDB = data.db -- back to the global env to be saved
 end
 
 --/*******************/ Data Access /*************************/--
@@ -185,7 +178,6 @@ function data:SetCurrentProfile(profileID, refreshList)
 
 	if profileTable then
 		data.db.currentProfile = profileID
-		data:OnDBUpdate()
 		if refreshList then
 			list:Refresh()
 		end
@@ -405,8 +397,6 @@ function data:CreateNewProfile(name, isChar, savedVarNames)
 	table.insert(data.db.profilesOrdered, profileID)
 	data.db.profiles[profileID] = profileTable
 
-	data:OnDBUpdate()
-
 	return profileID, profileTable
 end
 
@@ -518,7 +508,7 @@ function data:ScrollProfileBackupType(profileID, backupType, scrollCount)
 		end
 	end
 
-	data:OnDBUpdate()
+	collectgarbage()
 end
 
 ---@return boolean popupWasShown
@@ -551,7 +541,8 @@ function data:MakeBackup(profileID, backupType, backupSlot, forced)
 		end
 
 		profileBackupTypeTable[backupSlot] = backupTable
-		data:OnDBUpdate()
+		collectgarbage()
+
 		list:Refresh()
 
 		if not forced then
@@ -592,7 +583,8 @@ function data:DeleteBackup(profileID, backupType, backupSlot)
 				end
 
 				profileBackupTypeTable[backupSlot] = nil
-				data:OnDBUpdate()
+				collectgarbage()
+
 				list:Refresh()
 
 				-- pcall(function()
