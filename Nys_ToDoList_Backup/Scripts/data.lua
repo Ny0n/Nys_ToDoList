@@ -15,7 +15,7 @@ local private = {}
 --[[
 	defaults = {
 		nextProfileID = "1",
-		selectedProfile = profileID,
+		currentProfile = profileID,
 		profilesOrdered = { profileID, ... }, -- ipairs
 		profiles = { -- pairs
 			[profileID] = { -- profileTable
@@ -245,7 +245,6 @@ function data:IsValidBackupTable(backupTable)
 		and type(backupTable.savedVarsOrdered) == "table"
 		and #backupTable.savedVarsOrdered > 0
 		and type(backupTable.savedVars) == "table"
-		and next(backupTable.savedVars) ~= nil
 end
 
 ---@return backupTable | nil
@@ -507,7 +506,7 @@ function data:ScrollProfileBackupType(profileID, backupType, scrollCount)
 	end
 
 	local profileBackupTypeTable = data:GetValidProfileBackupType(profileID, backupType)
-	if not profileBackupTypeTable or #profileBackupTypeTable < 1 then
+	if not profileBackupTypeTable or not next(profileBackupTypeTable) then
 		return -- we don't need to scroll an invalid/empty table
 	end
 
