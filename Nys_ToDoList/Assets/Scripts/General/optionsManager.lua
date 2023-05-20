@@ -1102,7 +1102,7 @@ function private:CreateAddonOptionsTable()
 								func = function()
 									StaticPopup_Hide("NysTDL_StaticPopupDialog")
 									StaticPopupDialogs["NysTDL_StaticPopupDialog"] = {
-										text = core.toc.title.." - "..L["Import tabs"].."\n\n"..L["Do you want to create a backup before proceeding?"],
+										text = core.toc.title.." - "..L["Import tabs"].."\n\n"..L["Do you wish to create a backup before proceeding?"],
 										button1 = YES,
 										button2 = NO,
 										selectCallbackByIndex = true,
