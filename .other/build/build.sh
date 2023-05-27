@@ -32,7 +32,7 @@ addons_dir="../.."                                  # The path to the dev addon 
 
 # --local
 
-package_dir="package"                               # (--local command) The name/path for the package folder. The script will create it if it doesn't exist. Either absolute (/*) or relative (*)
+package_dir="package"                               # The name/path for the package folder (--local command). The script will create it if it doesn't exist. Either absolute (/*) or relative (*)
 
 # --symlink [-d]
 
@@ -44,7 +44,7 @@ addons_to_symlink+=("Nys_ToDoList_Backup")
 
 wow_dir="/c/Program Files (x86)/World of Warcraft"  # Only absolute (/*)
 
-wow_versions=()                                     # Add/Remove wow versions below (used for addon & saved vars symlink locations)
+wow_versions=()                                     # Add/Remove wow versions below
 wow_versions+=("_retail_")
 wow_versions+=("_classic_")
 wow_versions+=("_classic_era_")
@@ -55,7 +55,7 @@ wow_versions+=("_beta_")
 # --symlink [-f]
 
 saved_vars_dir="$wow_dir/SavedVariables"           # Common saved vars folder path, the one we will point to for every WoW version. Either absolute (/*) or relative (*)
-account_file_names=()                              # Add/Remove account file names below (used for saved vars symlink locations)
+account_file_names=()                              # Add/Remove account file names below
 account_file_names+=("122995789#1")
 account_file_names+=("122995789#2")
 

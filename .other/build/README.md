@@ -4,4 +4,4 @@
 
 - **./build.sh --help** for usage, you can also read the comment at the top of the script for more information
 
-- It is used mainly to package the addon locally for testing, publish the addon to GitHub and CurseForge, and create symlinks
+- It is used mainly to package locally / publish / symlink addons
