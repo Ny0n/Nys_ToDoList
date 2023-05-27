@@ -27,7 +27,7 @@ You can modify the variables just below to customize the behavior of the script.
 
 # addons info
 
-main_addon="Nys_ToDoList"                           # The name of the main addon's folder and toc file. Used to find the addon's version
+main_addon="Nys_ToDoList"                           # The name of the main addon folder and toc file. Used to find out the addon version that will be used as a tag for the Publish command
 addons_dir="../.."                                  # The path to the dev addon folder (usually the repository). Either absolute (/*) or relative (*)
 
 # --local
@@ -67,14 +67,13 @@ function usage()
 {
 	cat <<-'EOF' >&2
 	Usage: build.sh [MODE]
-
 	[MODE] can be ONE of these:
 
 	  --local [-a {args}]    Build the addon locally. If any {args} are specified, they will be sent to the packaging script.
 	  --publish              Launch the process to publish the current addon version. Will prompt for validation before starting.
 	  --symlink [-d|-f]      Create all addon symlinks. You can limit what gets created with -d (only addon directories) or -f (only saved variables directories).
 
-	Example: build.sh --local -a -c
+	Example: build.sh --local -a -l -e
 	EOF
 
 	return 1
@@ -177,7 +176,7 @@ function package()
 		test -n "$package_dir" || error_msg "Invalid package directory" "vars" || return
 
 		if [ ! -d "$package_dir" ]; then # if the package dir doesn't exist
-			mkdir "$package_dir" || return # we create it
+			mkdir -v "$package_dir" || return # we create it
 		fi
 
 		package_dir="$(cd "$package_dir" && pwd)" # to absolute path
@@ -187,15 +186,16 @@ function package()
 
 		# then we clear the old builds in the package folder
 		step_msg 2 5 "Cleanup the package directory"
-		rm -rf "${package_dir:?}/${main_addon:?}"* || return
-		test ! -e "$package_dir/package.sh" || rm -f "$package_dir/package.sh" > /dev/null 2>&1 || error_msg "Invalid file found at \"$package_dir/package.sh\", please remove it and try again" || return
+		rm -rfv "${package_dir:?}/${main_addon:?}"* || return
+		test ! -e "$package_dir/release.txt" || rm -fv "$package_dir/release.txt" || error_msg "Invalid file found at \"$package_dir/release.txt\", please remove it and try again" || return
 
-		# and we create (use) the packaging script from 'BigWigsMods/packager' on GitHub
-		# (renaming the script 'package.sh' for naming consistency)
+		# and we curl the packaging script from 'BigWigsMods/packager' on GitHub
+		# NOTE: using a txt file so that we don't risk executing it in the file explorer by mistake, and we have a trace of the last script used
 		step_msg 3 5 "Curl the packaging script (from GitHub)"
-		curl -s "https://raw.githubusercontent.com/BigWigsMods/packager/master/release.sh" > "$package_dir/package.sh" || return
+		curl -sv "https://raw.githubusercontent.com/BigWigsMods/packager/master/release.sh" > "$package_dir/release.txt" || return
+		echo -e "\nDownloaded the packaging script to \"$package_dir/release.txt\""
 
-		# here we get potential additional arguments to send to package.sh
+		# here we get potential additional arguments to send to release.txt
 		step_msg 4 5 "Process the additional arguments"
 		args=""
 		mark="0"
@@ -218,9 +218,9 @@ function package()
 			echo "Additional arguments: \"$args\""
 		fi
 
-		# we call package.sh with the good arguments
+		# we call release.txt with the good arguments
 		step_msg 5 5 "Run the packaging script"
-		(cd "$package_dir" || exit; ./package.sh -r "$(pwd)" -d $args) || return
+		(cd "$package_dir" || exit; ./release.txt -r "$(pwd)" -d $args) || return
 	}
 
 	build_msg "BUILD" 1
@@ -228,7 +228,8 @@ function package()
 	internal "$@" || build_msg "BUILD" 3 || return
 
 	echo ""
-	echo "Addons packaged to \"$package_dir\"."
+	echo "Addon(s) packaged to \"$package_dir\"."
+	echo "Version $version of $main_addon has been packaged."
 	build_msg "BUILD" 2
 }
 
@@ -251,6 +252,13 @@ function check_publish_execution()
 	dev_branch_name=$(git config --get "gitflow.branch.develop")
 	test -n "$main_branch_name" || error_msg "Could not figure out the master branch's name (git flow config)" || return
 	test -n "$dev_branch_name" || error_msg "Could not figure out the develop branch's name (git flow config)" || return
+
+	# make sure we are on the dev branch
+	echo ""
+	test "$dev_branch_name" == "$(git branch --show-current)" || error_msg "The develop branch needs to be checked out" || return
+
+	# check the TAG_EDITMSG file
+	test ! -e "TAG_EDITMSG" -o -f "TAG_EDITMSG" || error_msg "Invalid file found at \"$(pwd)/TAG_EDITMSG\", please remove it and try again" || return
 }
 
 function publish()
@@ -260,17 +268,16 @@ function publish()
 		# will cancel the execution if something isn't available
 		check_publish_execution || return
 
-		# make sure we are on the dev branch
-		echo ""
-		test "$dev_branch_name" == "$(git branch --show-current)" || error_msg "The develop branch needs to be checked out" || return
-
 		step_msg 1 5 "Start release"
 		git flow release start "$version" || return
-		echo "v$version" > "__TAG_EDITMSG" || return
+
+		echo -e "Create tag message \"v$version\" > 'TAG_EDITMSG'"
+		echo "v$version" > "TAG_EDITMSG" || return
 
 		step_msg 2 5 "Finish release"
-		git flow release finish "$version" -f "__TAG_EDITMSG" || return
-		rm -f "__TAG_EDITMSG" || return
+		git flow release finish "$version" -f "TAG_EDITMSG" || return
+
+		rm -fv "TAG_EDITMSG" || return
 
 		step_msg 3 5 "Push tags"
 		git push --tags || return
@@ -392,7 +399,7 @@ function make_links()
 		for addon_name in "${addons_to_symlink[@]}"; do
 			toPath="$addons_dir/$addon_name"
 			if [ -z "$addon_name" ] || [ ! -d "$toPath" ]; then
-				echo -e "Invalid addons_to_symlink element: addon not found, skipping..."
+				echo -e "Addon \"$addon_name\" not found, skipping..."
 				continue
 			fi
 
@@ -414,17 +421,17 @@ function make_links()
 
 # first of all, we change the local execution to be the script's folder,
 # so that it works wherever we call it
-cd "$(dirname "$0")" || exit
+cd "$(dirname "$0")"   || exit
 
 # check the script vars
-test -n "$main_addon" || error_msg "Invalid main addon name"   "vars" || exit
-test -n "$addons_dir"      || error_msg "Invalid addons directory"  "vars" || exit
+test -n "$main_addon"  || error_msg "Invalid main addon name"   "vars" || exit
+test -n "$addons_dir"  || error_msg "Invalid addons directory"  "vars" || exit
 
 # check the paths
 addons_dir="$(cd "$addons_dir" && pwd)" # to absolute path
 toc_file="$addons_dir/$main_addon/$main_addon.toc"
-test -d "$addons_dir"      || error_msg "Invalid addons directory"  "vars" || exit
-test -f "$toc_file"        || error_msg "toc file not found"        "vars" || exit
+test -d "$addons_dir"  || error_msg "Invalid addons directory"  "vars" || exit
+test -f "$toc_file"    || error_msg "toc file not found"        "vars" || exit
 
 # ========== PROCESS ARGUMENTS ========== #
 
@@ -433,7 +440,7 @@ if [ "$1" == "--local" ]; then
 
 	find_version || exit
 
-	read -p "$(echo -e "Package $main_addon locally? (version \e[4m$version\e[0m) [y/N] ")" -n 1 -r
+	read -p "$(echo -e "\e[1mPackage locally\e[0m $main_addon for version \e[4m$version\e[0m ? [y/N] ")" -n 1 -r
 	echo ""
 	if [[ $REPLY =~ ^[Yy]$ ]]
 	then

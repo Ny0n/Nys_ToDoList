@@ -35,3 +35,4 @@ manual-changelog:
 # for this command, every path is relative to the root of the zip (we're '{zip}/' unlike other commands, in which we are 'Nys_ToDoList(package-as)/')
 move-folders:
   Nys_ToDoList/Nys_ToDoList: Nys_ToDoList
+  Nys_ToDoList/Nys_ToDoList_Backup: Nys_ToDoList_Backup

@@ -4,10 +4,10 @@
 ## Interface-BCC: 20504
 ## Interface-Wrath: 30401
 
-## Version: 7.0
+## Version: 7.1
 
 ## Author: Nyony (on Twitch)
-## Title: Ny's To-Do List WIP
+## Title: Ny's To-Do List
 
 ## Notes: A simple interface to remember everything you need to do!
 ## Notes-frFR: Une interface simple pour se souvenir de tout ce que tu as à faire!

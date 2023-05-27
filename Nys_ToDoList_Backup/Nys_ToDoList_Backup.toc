@@ -4,7 +4,7 @@
 ## Interface-BCC: 20504
 ## Interface-Wrath: 30401
 
-## Version: 0.1
+## Version: 1.0
 
 ## Author: Nyony (on Twitch)
 ## Title: Ny's To-Do List Backup
