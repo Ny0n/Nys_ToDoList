@@ -1,49 +1,86 @@
 #!/bin/bash
 
-# script vars
-addonname="Nys_ToDoList"            # the name of the addon's toc file
-packagedir="package"                # the name/path to give to the package folder
-tmptagfile="TAG_EDITMSG"            # the name/path to give to a temp file used for git flow purposes
-devword="WIP"                       # the word used to differentiate the dev addon from the release addon. Used for the toc file and commit messages
-addondirpath="../../$addonname"     # the path to the dev addon folder. Use either absolute, or relative from the location of this script
+: '
 
-# symlink paths
-wowpath="/c/Program Files (x86)/World of Warcraft"
-savedvarspath="$wowpath/SavedVariables" # common saved vars folder path, the one we will point to for every WoW version
+This build script is used for 3 things:
+	- Package addons locally, using the latest BigWigsMods/packager/release.sh script
+	- Publish addons, again using the packager script and git flow
+	- Create symlinks, to setup the addon dev environment
 
-wowversions=() # add/remove wow versions below (used for symlinks locations)
-wowversions+=("_retail_")
-wowversions+=("_classic_")
-wowversions+=("_classic_era_")
-wowversions+=("_ptr_")
-wowversions+=("_ptr2_")
-wowversions+=("_beta_")
+For the Package and Publish command, the packager script will search for,
+and use a ".pkgmeta" file at the source of your git repository.
 
-accountfilenames=()	# add/remove account file names below (used for symlinks locations)
-accountfilenames+=("122995789#1")
-accountfilenames+=("122995789#2")
+The Package command will create the builds inside of the "addons_dir" folder.
 
-# ========================================================================== #
+The Publish command will use git flow to create a release using the "main_addon" version as a name,
+it will then push it to github where the release.yml file will automatically start an action to call the packager script,
+and this time it will not build locally, but create and publish a release on github and on curseforge (depending on the "X-" metadatas in the TOC file).
+
+The Symlink command will create symlinks between the WoW addons folders, and the specified addons inside the repository ("addons_to_symlink"),
+see https://github.com/WeakAuras/WeakAuras2/wiki/Lua-Dev-Environment#create-symlinks to understand what I mean.
+You can also create symlinks for a common "SavedVariables" folder, that will be used to source all saved variables for every WoW version,
+so you will share the same saved variables between Retail ("_retail_") and Classic ("_classic_"), as an example.
+
+You can modify the variables just below to customize the behavior of the script.
+
+'
+
+# addons info
+
+main_addon="Nys_ToDoList"                           # The name of the main addon's folder and toc file. Used to find the addon's version
+addons_dir="../.."                                  # The path to the dev addon folder (usually the repository). Either absolute (/*) or relative (*)
+
+# --local
+
+package_dir="package"                               # (--local command) The name/path for the package folder. The script will create it if it doesn't exist. Either absolute (/*) or relative (*)
+
+# --symlink [-d]
+
+addons_to_symlink=()                                # Found in $addons_dir
+addons_to_symlink+=("$main_addon")
+addons_to_symlink+=("Nys_ToDoList_Backup")
+
+# --symlink [-d|-f]
+
+wow_dir="/c/Program Files (x86)/World of Warcraft"  # Only absolute (/*)
+
+wow_versions=()                                     # Add/Remove wow versions below (used for addon & saved vars symlink locations)
+wow_versions+=("_retail_")
+wow_versions+=("_classic_")
+wow_versions+=("_classic_era_")
+wow_versions+=("_ptr_")
+wow_versions+=("_ptr2_")
+wow_versions+=("_beta_")
+
+# --symlink [-f]
+
+saved_vars_dir="$wow_dir/SavedVariables"           # Common saved vars folder path, the one we will point to for every WoW version. Either absolute (/*) or relative (*)
+account_file_names=()                              # Add/Remove account file names below (used for saved vars symlink locations)
+account_file_names+=("122995789#1")
+account_file_names+=("122995789#2")
+
+# ========== FUNCTIONS ================================================================ #
+
+# ========== UTILS ========== #
 
 function usage()
 {
-	echo ""
-	echo "Usage: build.sh [MODE]"
-	echo "[MODE] can be ONE of these:"
-	echo ""
-	echo -e "\t[-a {args}]    \t\tbuild the addon locally. If any {args} are specified, they will be sent to the packaging script"
-	echo ""
-	echo -e "\t--release      \t\tprep the toc file for release"
-	echo -e "\t--dev          \t\tprep the toc file for development"
-	echo ""
-	echo -e "\t--publish      \t\tlaunch the process to publish the current addon version. Will prompt for validation before starting"
-	echo ""
-	echo -e "\t--symlink [-d|-f]\tcreate all addon symlinks. You can limit what gets created with -d (only addon directories) or -f (only saved variables directories)"
+	cat <<-'EOF' >&2
+	Usage: build.sh [MODE]
+
+	[MODE] can be ONE of these:
+
+	  --local [-a {args}]    Build the addon locally. If any {args} are specified, they will be sent to the packaging script.
+	  --publish              Launch the process to publish the current addon version. Will prompt for validation before starting.
+	  --symlink [-d|-f]      Create all addon symlinks. You can limit what gets created with -d (only addon directories) or -f (only saved variables directories).
+
+	Example: build.sh --local -a -c
+	EOF
 
 	return 1
 }
 
-function stepmsg()
+function step_msg()
 {
 	echo ""
 	echo "** STEP $1/$2 - $3 **"
@@ -51,7 +88,7 @@ function stepmsg()
 	sleep 0.5
 }
 
-function errormsg()
+function error_msg()
 {
 	last=$?
 
@@ -65,7 +102,7 @@ function errormsg()
 	return $last
 }
 
-function buildmsg()
+function build_msg()
 {
 	last=$?
 
@@ -100,27 +137,177 @@ function buildmsg()
 	return $last
 }
 
-function findVersion()
+function find_version()
 {
-	# find and write to {version} the addon's current version number
-	version="$(grep -Pom1 "(?<=## Version: ).*" "$addondir"/*.toc)"
-	test -n "$version" || errormsg "Could not find the addon's version number"
+	# find and write to $version the main addon's current version number
+	version="$(grep -Pom1 "(?<=## Version: ).*" "$toc_file")"
+	test -n "$version" || error_msg "Could not find the addon's version number"
 }
 
-function makeLinks()
-{
-	function internalDir()
-	{
-		test -d "$1" || errormsg "Invalid source folder for links" "vars" || return
+# ========== PACKAGE COMMAND ========== #
 
-		for version in "${wowversions[@]}"; do
-			toPath="$wowdir/$version/Interface/AddOns" # WOW ADDON PATH
+function check_package_execution()
+{
+	echo "Running execution checkup routine..."
+	sleep 1
+
+	# check the addon's version number (find_version must be called beforehand)
+	echo ""
+	test -n "$version" || error_msg "Invalid addon version number" || return
+	echo "Addon version number: $version"
+
+	# check if we are connected to the internet
+	echo ""
+	curl -s https://www.google.com > /dev/null 2>&1 || error_msg "Offline" || return
+	echo "Online"
+
+	# check if we have curl
+	echo ""
+	curl --version || error_msg "Curl" || return
+}
+
+function package()
+{
+	function internal()
+	{
+		# will cancel the execution if something isn't available
+		check_package_execution || return
+
+		step_msg 1 5 "Check for the package directory"
+		test -n "$package_dir" || error_msg "Invalid package directory" "vars" || return
+
+		if [ ! -d "$package_dir" ]; then # if the package dir doesn't exist
+			mkdir "$package_dir" || return # we create it
+		fi
+
+		package_dir="$(cd "$package_dir" && pwd)" # to absolute path
+
+		test -n "$package_dir" -a -d "$package_dir" || error_msg "Invalid package directory" "vars" || return
+		echo "Package directory: \"$package_dir\""
+
+		# then we clear the old builds in the package folder
+		step_msg 2 5 "Cleanup the package directory"
+		rm -rf "${package_dir:?}/${main_addon:?}"* || return
+		test ! -e "$package_dir/package.sh" || rm -f "$package_dir/package.sh" > /dev/null 2>&1 || error_msg "Invalid file found at \"$package_dir/package.sh\", please remove it and try again" || return
+
+		# and we create (use) the packaging script from 'BigWigsMods/packager' on GitHub
+		# (renaming the script 'package.sh' for naming consistency)
+		step_msg 3 5 "Curl the packaging script (from GitHub)"
+		curl -s "https://raw.githubusercontent.com/BigWigsMods/packager/master/release.sh" > "$package_dir/package.sh" || return
+
+		# here we get potential additional arguments to send to package.sh
+		step_msg 4 5 "Process the additional arguments"
+		args=""
+		mark="0"
+		for i in "$@"; do
+			if [ "$mark" == "1" ]; then
+				if [ -z "$args" ]; then
+					args="$i"
+				else
+					args="$args $i"
+				fi
+			fi
+			if [ "$i" == "-a" ] && [ "$mark" == "0" ]; then
+				mark="1"
+			fi
+		done
+
+		if [ -z "$args" ]; then
+			echo "No additional arguments"
+		else
+			echo "Additional arguments: \"$args\""
+		fi
+
+		# we call package.sh with the good arguments
+		step_msg 5 5 "Run the packaging script"
+		(cd "$package_dir" || exit; ./package.sh -r "$(pwd)" -d $args) || return
+	}
+
+	build_msg "BUILD" 1
+
+	internal "$@" || build_msg "BUILD" 3 || return
+
+	echo ""
+	echo "Addons packaged to \"$package_dir\"."
+	build_msg "BUILD" 2
+}
+
+# ========== PUBLISH COMMAND ========== #
+
+function check_publish_execution()
+{
+	check_package_execution || return
+
+	# check if we have git
+	echo ""
+	git --version || error_msg "Git" || return
+
+	# check if we have git flow initialized
+	echo ""
+	git flow config || error_msg "Git flow" || return
+
+	# init branch names variables
+	main_branch_name=$(git config --get "gitflow.branch.master")
+	dev_branch_name=$(git config --get "gitflow.branch.develop")
+	test -n "$main_branch_name" || error_msg "Could not figure out the master branch's name (git flow config)" || return
+	test -n "$dev_branch_name" || error_msg "Could not figure out the develop branch's name (git flow config)" || return
+}
+
+function publish()
+{
+	function internal()
+	{
+		# will cancel the execution if something isn't available
+		check_publish_execution || return
+
+		# make sure we are on the dev branch
+		echo ""
+		test "$dev_branch_name" == "$(git branch --show-current)" || error_msg "The develop branch needs to be checked out" || return
+
+		step_msg 1 5 "Start release"
+		git flow release start "$version" || return
+		echo "v$version" > "__TAG_EDITMSG" || return
+
+		step_msg 2 5 "Finish release"
+		git flow release finish "$version" -f "__TAG_EDITMSG" || return
+		rm -f "__TAG_EDITMSG" || return
+
+		step_msg 3 5 "Push tags"
+		git push --tags || return
+
+		step_msg 4 5 "Push main branch"
+		git push origin "$main_branch_name" || return
+
+		step_msg 5 5 "Push $dev_branch_name branch"
+		git push || return
+	}
+
+	build_msg "PUBLISH" 1
+
+	internal || build_msg "PUBLISH" 3 || return
+
+	echo ""
+	echo "Version $version of $main_addon has been published."
+	build_msg "PUBLISH" 2
+}
+
+# ========== MAKE LINKS COMMAND ========== #
+
+function make_links()
+{
+	function internal_addon_dir()
+	{
+		test -d "$1" || error_msg "Invalid source folder for links" "vars" || return
+		test -n "$2" || error_msg "Invalid addon name for links" "vars" || return
+
+		for version in "${wow_versions[@]}"; do
+			toPath="$wow_dir/$version/Interface/AddOns" # WOW ADDON PATH
 			if [ ! -d "$toPath" ]; then
 				echo -e "\e[33m-\e[0m WoW \"$version\" version not found"
 				continue
 			fi
 
-			to="${toPath:?}/${addonname:?}$2"
+			to="${toPath:?}/${2:?}"
 			test ! -f "$to" -a ! -d "$to" -a ! -L "$to" || rm -rf "$to"
 
 			ln -s "$1" "$to" || return
@@ -129,18 +316,18 @@ function makeLinks()
 		done
 	}
 
-	function internalSavedDir()
+	function internal_saved_dir()
 	{
-		test -d "$1" || errormsg "Invalid source folder for saved variables links" "vars" || return
+		test -d "$1" || error_msg "Invalid source folder for saved variables links" "vars" || return
 
-		for version in "${wowversions[@]}"; do
-			toPath="$wowdir/$version/WTF/Account" # WOW SAVED VARIABLES PATH
+		for version in "${wow_versions[@]}"; do
+			toPath="$wow_dir/$version/WTF/Account" # WOW SAVED VARIABLES PATH
 			if [ ! -d "$toPath" ]; then
 				echo -e "\e[33m-\e[0m WoW \"$version\" version not found"
 				continue
 			fi
 
-			for account in "${accountfilenames[@]}"; do
+			for account in "${account_file_names[@]}"; do
 				toPathAccount="$toPath/$account" # WOW SAVED VARIABLES PATH
 				if [ ! -d "$toPathAccount" ] || [ -z "$account" ]; then
 					echo -e "\e[33m-\e[0m Account \"$account\" not found for \"$version\""
@@ -163,322 +350,109 @@ function makeLinks()
 		done
 	}
 
+	# === check all variables and paths === #
+
 	test -z "$1" || test "$1" == "-d"
-	canDoDir=$?
+	can_do_dir=$?
 
 	test -z "$1" || test "$1" == "-f"
-	canDoSavedDir=$?
+	can_do_saved_dir=$?
 
-	if [ "$canDoDir" -ne 0 ] && [ "$canDoSavedDir" -ne 0 ]; then
+	if [ "$can_do_dir" -ne 0 ] && [ "$can_do_saved_dir" -ne 0 ]; then
 		usage
 		return
 	fi
 
-	ln --version || errormsg "The \"ln\" command must be installed to create symbolic links" || return
+	ln --version || error_msg "The \"ln\" command must be installed to create symbolic links" || return
 	export MSYS=winsymlinks:nativestrict || return # to create real symlinks with ln, not just copies
 
-	case $wowpath in
-		/*) wowdir="$wowpath" ;; # absolute path
-		*) wowdir=$(realpath "$builddir/$wowpath") ;; # relative path
-	esac
-	test -d "$wowdir" || errormsg "Invalid WoW directory path" "vars" || return
-	test "${#wowversions[@]}" -ne 0 || errormsg "No WoW version has been specified" "vars" || return
+	test -n "$wow_dir" -a -d "$wow_dir" || error_msg "Invalid WoW directory" "vars" || return
+	test "${#wow_versions[@]}" -ne 0 || error_msg "No WoW version has been specified" "vars" || return
 
-	if [ "$canDoDir" -eq 0 ]; then
-		# addon build dir
-		addonbuilddir="$builddir/$packagedir/$addonname"
-		test -d "$addonbuilddir" || errormsg "Could not find the build folder, please ensure that the addon has been built at least once" || return
+	# if [ "$can_do_dir" -eq 0 ]; then
+		# $addons_dir has already been verified
+	# fi
 
-		# so we have: $addondir for the dev version, $addonbuilddir for the build version
+	if [ "$can_do_saved_dir" -eq 0 ]; then
+		test "${#account_file_names[@]}" -ne 0 || error_msg "No account file name has been specified" "vars" || return
+
+		test -n "$saved_vars_dir" || error_msg "Invalid saved vars directory" "vars" || return
+		saved_vars_dir="$(cd "$saved_vars_dir" && pwd)" # to absolute path
+		test -n "$saved_vars_dir" -a -d "$saved_vars_dir" || error_msg "Invalid saved vars directory" "vars" || return
 	fi
 
-	if [ "$canDoSavedDir" -eq 0 ]; then
-		test "${#accountfilenames[@]}" -ne 0 || errormsg "No account file name has been specified" "vars" || return
+	# so we have: $addons_dir for the addons folder and $saved_vars_dir for the common saved vars folder
 
-		# addon saved vars dir
-		case $savedvarspath in
-			/*) savedvarsdir="$savedvarspath" ;; # absolute path
-			*) savedvarsdir=$(realpath "$builddir/$savedvarspath") ;; # relative path
-		esac
-		test -d "$savedvarsdir" || errormsg "Could not find the saved variables folder to point to" "vars" || return
-
-		# so we have: $savedvarsdir for the common saved vars folder
-	fi
+	# === create symlinks === #
 
 	echo ""
 	symlinkCount=0
 
-	if [ "$canDoDir" -eq 0 ]; then
-		echo -e "Creating \e[4mdirectory\e[0m symlinks for the \e[4mbuild\e[0m addon version..."
-		internalDir "$addonbuilddir" || errormsg "Could not create symbolic links for the build addon version" || return
+	if [ "$can_do_dir" -eq 0 ]; then
+		for addon_name in "${addons_to_symlink[@]}"; do
+			toPath="$addons_dir/$addon_name"
+			if [ -z "$addon_name" ] || [ ! -d "$toPath" ]; then
+				echo -e "Invalid addons_to_symlink element: addon not found, skipping..."
+				continue
+			fi
 
-		echo -e "Creating \e[4mdirectory\e[0m symlinks for the \e[4m$devword\e[0m addon version..."
-		internalDir "$addondir" "$devword" || errormsg "Could not create symbolic links for the $devword addon version" || return
-
-		backupaddondir="$(realpath "$builddir/../../Nys_ToDoList_Backup")"
-		test -d "$backupaddondir" || errormsg "Could not find the backup addon folder" || return
-
-		echo -e "Creating \e[4mdirectory\e[0m symlinks for the \e[4mBackup\e[0m addon..."
-		internalDir "$backupaddondir" "_Backup" || errormsg "Could not create symbolic links for the Backup addon" || return
+			echo -e "Creating \e[4mdirectory\e[0m symlinks for \e[4m$addon_name\e[0m..."
+			internal_addon_dir "$toPath" "$addon_name" || error_msg "Could not create symbolic links for \"$addon_name\"" || return
+		done
 	fi
 
-	if [ "$canDoSavedDir" -eq 0 ]; then
+	if [ "$can_do_saved_dir" -eq 0 ]; then
 		echo -e "Creating \e[4msaved variables\e[0m symlinks..."
-		internalSavedDir "$savedvarsdir" || errormsg "Could not create symbolic links for the saved variables" || return
+		internal_saved_dir "$saved_vars_dir" || error_msg "Could not create symbolic links for the saved variables" || return
 	fi
 
 	echo ""
 	echo "Complete. Created $symlinkCount symbolic links"
 }
 
-function prepRelease()
-{
-	tocNewName="$(basename "$addondir"/*.toc | sed -e "s/$devword//")"
-	mv "$addondir"/*.toc "$addondir/$tocNewName" # remove any $devword in the toc's name
-
-	sed -i "s/ $devword//" "$addondir"/*.toc # remove any $devword in the toc file
-}
-
-function prepDev()
-{
-	tocNewName="$(basename "$addondir"/*.toc .toc)$devword.toc"
-	mv "$addondir"/*.toc "$addondir/$tocNewName" # we put $devword at the end of the toc's name
-
-	titleCurrentValue="$(grep -Pom1 "## Title:.*" "$addondir"/*.toc)"
-	sed -i "s/$titleCurrentValue/$titleCurrentValue $devword/" "$addondir"/*.toc # then we put $devword at the end of the the toc file's Title tag
-}
-
-function checkExecution()
-{
-	echo "Running execution checkup routine..."
-	sleep 1
-
-	# check the addon's version number (findVersion must be called beforehand)
-	echo ""
-	test -n "$version" || errormsg "Invalid addon version number" || return
-	echo "Addon version number: $version"
-
-	# check if we are connected to the internet
-	echo ""
-	curl -s https://www.google.com > /dev/null 2>&1 || errormsg "Offline" || return
-	echo "Online"
-
-	# check if we have curl
-	echo ""
-	curl --version || errormsg "Curl" || return
-
-	# check if we have git
-	echo ""
-	git --version || errormsg "Git" || return
-
-	# check if we have git flow initialized
-	echo ""
-	git flow config || errormsg "Git flow" || return
-
-	# init branch names variables
-	mainbranch=$(git config --get "gitflow.branch.master")
-	devbranch=$(git config --get "gitflow.branch.develop")
-	test -n "$mainbranch" || errormsg "Could not figure out the master branch's name (git flow config)" || return
-	test -n "$devbranch" || errormsg "Could not figure out the develop branch's name (git flow config)" || return
-}
-
-function package()
-{
-	function internal()
-	{
-		# will cancel the execution if something isn't available
-		checkExecution || return
-
-		# first we prep the toc file
-		stepmsg 1 12 "Prep addon for release"
-		prepRelease || return
-
-		# do a temp commit of the changes, or the packaging script won't work
-		stepmsg 2 12 "Commit temp changes to current branch ($(git branch --show-current))"
-		git add "$addondir" || return
-		git commit -m "temp" || return
-
-		stepmsg 3 12 "Check for the package directory"
-		if [ ! -d "$packagedir" ]; then # if the package dir doesn't exist
-			mkdir "$packagedir" || return # we create it
-		fi
-
-		# then we clear the old builds in the package folder
-		stepmsg 4 12 "Empty the package directory"
-		rm -rf "./${packagedir:?}/${addonname:?}"* || return
-
-		# and we create (use) the packaging script from 'BigWigsMods/packager' on GitHub
-		# (renaming the script 'package.sh' for naming consistency)
-		stepmsg 5 12 "Curl the packaging script (from GitHub)"
-		curl -s "https://raw.githubusercontent.com/BigWigsMods/packager/master/release.sh" > "$packagedir/package.sh" || return
-
-		# here we get potential additional arguments to send to package.sh
-		stepmsg 6 12 "Process the additional arguments"
-		args=""
-		mark="0"
-		for i in "$@"; do
-			if [ "$mark" == "1" ]; then
-				if [ -z "$args" ]; then
-					args="$i"
-				else
-					args="$args $i"
-				fi
-			fi
-			if [ "$i" == "-a" ] && [ "$mark" == "0" ]; then
-				mark="1"
-			fi
-		done
-
-		if [ -z "$args" ]; then
-			echo "No additional arguments"
-		else
-			echo "Additional arguments: \"$args\""
-		fi
-
-		stepmsg 7 12 "Move to the package folder"
-		cd "$packagedir" || return # we move the execution to the package folder
-
-		# we call package.sh with the good arguments
-		stepmsg 8 12 "Run the packaging script"
-		./package.sh -r "$(pwd)" -d $args
-		success=$?
-
-		# we're done packaging, so we can delete the 'package.sh' script
-		stepmsg 9 12 "Delete the packaging script"
-		rm -f "package.sh"
-
-		# undo the temp commit
-		stepmsg 10 12 "Undo the last temp commit"
-		git reset --soft HEAD~1 || return
-		git restore --staged "$addondir" || return
-
-		stepmsg 11 12 "Move to the build folder"
-		cd "$builddir" || return # we come back to the build folder
-
-		# and finally, we reset the toc file
-		stepmsg 12 12 "Prep the addon for dev"
-		prepDev || return
-
-		return $success
-	}
-
-	buildmsg "BUILD" 1
-
-	internal "$@" || buildmsg "BUILD" 3 || return
-
-	echo ""
-	echo "Addon packaged to \"$builddir/$packagedir/$addonname\"."
-	buildmsg "BUILD" 2
-}
-
-function publish()
-{
-	function internal()
-	{
-		# will cancel the execution if something isn't available
-		checkExecution || return
-
-		# make sure we are on the dev branch
-		echo ""
-		test "$devbranch" == "$(git branch --show-current)" || errormsg "The develop branch needs to be checked out" || return
-
-		stepmsg 1 11 "Start release"
-		git flow release start "$version" || return
-
-		stepmsg 2 11 "Prep addon for release"
-		./build.sh --release || return
-
-		stepmsg 3 11 "Commit changes on release branch"
-		git add "$addondir" || return
-		git commit -m "Push $version" || return
-
-		stepmsg 4 11 "Create tmp file for tag message"
-		echo "v$version" > "$tmptagfile" || return
-
-		stepmsg 5 11 "Finish release"
-		git flow release finish "$version" -f "$tmptagfile" || return
-
-		stepmsg 6 11 "Delete tmp file for tag message"
-		rm -f "$tmptagfile" || return
-
-		stepmsg 7 11 "Push tags"
-		git push --tags || return
-
-		stepmsg 8 11 "Push main branch"
-		git push origin "$mainbranch" || return
-
-		stepmsg 9 11 "Prep addon for dev"
-		./build.sh --dev || return
-
-		stepmsg 10 11 "Commit changes on $devbranch branch"
-		git add "$addondir" || return
-		git commit -m "$devword $version+" || return
-
-		stepmsg 11 11 "Push $devbranch branch"
-		git push || return
-	}
-
-	buildmsg "PUBLISH" 1
-
-	internal || buildmsg "PUBLISH" 3 || return
-
-	echo ""
-	echo "Version $version of $addonname has been published."
-	buildmsg "PUBLISH" 2
-}
+# ========== SCRIPT START ================================================================ #
 
 # first of all, we change the local execution to be the script's folder,
 # so that it works wherever we call it
 cd "$(dirname "$0")" || exit
 
 # check the script vars
-test -n "$addonname" || errormsg "Invalid addon name" "vars" || exit
-test -n "$packagedir" || errormsg "Invalid package directory name" "vars" || exit
-test -n "$tmptagfile" || errormsg "Invalid tag file name" "vars" || exit
-test -n "$devword" || errormsg "Invalid dev word" "vars" || exit
-test -n "$addondirpath" || errormsg "Invalid addon directory path" "vars" || exit
+test -n "$main_addon" || error_msg "Invalid main addon name"   "vars" || exit
+test -n "$addons_dir"      || error_msg "Invalid addons directory"  "vars" || exit
 
-# and here we prep the paths for the rest of the execution
-builddir="$(pwd)"
-case $addondirpath in
-	/*) addondir="$addondirpath" ;; # absolute path
-	*) addondir=$(realpath "$builddir/$addondirpath") ;; # relative path
-esac
-test -d "$builddir" -a -d "$addondir" || errormsg "Invalid directories" "vars" || exit
-test -f "$addondir"/*.toc || errormsg ".toc file not found" "vars" || exit
+# check the paths
+addons_dir="$(cd "$addons_dir" && pwd)" # to absolute path
+toc_file="$addons_dir/$main_addon/$main_addon.toc"
+test -d "$addons_dir"      || error_msg "Invalid addons directory"  "vars" || exit
+test -f "$toc_file"        || error_msg "toc file not found"        "vars" || exit
 
-if [ -z "$1" ] || [ "$1" == "-a" ]; then # if we typed nothing or '-a'
+# ========== PROCESS ARGUMENTS ========== #
+
+if [ "$1" == "--local" ]; then
 	# PACKAGE COMMAND
 
-	findVersion || exit
+	find_version || exit
 
-	read -p "$(echo -e "Package $addonname locally? (y/N) ")" -n 1 -r
+	read -p "$(echo -e "Package $main_addon locally? (version \e[4m$version\e[0m) [y/N] ")" -n 1 -r
 	echo ""
 	if [[ $REPLY =~ ^[Yy]$ ]]
 	then
-		package "$@"
+		package "${@:2}"
 	fi
 elif [ "$1" == "--publish" ]; then
 	# PUBLISH COMMAND
 
-	findVersion || exit
+	find_version || exit
 
-	read -p "$(echo -e "\e[1mPublish\e[0m $addonname for version \e[4m$version\e[0m ? (y/N) ")" -n 1 -r
+	read -p "$(echo -e "\e[1mPublish\e[0m $main_addon for version \e[4m$version\e[0m ? [y/N] ")" -n 1 -r
 	echo ""
 	if [[ $REPLY =~ ^[Yy]$ ]]
 	then
-		publish "$@"
-	fi
-elif [ "$1" == "--release" ] || [ "$1" == "--dev" ]; then
-	# PREP COMMAND
-
-	prepRelease
-	if [ "$1" == "--dev" ]; then # if we want to prep for dev, we put back the $devword
-		prepDev
+		publish
 	fi
 elif [ "$1" == "--symlink" ]; then
 	# MAKE LINKS COMMAND
-	makeLinks "$2"
+	make_links "$2"
 else
 	# we misstyped something, or we typed "--help"
 	usage

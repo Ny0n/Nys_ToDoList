@@ -1,9 +1,7 @@
 # build folder
 
-- This folder holds the "build.sh" script, which is used to manage, package and publish the addon
+- This folder holds the "build.sh" script, an addon developer tool
 
-- **./build.sh --help** for usage
+- **./build.sh --help** for usage, you can also read the comment at the top of the script for more information
 
-- It is used mainly to package the addon locally for testing, or to publish the addon to GitHub and CurseForge
-
-- The variables at the top of the script can be modified to suit other addon needs
+- It is used mainly to package the addon locally for testing, publish the addon to GitHub and CurseForge, and create symlinks
