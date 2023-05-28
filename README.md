@@ -5,7 +5,7 @@ WoW addon for retail and classic
 
 This addon provides a simple list where you can view and store all your to-do's,
 and everything can be sorted as daily or weekly, in which case it will reset automatically when the time comes!
-You also have the possibility to favorite / add descriptions on items, and event create custom tabs with custom resets.
+You also have the possibility to favorite / add descriptions on items, and even create custom tabs with custom resets.
 
 If you are having any problems, tap the information button on the list to print help in the chat, it will surely give you the answers you are looking for.
 
