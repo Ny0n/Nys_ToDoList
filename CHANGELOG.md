@@ -1,3 +1,21 @@
+#### **7.1**
+
+Added a new addon as part of the download: Ny's To-Do List Backup
+
+***Ny's To-Do List***
+
+- Added a new tutorial for the backup addon
+- Added a prompt before importing tabs, to ask whether we want to make a backup or not
+- Added a dependency: Ny's To-Do List Backup
+
+***Ny's To-Do List Backup (1.0)***
+
+- Added Ny's To-Do List Backup! A backup manager for Ny's To-Do List
+- This addon adds a new frame: the backup list
+- You can toggle this list either by going into the addon options, or by using the "/tdlb" chat command
+- The list allows you to create and restore backups whenever you want, and it also has an automatic backup section
+- Backups add a layer of protection in case something goes wrong with Ny's To-Do List, but don't forget to also back up your saved variables folder from time to time!
+
 #### **7.0**
 
 Introducing a brand new and reworked UI!
