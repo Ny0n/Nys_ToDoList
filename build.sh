@@ -71,16 +71,18 @@ function usage()
 	Usage: build.sh [MODE]
 	[MODE] can be ONE of these:
 
-	  --local [-a {args}]     Build the addon locally. If any {args} are specified, they will be sent to the packaging script.
-	  --publish               Launch the process to publish the current addon version. Will prompt for validation before starting.
-	  --symlink [-d|-b|-s]    Create symlinks. The option is either -d (addon dev folders), -b (addon build folders) or -s (saved variables folders). Defaults to -d if none is specified.
+      --local [-b] [-a {args}]      Build the addon locally.
+                                    The -b option will automatically launch the "--symlink -b" command once the build succeeds.
+                                    If any {args} are specified, they will be sent to the packaging script.
 
-	Examples:
-	  build.sh --local -a -l -e
-	  build.sh --symlink
+      --publish                     Launch the process to publish the current addon version.
+                                    Will prompt for validation before starting.
+
+      --symlink (-d|-b|-s)          Create symlinks.
+                                    The option is either -d (addon dev folders), -b (addon build folders) or -s (saved variables folders).
 
 	Note:
-	  If executed from the file explorer (double-click), the arguments will default to "--symlink -b".
+	  If executed from the file explorer (double-click), a prompt will appear and the arguments will default to "--symlink -{INPUT}".
 	EOF
 
 	return 1
@@ -97,9 +99,10 @@ function from_explorer()
 
 function custom_exit()
 {
-	last=$?
+	local last=$?
 
 	if from_explorer ; then
+		echo ""
 		read -n 1 -s -r -p "Press any key to continue..."
 	fi
 
@@ -116,7 +119,7 @@ function step_msg()
 
 function error_msg()
 {
-	last=$?
+	local last=$?
 
 	echo ""
 	case $2 in
@@ -130,7 +133,9 @@ function error_msg()
 
 function build_msg()
 {
-	last=$?
+	local last=$?
+
+	local msg line
 
 	case $2 in
 		1)
@@ -212,25 +217,29 @@ function package()
 		# will cancel the execution if something isn't available
 		check_package_execution || return
 
-		step_msg 1 5 "Check for the package directory"
+		local steps="5"
+		if [ "$1" == "-b" ]; then
+			steps="6"
+		fi
+
+		step_msg 1 "$steps" "Check for the package directory"
 		check_package_dir || return
 		echo "Package directory: \"$package_dir\""
 
 		# then we clear the old builds in the package folder
-		step_msg 2 5 "Cleanup the package directory"
+		step_msg 2 "$steps" "Cleanup the package directory"
 		rm -rfv "${package_dir:?}/${main_addon:?}"* || return
 		test ! -e "$package_dir/release.txt" || rm -fv "$package_dir/release.txt" || error_msg "Invalid file found at \"$package_dir/release.txt\", please remove it and try again" || return
 
 		# and we curl the packaging script from 'BigWigsMods/packager' on GitHub
 		# NOTE: using a txt file so that we don't risk executing it in the file explorer by mistake, and we have a trace of the last script used
-		step_msg 3 5 "Curl the packaging script (from GitHub)"
+		step_msg 3 "$steps" "Curl the packaging script (from GitHub)"
 		curl -sv "https://raw.githubusercontent.com/BigWigsMods/packager/master/release.sh" > "$package_dir/release.txt" || return
 		echo -e "\nDownloaded the packaging script to \"$package_dir/release.txt\""
 
 		# here we get potential additional arguments to send to release.txt
-		step_msg 4 5 "Process the additional arguments"
-		args=""
-		mark="0"
+		step_msg 4 "$steps" "Process the additional arguments"
+		local args="" mark="0"
 		for i in "$@"; do
 			if [ "$mark" == "1" ]; then
 				if [ -z "$args" ]; then
@@ -251,8 +260,13 @@ function package()
 		fi
 
 		# we call release.txt with the good arguments
-		step_msg 5 5 "Run the packaging script"
+		step_msg 5 "$steps" "Run the packaging script"
 		(cd "$package_dir" || exit; ./release.txt -r "$(pwd)" -d $args) || return
+
+		if [ "$1" == "-b" ]; then
+			step_msg 6 "$steps" "Create build symlinks"
+			make_links "-b" || return
+		fi
 	}
 
 	build_msg "BUILD" 1
@@ -339,19 +353,20 @@ function make_links()
 		test -d "$1" || error_msg "Invalid source folder for links" "vars" || return
 		test -n "$2" || error_msg "Invalid addon name for links" "vars" || return
 
+		local version to_path to
 		for version in "${wow_versions[@]}"; do
-			toPath="$wow_dir/$version/Interface/AddOns" # WOW ADDON PATH
-			if [ ! -d "$toPath" ]; then
+			to_path="$wow_dir/$version/Interface/AddOns" # WOW ADDON PATH
+			if [ ! -d "$to_path" ]; then
 				echo -e "\e[33m-\e[0m WoW \"$version\" version not found"
 				continue
 			fi
 
-			to="${toPath:?}/${2:?}"
+			to="${to_path:?}/${2:?}"
 			test ! -f "$to" -a ! -d "$to" -a ! -L "$to" || rm -rf "$to"
 
 			ln -s "$1" "$to" || return
 			echo -e "\e[32m+\e[0m \"$to\" (symlink) --> (target) \"$1\""
-			symlinkCount=$((symlinkCount+1))
+			symlink_count=$((symlink_count+1))
 		done
 	}
 
@@ -359,21 +374,22 @@ function make_links()
 	{
 		test -d "$1" || error_msg "Invalid source folder for saved variables links" "vars" || return
 
+		local version to_path account to_path_account to
 		for version in "${wow_versions[@]}"; do
-			toPath="$wow_dir/$version/WTF/Account" # WOW SAVED VARIABLES PATH
-			if [ ! -d "$toPath" ]; then
+			to_path="$wow_dir/$version/WTF/Account" # WOW SAVED VARIABLES PATH
+			if [ ! -d "$to_path" ]; then
 				echo -e "\e[33m-\e[0m WoW \"$version\" version not found"
 				continue
 			fi
 
 			for account in "${account_file_names[@]}"; do
-				toPathAccount="$toPath/$account" # WOW SAVED VARIABLES PATH
-				if [ ! -d "$toPathAccount" ] || [ -z "$account" ]; then
+				to_path_account="$to_path/$account" # WOW SAVED VARIABLES PATH
+				if [ ! -d "$to_path_account" ] || [ -z "$account" ]; then
 					echo -e "\e[33m-\e[0m Account \"$account\" not found for \"$version\""
 					continue
 				fi
 
-				to="${toPathAccount:?}/SavedVariables"
+				to="${to_path_account:?}/SavedVariables"
 				if [ -d "$to" ]; then
 					if [ ! -L "$to" ] && [ -n "$(ls -A "$to")" ]; then
 						echo -e "\e[31m-\e[0m Found a non-empty SavedVariables directory, skipping. Please backup, remove the folder and try again (\"$to\")"
@@ -384,7 +400,7 @@ function make_links()
 
 				ln -s "$1" "$to" || return
 				echo -e "\e[32m+\e[0m \"$to\" (symlink) --> (target) \"$1\""
-				symlinkCount=$((symlinkCount+1))
+				symlink_count=$((symlink_count+1))
 			done
 		done
 	}
@@ -392,13 +408,13 @@ function make_links()
 	# === check all variables and paths === #
 
 	test "$1" == "-d"
-	can_do_dev_dir=$?
+	local can_do_dev_dir=$?
 
 	test "$1" == "-b"
-	can_do_build_dir=$?
+	local can_do_build_dir=$?
 
 	test "$1" == "-s"
-	can_do_saved_dir=$?
+	local can_do_saved_dir=$?
 
 	if [ "$can_do_dev_dir" -ne 0 ] && [ "$can_do_build_dir" -ne 0 ] && [ "$can_do_saved_dir" -ne 0 ]; then
 		usage
@@ -437,31 +453,31 @@ function make_links()
 	# === create symlinks === #
 
 	echo ""
-	symlinkCount=0
+	local symlink_count=0 to_path addon_name
 
 	if [ "$can_do_dev_dir" -eq 0 ]; then
 		for addon_name in "${addons_to_symlink[@]}"; do
-			toPath="$addons_dir/$addon_name"
-			if [ -z "$addon_name" ] || [ ! -d "$toPath" ]; then
+			to_path="$addons_dir/$addon_name"
+			if [ -z "$addon_name" ] || [ ! -d "$to_path" ]; then
 				echo -e "Addon \"$addon_name\" not found at \"$addons_dir\", skipping..."
 				continue
 			fi
 
 			echo -e "Creating \e[4mdev directory\e[0m symlinks for \e[4m$addon_name\e[0m..."
-			internal_addon_dir "$toPath" "$addon_name" || error_msg "Could not create dev symbolic links for \"$addon_name\"" || return
+			internal_addon_dir "$to_path" "$addon_name" || error_msg "Could not create dev symbolic links for \"$addon_name\"" || return
 		done
 	fi
 
 	if [ "$can_do_build_dir" -eq 0 ]; then
 		for addon_name in "${addons_to_symlink[@]}"; do
-			toPath="$package_dir/$addon_name"
-			if [ -z "$addon_name" ] || [ ! -d "$toPath" ]; then
+			to_path="$package_dir/$addon_name"
+			if [ -z "$addon_name" ] || [ ! -d "$to_path" ]; then
 				echo -e "Addon \"$addon_name\" not found at \"$package_dir\", skipping..."
 				continue
 			fi
 
 			echo -e "Creating \e[4mbuild directory\e[0m symlinks for \e[4m$addon_name\e[0m..."
-			internal_addon_dir "$toPath" "$addon_name" || error_msg "Could not create build symbolic links for \"$addon_name\"" || return
+			internal_addon_dir "$to_path" "$addon_name" || error_msg "Could not create build symbolic links for \"$addon_name\"" || return
 		done
 	fi
 
@@ -471,7 +487,7 @@ function make_links()
 	fi
 
 	echo ""
-	echo "Complete. Created $symlinkCount symbolic links"
+	echo "Complete. Created $symlink_count symbolic links"
 }
 
 # ========== SCRIPT START ================================================================ #
@@ -493,7 +509,13 @@ test -f "$toc_file"    || error_msg "toc file not found"        "vars" || custom
 # ========== PROCESS ARGUMENTS ========== #
 
 if from_explorer ; then
-	set -- "--symlink" "-b"
+	read -p "$(echo -e "Select symlink mode [d/b] ")" -n 1 -r
+	echo ""
+	if [[ $REPLY =~ ^[Dd]$ ]]; then
+		set -- "--symlink" "-d"
+	elif [[ $REPLY =~ ^[Bb]$ ]]; then
+		set -- "--symlink" "-b"
+	fi
 fi
 
 if [ "$1" == "--local" ]; then
@@ -520,10 +542,6 @@ elif [ "$1" == "--publish" ]; then
 	fi
 elif [ "$1" == "--symlink" ]; then
 	# MAKE LINKS COMMAND
-
-	if [ -z "$2" ]; then
-		set -- "$1" "-d"
-	fi
 
 	make_links "$2"
 else
