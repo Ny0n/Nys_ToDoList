@@ -4,25 +4,27 @@
 ## Interface-BCC: 20504
 ## Interface-Wrath: 30401
 
-## Version: 7.0
+## Version: 7.1-alpha
 
 ## Author: Nyony (on Twitch)
 ## Title: Ny's To-Do List
+
 ## Notes: A simple interface to remember everything you need to do!
 ## Notes-frFR: Une interface simple pour se souvenir de tout ce que tu as à faire!
 ## Notes-deDE: Einfaches Interface, um dich an alles zu erinnern, was zu tun ist!
 ## Notes-ptBR: Uma interface simples para lembrar tudo o que você precisa fazer!
 ## Notes-koKR: 간단한 인터페이스로 할일을 모두 기록해 보아요!
 
-## DefaultState: enabled
 ## SavedVariables: NysToDoListDB
-## X-Curse-Project-ID: 320655
-# ## X-WoWI-ID: xxx
-
-# this is just to have an access to the old saved variables for a potential migration, they are not actually used anymore
 ## SavedVariablesPerCharacter: ToDoListSV, ToDoListSV_itemsList, ToDoListSV_checkedButtons, ToDoListSV_autoReset, ToDoListSV_lastLoadedTab
+# SavedVariablesPerCharacter are not used anymore, we just need to keep them here for migrations in case we updated from an old addon version
 
+## DefaultState: enabled
+## Dependencies: Nys_ToDoList_Backup
 ## OptionalDeps: LibStub, CallbackHandler-1.0, Ace3, LibDataBroker-1.1, LibDBIcon-1.0, LibQTip-1.0, LibDeflate
 ## X-Embeds: LibStub, CallbackHandler-1.0, Ace3, LibDataBroker-1.1, LibDBIcon-1.0, LibQTip-1.0, LibDeflate
+
+## X-Curse-Project-ID: 320655
+# ## X-WoWI-ID: xxx
 
 Main.xml

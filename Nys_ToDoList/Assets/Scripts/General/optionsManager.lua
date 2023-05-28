@@ -1100,7 +1100,30 @@ function private:CreateAddonOptionsTable()
 								type = "execute",
 								name = L["Import tabs"],
 								func = function()
-									importexport:ShowIEFrame(true)
+									StaticPopup_Hide("NysTDL_StaticPopupDialog")
+									StaticPopupDialogs["NysTDL_StaticPopupDialog"] = {
+										text = core.toc.title.." - "..L["Import tabs"].."\n\n"..L["Do you wish to create a backup before proceeding?"],
+										button1 = YES,
+										button2 = NO,
+										selectCallbackByIndex = true,
+										OnButton1 = function()
+											importexport:ShowIEFrame(true, nil, false)
+											NysTDLBackup:OpenList()
+										end,
+										OnButton2 = function()
+											importexport:ShowIEFrame(true)
+										end,
+										OnShow = function(self)
+											self:SetWidth(320) -- reset the width, because the closeButton sets it to 420
+										end,
+										closeButton = true,
+										closeButtonIsHide = true,
+										timeout = 0,
+										whileDead = true,
+										hideOnEscape = true,
+										preferredIndex = 3,
+									}
+									StaticPopup_Show("NysTDL_StaticPopupDialog")
 								end,
 							},
 							spacer111 = {

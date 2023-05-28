@@ -160,4 +160,12 @@ enums.quantities = {
 		[enums.category] = 0,
 		[enums.tab] = 0,
 	},
+	total = function()
+		return enums.quantities[false][enums.item]
+			+ enums.quantities[false][enums.category]
+			+ enums.quantities[false][enums.tab]
+			+ enums.quantities[true][enums.item]
+			+ enums.quantities[true][enums.category]
+			+ enums.quantities[true][enums.tab]
+	end
 }

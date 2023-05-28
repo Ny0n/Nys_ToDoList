@@ -65,7 +65,7 @@ function NysTDL:Tests(nb, ...)
 		-- end
 		-- print("<================>")
 	elseif nb == 4 then
-		importexport:OpenTabsSelectMenu()
+		NysTDL.tutorialsManager:ResetTuto("backup")
 
 		-- -- ITEM EXPLOSION
 		-- local refreshID = dataManager:SetRefresh(false)

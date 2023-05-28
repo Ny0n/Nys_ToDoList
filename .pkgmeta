@@ -23,6 +23,7 @@ externals:
 
 # Files and directories beginning with a dot (such as .git) are automatically ignored, as is the pgkmeta file itself
 ignore:
+  - build.sh
   - Nys_ToDoList/Assets/Dev
 
 manual-changelog:
@@ -35,3 +36,4 @@ manual-changelog:
 # for this command, every path is relative to the root of the zip (we're '{zip}/' unlike other commands, in which we are 'Nys_ToDoList(package-as)/')
 move-folders:
   Nys_ToDoList/Nys_ToDoList: Nys_ToDoList
+  Nys_ToDoList/Nys_ToDoList_Backup: Nys_ToDoList_Backup

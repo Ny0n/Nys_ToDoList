@@ -953,11 +953,17 @@ function private:GenerateFrameContent()
 	-- tutorialsManager:SetPoint("editmode", "undo", "BOTTOM", menu.undoButton, "TOP", 0, 18)
 
 	-- addon options button
-	menu.frameOptionsButton = widgets:IconTooltipButton(menu, "NysTDL_FrameOptionsButton", L["Open addon options"])
+	menu.frameOptionsButton = widgets:IconTooltipButton(menu, "NysTDL_FrameOptionsButton", L["Click"].." - "..L["Open addon options"].."\n"..L["Shift-Click"].." - "..L["Open backup list"])
 	menu.frameOptionsButton:SetPoint("CENTER", menu.undoButton, "CENTER", spacing, 0)
 	menu.frameOptionsButton:SetScript("OnClick", function()
-		optionsManager:ToggleOptions(true)
+		if IsShiftKeyDown() then
+			NysTDLBackup:OpenList()
+			tutorialsManager:Validate("backup", "optionsButton") -- tutorial
+		else
+			optionsManager:ToggleOptions(true)
+		end
 	end)
+	tutorialsManager:SetPoint("backup", "optionsButton", "BOTTOM", tdlFrame.content.menu.frameOptionsButton, "TOP", 0, 18)
 
 	-- remaining numbers labels
 	menu.remaining = widgets:Dummy(menu.helpButton)
