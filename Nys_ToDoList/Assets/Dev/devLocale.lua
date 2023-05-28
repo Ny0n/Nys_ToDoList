@@ -51,7 +51,7 @@ L["Create new"] = true
 L["You can also use the %s chat command"] = true
 
 L["Do you wish to create a backup before proceeding?"] = true
-L["Having a lot of data? Don't forget to make backups from time to time!"] = true
+L["You have a lot of data? Don't forget to make backups from time to time!"] = true
 L["Open backup list"] = true
 -- ================================= --
 
