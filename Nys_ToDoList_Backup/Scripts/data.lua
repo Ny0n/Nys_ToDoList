@@ -14,7 +14,7 @@ local private = {}
 
 --[[
 	defaults = {
-		nextProfileID = "1",
+		nextProfileID = "1", -- NOTE: profiles are not really used atm, but the system is in place in case I ever want to add them
 		currentProfile = profileID,
 		profilesOrdered = { profileID, ... }, -- ipairs
 		profiles = { -- pairs
@@ -476,8 +476,8 @@ function private:CreateNewBackup(profileID)
 		return
 	end
 
-	-- TDLATER only profileID.name
-	local addonLoaded = (IsAddOnLoaded("Nys_ToDoList") and "Nys_ToDoList") or (IsAddOnLoaded("Nys_ToDoListWIP") and "Nys_ToDoListWIP")
+	-- TDLATER only profileID.name or new addons list
+	local addonLoaded = (IsAddOnLoaded("Nys_ToDoList") and "Nys_ToDoList") or false
 	if not addonLoaded then
 		print("Error: private:CreateNewBackup #4 (addon not loaded)")
 		return
