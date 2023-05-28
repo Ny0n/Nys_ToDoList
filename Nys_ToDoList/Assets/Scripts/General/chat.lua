@@ -94,8 +94,7 @@ function chat:Warn()
 						if msg ~= "" then
 							msg = msg.." + "
 						end
-						local tabName = L[tabData.name] or tabData.name
-						msg = msg..tostring(nb).." ("..tabName..")"
+						msg = msg..tostring(nb).." ("..tostring(tabData.name)..")"
 					end, true)
 
 					if msg ~= "" then
