@@ -4,15 +4,15 @@
 
 This build script is used for 3 things:
 	- Package addons locally, using the latest BigWigsMods/packager/release.sh script
-	- Publish addons, again using the packager script and git flow
+	- Publish addons, using git flow, git actions and the packager script
 	- Create symlinks, to setup the addon dev environment
 
 For the Package and Publish command, the packager script will search for,
 and use a ".pkgmeta" file at the source of your git repository.
 
-The Package command will create the builds inside of the "addons_dir" folder.
+The Package command will create the builds inside of the "package_dir" folder.
 
-The Publish command will use git flow to create a release using the "main_addon" version as a name,
+The Publish command will use git flow to create a tag and a release using the "main_addon" version as a name,
 it will then push it to github where the release.yml file will automatically start an action to call the packager script,
 and this time it will not build locally, but create and publish a release on github and on curseforge (depending on the "X-" metadatas in the TOC file).
 
@@ -21,7 +21,7 @@ see https://github.com/WeakAuras/WeakAuras2/wiki/Lua-Dev-Environment#create-syml
 The -d option will make the symlinks target the repository ("addons_dir") addons, whereas the -b option will make the symlinks
 target the build ("package_dir") addons, useful if you want to test your local builds.
 You can also create symlinks for a common "SavedVariables" folder, that will be used to source all saved variables for every WoW version,
-so you will share the same saved variables between Retail ("_retail_") and Classic ("_classic_"), as an example.
+so you will share the same saved variables between Retail ("_retail_") and Classic ("_classic_"), for example.
 
 You can modify the variables just below to customize the behavior of the script.
 
@@ -38,7 +38,7 @@ package_dir=".other/package"                        # The name/path for the pack
 
 # --symlink -d|-b
 
-addons_to_symlink=()                                # Found in $addons_dir
+addons_to_symlink=()                                # Found in $addons_dir or $package_dir
 addons_to_symlink+=("$main_addon")
 addons_to_symlink+=("Nys_ToDoList_Backup")
 
