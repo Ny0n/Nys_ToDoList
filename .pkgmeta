@@ -23,6 +23,7 @@ externals:
 
 # Files and directories beginning with a dot (such as .git) are automatically ignored, as is the pgkmeta file itself
 ignore:
+  - build.sh
   - Nys_ToDoList/Assets/Dev
 
 manual-changelog:

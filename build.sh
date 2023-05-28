@@ -18,6 +18,8 @@ and this time it will not build locally, but create and publish a release on git
 
 The Symlink command will create symlinks between the WoW addons folders, and the specified addons inside the repository ("addons_to_symlink"),
 see https://github.com/WeakAuras/WeakAuras2/wiki/Lua-Dev-Environment#create-symlinks to understand what I mean.
+The -d option will make the symlinks target the repository ("addons_dir") addons, whereas the -b option will make the symlinks
+target the build ("package_dir") addons, useful if you want to test your local builds.
 You can also create symlinks for a common "SavedVariables" folder, that will be used to source all saved variables for every WoW version,
 so you will share the same saved variables between Retail ("_retail_") and Classic ("_classic_"), as an example.
 
@@ -28,19 +30,19 @@ You can modify the variables just below to customize the behavior of the script.
 # addons info
 
 main_addon="Nys_ToDoList"                           # The name of the main addon folder and toc file. Used to find out the addon version that will be used as a tag for the Publish command
-addons_dir="../.."                                  # The path to the dev addon folder (usually the repository). Either absolute (/*) or relative (*)
+addons_dir="."                                      # The path to the dev addon folder (usually the repository). Either absolute (/*) or relative (*)
 
 # --local
 
-package_dir="package"                               # The name/path for the package folder (--local command). The script will create it if it doesn't exist. Either absolute (/*) or relative (*)
+package_dir=".other/package"                        # The name/path for the package folder (--local command). The script will create it if it doesn't exist. Prefer somewhere ignored by a gitignore. Either absolute (/*) or relative (*)
 
-# --symlink [-d]
+# --symlink -d|-b
 
 addons_to_symlink=()                                # Found in $addons_dir
 addons_to_symlink+=("$main_addon")
 addons_to_symlink+=("Nys_ToDoList_Backup")
 
-# --symlink [-d|-f]
+# --symlink -d|-b|-f
 
 wow_dir="/c/Program Files (x86)/World of Warcraft"  # Only absolute (/*)
 
@@ -52,7 +54,7 @@ wow_versions+=("_ptr_")
 wow_versions+=("_ptr2_")
 wow_versions+=("_beta_")
 
-# --symlink [-f]
+# --symlink -f
 
 saved_vars_dir="$wow_dir/SavedVariables"           # Common saved vars folder path, the one we will point to for every WoW version. Either absolute (/*) or relative (*)
 account_file_names=()                              # Add/Remove account file names below
@@ -69,14 +71,39 @@ function usage()
 	Usage: build.sh [MODE]
 	[MODE] can be ONE of these:
 
-	  --local [-a {args}]    Build the addon locally. If any {args} are specified, they will be sent to the packaging script.
-	  --publish              Launch the process to publish the current addon version. Will prompt for validation before starting.
-	  --symlink [-d|-f]      Create all addon symlinks. You can limit what gets created with -d (only addon directories) or -f (only saved variables directories).
+	  --local [-a {args}]     Build the addon locally. If any {args} are specified, they will be sent to the packaging script.
+	  --publish               Launch the process to publish the current addon version. Will prompt for validation before starting.
+	  --symlink [-d|-b|-s]    Create symlinks. The option is either -d (addon dev folders), -b (addon build folders) or -s (saved variables folders). Defaults to -d if none is specified.
 
-	Example: build.sh --local -a -l -e
+	Examples:
+	  build.sh --local -a -l -e
+	  build.sh --symlink
+
+	Note:
+	  If executed from the file explorer (double-click), the arguments will default to "--symlink -b"
 	EOF
 
 	return 1
+}
+
+function from_explorer()
+{
+	if (( SHLVL < 2 )) ; then # if we double-clicked on the script (not running from a terminal)
+		return 0
+	fi
+
+	return 1
+}
+
+function custom_exit()
+{
+	last=$?
+
+	if from_explorer ; then
+		read -n 1 -s -r -p "Press any key to continue..."
+	fi
+
+	exit $last
 }
 
 function step_msg()
@@ -126,8 +153,8 @@ function build_msg()
 			;;
 		3)
 			echo ""
-			echo "** /!\ $1 ERROR /!\ **"
-			echo "** /!\ Check log for more information /!\ **"
+			echo "** </> $1 ERROR </> **"
+			echo "** </> Check log for more information </> **"
 			echo ""
 			;;
 	esac
@@ -144,6 +171,19 @@ function find_version()
 }
 
 # ========== PACKAGE COMMAND ========== #
+
+function check_package_dir()
+{
+	test -n "$package_dir" || error_msg "Invalid package directory" "vars" || return
+
+	if [ ! -d "$package_dir" ]; then # if the package dir doesn't exist
+		mkdir -v "$package_dir" || return # we create it
+	fi
+
+	package_dir="$(cd "$package_dir" && pwd)" # to absolute path
+
+	test -n "$package_dir" -a -d "$package_dir" || error_msg "Invalid package directory" "vars" || return
+}
 
 function check_package_execution()
 {
@@ -173,15 +213,7 @@ function package()
 		check_package_execution || return
 
 		step_msg 1 5 "Check for the package directory"
-		test -n "$package_dir" || error_msg "Invalid package directory" "vars" || return
-
-		if [ ! -d "$package_dir" ]; then # if the package dir doesn't exist
-			mkdir -v "$package_dir" || return # we create it
-		fi
-
-		package_dir="$(cd "$package_dir" && pwd)" # to absolute path
-
-		test -n "$package_dir" -a -d "$package_dir" || error_msg "Invalid package directory" "vars" || return
+		check_package_dir || return
 		echo "Package directory: \"$package_dir\""
 
 		# then we clear the old builds in the package folder
@@ -359,13 +391,21 @@ function make_links()
 
 	# === check all variables and paths === #
 
-	test -z "$1" || test "$1" == "-d"
-	can_do_dir=$?
+	test "$1" == "-d"
+	can_do_dev_dir=$?
 
-	test -z "$1" || test "$1" == "-f"
+	test "$1" == "-b"
+	can_do_build_dir=$?
+
+	test "$1" == "-s"
 	can_do_saved_dir=$?
 
-	if [ "$can_do_dir" -ne 0 ] && [ "$can_do_saved_dir" -ne 0 ]; then
+	if [ "$can_do_dev_dir" -ne 0 ] && [ "$can_do_build_dir" -ne 0 ] && [ "$can_do_saved_dir" -ne 0 ]; then
+		usage
+		return
+	fi
+
+	if [ "$can_do_dev_dir" -eq 0 ] && [ "$can_do_build_dir" -eq 0 ]; then
 		usage
 		return
 	fi
@@ -376,9 +416,13 @@ function make_links()
 	test -n "$wow_dir" -a -d "$wow_dir" || error_msg "Invalid WoW directory" "vars" || return
 	test "${#wow_versions[@]}" -ne 0 || error_msg "No WoW version has been specified" "vars" || return
 
-	# if [ "$can_do_dir" -eq 0 ]; then
-		# $addons_dir has already been verified
-	# fi
+	if [ "$can_do_dev_dir" -eq 0 ]; then
+		: # $addons_dir has already been verified
+	fi
+
+	if [ "$can_do_build_dir" -eq 0 ]; then
+		check_package_dir || return
+	fi
 
 	if [ "$can_do_saved_dir" -eq 0 ]; then
 		test "${#account_file_names[@]}" -ne 0 || error_msg "No account file name has been specified" "vars" || return
@@ -388,23 +432,36 @@ function make_links()
 		test -n "$saved_vars_dir" -a -d "$saved_vars_dir" || error_msg "Invalid saved vars directory" "vars" || return
 	fi
 
-	# so we have: $addons_dir for the addons folder and $saved_vars_dir for the common saved vars folder
+	# so we have: $package_dir for the addons build folder, $addons_dir for the addons dev folder and $saved_vars_dir for the common saved vars folder
 
 	# === create symlinks === #
 
 	echo ""
 	symlinkCount=0
 
-	if [ "$can_do_dir" -eq 0 ]; then
+	if [ "$can_do_dev_dir" -eq 0 ]; then
 		for addon_name in "${addons_to_symlink[@]}"; do
 			toPath="$addons_dir/$addon_name"
 			if [ -z "$addon_name" ] || [ ! -d "$toPath" ]; then
-				echo -e "Addon \"$addon_name\" not found, skipping..."
+				echo -e "Addon \"$addon_name\" not found at \"$addons_dir\", skipping..."
 				continue
 			fi
 
-			echo -e "Creating \e[4mdirectory\e[0m symlinks for \e[4m$addon_name\e[0m..."
-			internal_addon_dir "$toPath" "$addon_name" || error_msg "Could not create symbolic links for \"$addon_name\"" || return
+			echo -e "Creating \e[4mdev directory\e[0m symlinks for \e[4m$addon_name\e[0m..."
+			internal_addon_dir "$toPath" "$addon_name" || error_msg "Could not create dev symbolic links for \"$addon_name\"" || return
+		done
+	fi
+
+	if [ "$can_do_build_dir" -eq 0 ]; then
+		for addon_name in "${addons_to_symlink[@]}"; do
+			toPath="$package_dir/$addon_name"
+			if [ -z "$addon_name" ] || [ ! -d "$toPath" ]; then
+				echo -e "Addon \"$addon_name\" not found at \"$package_dir\", skipping..."
+				continue
+			fi
+
+			echo -e "Creating \e[4mbuild directory\e[0m symlinks for \e[4m$addon_name\e[0m..."
+			internal_addon_dir "$toPath" "$addon_name" || error_msg "Could not create build symbolic links for \"$addon_name\"" || return
 		done
 	fi
 
@@ -421,24 +478,28 @@ function make_links()
 
 # first of all, we change the local execution to be the script's folder,
 # so that it works wherever we call it
-cd "$(dirname "$0")"   || exit
+cd "$(dirname "$0")"   || custom_exit
 
 # check the script vars
-test -n "$main_addon"  || error_msg "Invalid main addon name"   "vars" || exit
-test -n "$addons_dir"  || error_msg "Invalid addons directory"  "vars" || exit
+test -n "$main_addon"  || error_msg "Invalid main addon name"   "vars" || custom_exit
+test -n "$addons_dir"  || error_msg "Invalid addons directory"  "vars" || custom_exit
 
 # check the paths
 addons_dir="$(cd "$addons_dir" && pwd)" # to absolute path
 toc_file="$addons_dir/$main_addon/$main_addon.toc"
-test -d "$addons_dir"  || error_msg "Invalid addons directory"  "vars" || exit
-test -f "$toc_file"    || error_msg "toc file not found"        "vars" || exit
+test -d "$addons_dir"  || error_msg "Invalid addons directory"  "vars" || custom_exit
+test -f "$toc_file"    || error_msg "toc file not found"        "vars" || custom_exit
 
 # ========== PROCESS ARGUMENTS ========== #
+
+if from_explorer ; then
+	set -- "--symlink" "-b"
+fi
 
 if [ "$1" == "--local" ]; then
 	# PACKAGE COMMAND
 
-	find_version || exit
+	find_version || custom_exit
 
 	read -p "$(echo -e "\e[1mPackage locally\e[0m $main_addon for version \e[4m$version\e[0m ? [y/N] ")" -n 1 -r
 	echo ""
@@ -449,7 +510,7 @@ if [ "$1" == "--local" ]; then
 elif [ "$1" == "--publish" ]; then
 	# PUBLISH COMMAND
 
-	find_version || exit
+	find_version || custom_exit
 
 	read -p "$(echo -e "\e[1mPublish\e[0m $main_addon for version \e[4m$version\e[0m ? [y/N] ")" -n 1 -r
 	echo ""
@@ -459,10 +520,14 @@ elif [ "$1" == "--publish" ]; then
 	fi
 elif [ "$1" == "--symlink" ]; then
 	# MAKE LINKS COMMAND
+	if [ -z "$2" ]; then
+		set -- "$1" "-d"
+	fi
+
 	make_links "$2"
 else
 	# we misstyped something, or we typed "--help"
 	usage
 fi
 
-exit
+custom_exit
