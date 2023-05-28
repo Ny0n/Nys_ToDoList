@@ -64,7 +64,7 @@ function core:ADDON_LOADED(event, addonName)
 		backupLoaded = true
 	end
 
-	if addonName == "Nys_ToDoList" or addonName == "Nys_ToDoListWIP" then
+	if addonName == "Nys_ToDoList" or addonName == "Nys_ToDoListWIP" then -- TODO remove all mentions of Nys_ToDoListWIP
 		listLoaded = true
 	end
 

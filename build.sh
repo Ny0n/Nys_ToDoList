@@ -80,7 +80,7 @@ function usage()
 	  build.sh --symlink
 
 	Note:
-	  If executed from the file explorer (double-click), the arguments will default to "--symlink -b"
+	  If executed from the file explorer (double-click), the arguments will default to "--symlink -b".
 	EOF
 
 	return 1
@@ -520,6 +520,7 @@ elif [ "$1" == "--publish" ]; then
 	fi
 elif [ "$1" == "--symlink" ]; then
 	# MAKE LINKS COMMAND
+
 	if [ -z "$2" ]; then
 		set -- "$1" "-d"
 	fi
