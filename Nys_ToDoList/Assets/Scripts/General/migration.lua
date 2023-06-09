@@ -73,26 +73,16 @@ end
 function private:GlobalNewVersion()
     -- // updates the global saved variables once after an update
 
-    if utils:IsVersionOlderThan(NysTDL.acedb.global.latestVersion, "6.0") then -- if we come from before 6.0
-        if NysTDL.acedb.global.tuto_progression then
-			if NysTDL.acedb.global.tuto_progression > 5 then -- if we already completed the tutorial
-				-- we go to the new part of the edit mode button
-				NysTDL.acedb.global.tuto_progression = 5
-			end
-		end
-    end
-
-	if utils:IsVersionOlderThan(NysTDL.acedb.global.latestVersion, "6.6") then
-        if NysTDL.acedb.global.tuto_progression then
-			tutorialsManager:SetProgress("introduction", NysTDL.acedb.global.tuto_progression)
-		end
-    end
-
     if utils:IsVersionOlderThan(NysTDL.acedb.global.latestVersion, "7.0-alpha") then
-        if NysTDL.acedb.global.tutorials_progression["introduction"] == true then -- if we already completed the tutorial
-			NysTDL.acedb.global.tutorials_progression["introduction"] = 2 -- restart it from the moment where we add new items
-		end
-    end
+        local oldProgression = NysTDL.acedb.global.tuto_progression
+        local newProgression = NysTDL.acedb.global.tutorials_progression
+
+        local oldNeeds = type(oldProgression) == "number" and oldProgression > 2 or false
+        local newNeeds = (type(newProgression) == "number" and newProgression > 2) or type(newProgression) == "boolean"
+		if oldNeeds or newNeeds then
+            NysTDL.acedb.global.tutorials_progression["introduction"] = 2 -- restart the tuto from the moment where we add new items
+        end
+	end
 end
 
 function private:ProfileNewVersion()

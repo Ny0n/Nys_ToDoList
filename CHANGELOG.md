@@ -1,3 +1,7 @@
+#### **7.1.1**
+
+- Fixed a bug due to the tutorial system that happened if we updated the addon to v7.0+ from before v6.6
+
 #### **7.1**
 
 Added a new addon as part of the download: Ny's To-Do List Backup
