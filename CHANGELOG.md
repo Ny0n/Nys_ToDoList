@@ -1,7 +1,3 @@
-#### **7.1.2**
-
-- Fixed a bug with the tabs overflow list not dissapearing when we hide the list
-
 #### **7.1.1**
 
 - Fixed a bug due to the tutorial system that happened if we updated the addon to v7.0+ from before v6.6

@@ -545,16 +545,10 @@ end
 
 --/*******************/ GENERAL /*************************/--
 
-function tabsFrame:HideOverflowList()
-	if overflowList then
-		overflowList:Hide()
-	end
-end
-
 function tabsFrame:GLOBAL_MOUSE_DOWN()
 	-- to replicate the behavior of the GameTooltip
 	if overflowList and not overflowList:IsMouseOver() and not overflowButtonFrame:IsMouseOver() then
-		tabsFrame:HideOverflowList()
+		overflowList:Hide()
 	end
 end
 
