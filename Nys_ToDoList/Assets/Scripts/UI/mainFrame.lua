@@ -533,6 +533,7 @@ function mainFrame:Event_TDLFrame_OnVisibilityUpdate()
 	NysTDL.acedb.profile.lastListVisibility = tdlFrame:IsShown()
 	if dragndrop.dragging then dragndrop:CancelDragging() end
 	mainFrame:ToggleEditMode(false)
+	tabsFrame:HideOverflowList()
 end
 
 function mainFrame:Event_TDLFrame_OnSizeChanged(width, height)
