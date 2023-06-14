@@ -624,7 +624,7 @@ function dataManager:CreateCategory(catName, tabID, parentCatID)
 	-- first, we check what needs to be checked
 	if not private:CheckName(catName, enums.category) then return end
 	if parentCatID and not dataManager:IsID(parentCatID) then
-		-- chat:Print(L["The given parent category is not valid"]) -- TDLATER
+		chat:Print(L["The given parent category is not valid"])
 		return
 	end
 
@@ -1009,20 +1009,24 @@ function dataManager:MoveTab(tabID, newPos)
 	tabsFrame:Refresh()
 end
 
--- luacheck: push ignore
-
----Future function used to move a tab from global to profile and vice versa. TODO already done, move code to here?
+---Moves tabs from global to profile and vice versa.
 ---@param tabID string
 ---@param newGlobalState boolean true = global, false = profile
-function dataManager:ChangeTabGlobalState(tabID, newGlobalState)
-	local oldGlobalState, tabData = select(2, dataManager:Find(tabID))
-	-- TDLATER ChangeTabGlobalState
+function dataManager:ChangeTabsGlobalState(tabsToMigrate)
+	if type(tabsToMigrate) ~= "table" then return end
 
-	-- TDLATER ChangeTabGlobalState message
-	mainFrame:Refresh()
+	local encodedData = importexport:LaunchExportProcess(tabsToMigrate, true)
+	if not encodedData then return end
+
+	local success = importexport:LaunchImportProcess(encodedData)
+	if not success then return end
+
+	for tabID in pairs(tabsToMigrate) do
+		dataManager:DeleteTab(tabID) -- right now we just created a copy of the tabs in the other "globality" state, but the original ones still exist
+	end
+
+	return success
 end
-
--- luacheck: pop
 
 -- // remove functions
 

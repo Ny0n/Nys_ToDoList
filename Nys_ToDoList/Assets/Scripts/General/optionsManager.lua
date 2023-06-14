@@ -130,7 +130,7 @@ local tabManagementTable = {
 				name = L["Switch Global/Profile"],
 				func = function(info)
 					local tabID = private:GetTabInfo(info)
-					importexport:SwitchTabs({[tabID] = true})
+					dataManager:ChangeTabsGlobalState({[tabID] = true})
 				end,
 				disabled = function(info)
 					local tabID = private:GetTabInfo(info)
