@@ -141,7 +141,7 @@ function private:DragUpdateFunc()
 end
 
 function private:IsCatDropValid(targetCatID)
-	do return false end -- TDLATER sub-cat drag&drop (fix (add) missing drop points (under sub-cats) & verify tab switch)
+	-- TDLATER sub-cat drag&drop (fix (add) missing drop points (under sub-cats) & verify tab switch)
 
 	-- returns false if:
 	-- - (1) the targetCatID's original tab is different from the one we're currently dragging

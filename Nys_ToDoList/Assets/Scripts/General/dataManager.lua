@@ -15,6 +15,7 @@ local utils = NysTDL.utils
 local widgets = NysTDL.widgets
 local database = NysTDL.database
 local resetManager = NysTDL.resetManager
+local importexport = NysTDL.importexport
 
 -- Secondary aliases
 
@@ -1010,8 +1011,7 @@ function dataManager:MoveTab(tabID, newPos)
 end
 
 ---Moves tabs from global to profile and vice versa.
----@param tabID string
----@param newGlobalState boolean true = global, false = profile
+---@param tabsToMigrate table A key value table containing all the tabIDs to migrate as keys having a value of true ( { [tabID] = true, ... } )
 function dataManager:ChangeTabsGlobalState(tabsToMigrate)
 	if type(tabsToMigrate) ~= "table" then return end
 

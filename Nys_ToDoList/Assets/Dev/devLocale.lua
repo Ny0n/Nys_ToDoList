@@ -55,6 +55,8 @@ L["You have a lot of data? Don't forget to make backups from time to time!"] = t
 L["Open backup list"] = true
 -- ================================= --
 
+L["Add a sub-category"] = true
+L["Sub-Category"] = true
 L["One last thing: you can change what you see using this button. It's up to you now!"] = true
 L["Data comes from a newer addon version (%s), please update and try again"] = true
 L["Press enter to add"] = true
@@ -64,7 +66,6 @@ L["Toggle menu"] = true
 L["Resize"] = true
 L["To add new items, hover the category names and press the %s icon"] = true
 L["Access new buttons"] = true
-
 L["Automatically saved"] = true
 L["Open addon options"] = true
 L["Open behavior on login"] = true
