@@ -2,10 +2,10 @@
 ..\FrameXML\UI.xsd">
 
 	<!-- **************** Scripts *********************** -->
-	<Script file="Scripts\core.lua"/> <!-- #1 to be loaded -->
-	<Script file="Scripts\data.lua"/>
-	<Script file="Scripts\list.lua"/>
-	<Script file="Scripts\options.lua"/>
-	<Script file="Scripts\utils.lua"/>
+	<Script file="Assets\Scripts\core.lua"/> <!-- #1 to be loaded -->
+	<Script file="Assets\Scripts\data.lua"/>
+	<Script file="Assets\Scripts\list.lua"/>
+	<Script file="Assets\Scripts\options.lua"/>
+	<Script file="Assets\Scripts\utils.lua"/>
 
 </Ui>

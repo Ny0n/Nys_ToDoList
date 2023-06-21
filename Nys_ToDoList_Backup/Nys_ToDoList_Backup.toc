@@ -4,7 +4,7 @@
 ## Interface-BCC: 20504
 ## Interface-Wrath: 30401
 
-## Version: 1.0
+## Version: 1.0.1
 
 ## Author: Nyony (on Twitch)
 ## Title: Ny's To-Do List Backup
@@ -15,5 +15,7 @@
 
 ## DefaultState: enabled
 ## LoadOnDemand: 1
+
+## IconTexture: Interface\AddOns\Nys_ToDoList_Backup\Assets\Art\70_professions_scroll_03
 
 Main.xml
