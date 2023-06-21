@@ -1,3 +1,7 @@
+#### **7.1.3**
+
+- Added addon icons in the addon menu
+
 #### **7.1.2**
 
 - Fixed a bug with the tabs overflow list not dissapearing when we hide the list
