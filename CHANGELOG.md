@@ -1,6 +1,10 @@
+#### **7.1.4**
+
+- Added localization for French (frFR)
+
 #### **7.1.3**
 
-- Added addon icons in the addon menu
+- Added addon icons in the WoW addon menu
 
 #### **7.1.2**
 
