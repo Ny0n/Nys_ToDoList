@@ -15,6 +15,7 @@ local utils = NysTDL.utils
 local widgets = NysTDL.widgets
 local database = NysTDL.database
 local resetManager = NysTDL.resetManager
+local importexport = NysTDL.importexport
 
 -- Secondary aliases
 
@@ -1009,20 +1010,23 @@ function dataManager:MoveTab(tabID, newPos)
 	tabsFrame:Refresh()
 end
 
--- luacheck: push ignore
+---Moves tabs from global to profile and vice versa.
+---@param tabsToMigrate table A key value table containing all the tabIDs to migrate as keys having a value of true ( { [tabID] = true, ... } )
+function dataManager:ChangeTabsGlobalState(tabsToMigrate)
+	if type(tabsToMigrate) ~= "table" then return end
 
----Future function used to move a tab from global to profile and vice versa. TODO already done, move code to here?
----@param tabID string
----@param newGlobalState boolean true = global, false = profile
-function dataManager:ChangeTabGlobalState(tabID, newGlobalState)
-	local oldGlobalState, tabData = select(2, dataManager:Find(tabID))
-	-- TDLATER ChangeTabGlobalState
+	local encodedData = importexport:LaunchExportProcess(tabsToMigrate, true)
+	if not encodedData then return end
 
-	-- TDLATER ChangeTabGlobalState message
-	mainFrame:Refresh()
+	local success = importexport:LaunchImportProcess(encodedData)
+	if not success then return end
+
+	for tabID in pairs(tabsToMigrate) do
+		dataManager:DeleteTab(tabID) -- right now we just created a copy of the tabs in the other "globality" state, but the original ones still exist
+	end
+
+	return success
 end
-
--- luacheck: pop
 
 -- // remove functions
 

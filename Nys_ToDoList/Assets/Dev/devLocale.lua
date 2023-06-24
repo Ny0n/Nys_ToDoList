@@ -18,17 +18,6 @@ addonTable.devLocale = L
 -- "방탄소년단" test locale (:D)
 
 --/************************************************/--
-L["Change the background opacity"] = true
-L["Change the opacity for texts, buttons and other elements"] = true
-L["Name"] = true
-L["Name is too large"] = true
-L["Frame options"] = true
-L["Resize the list"] = true
-L["To add new items to existing categories, just right-click the category names"] = true
-L["You can access the options from here"] = true
-L["Right-click on the category names to add new items"] = true
-L["Access new buttons: %s and %s"] = true
-L["They are automatically saved"] = true
 
 -- == Nys_ToDoList_Backup locales (Nys_ToDoList backup related locales) == --
 L["The current data will be backed up under the %s section"] = true
@@ -64,7 +53,6 @@ L["Toggle menu"] = true
 L["Resize"] = true
 L["To add new items, hover the category names and press the %s icon"] = true
 L["Access new buttons"] = true
-
 L["Automatically saved"] = true
 L["Open addon options"] = true
 L["Open behavior on login"] = true
