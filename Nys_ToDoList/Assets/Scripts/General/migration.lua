@@ -968,10 +968,10 @@ function private:NewItemWidget(itemName, removeBtnFunc)
 		recoveryList.tooltip:SetFont("GameTooltipText")
 
         if checked then
-            recoveryList.tooltip:AddLine(L["Checked"]..": "..L["Yes"])
+            recoveryList.tooltip:AddLine(L["Checked"]..": "..tostring(YES))
         end
         if favorite then
-            recoveryList.tooltip:AddLine(L["Favorite"]..": "..L["Yes"])
+            recoveryList.tooltip:AddLine(L["Favorite"]..": "..tostring(YES))
         end
         if description then
             recoveryList.tooltip:AddLine(L["Description"]..": "..L["Click to copy"])

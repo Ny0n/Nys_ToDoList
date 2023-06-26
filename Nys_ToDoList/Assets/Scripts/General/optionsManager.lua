@@ -34,7 +34,7 @@ local addonName = core.addonName
 
 local private = {}
 
-local wDef = { toggle = 160, select = 265, range = 200, execute = 180, keybinding = 200, color = 180 } -- the min width (this is for the locales)
+local wDef = { toggle = 160, select = 265, range = 200, execute = 180, keybinding = 200, color = 180, input = 240 } -- the max width (this is for the locales), more than this and we scale
 
 --/*******************/ OPTIONS TABLES /*************************/--
 
@@ -1252,7 +1252,6 @@ function optionsManager:Initialize()
 	-- this is for adapting the width of the widgets to the length of their respective names (that can change with the locale)
 	private:InitializeOptionsWidthRecursive(optionsManager.optionsTable.args.main.args, wDef)
 	private:InitializeOptionsWidthRecursive(tabManagementTable, wDef)
-	private:InitializeOptionsWidthRecursive(tabAddTable, wDef)
 
 	-- we register our options table for AceConfig
 	AceConfigRegistry:ValidateOptionsTable(optionsManager.optionsTable, addonName)
