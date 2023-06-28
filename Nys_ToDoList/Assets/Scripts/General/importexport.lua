@@ -130,22 +130,6 @@ function importexport:Import(prefixed, method)
     return data
 end
 
-function importexport:SwitchTabs(tabsToMigrate)
-	if type(tabsToMigrate) ~= "table" then return end
-
-	local encodedData = importexport:LaunchExportProcess(tabsToMigrate, true)
-	if not encodedData then return end
-
-	local success = importexport:LaunchImportProcess(encodedData)
-	if not success then return end
-
-	for tabID in pairs(tabsToMigrate) do
-		dataManager:DeleteTab(tabID) -- right now we just created a copy of the tabs in the other "globality" state, but the original ones still exist
-	end
-
-	return success
-end
-
 ---Shows an editbox where the player can copy or paste serialized data
 function importexport:ShowIEFrame(isImport, data, setFocus)
 	if IEFrame then return end
@@ -216,7 +200,123 @@ function importexport:ShowIEFrame(isImport, data, setFocus)
 	end
 end
 
---/***************/ Data Import /*****************/--
+--/***************/ Data Processing /*****************/--
+
+function importexport:LaunchExportProcess(tabsToMigrate, onlyReturn)
+	if IEFrame then return end
+
+	local tabsToExport = tabsToMigrate or selectedTabIDs
+
+	-- // Part 1: Validate the tabIDs
+	if type(tabsToExport) ~= "table" then return end
+
+	local tabIDs = {}
+	for tabID, value in pairs(tabsToExport) do
+		if value and dataManager:IsID(tabID) then
+			tinsert(tabIDs, tabID)
+		end
+	end
+
+	if #tabIDs <= 0 then -- no tabs selected
+		return
+	end
+
+	--[[
+		tabIDs = {
+			ID,
+			ID,
+			...
+		}
+	]]
+
+	-- // Part 2: Create the export table
+	local exportData = {
+		addonVersion = NysTDL.acedb.global.latestVersion,
+		isMigration = not not tabsToMigrate,
+		orderedTabIDs = {
+			[true] = {}, -- global
+			[false] = {}, -- profile
+		},
+		elements = {},
+	}
+
+	-- helpers
+	local function isTabInExport(tabID)
+		return utils:HasValue(tabIDs, tabID)
+	end
+	local function removeUnusedTabIDs(tbl, isKey)
+		local temp = utils:Deepcopy(tbl)
+		wipe(tbl)
+
+		if isKey then
+			for tabID in pairs(temp) do
+				if isTabInExport(tabID) then
+					tbl[tabID] = true
+				end
+			end
+		else
+			for _,tabID in ipairs(temp) do
+				if isTabInExport(tabID) then
+					tinsert(tbl, tabID)
+				end
+			end
+		end
+	end
+
+	-- // Part 3: Find all of the data related to the tabs we want to export, process its info, and add it to the export table
+	-- tabs order
+	for i=1,2 do
+		local isGlobal = i==2
+		exportData.orderedTabIDs[isGlobal] = utils:Deepcopy(dataManager:GetTabsLoc(isGlobal))
+		removeUnusedTabIDs(exportData.orderedTabIDs[isGlobal])
+	end
+
+	-- elements
+	for _,tabID in ipairs(tabIDs) do
+		tinsert(exportData.elements, private:GenerateInfoTable(tabID)) -- tabs
+		for catID in dataManager:ForEach(enums.category, tabID, true) do
+			tinsert(exportData.elements, private:GenerateInfoTable(catID)) -- categories
+		end
+		for itemID in dataManager:ForEach(enums.item, tabID, true) do
+			tinsert(exportData.elements, private:GenerateInfoTable(itemID)) -- items
+		end
+	end
+
+	-- // Part 4: Process the shownIDs
+	for _,elementInfo in ipairs(exportData.elements) do
+		local data = elementInfo.data
+		if elementInfo.enum == enums.item then -- item
+			removeUnusedTabIDs(data.tabIDs, true)
+		elseif elementInfo.enum == enums.category then -- category
+			removeUnusedTabIDs(data.tabIDs, true)
+			removeUnusedTabIDs(data.closedInTabIDs, true)
+		elseif elementInfo.enum == enums.tab then -- tab
+			local temp = {}
+			for _,catID in ipairs(data.orderedCatIDs) do -- those are catIDs, not tabIDs (so we find and use their originalTabID)
+				local originalTabID = (select(3, dataManager:Find(catID))).originalTabID
+				if isTabInExport(originalTabID) then
+					tinsert(temp, catID)
+				end
+			end
+			data.orderedCatIDs = temp
+
+			removeUnusedTabIDs(data.shownIDs, true)
+		end
+	end
+
+	-- // Last Part: Export the table and show it to the player
+	local encodedData = importexport:Export(exportData)
+	if encodedData then
+		if not onlyReturn then
+			importexport:ShowIEFrame(false, encodedData)
+		end
+	else
+		chat:PrintForced(L["Export error"])
+	end
+
+	-- collectgarbage()
+	return encodedData
+end
 
 function importexport:LaunchImportProcess(encodedData)
 	-- // Part 0: decode the data
@@ -397,122 +497,6 @@ function importexport:LaunchImportProcess(encodedData)
 
 	-- collectgarbage()
 	return true
-end
-
-function importexport:LaunchExportProcess(tabsToMigrate, onlyReturn)
-	if IEFrame then return end
-
-	local tabsToExport = tabsToMigrate or selectedTabIDs
-
-	-- // Part 1: Validate the tabIDs
-	if type(tabsToExport) ~= "table" then return end
-
-	local tabIDs = {}
-	for tabID, value in pairs(tabsToExport) do
-		if value and dataManager:IsID(tabID) then
-			tinsert(tabIDs, tabID)
-		end
-	end
-
-	if #tabIDs <= 0 then -- no tabs selected
-		return
-	end
-
-	--[[
-		tabIDs = {
-			ID,
-			ID,
-			...
-		}
-	]]
-
-	-- // Part 2: Create the export table
-	local exportData = {
-		addonVersion = NysTDL.acedb.global.latestVersion,
-		isMigration = not not tabsToMigrate,
-		orderedTabIDs = {
-			[true] = {}, -- global
-			[false] = {}, -- profile
-		},
-		elements = {},
-	}
-
-	-- helpers
-	local function isTabInExport(tabID)
-		return utils:HasValue(tabIDs, tabID)
-	end
-	local function removeUnusedTabIDs(tbl, isKey)
-		local temp = utils:Deepcopy(tbl)
-		wipe(tbl)
-
-		if isKey then
-			for tabID in pairs(temp) do
-				if isTabInExport(tabID) then
-					tbl[tabID] = true
-				end
-			end
-		else
-			for _,tabID in ipairs(temp) do
-				if isTabInExport(tabID) then
-					tinsert(tbl, tabID)
-				end
-			end
-		end
-	end
-
-	-- // Part 3: Find all of the data related to the tabs we want to export, process its info, and add it to the export table
-	-- tabs order
-	for i=1,2 do
-		local isGlobal = i==2
-		exportData.orderedTabIDs[isGlobal] = utils:Deepcopy(dataManager:GetTabsLoc(isGlobal))
-		removeUnusedTabIDs(exportData.orderedTabIDs[isGlobal])
-	end
-
-	-- elements
-	for _,tabID in ipairs(tabIDs) do
-		tinsert(exportData.elements, private:GenerateInfoTable(tabID)) -- tabs
-		for catID in dataManager:ForEach(enums.category, tabID, true) do
-			tinsert(exportData.elements, private:GenerateInfoTable(catID)) -- categories
-		end
-		for itemID in dataManager:ForEach(enums.item, tabID, true) do
-			tinsert(exportData.elements, private:GenerateInfoTable(itemID)) -- items
-		end
-	end
-
-	-- // Part 4: Process the shownIDs
-	for _,elementInfo in ipairs(exportData.elements) do
-		local data = elementInfo.data
-		if elementInfo.enum == enums.item then -- item
-			removeUnusedTabIDs(data.tabIDs, true)
-		elseif elementInfo.enum == enums.category then -- category
-			removeUnusedTabIDs(data.tabIDs, true)
-			removeUnusedTabIDs(data.closedInTabIDs, true)
-		elseif elementInfo.enum == enums.tab then -- tab
-			local temp = {}
-			for _,catID in ipairs(data.orderedCatIDs) do -- those are catIDs, not tabIDs (so we find and use their originalTabID)
-				local originalTabID = (select(3, dataManager:Find(catID))).originalTabID
-				if isTabInExport(originalTabID) then
-					tinsert(temp, catID)
-				end
-			end
-			data.orderedCatIDs = temp
-
-			removeUnusedTabIDs(data.shownIDs, true)
-		end
-	end
-
-	-- // Last Part: Export the table and show it to the player
-	local encodedData = importexport:Export(exportData)
-	if encodedData then
-		if not onlyReturn then
-			importexport:ShowIEFrame(false, encodedData)
-		end
-	else
-		chat:PrintForced(L["Export error"])
-	end
-
-	-- collectgarbage()
-	return encodedData
 end
 
 function private:GenerateInfoTable(ID)

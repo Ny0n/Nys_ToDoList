@@ -1,3 +1,11 @@
+#### **7.1.4**
+
+- Added localization for French (frFR)
+
+#### **7.1.3**
+
+- Added addon icons in the WoW addon menu
+
 #### **7.1.2**
 
 - Fixed a bug with the tabs overflow list not dissapearing when we hide the list
