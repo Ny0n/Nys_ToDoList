@@ -47,13 +47,14 @@ addons_to_symlink+=("Nys_ToDoList_Backup")
 wow_dir="/c/Program Files (x86)/World of Warcraft"  # Only absolute (/*)
 
 wow_versions=()                                     # Add/Remove wow versions below
-wow_versions+=("_retail_")
+wow_versions+=("_beta_")
 wow_versions+=("_classic_")
 wow_versions+=("_classic_era_")
+wow_versions+=("_classic_ptr_")
 wow_versions+=("_ptr_")
 wow_versions+=("_ptr2_")
+wow_versions+=("_retail_")
 wow_versions+=("_xptr_")
-wow_versions+=("_beta_")
 
 # --symlink -f
 
