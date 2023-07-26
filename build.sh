@@ -42,20 +42,21 @@ addons_to_symlink=()                                # Found in $addons_dir or $p
 addons_to_symlink+=("$main_addon")
 addons_to_symlink+=("Nys_ToDoList_Backup")
 
-# --symlink -d|-b|-f
+# --symlink -d|-b|-s
 
 wow_dir="/c/Program Files (x86)/World of Warcraft"  # Only absolute (/*)
 
 wow_versions=()                                     # Add/Remove wow versions below
-wow_versions+=("_retail_")
+wow_versions+=("_beta_")
 wow_versions+=("_classic_")
 wow_versions+=("_classic_era_")
+wow_versions+=("_classic_ptr_")
 wow_versions+=("_ptr_")
 wow_versions+=("_ptr2_")
+wow_versions+=("_retail_")
 wow_versions+=("_xptr_")
-wow_versions+=("_beta_")
 
-# --symlink -f
+# --symlink -s
 
 saved_vars_dir="$wow_dir/SavedVariables"           # Common saved vars folder path, the one we will point to for every WoW version. Either absolute (/*) or relative (*)
 account_file_names=()                              # Add/Remove account file names below
@@ -510,12 +511,14 @@ test -f "$toc_file"    || error_msg "toc file not found"        "vars" || custom
 # ========== PROCESS ARGUMENTS ========== #
 
 if from_explorer ; then
-	read -p "$(echo -e "Select symlink mode [d/b] ")" -n 1 -r
+	read -p "$(echo -e "Select symlink mode [d/b/s] ")" -n 1 -r
 	echo ""
 	if [[ $REPLY =~ ^[Dd]$ ]]; then
 		set -- "--symlink" "-d"
 	elif [[ $REPLY =~ ^[Bb]$ ]]; then
 		set -- "--symlink" "-b"
+	elif [[ $REPLY =~ ^[Ss]$ ]]; then
+		set -- "--symlink" "-s"
 	fi
 fi
 

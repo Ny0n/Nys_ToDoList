@@ -15,6 +15,7 @@ local widgets = NysTDL.widgets
 local database = NysTDL.database
 local mainFrame = NysTDL.mainFrame
 local dataManager = NysTDL.dataManager
+local resetManager = NysTDL.resetManager
 local tutorialsManager = NysTDL.tutorialsManager
 
 -- Secondary aliases
@@ -82,6 +83,22 @@ function private:GlobalNewVersion()
 		if oldNeeds or newNeeds then
             NysTDL.acedb.global.tutorials_progression["introduction"] = 2 -- restart the tuto from the moment where we add new items
         end
+	end
+
+	if utils:IsVersionOlderThan(NysTDL.acedb.global.latestVersion, "7.1.6") then
+		pcall(function() -- it's okay if we don't manage to change the default reset hour, ppl can do it themselves
+			local dailyTabID = dataManager:FindFirstIDByName(L["Daily"], enums.tab, false)
+			local _, _, dailyTabData = dataManager:Find(dailyTabID)
+
+			local weeklyTabID = dataManager:FindFirstIDByName(L["Weekly"], enums.tab, false)
+			local _, _, weeklyTabData = dataManager:Find(weeklyTabID)
+
+			if (dailyTabData.reset.sameEachDay.resetTimes[L["Daily"]].hour == 9
+			and weeklyTabData.reset.sameEachDay.resetTimes[L["Weekly"]].hour == 9) then
+				resetManager:UpdateTimeData(dailyTabID, dailyTabData.reset.sameEachDay.resetTimes[L["Daily"]], 6, 0, 0)
+				resetManager:UpdateTimeData(weeklyTabID, weeklyTabData.reset.sameEachDay.resetTimes[L["Weekly"]], 6, 0, 0)
+			end
+		end)
 	end
 end
 

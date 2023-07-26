@@ -234,12 +234,12 @@ function private:CreateDefaultTabs()
 		-- Daily data (isSameEachDay already true)
 		for i=1,7 do resetManager:UpdateResetDay(dailyTabID, i, true) end -- every day
 		resetManager:RenameResetTime(dailyTabID, dailyTabData.reset.sameEachDay, enums.defaultResetTimeName, L["Daily"])
-		resetManager:UpdateTimeData(dailyTabID, dailyTabData.reset.sameEachDay.resetTimes[L["Daily"]], 9, 0, 0)
+		resetManager:UpdateTimeData(dailyTabID, dailyTabData.reset.sameEachDay.resetTimes[L["Daily"]], 6, 0, 0)
 
 		-- Weekly data (isSameEachDay already true)
 		resetManager:UpdateResetDay(weeklyTabID, 4, true) -- only wednesday
 		resetManager:RenameResetTime(weeklyTabID, weeklyTabData.reset.sameEachDay, enums.defaultResetTimeName, L["Weekly"])
-		resetManager:UpdateTimeData(weeklyTabID, weeklyTabData.reset.sameEachDay.resetTimes[L["Weekly"]], 9, 0, 0)
+		resetManager:UpdateTimeData(weeklyTabID, weeklyTabData.reset.sameEachDay.resetTimes[L["Weekly"]], 6, 0, 0)
 	end
 
 	-- then we set the default tab
