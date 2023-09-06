@@ -1,10 +1,10 @@
 # /run print((select(4, GetBuildInfo())))
-## Interface: 100105
+## Interface: 100107
 ## Interface-Classic: 11403
 ## Interface-BCC: 20504
 ## Interface-Wrath: 30401
 
-## Version: 1.0.2
+## Version: 1.0.3
 
 ## Author: Nyony (on Twitch)
 ## Title: Ny's To-Do List Backup
