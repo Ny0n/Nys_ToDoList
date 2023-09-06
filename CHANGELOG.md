@@ -1,3 +1,7 @@
+#### **7.1.7**
+
+- Bump interface number (10.1.7, 3.4.2, 1.14.4)
+
 #### **7.1.6**
 
 - Change default daily & weekly reset hour
