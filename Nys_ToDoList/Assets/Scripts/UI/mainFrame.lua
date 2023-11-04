@@ -33,7 +33,7 @@ local private = {}
 -- THE frame
 local tdlFrame
 local function createFrame()
-	mainFrame.tdlFrame = CreateFrame("Frame", nil, UIParent, utils:IsDF() and "NysTDL_MainFrameRetail" or "NysTDL_MainFrameClassic")
+	mainFrame.tdlFrame = CreateFrame("Frame", "NysTDL_tdlFrame", UIParent, utils:IsDF() and "NysTDL_MainFrameRetail" or "NysTDL_MainFrameClassic")
 	tdlFrame = mainFrame.tdlFrame
 end
 table.insert(core.Event_OnInitialize_Start, createFrame)
@@ -892,16 +892,16 @@ function private:GenerateFrameContent()
 	-- // generating the content (top to bottom)
 
 	-- creating the scroll child, whose width will be manually controlled for word wrap purposes
-	tdlFrame.scrollChild = CreateFrame("Frame", nil, tdlFrame.ScrollFrame)
+	tdlFrame.scrollChild = CreateFrame("Frame", "NysTDL_tdlFrame.scrollChild", tdlFrame.ScrollFrame)
 	tdlFrame.scrollChild:SetHeight(1) -- y is determined by the elements inside of it, this is just to make the frame visible. Also, x is set on resize so no need to set it here
 	tdlFrame.ScrollFrame:SetScrollChild(tdlFrame.scrollChild)
 
 	-- creating content, child of scrollChild which is scroll child of ScrollFrame (everything will be inside of content)
-	tdlFrame.content = CreateFrame("Frame", nil, tdlFrame.scrollChild)
+	tdlFrame.content = CreateFrame("Frame", "NysTDL_tdlFrame.content", tdlFrame.scrollChild)
 	tdlFrame.content:SetAllPoints(tdlFrame.scrollChild)
 	local content = tdlFrame.content
 
-	content.menu = CreateFrame("Frame", nil, content)
+	content.menu = CreateFrame("Frame", "NysTDL_tdlFrame.content.menu", content)
 	content.menu:SetAllPoints(content)
 	content.menu:SetSize(content:GetSize())
 	local menu = content.menu
@@ -1123,7 +1123,7 @@ function mainFrame:CreateTDLFrame()
 
 	sWidth = utils:IsDF() and sWidth or sWidthClassic
 
-	tdlFrame.ScrollFrame = CreateFrame("ScrollFrame", nil, tdlFrame, utils:IsDF() and "ScrollFrameTemplate" or "UIPanelScrollFrameTemplate")
+	tdlFrame.ScrollFrame = CreateFrame("ScrollFrame", "NysTDL_tdlFrame.ScrollFrame", tdlFrame, utils:IsDF() and "ScrollFrameTemplate" or "UIPanelScrollFrameTemplate")
 	tdlFrame.ScrollFrame:SetPoint("TOPLEFT", tdlFrame, "TOPLEFT", 4, -24)
 	tdlFrame.ScrollFrame:SetPoint("BOTTOMRIGHT", tdlFrame, "BOTTOMRIGHT", -4 -sWidth, 4)
 	tdlFrame.ScrollFrame:SetScript("OnMouseWheel", mainFrame.Event_ScrollFrame_OnMouseWheel)

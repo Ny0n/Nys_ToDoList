@@ -37,9 +37,9 @@ local addonName = core.addonName
 function NysTDL:Tests(nb, ...)
 	nb = nb or 0
 	if nb == 0 then
-		print((select(4, GetBuildInfo())))
+		-- print((select(4, GetBuildInfo())))
 	elseif nb == 1 then
-		AceConfigDialog:Open(addonName)
+		-- AceConfigDialog:Open(addonName)
 	elseif nb == 2 then
 		-- mainFrame:Toggle()
 		-- UIFrameFadeOut(tdlFrame, 2)
@@ -49,9 +49,24 @@ function NysTDL:Tests(nb, ...)
 		-- end
 		-- print(tdlFrame.fadeInfo.finishedFunc)
 
-		importexport:LaunchExportProcess()
+		-- importexport:LaunchExportProcess()
+
+		-- local function info(frame)
+		-- 	print(frame:GetName()..": "..tostring(frame:GetFrameStrata()).." / "..tostring(frame:GetFrameLevel()).." / "..tostring(frame:GetParent():GetName()))
+		-- end
+
+		-- local tdlFrame = mainFrame:GetFrame()
+		-- info(tdlFrame)
+		-- info(tdlFrame.Bg)
+		-- info(tdlFrame.NineSlice)
+		-- info(tdlFrame.ScrollFrame)
+		-- info(tdlFrame.scrollChild)
+		-- info(tdlFrame.content)
+		-- info(tdlFrame.content.menu)
+		-- info(tdlFrame.content.menu.categoryButton)
+
 	elseif nb == 3 then
-		importexport:ShowIEFrame(true)
+		-- importexport:ShowIEFrame(true)
 
 		-- core:AddonUpdated()
 		-- for tabID, tabData in dataManager:ForEach(enums.tab, false) do
