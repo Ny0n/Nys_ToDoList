@@ -741,13 +741,13 @@
 	<!-- The main frame (Retail) -->
 	<Frame name="NysTDL_MainFrameRetail" virtual="true">
 		<Frames>
-			<Frame parentKey="Bg" inherits="FlatPanelBackgroundTemplate" frameLevel="0">
+			<Frame parentKey="Bg" name="NysTDL_tdlFrame.Bg" useParentLevel="true" inherits="FlatPanelBackgroundTemplate">
 				<Anchors>
 					<Anchor point="TOPLEFT" x="7" y="-18"/>
 					<Anchor point="BOTTOMRIGHT" x="-3" y="3"/>
 				</Anchors>
 			</Frame>
-			<Frame parentKey="NineSlice" useParentLevel="true" inherits="NineSlicePanelTemplate">
+			<Frame parentKey="NineSlice" name="NysTDL_tdlFrame.NineSlice" useParentLevel="true" inherits="NineSlicePanelTemplate">
 				<KeyValues>
 					<KeyValue key="layoutType" value="ButtonFrameTemplateNoPortrait" type="string"/>
 				</KeyValues>
