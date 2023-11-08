@@ -32,6 +32,9 @@ You can modify the variables just below to customize the behavior of the script.
 main_addon="Nys_ToDoList"                           # The name of the main addon folder and toc file. Used to find out the addon version that will be used as a tag for the Publish command
 addons_dir="."                                      # The path to the dev addon folder (usually the repository). Either absolute (/*) or relative (*)
 
+changelog="CHANGELOG.md"                            # Optional, the path to the changelog file, just to check if the top line corresponds to the current addon version
+changelog_pattern="(?<=#### \*\*).*?(?=\*\*)"       # Optional, grep regex pattern that extracts the vesion number of the top line of the changelog file
+
 # --local
 
 package_dir=".other/package"                        # The name/path for the package folder (--local command). The script will create it if it doesn't exist. Prefer somewhere ignored by a gitignore. Either absolute (/*) or relative (*)
@@ -537,6 +540,13 @@ elif [ "$1" == "--publish" ]; then
 	# PUBLISH COMMAND
 
 	find_version || custom_exit
+
+	# Changelog verification
+	test -z "$changelog"  || test -f "$changelog" || error_msg "Changelog not found" "vars" || custom_exit
+	if [ -f "$changelog" ]; then
+		changelog_version="$(head -n 1 "$changelog" | grep -oP "$changelog_pattern")"
+		test "$changelog_version" == "$version" || error_msg "Changelog is not up to date" || custom_exit
+	fi
 
 	read -p "$(echo -e "\e[1mPublish\e[0m $main_addon for version \e[4m$version\e[0m ? [y/N] ")" -n 1 -r
 	echo ""
