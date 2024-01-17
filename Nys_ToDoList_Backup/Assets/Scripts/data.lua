@@ -414,18 +414,21 @@ function data:CheckForAutomaticSaves()
 			if type(profileTable.autoSaveInfos) ~= "table" then profileTable.autoSaveInfos = {} end
 			local infos = profileTable.autoSaveInfos
 
-			if type(infos.lastDaily) ~= "number" then infos.lastDaily = nil end
-			if type(infos.lastWeekly) ~= "number" then infos.lastWeekly = nil end
+			if type(infos.lastDaily) ~= "number" then infos.lastDaily = -1 end
+			if type(infos.lastWeekly) ~= "number" then infos.lastWeekly = -7 end
 
 			local yday = date("*t").yday
 
-			if yday >= (((infos.lastDaily or -1) + 1) % 365) then
+			local deltaDaily = ((yday - infos.lastDaily) + 365) % 365
+			local deltaWeekly = ((yday - infos.lastWeekly) + 365) % 365
+
+			if deltaDaily >= 1 then
 				infos.lastDaily = yday
 				data:ScrollProfileBackupType(profileID, data.backupTypes.autoDaily, 1)
 				data:MakeBackup(profileID, data.backupTypes.autoDaily, 1, true)
 			end
 
-			if yday >= (((infos.lastWeekly or -7) + 7) % 365) then
+			if deltaWeekly >= 7 then
 				infos.lastWeekly = yday
 				data:ScrollProfileBackupType(profileID, data.backupTypes.autoWeekly, 1)
 				data:MakeBackup(profileID, data.backupTypes.autoWeekly, 1, true)

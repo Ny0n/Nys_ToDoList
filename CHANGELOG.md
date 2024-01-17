@@ -1,3 +1,8 @@
+#### **7.1.9**
+
+- Bump interface number (10.2.5, 1.15.0)
+- Fixed a bug with auto backups not working since the new year
+
 #### **7.1.8**
 
 - Bump interface number (10.2.0, 3.4.3)
