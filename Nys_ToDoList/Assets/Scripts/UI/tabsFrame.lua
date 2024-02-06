@@ -535,6 +535,7 @@ function private:ListButtonWidget(tabID, parentFrame)
 
 	listButtonWidget:SetText(tabData.name)
 	listButtonWidget:SetSize(parentFrame:GetWidth()-12, listButtonWidgetHeight)
+	listButtonWidget:GetFontString():SetWordWrap(false)
 	listButtonWidget:SetScript("OnClick", function(self)
 		tabWidgets[self.tabID]:Click()
 		private:SetTabWidgetsContentAlpha(NysTDL.acedb.profile.frameContentAlpha/100, true) -- I hate this alpha problem, but whatever, this fixes it

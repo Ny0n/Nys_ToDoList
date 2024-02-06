@@ -851,6 +851,7 @@ function private:GenerateMenuAddACategory()
 	menuframe.categoryEditBox:SetPoint("TOPLEFT", menuframe.menuTitle, "BOTTOMLEFT", 5, -13)
 	menuframe.categoryEditBox:SetWidth(200)
 	menuframe.categoryEditBox:SetScript("OnEnterPressed", addCat)
+	widgets:AddHyperlinkEditBox(menuframe.categoryEditBox)
 	tutorialsManager:SetPoint("introduction", "addCat", "TOP", menuframe.categoryEditBox, "BOTTOM", 0, -22)
 end
 
