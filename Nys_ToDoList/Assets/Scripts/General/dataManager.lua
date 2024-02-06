@@ -543,7 +543,10 @@ function dataManager:CreateItem(itemName, tabID, catID)
 	-- add the item and its dependencies to the saved variables
 
 	-- first, we check what needs to be checked
-	if not private:CheckName(itemName, enums.item) then return end
+	itemName = private:CheckName(itemName, enums.item)
+	if not itemName then
+		return false
+	end
 
 	local itemData = { -- itemData
 		name = itemName,
@@ -623,7 +626,11 @@ function dataManager:CreateCategory(catName, tabID, parentCatID)
 	-- we can add others later
 
 	-- first, we check what needs to be checked
-	if not private:CheckName(catName, enums.category) then return end
+	catName = private:CheckName(catName, enums.category)
+	if not catName then
+		return false
+	end
+
 	if parentCatID and not dataManager:IsID(parentCatID) then
 		-- chat:Print(L["The given parent category is not valid"]) -- TDLATER
 		return
@@ -706,7 +713,10 @@ function dataManager:CreateTab(tabName, isGlobal)
 	-- add the tab and its dependencies to the saved variables
 
 	-- first, we check what needs to be checked
-	if not private:CheckName(tabName, enums.tab) then return end
+	tabName = private:CheckName(tabName, enums.tab)
+	if not tabName then
+		return false
+	end
 
 	local tabData = { -- tabData
 		name = tabName,
@@ -1394,21 +1404,22 @@ end
 ---Helper to check if the given name is valid for the given enumObject.
 ---@param name string
 ---@param enum enumObject
----@return boolean isValid
+---@return string|nil the (potentially) corrected string, or nil if the name isn't valid
 function private:CheckName(name, enum)
+	if type(name) ~= "string" then
+		return nil
+	end
+
+	-- process escape patterns so that we can render hyperlinks correctly on the list
+	name = string.gsub(name, "||", "|")
+	name = string.gsub(name, "\\124", "|")
+
 	if #name == 0 then -- empty
 		chat:Print(L["Name cannot be empty"])
-		return false
+		return nil
 	end
 
-	-- TDLATER temp?
-	if (enum == enums.tab or enum == enums.category)
-	and utils:HasHyperlink(name) then
-		chat:Print(L["Invalid name"])
-		return false
-	end
-
-	return true
+	return name
 end
 
 ---Tries to rename the given object.
@@ -1418,7 +1429,10 @@ end
 function dataManager:Rename(ID, newName)
 	local enum, _, dataTable = dataManager:Find(ID)
 
-	if not private:CheckName(newName, enum) then return false end
+	newName = private:CheckName(newName, enum)
+	if not newName then
+		return false
+	end
 
 	dataTable.name = newName
 

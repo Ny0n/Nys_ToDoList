@@ -970,7 +970,7 @@ function private.Widget_OnDoubleClick(self, button)
 	renameEditBox:SetPoint("LEFT", widget.interactiveLabel, "LEFT", 5, 0)
 	renameEditBox:SetPoint("RIGHT", widget:GetParent(), "RIGHT", -3, 0)
 
-	if widget.enum == enums.item then
+	if widget.enum == enums.item or widget.enum == enums.category then
 		widgets:AddHyperlinkEditBox(renameEditBox) -- so that we can add hyperlinks in it
 		-- widgets:SetHyperlinksEnabled(renameEditBox, true) -- to click on hyperlinks inside the edit box
 	end

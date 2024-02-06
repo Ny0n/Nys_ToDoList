@@ -1,3 +1,7 @@
+#### **7.2**
+
+- Added the possibility to paste and create any kind of hyperlink in the list. This also includes icons and colors! Works for tab, category and item names.
+
 #### **7.1.9**
 
 - Bump interface number (10.2.5, 1.15.0)
