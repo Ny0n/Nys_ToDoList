@@ -1,3 +1,8 @@
+#### **7.2.1**
+
+- Fixed a bug with an input field sometimes dissapearing (maybe)
+- Update German localization (deDE)
+
 #### **7.2**
 
 - Added the possibility to paste and create any kind of hyperlink in the list. This also includes icons and colors! Works for tab, category and item names.
