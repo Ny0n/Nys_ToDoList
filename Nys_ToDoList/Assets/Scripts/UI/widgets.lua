@@ -1456,7 +1456,6 @@ function widgets:NoPointsCatEditBox(parent, hint, fullWidget, pointRight)
 	widget.widthFrame:HookScript("OnSizeChanged", function(self, width)
 		if width < 22 then width = 22 end
 		widget.edb:SetWidth(width)
-		widget.edb:SetShown(math.floor(widget.widthFrame:GetLeft()) >= math.floor(widget.startPosFrame:GetRight()-1))
 	end)
 
 	widget.removeBtn = CreateFrame("Button", nil, widget, "NysTDL_RemoveButton")
