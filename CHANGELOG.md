@@ -1,3 +1,7 @@
+#### **7.2.2**
+
+- Bump interface number (10.2.6)
+
 #### **7.2.1**
 
 - Fixed a bug with an input field sometimes dissapearing (maybe)
