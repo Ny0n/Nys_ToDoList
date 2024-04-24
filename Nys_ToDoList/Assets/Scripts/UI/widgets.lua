@@ -433,6 +433,7 @@ end
 
 function widgets:TutorialFrame(tutoCategory, tutoName, showCloseButton, arrowSide, text, width)
 	local tutoFrame = CreateFrame("Frame", "NysTDL_TutorialFrame_"..tutoCategory.."_"..tutoName, UIParent, "NysTDL_HelpPlateTooltip") -- TDLATER POLISH check if name is mandatory, also checl ALL addon names for the same thing
+	tutoFrame:SetFrameStrata("TOOLTIP")
 	tutoFrame.Text:SetText(text)
 	tutoFrame.Text:SetWidth(width-15-15)
 
