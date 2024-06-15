@@ -292,3 +292,20 @@ function utils:ColorText(colorTable, text)
 	-- alpha is 1
 	return string.format("|cff%s%s|r", utils:RGBToHex(colorTable), text)
 end
+
+---Returns the date("*t") table for the next weekly reset
+---@return table
+function utils:GetWeeklyResetDate()
+	local success, value = pcall(function() return date("*t", GetServerTime()+C_DateAndTime.GetSecondsUntilWeeklyReset()) end)
+	if not success then
+		-- default to EU reset date
+		value = {
+			wday = 4,
+			hour = 6,
+			min = 0,
+			sec = 0,
+		}
+	end
+
+	return value
+end
