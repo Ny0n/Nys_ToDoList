@@ -25,7 +25,6 @@
 ## X-Embeds: LibStub, CallbackHandler-1.0, Ace3, LibDataBroker-1.1, LibDBIcon-1.0, LibQTip-1.0, LibDeflate
 
 ## X-Curse-Project-ID: 320655
-# ## X-WoWI-ID: xxx
 
 ## IconTexture: Interface\AddOns\Nys_ToDoList\Assets\Art\70_professions_scroll_03
 
