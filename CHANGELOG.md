@@ -1,6 +1,7 @@
 #### **7.2.4**
 
 - Bump interface number (4.4.0, 1.15.2)
+- The default values for the daily and weekly reset are now based on the current region, instead of being set up on EU times (note that this will only affect new users, and those who never changed the default values, as to not override their settings)
 
 #### **7.2.3**
 
