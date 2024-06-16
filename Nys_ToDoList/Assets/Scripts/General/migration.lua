@@ -85,18 +85,37 @@ function private:GlobalNewVersion()
         end
 	end
 
-	if utils:IsVersionOlderThan(NysTDL.acedb.global.latestVersion, "7.1.6") then
-		pcall(function() -- it's okay if we don't manage to change the default reset hour, ppl can do it themselves
+	if utils:IsVersionOlderThan(NysTDL.acedb.global.latestVersion, "7.2.4") then
+		pcall(function() -- it's okay if we don't manage to change the default daily and weekly reset date, ppl can do it themselves
 			local dailyTabID = dataManager:FindFirstIDByName(L["Daily"], enums.tab, false)
 			local _, _, dailyTabData = dataManager:Find(dailyTabID)
 
 			local weeklyTabID = dataManager:FindFirstIDByName(L["Weekly"], enums.tab, false)
 			local _, _, weeklyTabData = dataManager:Find(weeklyTabID)
 
-			if (dailyTabData.reset.sameEachDay.resetTimes[L["Daily"]].hour == 9
-			and weeklyTabData.reset.sameEachDay.resetTimes[L["Weekly"]].hour == 9) then
-				resetManager:UpdateTimeData(dailyTabID, dailyTabData.reset.sameEachDay.resetTimes[L["Daily"]], 6, 0, 0)
-				resetManager:UpdateTimeData(weeklyTabID, weeklyTabData.reset.sameEachDay.resetTimes[L["Weekly"]], 6, 0, 0)
+			local dailyResetTimeTable = dailyTabData.reset.sameEachDay.resetTimes[L["Daily"]]
+			local weeklyResetTimeTable = weeklyTabData.reset.sameEachDay.resetTimes[L["Weekly"]]
+
+			local function hasOnlyOneKey(tbl, key)
+				return next(tbl) == key and not next(tbl, key)
+			end
+
+			-- also don't forget to take into account the previous addon version's hour retargetting from 9 to 6
+			local isSetToDefault = 	(dailyResetTimeTable.hour == 6 or dailyResetTimeTable.hour == 9)
+									and (weeklyResetTimeTable.hour == 6 or weeklyResetTimeTable.hour == 9)
+									and hasOnlyOneKey(weeklyTabData.reset.days, 4)
+
+			if isSetToDefault then
+				-- so basically all this code does is check if the user changed anything about the reset times or if they are still set to the addon's default,
+				-- if he touched something, we won't do anything, but if it's still set to the (erroneous) default,
+				-- we update it now to the real daily and weekly reset times, that corresponds to the user's region (EU, US, etc...)
+
+				local resetDate = utils:GetWeeklyResetDate()
+
+				resetManager:UpdateTimeData(dailyTabID, dailyResetTimeTable, resetDate.hour, resetDate.min, resetDate.sec)
+				resetManager:UpdateTimeData(weeklyTabID, weeklyResetTimeTable, resetDate.hour, resetDate.min, resetDate.sec)
+				resetManager:UpdateResetDay(weeklyTabID, 4, false)
+				resetManager:UpdateResetDay(weeklyTabID, resetDate.wday, true)
 			end
 		end)
 	end

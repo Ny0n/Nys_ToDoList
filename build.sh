@@ -239,7 +239,7 @@ function package()
 		# and we curl the packaging script from 'BigWigsMods/packager' on GitHub
 		# NOTE: using a txt file so that we don't risk executing it in the file explorer by mistake, and we have a trace of the last script used
 		step_msg 3 "$steps" "Curl the packaging script (from GitHub)"
-		curl -sv "https://raw.githubusercontent.com/BigWigsMods/packager/master/release.sh" > "$package_dir/release.txt" || return
+		curl -sv "https://raw.githubusercontent.com/BigWigsMods/packager/v2/release.sh" > "$package_dir/release.txt" || return
 		echo -e "\nDownloaded the packaging script to \"$package_dir/release.txt\""
 
 		# here we get potential additional arguments to send to release.txt

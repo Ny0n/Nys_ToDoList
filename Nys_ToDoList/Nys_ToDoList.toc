@@ -1,10 +1,9 @@
 # /run print((select(4, GetBuildInfo())))
 ## Interface: 100207
-## Interface-Classic: 11500
-## Interface-BCC: 20504
-## Interface-Wrath: 30403
+## Interface-Classic: 11502
+## Interface-Cata: 40400
 
-## Version: 7.2.3
+## Version: 7.2.4
 
 ## Author: Nyony (on Twitch)
 ## Title: Ny's To-Do List
@@ -25,7 +24,6 @@
 ## X-Embeds: LibStub, CallbackHandler-1.0, Ace3, LibDataBroker-1.1, LibDBIcon-1.0, LibQTip-1.0, LibDeflate
 
 ## X-Curse-Project-ID: 320655
-# ## X-WoWI-ID: xxx
 
 ## IconTexture: Interface\AddOns\Nys_ToDoList\Assets\Art\70_professions_scroll_03
 
