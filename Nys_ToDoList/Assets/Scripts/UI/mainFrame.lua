@@ -1038,7 +1038,7 @@ function mainFrame:CreateTDLFrame()
 	-- // we create the list
 
 	-- properties
-	tdlFrame:SetFrameStrata("LOW")
+	tdlFrame:SetFrameStrata("DIALOG")
 	tdlFrame:EnableMouse(true)
 	tdlFrame:SetMovable(true)
 	tdlFrame:SetClampedToScreen(true)
