@@ -49,5 +49,11 @@ function options:Initialize()
 	panel.openListText:SetFontObject("GameFontNormal")
 	panel.openListText:SetText(utils:SafeStringFormat(L["You can also use the %s chat command"], "\""..options.chatCommand.."\""))
 
-	InterfaceOptions_AddCategory(panel)
+	if Settings and Settings.RegisterCanvasLayoutCategory then
+		local category = Settings.RegisterCanvasLayoutCategory(panel, panel.name)
+		category.ID = panel.name
+		Settings.RegisterAddOnCategory(category)
+	else
+		InterfaceOptions_AddCategory(panel)
+	end
 end
