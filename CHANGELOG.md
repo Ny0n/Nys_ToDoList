@@ -1,3 +1,7 @@
+#### **7.2.5**
+
+- Add support for The War Within (11.0.0)
+
 #### **7.2.4**
 
 - Bump interface number (4.4.0, 1.15.2)
