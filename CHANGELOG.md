@@ -1,6 +1,7 @@
 #### **7.2.5**
 
-- Add support for The War Within (11.0.0)
+- Added support for The War Within (11.0.0)
+- Bump interface number (1.15.3)
 
 #### **7.2.4**
 

@@ -1,6 +1,6 @@
 # /run print((select(4, GetBuildInfo())))
 ## Interface: 100207, 110000
-## Interface-Classic: 11502
+## Interface-Classic: 11503
 ## Interface-Cata: 40400
 
 ## Version: 1.0.9
