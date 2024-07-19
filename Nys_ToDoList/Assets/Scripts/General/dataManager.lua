@@ -817,6 +817,11 @@ function dataManager:MoveItem(itemID, newPos, newCatID)
 	-- // this func is used to move items from one cat to another, and/or from one position to an other
 	-- usage: dataManager:MoveItem(itemID, [newPos], [newCatID])
 
+	local _itemID, _newPos, _newCatID = itemID, newPos, newCatID
+	if dataManager:IsID(itemID) then _itemID = dataManager:GetName(itemID) end
+	if dataManager:IsID(newCatID) then _newCatID = dataManager:GetName(newCatID) end
+	print("dataManager:MoveItem("..tostring(_itemID)..", "..tostring(_newPos)..", "..tostring(_newCatID)..")")
+
 	-- / *** first things first, we validate all of the data *** /
 
 	local itemData = select(3, dataManager:Find(itemID))
@@ -896,6 +901,13 @@ function dataManager:MoveCategory(catID, newPos, newParentID, fromTabID, toTabID
 	-- usage: dataManager:MoveCategory(catID, [newPos], [newParentID], [fromTabID], [toTabID])
 	-- newParentID == nil --> ignore, newParentID == false --> no parent, newParentID == ID --> new parent
 
+	local _catID, _newPos, _newParentID, _fromTabID, _toTabID = catID, newPos, newParentID, fromTabID, toTabID
+	if dataManager:IsID(catID) then _catID = dataManager:GetName(catID) end
+	if dataManager:IsID(newParentID) then _newParentID = dataManager:GetName(newParentID) end
+	if dataManager:IsID(fromTabID) then _fromTabID = dataManager:GetName(fromTabID) end
+	if dataManager:IsID(toTabID) then _toTabID = dataManager:GetName(toTabID) end
+	print("dataManager:MoveCategory("..tostring(_catID)..", "..tostring(_newPos)..", "..tostring(_newParentID)..", "..tostring(_fromTabID)..", "..tostring(_toTabID)..")")
+
 	-- / *** first things first, we validate all of the data *** /
 
 	local catData, _, categoriesList, tabsList = select(3, dataManager:Find(catID))
@@ -943,6 +955,10 @@ function dataManager:MoveCategory(catID, newPos, newParentID, fromTabID, toTabID
 
 	-- position (order)
 	if oldParentID and not newParentID then -- from sub-cat to normal cat
+		if toTabID ~= catData.originalTabID then
+			return -- we cannot transform a sub cat into a root cat if it is not in its original tab
+		end
+
 		tremove(oldLoc, oldPos)
 
 		-- SPECIAL INSERT:
@@ -1095,7 +1111,7 @@ function dataManager:DeleteCat(catID)
 	for _,contentID in pairs(copy) do
 		local result, nb = nil, 0
 		if dataManager:Find(contentID) == enums.category then -- current ID is a sub-category
-			result, nb = dataManager:DeleteCat(contentID) -- TDLATER crash quand delete tab qui a des sub-cats ?
+			result, nb = dataManager:DeleteCat(contentID)
 		else -- current ID is an item
 			result = dataManager:DeleteItem(contentID)
 		end
@@ -1109,6 +1125,9 @@ function dataManager:DeleteCat(catID)
 	if #catData.orderedContentIDs == 0 then -- we removed everything from the cat, now we delete it
 		-- we update its data (pretty much the reverse actions of the Add func)
 		private:UpdateTabsDisplay(catData.originalTabID, false, catID)
+		if catData.parentCatID then
+			tremove(dataManager:GetPosData(catID))
+		end
 
 		dataManager:AddUndo(undoData)
 		categoriesList[catID] = nil -- delete action
@@ -1338,6 +1357,10 @@ end
 function private:UpdateCatShownTabID(catID, catData, tabID, tabData, shownTabID, modif)
 	if catData.originalTabID == shownTabID then -- important
 		catData.tabIDs[tabID] = modif
+
+		-- NOTE: this code is here because a category can be present in multiple tabs at the same time,
+		-- and it can be in different positions in each tab! Where an item is only present at one place in one category
+		-- Sub-Categories however, work just like items so the code here only affects root categories
 		if not catData.parentCatID then -- if it's not a sub-category, we edit it in its tab orders
 			if modif and not utils:HasValue(tabData.orderedCatIDs, catID) then
 				-- we add it ordered in the tab if it wasn't here already

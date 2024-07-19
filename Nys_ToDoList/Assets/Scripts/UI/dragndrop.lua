@@ -141,12 +141,12 @@ function private:DragUpdateFunc()
 end
 
 function private:IsCatDropValid(targetCatID)
-	do return false end -- TDLATER sub-cat drag&drop (fix (add) missing drop points (under sub-cats) & verify tab switch)
+	-- TDLATER sub-cat drag&drop (fix (add) missing drop points (under sub-cats) & verify tab switch)
 
 	-- returns false if:
 	-- - (1) the targetCatID's original tab is different from the one we're currently dragging
 	-- - (2) the targetCatID is a child of the category we're currently dragging
-	if not draggingWidget or not targetCatID or draggingWidget.enum ~= enums.category then return false end -- luacheck: ignore
+	if not draggingWidget or not targetCatID or draggingWidget.enum ~= enums.category then return false end
 
 	local catData = select(3, dataManager:Find(targetCatID))
 

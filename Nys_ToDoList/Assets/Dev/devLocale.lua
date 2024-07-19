@@ -19,6 +19,8 @@ addonTable.devLocale = L
 
 --/************************************************/--
 
+L["Add a sub-category"] = true
+L["Sub-Category"] = true
 L["A minimap button"] = true
 L["A movable %s button"] = true
 L["A simple interface to remember everything you need to do!"] = true

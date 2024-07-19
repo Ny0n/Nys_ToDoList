@@ -419,7 +419,7 @@ function private:CreateTutorials()
 		}
 	)
 
-	private:CreateTutoFrame(cat, "optionsButton", false, "DOWN", L["You have a lot of data? Don't forget to make backups from time to time!"].." ("..L["Shift-Click"]..")", 240)
+	private:CreateTutoFrame(cat, "optionsButton", false, "DOWN", L["You have a lot of data? Don't forget to make backups from time to time!"].." ("..L["Right-Click"]..")", 240)
 
 	-- // ******************** // --
 

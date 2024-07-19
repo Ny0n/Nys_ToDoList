@@ -693,7 +693,7 @@ function private:RecursiveLoad(tabID, tabData, catWidget, p)
 		end
 	end
 
-	-- p.offsetY = enums.ofsyContent -- TDLATER take last used offset for sub-cats? (not sure of this comment tho)
+	-- p.offsetY = enums.ofsyContent -- TDLATER sub-cat take last used offset for sub-cats? (not sure of this comment tho)
 
 	p:SetX(-enums.ofsxContent)
 	p:SetY(-enums.ofsyContentCat)
@@ -955,16 +955,17 @@ function private:GenerateFrameContent()
 	-- tutorialsManager:SetPoint("editmode", "undo", "BOTTOM", menu.undoButton, "TOP", 0, 18)
 
 	-- addon options button
-	menu.frameOptionsButton = widgets:IconTooltipButton(menu, "NysTDL_FrameOptionsButton", L["Click"].." - "..L["Open addon options"].."\n"..L["Shift-Click"].." - "..L["Open backup list"])
+	menu.frameOptionsButton = widgets:IconTooltipButton(menu, "NysTDL_FrameOptionsButton", L["Left-Click"].." - "..L["Open addon options"].."\n"..L["Right-Click"].." - "..L["Open backup list"])
 	menu.frameOptionsButton:SetPoint("CENTER", menu.undoButton, "CENTER", spacing, 0)
-	menu.frameOptionsButton:SetScript("OnClick", function()
-		if IsShiftKeyDown() then
+	menu.frameOptionsButton:SetScript("OnClick", function(self, button)
+		if button == "RightButton" then
 			NysTDLBackup:OpenList()
 			tutorialsManager:Validate("backup", "optionsButton") -- tutorial
 		else
 			optionsManager:ToggleOptions(true)
 		end
 	end)
+	menu.frameOptionsButton:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 	tutorialsManager:SetPoint("backup", "optionsButton", "BOTTOM", tdlFrame.content.menu.frameOptionsButton, "TOP", 0, 18)
 
 	-- remaining numbers labels

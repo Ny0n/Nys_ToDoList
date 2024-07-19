@@ -882,7 +882,7 @@ function widgets:DescButton(widget, parent)
 end
 
 function widgets:AddButton(widget, parent)
-	local btn = widgets:IconTooltipButton(parent, "NysTDL_AddButton", L["Add an item"])
+	local btn = widgets:IconTooltipButton(parent, "NysTDL_AddButton", L["Left-Click"].." - "..L["Add an item"].."\n"..L["Right-Click"].." - "..L["Add a sub-category"])
 
 	-- // Appearance
 
@@ -1192,16 +1192,30 @@ function widgets:CategoryWidget(catID, parentFrame)
 	-- / addItemBtn
 	categoryWidget.addItemBtn = widgets:AddButton(categoryWidget, categoryWidget.hoverFrame)
 	categoryWidget.addItemBtn:SetPoint("TOPLEFT", categoryWidget.hoverFrame, "TOPRIGHT", -hoverFrameExtent+5, -1)
-	categoryWidget.addItemBtn:SetScript("OnClick", function()
+	categoryWidget.addItemBtn:SetScript("OnClick", function(self, button)
 		if not widgets.aebShown[catID] then widgets.aebShown[catID] = 0 end
 
-		widgets.aebShown[catID] = bit.bxor(widgets.aebShown[catID], widgets.aebShownFlags.item)
+		local lastAddMode = categoryWidget.addMode or enums.item
+
+		if button == "RightButton" then
+			categoryWidget.addMode = enums.category
+		else
+			categoryWidget.addMode = enums.item
+		end
+
+		if lastAddMode == categoryWidget.addMode then
+			widgets.aebShown[catID] = bit.bxor(widgets.aebShown[catID], widgets.aebShownFlags.item) -- toggle
+		else
+			widgets.aebShown[catID] = bit.bor(widgets.aebShown[catID], widgets.aebShownFlags.item) -- on
+		end
+
 		mainFrame:Refresh()
 
 		if categoryWidget.addEditBox.edb:IsShown() then
 			widgets:SetFocusEditBox(categoryWidget.addEditBox.edb)
 		end
 	end)
+	categoryWidget.addItemBtn:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 	categoryWidget.addItemBtn:HookScript("OnEnter", function(self)
 		categoryWidget.hoverFrame:GetScript("OnEnter")(categoryWidget.hoverFrame)
 	end)
@@ -1210,11 +1224,17 @@ function widgets:CategoryWidget(catID, parentFrame)
 	end)
 
 	-- / addEditBox
-	categoryWidget.addEditBox = widgets:NoPointsCatEditBox(categoryWidget, L["Press enter to add"], true, parentFrame)
+	categoryWidget.addEditBox = widgets:NoPointsCatEditBox(categoryWidget, nil, true, parentFrame)
 	categoryWidget.addEditBox:Hide()
 	categoryWidget.addEditBox.edb:SetScript("OnEnterPressed", function(self)
-		if dataManager:CreateItem(self:GetText(), catData.originalTabID, catID) then -- calls mainFrame:Refresh()
-			self:SetText("") -- we clear the box if the adding was a success
+		if categoryWidget.addMode == enums.item then
+			if dataManager:CreateItem(self:GetText(), catData.originalTabID, catID) then -- calls mainFrame:Refresh()
+				self:SetText("") -- we clear the box if the adding was a success
+			end
+		elseif categoryWidget.addMode == enums.category then
+			if dataManager:CreateCategory(self:GetText(), catData.originalTabID, catID) then -- calls mainFrame:Refresh()
+				self:SetText("") -- we clear the box if the adding was a success
+			end
 		end
 		widgets:SetFocusEditBox(self)
 	end)
@@ -1225,6 +1245,12 @@ function widgets:CategoryWidget(catID, parentFrame)
 	end)
 	categoryWidget.addEditBox.edb:SetScript("OnShow", function(self)
 		tutorialsManager:Validate("introduction", "addItem") -- tutorial
+
+		if categoryWidget.addMode == enums.item then
+			categoryWidget.addEditBox.edb.Hint:SetText(L["Press enter to add"].. " ("..string.lower(L["Item"])..")")
+		elseif categoryWidget.addMode == enums.category then
+			categoryWidget.addEditBox.edb.Hint:SetText(L["Press enter to add"].. " ("..string.lower(L["Sub-Category"])..")")
+		end
 	end)
 	widgets:AddHyperlinkEditBox(categoryWidget.addEditBox.edb)
 
