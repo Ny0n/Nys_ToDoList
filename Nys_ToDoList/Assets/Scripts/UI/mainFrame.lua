@@ -642,6 +642,9 @@ function private:RecursiveLoad(tabID, tabData, catWidget, p)
 		return
 	end
 
+	p.deep = p.deep + 1
+	local deep = p.deep
+
 	p:SetX(enums.ofsxContent)
 	p:SetY(-enums.ofsyCatContent)
 
@@ -685,6 +688,8 @@ function private:RecursiveLoad(tabID, tabData, catWidget, p)
 			p:ShowFrame(contentWidget)
 			p:SetX(0)
 
+			p.deep = deep
+
 			if contentWidget.enum == enums.category then -- sub-category
 				private:RecursiveLoad(tabID, tabData, contentWidget, p)
 			elseif contentWidget.enum == enums.item then -- item
@@ -697,6 +702,10 @@ function private:RecursiveLoad(tabID, tabData, catWidget, p)
 
 	p:SetX(-enums.ofsxContent)
 	p:SetY(-enums.ofsyContentCat)
+
+	if p.deep ~= deep then
+		p:AddX(-enums.ofsxContent * (p.deep - deep))
+	end
 end
 
 function private:LoadList()
@@ -716,6 +725,7 @@ function private:LoadList()
 		relativeFrame = tdlFrame.content.loadOrigin,
 		offsetX = 0,
 		offsetY = 0,
+		deep = 0,
 		ShowFrame = function(self, frame)
 			frame:SetPoint("TOPLEFT", self.relativeFrame, "BOTTOMLEFT", self.offsetX, self.offsetY)
 			frame:Show()
@@ -743,6 +753,8 @@ function private:LoadList()
 			p:ShowFrame(catWidget)
 			p:SetX(0)
 
+			p.deep = 0
+
 			if catOrder == 1 then -- if it's the first loaded cat widget
 				tutorialsManager:SetPoint("introduction", "addItem", "RIGHT", catWidget, "LEFT", -23, 0) -- we put the corresponding tuto on it
 			end
@@ -758,6 +770,7 @@ function private:LoadList()
 		end
 	end
 
+	p:AddY(-8)
 	p:ShowFrame(tdlFrame.content.dummyBottomFrame) -- add a bit of space at the bottom
 
 	-- drag&drop
