@@ -608,6 +608,67 @@ end
 
 -- // Content loading
 
+local rlHelper = {
+	deep = 0,
+
+	last = {},
+	new = {},
+
+	---@param frameType enums.rlFrameType
+	ShowFrame = function(self, frame, frameType)
+		self.new.relativeFrame = frame.heightFrame
+		self.new.frameType = frameType
+		self.new.deep = self.deep
+
+		local offsetX, offsetY = private:DetermineOffset(self.last, self.new)
+
+		frame:SetPoint("TOPLEFT", self.last.relativeFrame, "BOTTOMLEFT", offsetX, offsetY)
+		frame:Show()
+
+		self.last.relativeFrame = self.new.relativeFrame
+		self.last.frameType = self.new.frameType
+		self.last.deep = self.new.deep
+	end,
+}
+
+function private:DetermineOffset(last, new)
+	-- determine offsetX and offsetY by computing the last frame and new frame details
+
+	if last.frameType == enums.rlFrameType.empty then
+		return 0, 0
+	end
+
+	local offsetX, offsetY = 0, 0
+
+	local isSameDeep, isNewDeeper = last.deep == new.deep, new.deep > last.deep
+
+	offsetX = enums.ofsxContent * (new.deep - last.deep)
+
+	offsetY = -enums.ofsyContent
+
+	if not isSameDeep then
+		if isNewDeeper then
+			offsetY = -enums.ofsyCatContent
+		else
+			offsetY = -enums.ofsyContentCat
+		end
+	end
+
+	if last.frameType == enums.rlFrameType.addEditBox then
+		offsetY = offsetY + -3
+	end
+
+	if last.frameType == enums.rlFrameType.category and new.frameType ~= enums.rlFrameType.category and isSameDeep then
+		offsetY = offsetY + -3
+	end
+
+	if new.frameType == enums.rlFrameType.empty then
+		offsetY = -15
+	end
+
+	return offsetX, offsetY
+end
+
 function private:LoadContent()
 	-- // reloading of elements that need updates
 
@@ -630,7 +691,7 @@ function private:LoadContent()
 	end
 end
 
-function private:RecursiveLoad(tabID, tabData, catWidget, p)
+function private:RecursiveLoad(tabID, tabData, catWidget)
 	local catData = catWidget.catData
 	catWidget.addEditBox:Hide()
 	catWidget.emptyLabel:Hide()
@@ -638,31 +699,21 @@ function private:RecursiveLoad(tabID, tabData, catWidget, p)
 
 	-- if the cat is closed, ignore it
 	if catData.closedInTabIDs[tabID] then
-		p:SetY(-enums.ofsyCat)
 		return
 	end
 
-	p.deep = p.deep + 1
-	local deep = p.deep
-
-	p:SetX(enums.ofsxContent)
-	p:SetY(-enums.ofsyCatContent)
+	rlHelper.deep = rlHelper.deep + 1
+	local deep = rlHelper.deep
 
 	-- add edit boxes : check for the flags and show them accordingly
 	local isAddBoxShown = widgets.aebShown[catWidget.catID] and bit.band(widgets.aebShown[catWidget.catID], widgets.aebShownFlags.item) ~= 0
 	if isAddBoxShown then -- item add edit box
-		p:ShowFrame(catWidget.addEditBox)
-
-		p:SetX(0)
-		p:SetY(-enums.ofsyContent-3)
+		rlHelper:ShowFrame(catWidget.addEditBox, enums.rlFrameType.addEditBox)
 	end
 
 	-- emptyLabel : we show it if there's nothing in the category
 	if not next(catData.orderedContentIDs) then
-		p:ShowFrame(catWidget.emptyLabel)
-
-		p:SetX(-enums.ofsxContent)
-		p:SetY(-enums.ofsyContentCat)
+		rlHelper:ShowFrame(catWidget.emptyLabel, enums.rlFrameType.label)
 		return
 	end
 
@@ -671,10 +722,7 @@ function private:RecursiveLoad(tabID, tabData, catWidget, p)
 		if tabData.hideCheckedItems then
 			if not dataManager:IsParent(catWidget.catID) then
 				if dataManager:IsCategoryCompleted(catWidget.catID) then
-					p:ShowFrame(catWidget.hiddenLabel)
-
-					p:SetX(-enums.ofsxContent)
-					p:SetY(-enums.ofsyContentCat)
+					rlHelper:ShowFrame(catWidget.hiddenLabel, enums.rlFrameType.label)
 					return
 				end
 			end
@@ -685,32 +733,20 @@ function private:RecursiveLoad(tabID, tabData, catWidget, p)
 	for contentOrder,contentID in ipairs(catData.orderedContentIDs) do -- for everything in a category
 		local contentWidget = contentWidgets[contentID]
 		if not dataManager:IsHidden(contentID, tabID) then -- if it's not hidden, we show the corresponding widget
-			p:ShowFrame(contentWidget)
-			p:SetX(0)
-
-			p.deep = deep
+			rlHelper.deep = deep
+			rlHelper:ShowFrame(contentWidget, contentWidget.enum == enums.item and enums.rlFrameType.item or enums.rlFrameType.category)
 
 			if contentWidget.enum == enums.category then -- sub-category
-				private:RecursiveLoad(tabID, tabData, contentWidget, p)
-			elseif contentWidget.enum == enums.item then -- item
-				p:SetY(-enums.ofsyContent)
+				private:RecursiveLoad(tabID, tabData, contentWidget)
 			end
 		end
-	end
-
-	-- p.offsetY = enums.ofsyContent -- TDLATER sub-cat take last used offset for sub-cats? (not sure of this comment tho)
-
-	p:SetX(-enums.ofsxContent)
-	p:SetY(-enums.ofsyContentCat)
-
-	if p.deep ~= deep then
-		p:AddX(-enums.ofsxContent * (p.deep - deep))
 	end
 end
 
 function private:LoadList()
 	-- // generating all of the content (items, checkboxes, editboxes, category labels...)
 	-- it's the big big important generation loop (oof)
+	-- NOTE: Max 800 things to show in one tab or wow may crash due to an overflow error in the frame parent system!
 
 	-- first things first, we hide EVERY widget, so that we only show the good ones after
 	for _,contentWidget in pairs(contentWidgets) do
@@ -721,39 +757,18 @@ function private:LoadList()
 	-- let's go!
 	local tabID = database.ctab()
 	local tabData = select(3, dataManager:Find(tabID))
-	local p = { -- pos table TDLATER declare out of here for opti?
-		relativeFrame = tdlFrame.content.loadOrigin,
-		offsetX = 0,
-		offsetY = 0,
-		deep = 0,
-		ShowFrame = function(self, frame)
-			frame:SetPoint("TOPLEFT", self.relativeFrame, "BOTTOMLEFT", self.offsetX, self.offsetY)
-			frame:Show()
-			self.relativeFrame = frame.heightFrame
-		end,
-		SetX = function(self, value)
-			self.offsetX = value
-		end,
-		SetY = function(self, value)
-			self.offsetY = value
-		end,
-		AddX = function(self, value)
-			self.offsetX = self.offsetX + value
-		end,
-		AddY = function(self, value)
-			self.offsetY = self.offsetY + value
-		end
-	}
+
+	rlHelper.last.relativeFrame = tdlFrame.content.loadOrigin
+	rlHelper.last.frameType = enums.rlFrameType.empty
+	rlHelper.last.deep = 0
 
 	-- base category widgets loop
 	for catOrder,catID in ipairs(tabData.orderedCatIDs) do
 		local catWidget = contentWidgets[catID]
 
 		if not dataManager:IsHidden(catID, tabID) then
-			p:ShowFrame(catWidget)
-			p:SetX(0)
-
-			p.deep = 0
+			rlHelper.deep = 0
+			rlHelper:ShowFrame(catWidget, enums.rlFrameType.category)
 
 			if catOrder == 1 then -- if it's the first loaded cat widget
 				tutorialsManager:SetPoint("introduction", "addItem", "RIGHT", catWidget, "LEFT", -23, 0) -- we put the corresponding tuto on it
@@ -766,12 +781,11 @@ function private:LoadList()
 				catWidget.originalTabLabel:Show()
 			end
 
-			private:RecursiveLoad(tabID, tabData, catWidget, p)
+			private:RecursiveLoad(tabID, tabData, catWidget)
 		end
 	end
 
-	p:AddY(-8)
-	p:ShowFrame(tdlFrame.content.dummyBottomFrame) -- add a bit of space at the bottom
+	rlHelper:ShowFrame(tdlFrame.content.dummyBottomFrame, enums.rlFrameType.empty) -- add a bit of space at the bottom
 
 	-- drag&drop
 	if dragndrop.dragging then

@@ -58,12 +58,23 @@ enums.tdlFrameDefaultWidth = 340
 enums.tdlFrameDefaultHeight = 400
 enums.rightPointDistance = 297
 
+enums.ofsxItemIcons = 20
+
 enums.ofsxContent = 15
 enums.ofsyCatContent = 10
 enums.ofsyCat = 5
 enums.ofsyContentCat = 10
 enums.ofsyContent = 6
-enums.ofsxItemIcons = 20
+enums.ofsyContentContent = 15
+
+---@class enums.rlFrameType
+enums.rlFrameType = { -- helper
+	empty = 0,
+	label = 1,
+	item = 2,
+	category = 3,
+	addEditBox = 4,
+}
 
 enums.maxWordWrapLines = 3
 enums.maxDescriptionCharCount = 10000
