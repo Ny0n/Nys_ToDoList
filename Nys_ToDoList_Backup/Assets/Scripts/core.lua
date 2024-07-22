@@ -45,6 +45,9 @@ core.simpleAddonName = string.gsub(core.toc.title, "Ny's ", "")
 -- Easy access to know if we are currently running on retail or not
 core.isRetail = (LE_EXPANSION_LEVEL_CURRENT or 0) >= 9
 
+core.backupLoaded = false
+core.listLoaded = false
+
 --/*******************/ Events /*************************/--
 
 core.loadFrame = CreateFrame("Frame")
@@ -55,24 +58,22 @@ end
 
 core.loadFrame:SetScript("OnEvent", core.OnEvent)
 core.loadFrame:RegisterEvent("ADDON_LOADED")
+core.loadFrame:RegisterEvent("PLAYER_LOGIN")
 
 --/*******************/ Functions /*************************/--
 
-local backupLoaded, listLoaded = false, false
 function core:ADDON_LOADED(event, addonName)
-	if addonName == core.addonName then
-		backupLoaded = true
+	-- Always happens before Nys_ToDoList's ADDON_LOADED event, because we are a dependency
+
+	if IsAddOnLoaded("Nys_ToDoList_Backup") then
+		core.backupLoaded = true
 	end
 
-	if addonName == "Nys_ToDoList" then
-		listLoaded = true
+	if IsAddOnLoaded("Nys_ToDoList") then
+		core.listLoaded = true
 	end
 
-	if not backupLoaded or not listLoaded then
-		return
-	end
-
-	core.loadFrame:UnregisterEvent(event) -- stop calling this func
+	core.loadFrame:UnregisterEvent(event)
 	core.loadFrame:RegisterEvent("PLAYER_LOGOUT")
 
 	data:Initialize()
@@ -80,8 +81,11 @@ function core:ADDON_LOADED(event, addonName)
 	list:Initialize()
 
 	pcall(function() options:Initialize() end) -- optionnal, don't crash the whole addon if there's ever a problem in the options
+end
 
+function core:PLAYER_LOGIN(event)
 	data:CheckForAutomaticSaves()
+	core.loadFrame:UnregisterEvent(event)
 end
 
 function core:PLAYER_LOGOUT(event)

@@ -13,7 +13,6 @@
 ## SavedVariables: NysToDoListBackupDB
 
 ## DefaultState: enabled
-## LoadOnDemand: 1
 
 ## IconTexture: Interface\AddOns\Nys_ToDoList_Backup\Assets\Art\70_professions_scroll_03
 

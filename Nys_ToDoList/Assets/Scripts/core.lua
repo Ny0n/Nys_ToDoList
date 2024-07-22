@@ -181,6 +181,8 @@ core.Event_OnInitialize_End = {}
 function NysTDL:OnInitialize()
     -- Called when the addon has finished loading
 
+	NysTDLBackup:ApplyPendingBackup()
+
 	-- start initialization event
 	for _,callback in ipairs(core.Event_OnInitialize_Start) do
 		if type(callback) == "function" then

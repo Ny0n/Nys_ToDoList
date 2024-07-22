@@ -71,7 +71,7 @@ function list:BackupButton(backupType, backupSlot, isWriteable)
 	listButtonWidget:SetScript("OnClick", function(self, button)
 		if button == "LeftButton" then
 			local hasBackup = not not data:GetValidBackup(data:GetCurrentProfile(), backupType, backupSlot)
-			if isWriteable and (not hasBackup or IsShiftKeyDown()) then
+			if (core.listLoaded and isWriteable) and (not hasBackup or IsShiftKeyDown()) then
 				data:MakeBackup(data:GetCurrentProfile(), backupType, backupSlot)
 			else
 				data:ApplyBackup(data:GetCurrentProfile(), backupType, backupSlot)
@@ -91,7 +91,11 @@ function list:BackupButton(backupType, backupSlot, isWriteable)
 				local backupTable = data:GetValidBackup(data:GetCurrentProfile(), backupType, backupSlot)
 
 				if not backupTable and isWriteable then
-					tooltipFrame:AddLine(L["Left-Click"].." - "..L["Create new"], 0.2, 1, 0.2)
+					if core.listLoaded then
+						tooltipFrame:AddLine(L["Left-Click"].." - "..L["Create new"], 0.2, 1, 0.2)
+					else
+						tooltipFrame:AddLine(L["Addon not loaded"], 1, 0.2, 0.2)
+					end
 				end
 
 				if backupTable then
@@ -106,7 +110,9 @@ function list:BackupButton(backupType, backupSlot, isWriteable)
 
 					tooltipFrame:AddLine(L["Left-Click"].." - "..L["Apply"], 0.2, 1, 0.2)
 					if isWriteable then
-						tooltipFrame:AddLine(L["Shift-Click"].." - "..L["Overwrite"], 1, 1, 0.2)
+						if core.listLoaded then
+							tooltipFrame:AddLine(L["Shift-Click"].." - "..L["Overwrite"], 1, 1, 0.2)
+						end
 						tooltipFrame:AddLine(L["Right-Click"].." - "..L["Delete"], 1, 0.2, 0.2)
 					end
 				end
