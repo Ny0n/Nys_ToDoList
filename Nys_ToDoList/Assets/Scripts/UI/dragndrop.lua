@@ -331,13 +331,24 @@ function private:InitCategoryDrag()
 	draggingWidget.originalTabLabel:Hide()
 	draggingWidget.addEditBox:Hide()
 	draggingWidget.editModeFrame:Hide()
+	draggingWidget.tabulation:Hide()
 
 	-- when we are dragging a category, we dim every place we can't drag it to (for a visual feedback)
 	local contentWidgets = mainFrame:GetContentWidgets()
+	contentWidgets[draggingWidget.catID].tabulation:SetParent(contentWidgets[draggingWidget.catID]:GetParent()) -- keep it visible
 	contentWidgets[draggingWidget.catID]:SetAlpha(selectedDimAlpha)
+	-- for _,widget in pairs(contentWidgets) do
+	-- 	if widget.enum == enums.item then
+	-- 		widget:SetAlpha(forbiddenDimAlpha)
+	-- 	elseif widget.enum == enums.category then
+	-- 		widget.tabulation:SetAlpha(forbiddenDimAlpha)
+	-- 	end
+	-- end
 	for _,widget in pairs(contentWidgets) do
 		if widget.enum == enums.item then
-			widget:SetAlpha(forbiddenDimAlpha)
+			if widget.itemData.favorite then
+				widget:SetAlpha(forbiddenDimAlpha)
+			end
 		end
 	end
 
@@ -431,6 +442,7 @@ function private:DragStart()
 	targetDropFrame, newPos = nil, nil
 	startingTab, currentTab = nil, nil
 	dropLine = dropLine or CreateFrame("Frame", nil, tdlFrame.content, "NysTDL_DropLine") -- creating the drop line
+	dropLine:SetFrameStrata("HIGH")
 	dropLine:SetScale(utils:Clamp(listScale, 0, 1)) -- we need to re-set the scale of the drop line here (for reasons)
 	dropLine:Show()
 end
@@ -453,8 +465,14 @@ function private:DragStop()
 
 	-- we reset the alpha states
 	local contentWidgets = mainFrame:GetContentWidgets()
+	if draggingWidget.enum == enums.category then
+		contentWidgets[draggingWidget.catID].tabulation:SetParent(contentWidgets[draggingWidget.catID])
+	end
 	for _,widget in pairs(contentWidgets) do
 		widget:SetAlpha(normalAlpha)
+		-- if widget.enum == enums.category then
+		-- 	widget.tabulation:SetAlpha(normalAlpha)
+		-- end
 	end
 
 	-- we hide the dragging widget, as well as the drop line

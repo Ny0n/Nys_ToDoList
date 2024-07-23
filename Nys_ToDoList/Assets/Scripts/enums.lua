@@ -127,7 +127,7 @@ enums.icons = {
 	},
 	tabulationLine = {
 		info = function() return enums.artPath.."CommonForms", 0, 3 end,
-		texCoords = { 0.047, 0.59, 0.121, 0.137 },
+		texCoords = { 0.07, 0.53, 0.121, 0.137 },
 	},
 	tabulationDot = {
 		info = function() return enums.artPath.."CommonForms", 12, 12 end,

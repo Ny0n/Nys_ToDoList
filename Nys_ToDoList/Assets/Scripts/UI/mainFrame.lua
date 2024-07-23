@@ -700,10 +700,6 @@ function private:RecursiveLoad(tabID, tabData, catWidget)
 	catWidget.addEditBox:Hide()
 	catWidget.emptyLabel:Hide()
 	catWidget.hiddenLabel:Hide()
-
-	if not catWidget.tabulation then
-		catWidget.tabulation = widgets:Tabulation(catWidget)
-	end
 	catWidget.tabulation:Hide()
 
 	-- if the cat is closed, ignore it

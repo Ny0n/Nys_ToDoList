@@ -1277,6 +1277,9 @@ function widgets:CategoryWidget(catID, parentFrame)
 	-- 	self:GetScript("OnEscapePressed")(self)
 	-- end)
 
+	-- / tabulation
+	categoryWidget.tabulation = widgets:Tabulation(categoryWidget)
+
 	-- / drag&drop
 	dragndrop:RegisterForDrag(categoryWidget)
 
@@ -1535,6 +1538,7 @@ end
 function widgets:Tabulation(parentFrame)
 	local tabulation = CreateFrame("Frame", nil, parentFrame)
 	tabulation:SetWidth(10) -- just to see the content, the height is determined by SetPoint (top and bottom)
+	tabulation:Hide()
 
 	tabulation.start = tabulation:CreateTexture()
 	tabulation.start:SetTexture((enums.icons.tabulationArrow.info()))
@@ -1555,7 +1559,7 @@ function widgets:Tabulation(parentFrame)
 	tabulation.line:SetPoint("LEFT", tabulation, "TOP")
 	tabulation.line:SetDrawLayer("BACKGROUND")
 	tabulation.line:SetDesaturated(true)
-	tabulation.line:SetAlpha(0.5)
+	tabulation.line:SetAlpha(0.8)
 	tabulation.line:Show()
 
 	tabulation.point = tabulation:CreateTexture()
