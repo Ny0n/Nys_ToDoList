@@ -1537,44 +1537,16 @@ end
 ---@return Frame tabulation
 function widgets:Tabulation(parentFrame)
 	local tabulation = CreateFrame("Frame", nil, parentFrame)
-	tabulation:SetWidth(10) -- just to see the content, the height is determined by SetPoint (top and bottom)
+	tabulation:SetWidth(10)
 	tabulation:Hide()
 
-	tabulation.start = tabulation:CreateTexture()
-	tabulation.start:SetTexture((enums.icons.tabulationArrow.info()))
-	tabulation.start:SetSize(select(2, enums.icons.tabulationArrow.info()))
-	tabulation.start:SetTexCoord(unpack(enums.icons.tabulationArrow.texCoords))
-	tabulation.start:SetRotation(math.rad(-90))
-	tabulation.start:SetPoint("CENTER", tabulation, "TOP")
-	tabulation.start:SetDrawLayer("ARTWORK")
-	tabulation.start:SetDesaturated(true)
-	tabulation.start:SetAlpha(0.5)
-	tabulation.start:Hide() -- unused
-
-	tabulation.line = tabulation:CreateTexture()
-	tabulation.line:SetTexture((enums.icons.tabulationLine.info()))
-	tabulation.line:SetSize(select(2, enums.icons.tabulationLine.info()))
-	tabulation.line:SetTexCoord(unpack(enums.icons.tabulationLine.texCoords))
-	tabulation.line:SetRotation(math.rad(-90), {x=0, y=0.5})
-	tabulation.line:SetPoint("LEFT", tabulation, "TOP")
+	tabulation.line = tabulation:CreateLine()
+	tabulation.line:SetThickness(3)
+	tabulation.line:SetColorTexture(0.3, 0.3, 0.3, 0.7)
+	tabulation.line:SetStartPoint("TOP", tabulation)
+	tabulation.line:SetEndPoint("BOTTOM", tabulation)
 	tabulation.line:SetDrawLayer("BACKGROUND")
-	tabulation.line:SetDesaturated(true)
-	tabulation.line:SetAlpha(0.8)
 	tabulation.line:Show()
-
-	tabulation.point = tabulation:CreateTexture()
-	tabulation.point:SetTexture((enums.icons.tabulationDot.info()))
-	tabulation.point:SetSize(select(2, enums.icons.tabulationDot.info()))
-	tabulation.point:SetTexCoord(unpack(enums.icons.tabulationDot.texCoords))
-	tabulation.point:SetPoint("CENTER", tabulation, "BOTTOM")
-	tabulation.point:SetDrawLayer("BORDER")
-	tabulation.point:SetDesaturated(true)
-	tabulation.point:SetAlpha(0.2)
-	tabulation.point:Hide() -- unused
-
-	tabulation:SetScript("OnSizeChanged", function(self, width, height)
-		tabulation.line:SetWidth(height)
-	end)
 
 	return tabulation
 end

@@ -121,18 +121,6 @@ enums.icons = {
 		info = function() return enums.artPath.."Options", 200, 2 end,
 		texCoords = { 0.000976562, 0.616211, 0.749023, 0.75 },
 	},
-	tabulationArrow = {
-		info = function() return enums.artPath.."CommonIcons", 12, 12 end,
-		texCoords = { 0.126465, 0.251465, 0.25293, 0.50293 },
-	},
-	tabulationLine = {
-		info = function() return enums.artPath.."CommonForms", 0, 3 end,
-		texCoords = { 0.07, 0.53, 0.121, 0.137 },
-	},
-	tabulationDot = {
-		info = function() return enums.artPath.."CommonForms", 12, 12 end,
-		texCoords = { 0.232422, 0.458984, 0.261719, 0.714844 },
-	},
 	add = {
 		info = function() return enums.artPath.."UIMinimap", 17, 17 end,
 		texCoords = { 0.00390625, 0.0703125, 0.548828, 0.582031 },

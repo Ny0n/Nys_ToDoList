@@ -630,8 +630,11 @@ local rlHelper = {
 		self.last.deep = self.new.deep
 	end,
 
-	RefreshTabulationHeight = function(self, tabulation)
-		tabulation:SetPoint("BOTTOM", self.last.relativeFrame, "BOTTOMLEFT", 0, 1)
+	RefreshTabulationHeight = function(self, catWidget)
+		repeat
+			catWidget.tabulation:SetPoint("BOTTOM", self.last.relativeFrame, "BOTTOM", 0, 1)
+			catWidget = contentWidgets[catWidget.catData.parentCatID]
+		until not catWidget
 	end,
 }
 
@@ -710,21 +713,20 @@ function private:RecursiveLoad(tabID, tabData, catWidget)
 	rlHelper.deep = rlHelper.deep + 1
 	local deep = rlHelper.deep
 
-	-- catWidget.tabulation:SetPoint("TOP", catWidget.heightFrame, "BOTTOMLEFT", 6, -9) -- TODO top from heightFrame
-	catWidget.tabulation:SetPoint("TOP", catWidget, "CENTER", 6, -17)
+	catWidget.tabulation:SetPoint("TOP", catWidget.heightFrame, "BOTTOM", 6, -9)
 	catWidget.tabulation:SetShown(deep > 1)
 
 	-- add edit boxes : check for the flags and show them accordingly
 	local isAddBoxShown = widgets.aebShown[catWidget.catID] and bit.band(widgets.aebShown[catWidget.catID], widgets.aebShownFlags.item) ~= 0
 	if isAddBoxShown then -- item add edit box
 		rlHelper:ShowFrame(catWidget.addEditBox, enums.rlFrameType.addEditBox)
-		rlHelper:RefreshTabulationHeight(catWidget.tabulation)
+		rlHelper:RefreshTabulationHeight(catWidget)
 	end
 
 	-- emptyLabel : we show it if there's nothing in the category
 	if not next(catData.orderedContentIDs) then
 		rlHelper:ShowFrame(catWidget.emptyLabel, enums.rlFrameType.label)
-		rlHelper:RefreshTabulationHeight(catWidget.tabulation)
+		rlHelper:RefreshTabulationHeight(catWidget)
 		return
 	end
 
@@ -734,7 +736,7 @@ function private:RecursiveLoad(tabID, tabData, catWidget)
 			if not dataManager:IsParent(catWidget.catID) then
 				if dataManager:IsCategoryCompleted(catWidget.catID) then
 					rlHelper:ShowFrame(catWidget.hiddenLabel, enums.rlFrameType.label)
-					rlHelper:RefreshTabulationHeight(catWidget.tabulation)
+					rlHelper:RefreshTabulationHeight(catWidget)
 					return
 				end
 			end
@@ -747,7 +749,7 @@ function private:RecursiveLoad(tabID, tabData, catWidget)
 		if not dataManager:IsHidden(contentID, tabID) then -- if it's not hidden, we show the corresponding widget
 			rlHelper.deep = deep
 			rlHelper:ShowFrame(contentWidget, contentWidget.enum == enums.item and enums.rlFrameType.item or enums.rlFrameType.category)
-			rlHelper:RefreshTabulationHeight(catWidget.tabulation)
+			rlHelper:RefreshTabulationHeight(catWidget)
 
 			if contentWidget.enum == enums.category then -- sub-category
 				private:RecursiveLoad(tabID, tabData, contentWidget)
