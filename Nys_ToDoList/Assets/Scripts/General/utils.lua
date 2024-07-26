@@ -9,6 +9,7 @@ NysTDL.utils = utils
 
 local libs = NysTDL.libs
 local enums = NysTDL.enums
+local database = NysTDL.database
 
 -- Secondary aliases
 
@@ -308,4 +309,10 @@ function utils:GetWeeklyResetDate()
 	end
 
 	return value
+end
+
+---Helper to return the litteral string " - " colored with the addon theme
+---@return string
+function utils:GetMinusStr()
+	return string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme_yellow), " - ")
 end

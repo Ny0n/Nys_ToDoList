@@ -14,6 +14,7 @@ local chat = NysTDL.chat
 local enums = NysTDL.enums
 local utils = NysTDL.utils
 local widgets = NysTDL.widgets
+local database = NysTDL.database
 local mainFrame = NysTDL.mainFrame
 
 -- Secondary aliases
@@ -419,7 +420,7 @@ function private:CreateTutorials()
 		}
 	)
 
-	private:CreateTutoFrame(cat, "optionsButton", false, "DOWN", L["You have a lot of data? Don't forget to make backups from time to time!"].." ("..L["Right-Click"]..")", 240)
+	private:CreateTutoFrame(cat, "optionsButton", false, "DOWN", L["You have a lot of data? Don't forget to make backups from time to time!"].." ("..string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Right-Click"])..")", 240)
 
 	-- // ******************** // --
 

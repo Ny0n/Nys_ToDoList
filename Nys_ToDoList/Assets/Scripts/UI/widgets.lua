@@ -238,7 +238,7 @@ function widgets:DescriptionFrame(itemWidget)
 	-- / content of the frame / --
 
 	-- / resize button
-	descFrame.resizeButton = widgets:IconTooltipButton(descFrame, "NysTDL_TooltipResizeButton", L["Left-Click"].." - "..L["Resize"].."\n"..L["Right-Click"].." - "..L["Reset"])
+	descFrame.resizeButton = widgets:IconTooltipButton(descFrame, "NysTDL_TooltipResizeButton", string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Left-Click"])..utils:GetMinusStr()..L["Resize"].."\n"..string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Right-Click"])..utils:GetMinusStr()..L["Reset"])
 	descFrame.resizeButton:SetPoint("BOTTOMRIGHT")
 	descFrame.resizeButton:SetScript("OnMouseDown", function(self, button)
 		if button == "LeftButton" then
@@ -269,7 +269,7 @@ function widgets:DescriptionFrame(itemWidget)
 	descFrame.closeButton:SetScript("OnClick", function() widgets:DescFrameHide(itemID) end)
 
 	-- / clear button
-	descFrame.clearButton = widgets:IconTooltipButton(descFrame, "NysTDL_ClearButton", L["Clear"].." ("..L["Right-Click"]..")")
+	descFrame.clearButton = widgets:IconTooltipButton(descFrame, "NysTDL_ClearButton", L["Clear"].." ("..string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Right-Click"])..")")
 	descFrame.clearButton:SetPoint("TOPRIGHT", descFrame.closeButton, "TOPLEFT", 2, 0)
 	descFrame.clearButton:RegisterForClicks("RightButtonUp") -- only responds to right-clicks
 	descFrame.clearButton:SetScript("OnClick", function(self)
@@ -882,7 +882,7 @@ function widgets:DescButton(widget, parent)
 end
 
 function widgets:AddButton(widget, parent)
-	local btn = widgets:IconTooltipButton(parent, "NysTDL_AddButton", L["Left-Click"].." - "..L["Add an item"].."\n"..L["Right-Click"].." - "..L["Add a sub-category"])
+	local btn = widgets:IconTooltipButton(parent, "NysTDL_AddButton", string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Left-Click"])..utils:GetMinusStr()..L["Add an item"].."\n"..string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Right-Click"])..utils:GetMinusStr()..L["Add a sub-category"])
 
 	-- // Appearance
 

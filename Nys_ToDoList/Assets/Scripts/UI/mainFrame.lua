@@ -999,7 +999,7 @@ function private:GenerateFrameContent()
 	-- tutorialsManager:SetPoint("editmode", "undo", "BOTTOM", menu.undoButton, "TOP", 0, 18)
 
 	-- addon options button
-	menu.frameOptionsButton = widgets:IconTooltipButton(menu, "NysTDL_FrameOptionsButton", L["Left-Click"].." - "..L["Open addon options"].."\n"..L["Right-Click"].." - "..L["Open backup list"])
+	menu.frameOptionsButton = widgets:IconTooltipButton(menu, "NysTDL_FrameOptionsButton", string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Left-Click"])..utils:GetMinusStr()..L["Open addon options"].."\n"..string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Right-Click"])..utils:GetMinusStr()..L["Open backup list"])
 	menu.frameOptionsButton:SetPoint("CENTER", menu.undoButton, "CENTER", spacing, 0)
 	menu.frameOptionsButton:SetScript("OnClick", function(self, button)
 		if button == "RightButton" then
@@ -1205,7 +1205,7 @@ function mainFrame:CreateTDLFrame()
 	-- -- // outside the scroll frame
 
 	-- resize button
-	tdlFrame.resizeButton = widgets:IconTooltipButton(tdlFrame, "NysTDL_TooltipResizeButton", L["Left-Click"].." - "..L["Resize"].."\n"..L["Right-Click"].." - "..L["Reset"])
+	tdlFrame.resizeButton = widgets:IconTooltipButton(tdlFrame, "NysTDL_TooltipResizeButton", string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Left-Click"])..utils:GetMinusStr()..L["Resize"].."\n"..string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Right-Click"])..utils:GetMinusStr()..L["Reset"])
 	tdlFrame.resizeButton:SetPoint("BOTTOMRIGHT", -3, 3)
 	tdlFrame.resizeButton:SetScript("OnMouseDown", function(self, button)
 		if button == "LeftButton" then
