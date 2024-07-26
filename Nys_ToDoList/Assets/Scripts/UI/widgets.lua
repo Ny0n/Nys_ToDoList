@@ -1019,16 +1019,26 @@ contentWidgets = {
 ]]
 
 function private:Category_SetEditMode(state)
+	local isSubCat = not not self.catData.parentCatID
 	if state then
 		self.editModeFrame:Show()
+
 		self.startPosFrame:SetPoint("LEFT", self, "LEFT", enums.ofsxItemIcons-3, 0)
+
 		self.interactiveLabel.Button:GetScript("OnLeave")(self.interactiveLabel.Button)
 		self.interactiveLabel.Text:SetMaxLines(math.min(self.interactiveLabel.Text:GetNumLines(), enums.maxWordWrapLines))
 	else
 		self.editModeFrame:Hide()
+
 		self.startPosFrame:SetPoint("LEFT", self, "LEFT", 0, 0)
+
 		self.interactiveLabel.Text:SetMaxLines(enums.maxWordWrapLines)
 	end
+
+	if isSubCat then
+		self.startPosFrame:SetPoint("LEFT", self, "LEFT", enums.ofsxItemIcons, 0)
+	end
+
 	self.interactiveLabel:GetScript("OnSizeChanged")(self.interactiveLabel, self.interactiveLabel:GetWidth())
 end
 
@@ -1542,7 +1552,7 @@ function widgets:Tabulation(parentFrame)
 
 	tabulation.line = tabulation:CreateLine()
 	tabulation.line:SetThickness(3)
-	tabulation.line:SetColorTexture(0.3, 0.3, 0.3, 0.7)
+	tabulation.line:SetColorTexture(0.3, 0.3, 0.3, 0.5)
 	tabulation.line:SetStartPoint("TOP", tabulation)
 	tabulation.line:SetEndPoint("BOTTOM", tabulation)
 	tabulation.line:SetDrawLayer("BACKGROUND")

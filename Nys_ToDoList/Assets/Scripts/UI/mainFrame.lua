@@ -649,7 +649,7 @@ function private:DetermineOffset(last, new)
 
 	local isSameDeep, isNewDeeper = last.deep == new.deep, new.deep > last.deep
 
-	offsetX = enums.ofsxContent * (new.deep - last.deep)
+	offsetX = enums.ofsxContent * (new.deep - last.deep) + enums.ofsxItemIcons * (math.max(new.deep - 1, 0) - math.max(last.deep - 1, 0))
 
 	offsetY = -enums.ofsyContent
 
@@ -720,8 +720,10 @@ function private:RecursiveLoad(tabID, tabData, catWidget)
 	rlHelper.deep = rlHelper.deep + 1
 	local deep = rlHelper.deep
 
-	catWidget.tabulation:SetPoint("TOP", catWidget.heightFrame, "BOTTOM", 6, -9)
-	catWidget.tabulation:SetShown(deep > 1)
+	local isSubCat = deep > 1
+
+	catWidget.tabulation:SetPoint("TOP", catWidget.heightFrame, "BOTTOM", 6 + (isSubCat and enums.ofsxItemIcons or 0), -9)
+	catWidget.tabulation:SetShown(isSubCat)
 
 	-- add edit boxes : check for the flags and show them accordingly
 	local isAddBoxShown = widgets.aebShown[catWidget.catID] and bit.band(widgets.aebShown[catWidget.catID], widgets.aebShownFlags.item) ~= 0

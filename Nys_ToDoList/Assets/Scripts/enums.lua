@@ -60,7 +60,7 @@ enums.rightPointDistance = 297
 
 enums.ofsxItemIcons = 20
 
-enums.ofsxContent = 15
+enums.ofsxContent = 17
 enums.ofsyCatContent = 10
 enums.ofsyCat = 5
 enums.ofsyContentCat = 10

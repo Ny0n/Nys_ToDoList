@@ -1202,8 +1202,7 @@ function dataManager:DeleteCat(catID)
 		else -- current ID is an item
 			result = dataManager:DeleteItem(contentID)
 		end
-		nbToUndo = nbToUndo + nb
-		if result then nbToUndo = nbToUndo + 1 end
+		if result or nb > 0 then nbToUndo = nbToUndo + 1 end
 	end
 
 	local undoData = private:CreateUndo(catID)
@@ -1850,7 +1849,9 @@ end
 function dataManager:ClearTab(tabID)
 	local copy = {}
 	for catID,catData in dataManager:ForEach(enums.category, tabID) do
-		copy[catID] = catData
+		if not catData.parentCatID then -- every root category
+			copy[catID] = catData
+		end
 	end
 
 	local refreshID = dataManager:SetRefresh(false)
