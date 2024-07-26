@@ -705,6 +705,13 @@ function private:RecursiveLoad(tabID, tabData, catWidget)
 	catWidget.hiddenLabel:Hide()
 	catWidget.tabulation:Hide()
 
+	if catWidget.catData.originalTabID == tabID then
+		catWidget.originalTabLabel:Hide()
+	else -- if the tab is showing a cat that was not created here, we show the label specifying the cat's original tab
+		catWidget.originalTabLabel:SetText("("..dataManager:GetName(catWidget.catData.originalTabID)..")")
+		catWidget.originalTabLabel:Show()
+	end
+
 	-- if the cat is closed, ignore it
 	if catData.closedInTabIDs[tabID] then
 		return
@@ -787,13 +794,6 @@ function private:LoadList()
 
 			if catOrder == 1 then -- if it's the first loaded cat widget
 				tutorialsManager:SetPoint("introduction", "addItem", "RIGHT", catWidget, "LEFT", -23, 0) -- we put the corresponding tuto on it
-			end
-
-			if catWidget.catData.originalTabID == tabID then
-				catWidget.originalTabLabel:Hide()
-			else -- if the tab is showing a cat that was not created here, we show the label specifying the cat's original tab
-				catWidget.originalTabLabel:SetText("("..dataManager:GetName(catWidget.catData.originalTabID)..")")
-				catWidget.originalTabLabel:Show()
 			end
 
 			private:RecursiveLoad(tabID, tabData, catWidget)

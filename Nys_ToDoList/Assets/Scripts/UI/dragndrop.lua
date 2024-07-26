@@ -141,7 +141,7 @@ function private:DragUpdateFunc()
 end
 
 function private:IsCatDropValid(targetCatID)
-	-- TDLATER sub-cat drag&drop (fix (add) missing drop points (under sub-cats) & verify tab switch)
+	-- TDLATER sub-cat drag&drop (fix (add) missing drop points (under sub-cats) & verify tab switch) -- TODO
 
 	-- returns false if:
 	-- - (1) the targetCatID's original tab is different from the one we're currently dragging
@@ -405,6 +405,15 @@ function private:DropCategory()
 	if not mainFrame:GetFrame():IsMouseOver() then return end -- we cancel the drop if we were out of the frame
 
 	local newParentID = targetDropFrame.dropData.catID or false
+
+	-- if draggingWidget.catData.parentCatID then
+	-- 	startingTab = select(3, dataManager:Find(draggingWidget.catData.parentCatID)).originalTabID
+	-- end
+
+	-- if newParentID then
+	-- 	currentTab = select(3, dataManager:Find(newParentID)).originalTabID
+	-- end
+
 	mainFrame:DontRefreshNextTime()
 	dataManager:MoveCategory(draggingWidget.catID, newPos, newParentID, startingTab, currentTab)
 end
@@ -557,6 +566,33 @@ function dragndrop:RegisterForDrag(widget)
 		-- and finally, when everything is set up, we start the drop update managment
 		dragUpdate:SetScript("OnUpdate", private.DragUpdateFunc)
 	end)
+
+	-- TODO DEBUG
+	dragFrame:HookScript("OnClick", function(self, button)
+		if button == "RightButton" then
+			print("-------------------")
+			if widget.enum == enums.item then
+				print("*** <item>")
+				print("** NAME = "..dataManager:GetName(widget.itemID))
+				print("* orig.tab = "..dataManager:GetName(widget.itemData.originalTabID))
+				for k,v in pairs(widget.itemData.tabIDs) do
+					if v then
+						print(dataManager:GetName(k))
+					end
+				end
+			else
+				print("*** <category>")
+				print("** NAME = "..dataManager:GetName(widget.catID))
+				print("* orig.tab = "..dataManager:GetName(widget.catData.originalTabID))
+				for k,v in pairs(widget.catData.tabIDs) do
+					if v then
+						print("- "..dataManager:GetName(k))
+					end
+				end
+			end
+		end
+	end)
+	dragFrame:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 
 	-- / stop
 	dragFrame:HookScript("OnDragStop", private.DragStop)
