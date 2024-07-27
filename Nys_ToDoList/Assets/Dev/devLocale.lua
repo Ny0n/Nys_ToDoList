@@ -19,8 +19,7 @@ addonTable.devLocale = L
 
 --/************************************************/--
 
-L["Add a sub-category"] = true
-L["Sub-Category"] = true
+L["To add elements in a category, hover the name and press the %s icon"] = true
 L["A minimap button"] = true
 L["A movable %s button"] = true
 L["A simple interface to remember everything you need to do!"] = true
@@ -243,7 +242,6 @@ L["This action will reload your UI"] = true
 L["This name already exists"] = true
 L["This will add your category to the current tab"] = true
 L["Thursday"] = true
-L["To add new items, hover the category names and press the %s icon"] = true
 L["To delete items and do a lot more, you can right-click anywhere on the list or click on this button to toggle the edit mode"] = true
 L["To toggle the list, you have several ways"] = true
 L["toggle"] = true

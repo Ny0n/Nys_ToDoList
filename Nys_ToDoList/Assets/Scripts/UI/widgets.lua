@@ -882,7 +882,7 @@ function widgets:DescButton(widget, parent)
 end
 
 function widgets:AddButton(widget, parent)
-	local btn = widgets:IconTooltipButton(parent, "NysTDL_AddButton", string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Left-Click"])..utils:GetMinusStr()..L["Add an item"].."\n"..string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Right-Click"])..utils:GetMinusStr()..L["Add a sub-category"])
+	local btn = widgets:IconTooltipButton(parent, "NysTDL_AddButton", string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Left-Click"])..utils:GetMinusStr()..L["Add an item"].."\n"..string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Right-Click"])..utils:GetMinusStr()..L["Add a category"])
 
 	-- // Appearance
 
@@ -1257,9 +1257,9 @@ function widgets:CategoryWidget(catID, parentFrame)
 		tutorialsManager:Validate("introduction", "addItem") -- tutorial
 
 		if categoryWidget.addMode == enums.item then
-			categoryWidget.addEditBox.edb.Hint:SetText(L["Press enter to add"].. " ("..string.lower(L["Item"])..")")
+			categoryWidget.addEditBox.edb.Hint:SetText(L["Add an item"])
 		elseif categoryWidget.addMode == enums.category then
-			categoryWidget.addEditBox.edb.Hint:SetText(L["Press enter to add"].. " ("..string.lower(L["Sub-Category"])..")")
+			categoryWidget.addEditBox.edb.Hint:SetText(L["Add a category"])
 		end
 	end)
 	widgets:AddHyperlinkEditBox(categoryWidget.addEditBox.edb)

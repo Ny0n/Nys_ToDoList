@@ -181,7 +181,7 @@ chat.commands = {
 	[L["categories"]] = function()
 		chat:CustomPrintForced(L["Information on categories"]..":")
 		chat:CustomPrintForced("- "..L["Left-click on the category names to expand or shrink their content"]..".", true)
-		chat:CustomPrintForced("- "..utils:SafeStringFormat(L["To add new items, hover the category names and press the %s icon"], enums.icons.add.texHyperlinkChat)..".", true)
+		chat:CustomPrintForced("- "..utils:SafeStringFormat(L["To add elements in a category, hover the name and press the %s icon"], enums.icons.add.texHyperlinkChat).." ("..string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Left-Click"])..utils:GetMinusStr()..L["Add an item"]..", "..string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Right-Click"])..utils:GetMinusStr()..L["Add a category"]..").", true)
 	end,
 
 	[L["favorites"]] = function()

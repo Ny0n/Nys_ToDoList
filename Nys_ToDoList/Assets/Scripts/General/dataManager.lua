@@ -598,7 +598,7 @@ function dataManager:AddCategory(catID, catData)
 	private:UpdateTabsDisplay(catData.originalTabID, true, catID)
 	if catData.parentCatID then
 		-- we add it ordered in its category/categories
-		local catOrder = dataManager:GetNextFavPos(catData.parentCatID)
+		local catOrder = dataManager:GetNextSubCatPos(catData.parentCatID)
 		tinsert(categoriesList[catData.parentCatID].orderedContentIDs, catOrder, catID)
 	end
 
@@ -1732,6 +1732,25 @@ function dataManager:GetNextFavPos(catID)
 	end
 
 	return lastFavPos + 1
+end
+
+---Finds and returns the index where the next sub category should preferably be added in the category
+---@param catID string
+---@return number
+function dataManager:GetNextSubCatPos(catID)
+	local catData = select(3, dataManager:Find(catID))
+	-- local lastPos = 0
+	-- for contentOrder,contentID in ipairs(catData.orderedContentIDs) do -- for everything that is in the cat
+	-- 	local enum, _, contentData = dataManager:Find(contentID)
+	-- 	if enum == enums.item then
+	-- 		if contentData.favorite then
+	-- 			lastPos = contentOrder
+	-- 		end
+	-- 	end
+	-- end
+
+	-- return #catData.orderedContentIDs + 1
+	return dataManager:GetNextFavPos(catID)
 end
 
 local T_GetParents = {}
