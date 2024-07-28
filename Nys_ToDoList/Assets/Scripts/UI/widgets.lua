@@ -238,7 +238,7 @@ function widgets:DescriptionFrame(itemWidget)
 	-- / content of the frame / --
 
 	-- / resize button
-	descFrame.resizeButton = widgets:IconTooltipButton(descFrame, "NysTDL_TooltipResizeButton", string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Left-Click"])..utils:GetMinusStr()..L["Resize"].."\n"..string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Right-Click"])..utils:GetMinusStr()..L["Reset"])
+	descFrame.resizeButton = widgets:IconTooltipButton(descFrame, "NysTDL_TooltipResizeButton", {string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Left-Click"])..utils:GetMinusStr()..L["Resize"], string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Right-Click"])..utils:GetMinusStr()..L["Reset"]})
 	descFrame.resizeButton:SetPoint("BOTTOMRIGHT")
 	descFrame.resizeButton:SetScript("OnMouseDown", function(self, button)
 		if button == "LeftButton" then
@@ -621,7 +621,13 @@ end
 function widgets:IconTooltipButton(relativeFrame, template, tooltipText, tooltipOffsetX, tooltipOffsetY)
 	local btn = CreateFrame("Button", nil, relativeFrame, template)
 
-	if type(tooltipText) == "string" and tooltipText ~= "" then -- // Tooltip
+	local tooltipTexts
+	if type(tooltipText) ~= "table" then
+		tooltipTexts = {tostring(tooltipText)}
+	else
+		tooltipTexts = tooltipText
+	end
+	if type(tooltipTexts[1]) == "string" and tooltipTexts[1] ~= "" then -- // Tooltip
 		btn.tooltip = nil
 		btn:HookScript("OnEnter", function(self)
 			-- if the tooltip is already in use by someone else, return
@@ -632,7 +638,10 @@ function widgets:IconTooltipButton(relativeFrame, template, tooltipText, tooltip
 			-- we're good to go
 			btn.tooltip = widgets:AcquireTooltip("NysTDL_Tooltip_TooltipButton", self, tooltipOffsetX, tooltipOffsetY)
 			btn.tooltip:SetFont("GameTooltipText")
-			btn.tooltip:AddLine(tooltipText)
+
+			for _,text in ipairs(tooltipTexts) do
+				btn.tooltip:AddLine(text)
+			end
 		end)
 		btn:HookScript("OnLeave", function()
 			if btn.tooltip then
@@ -892,7 +901,7 @@ function widgets:DescButton(widget, parent)
 end
 
 function widgets:AddButton(widget, parent)
-	local btn = widgets:IconTooltipButton(parent, "NysTDL_AddButton", string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Left-Click"])..utils:GetMinusStr()..L["Add an item"].."\n"..string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Right-Click"])..utils:GetMinusStr()..L["Add a category"])
+	local btn = widgets:IconTooltipButton(parent, "NysTDL_AddButton", {string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Left-Click"])..utils:GetMinusStr()..L["Add an item"], string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Right-Click"])..utils:GetMinusStr()..L["Add a category"]})
 
 	-- // Appearance
 

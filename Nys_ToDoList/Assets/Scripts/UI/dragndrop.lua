@@ -7,11 +7,17 @@ NysTDL.dragndrop = dragndrop
 
 -- Primary aliases
 
+local libs = NysTDL.libs
 local enums = NysTDL.enums
 local utils = NysTDL.utils
+local widgets = NysTDL.widgets
 local database = NysTDL.database
 local mainFrame = NysTDL.mainFrame
 local dataManager = NysTDL.dataManager
+
+-- Secondary aliases
+local L = libs.L
+local LibQTip = libs.LibQTip
 
 --/*******************************************************/--
 
@@ -42,6 +48,7 @@ local startingTab, currentTab
 
 local dragUpdate = CreateFrame("Frame", nil, UIParent)
 local dropLine
+local tooltip
 local minDist = 10000
 
 local clickX, clickY -- for a clean drag&grop
@@ -452,6 +459,11 @@ function private:DragStart()
 	dropLine:SetFrameStrata("HIGH")
 	dropLine:SetScale(utils:Clamp(listScale, 0, 1)) -- we need to re-set the scale of the drop line here (for reasons)
 	dropLine:Show()
+
+	if tooltip then
+		LibQTip:Release(tooltip)
+		tooltip = nil
+	end
 end
 
 function private:DragStop()
@@ -604,10 +616,27 @@ function dragndrop:RegisterForDrag(widget)
 	dragFrame:HookScript("OnEnter", function(self)
 		if dragndrop.dragging or not mainFrame.editMode then return end
 		dragFrame:SetHighlightShown(true)
+
+        -- <!> tooltip content <!>
+
+        tooltip = widgets:AcquireTooltip("NysTDL_Tooltip_DragAndDrop", self)
+
+		tooltip:SetFont("GameTooltipText")
+
+		tooltip:ClearAllPoints()
+		tooltip:SetPoint("BOTTOMLEFT", self, "TOPLEFT", -5, 2)
+
+		tooltip:AddLine(string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Double-Click"])..utils:GetMinusStr()..L["Rename"])
+		tooltip:AddLine(string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Drag and Drop"])..utils:GetMinusStr()..L["Reorder"])
 	end)
 	dragFrame:HookScript("OnLeave", function(self)
 		if dragFrame:IsHighlightShown() then
 			dragFrame:SetHighlightShown(false)
+		end
+
+		if tooltip then
+			LibQTip:Release(tooltip)
+			tooltip = nil
 		end
 	end)
 end

@@ -20,6 +20,8 @@ addonTable.devLocale = L
 --/************************************************/--
 
 L["To add elements in a category, hover the name and press the %s icon"] = true
+L["Reorder"] = true
+
 L["A minimap button"] = true
 L["A movable %s button"] = true
 L["A simple interface to remember everything you need to do!"] = true
@@ -199,9 +201,7 @@ L["Remember"] = true
 L["Remember undos"] = true
 L["Remove reset"] = true
 L["Rename"] = true
-L["Rename items and categories"] = true
 L["Reopen error message"] = true
-L["Reorder/Sort the list"] = true
 L["Reset"] = true
 L["Reset days"] = true
 L["Resetting this profile will also clear the list"] = true

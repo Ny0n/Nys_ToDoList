@@ -655,8 +655,13 @@ function private:CreateRecoveryList()
     footer.copyBox:SetPoint("BOTTOMRIGHT", footer, "BOTTOMRIGHT", -10, 10)
     footer.copyBox.EditBox:SetFontObject("ChatFontNormal")
     footer.copyBox.EditBox:SetAutoFocus(false)
-    footer.copyBox.ScrollBar.ScrollDownButton:ClearAllPoints()
-    footer.copyBox.ScrollBar.ScrollDownButton:SetPoint("BOTTOMRIGHT", footer.copyBox, "BOTTOMRIGHT", -1, 0)
+	if utils:IsDF() then
+		footer.copyBox.ScrollBar.Forward:ClearAllPoints()
+		footer.copyBox.ScrollBar.Forward:SetPoint("BOTTOMRIGHT", footer.copyBox, "BOTTOMRIGHT", -1, 0)
+	else
+		footer.copyBox.ScrollBar.ScrollDownButton:ClearAllPoints()
+		footer.copyBox.ScrollBar.ScrollDownButton:SetPoint("BOTTOMRIGHT", footer.copyBox, "BOTTOMRIGHT", -1, 0)
+	end
 
     -- /--> char count
     footer.copyBox.EditBox:SetMaxLetters(enums.maxDescriptionCharCount)
@@ -670,8 +675,13 @@ function private:CreateRecoveryList()
     footer:SetScript("OnUpdate", function() -- don't ask me why
         footer.copyBox.EditBox:SetWidth(footer.copyBox:GetWidth() - 25)
         -- footer.copyBox.ScrollBar:Hide()
-        footer.copyBox.ScrollBar.ScrollUpButton:Hide()
-        footer.copyBox.ScrollBar.ThumbTexture:Hide()
+		if utils:IsDF() then
+			footer.copyBox.ScrollBar.Back:Hide()
+			footer.copyBox.ScrollBar.Track.Thumb:Hide()
+		else
+			footer.copyBox.ScrollBar.ScrollUpButton:Hide()
+			footer.copyBox.ScrollBar.ThumbTexture:Hide()
+		end
     end)
     widgets:SetHyperlinksEnabled(footer.copyBox.EditBox, true)
     recoveryList.copyBox = footer.copyBox.EditBox -- shortcut

@@ -602,21 +602,21 @@
 				</Anchors>
 				<Layers>
 					<Layer level="BORDER">
-						<Texture parentKey="ActiveLeft" file="Interface\AddOns\Nys_ToDoList\Assets\Art\ChatFrameTab-SelectedLeft-min" alphaMode="ADD">
+						<Texture parentKey="ActiveLeft" file="Interface\AddOns\Nys_ToDoList\Assets\Art\ChatFrameTab-SelectedLeft-min" alphaMode="ADD" alpha="0.7">
 							<Size x="16"/>
 							<Anchors>
 								<Anchor point="TOPLEFT" x="-8" y="8"/>
 								<Anchor point="BOTTOMLEFT" x="-8" y="-8"/>
 							</Anchors>
 						</Texture>
-						<Texture parentKey="ActiveRight" file="Interface\AddOns\Nys_ToDoList\Assets\Art\ChatFrameTab-SelectedRight-min" alphaMode="ADD">
+						<Texture parentKey="ActiveRight" file="Interface\AddOns\Nys_ToDoList\Assets\Art\ChatFrameTab-SelectedRight-min" alphaMode="ADD" alpha="0.7">
 							<Size x="16"/>
 							<Anchors>
 								<Anchor point="TOPRIGHT" x="8" y="8"/>
 								<Anchor point="BOTTOMRIGHT" x="8" y="-8"/>
 							</Anchors>
 						</Texture>
-						<Texture parentKey="ActiveMiddle" file="Interface\AddOns\Nys_ToDoList\Assets\Art\ChatFrameTab-SelectedMid-min" horizTile="true" alphaMode="ADD">
+						<Texture parentKey="ActiveMiddle" file="Interface\AddOns\Nys_ToDoList\Assets\Art\ChatFrameTab-SelectedMid-min" horizTile="true" alphaMode="ADD" alpha="0.7">
 							<Anchors>
 								<Anchor point="TOPLEFT" relativeKey="$parent.ActiveLeft" relativePoint="TOPRIGHT" x="0" y="0"/>
 								<Anchor point="BOTTOMRIGHT" relativeKey="$parent.ActiveRight" relativePoint="BOTTOMLEFT" x="0" y="0"/>

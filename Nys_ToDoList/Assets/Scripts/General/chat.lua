@@ -208,8 +208,8 @@ chat.commands = {
 		chat:CustomPrintForced("- "..L["Everything hidden becomes visible"], true)
 		chat:CustomPrintForced("- "..L["Delete items and categories"], true)
 		chat:CustomPrintForced("- "..L["Favorite and add descriptions on items"], true)
-		chat:CustomPrintForced("- "..L["Rename items and categories"].." ("..L["Double-Click"]..")", true)
-		chat:CustomPrintForced("- "..L["Reorder/Sort the list"].." ("..L["Drag and Drop"]..")", true)
+		chat:CustomPrintForced("- "..L["Rename"].." ("..L["Double-Click"]..")", true)
+		chat:CustomPrintForced("- "..L["Reorder"].." ("..L["Drag and Drop"]..")", true)
 		chat:CustomPrintForced("- "..L["Resize"].." ("..L["Button in the bottom-right"]..")", true)
 		chat:CustomPrintForced("- "..L["Access new buttons"].." (\""..L["Tab actions"].."\", \""..L["Undo last remove"].."\", \""..L["Open addon options"].."\")", true)
 		tutorialsManager:Validate("introduction", "editmodeChat")
@@ -224,7 +224,7 @@ chat.commands = {
 		dataManager:CreateByCommand(false, ...)
 	end,
 
-	[string.lower(L["Add"].."*")] = function(...)
+	[string.lower(L["Add"]).."*"] = function(...)
 		dataManager:CreateByCommand(true, ...)
 	end,
 }
