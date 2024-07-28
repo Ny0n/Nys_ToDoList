@@ -742,12 +742,10 @@ function private:RecursiveLoad(tabID, tabData, catWidget)
 	-- hiddenLabel : we show it if the category is completed
 	if not mainFrame.editMode then
 		if tabData.hideCheckedItems then
-			if not dataManager:IsParent(catWidget.catID) then
-				if dataManager:IsCategoryCompleted(catWidget.catID) then
-					rlHelper:ShowFrame(catWidget.hiddenLabel, enums.rlFrameType.label)
-					rlHelper:RefreshTabulationHeight(catWidget)
-					return
-				end
+			if dataManager:IsCategoryCompleted(catWidget.catID) then
+				rlHelper:ShowFrame(catWidget.hiddenLabel, enums.rlFrameType.label)
+				rlHelper:RefreshTabulationHeight(catWidget)
+				return
 			end
 		end
 	end

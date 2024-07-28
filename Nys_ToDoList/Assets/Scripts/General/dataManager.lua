@@ -1891,10 +1891,8 @@ end
 ---@param tabID string
 function dataManager:ClearTab(tabID)
 	local copy = {}
-	for catID,catData in dataManager:ForEach(enums.category, tabID) do
-		if not catData.parentCatID then -- every root category
-			copy[catID] = catData
-		end
+	for catID,catData in dataManager:ForEach(enums.category, tabID, false, true) do
+		copy[catID] = catData
 	end
 
 	local refreshID = dataManager:SetRefresh(false)
@@ -1913,7 +1911,7 @@ function dataManager:ClearTab(tabID)
 
 	dataManager:SetRefresh(true, refreshID)
 
-	for _,_ in dataManager:ForEach(enums.category, tabID) do -- luacheck: ignore -- if there are cats left
+	for _,_ in dataManager:ForEach(enums.category, tabID, false, true) do -- luacheck: ignore -- if there are cats left
 		chat:Print(L["Could not empty tab"].." ("..L["Some of its content is protected"]..")")
 		break
 	end
