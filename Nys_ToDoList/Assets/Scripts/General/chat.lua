@@ -221,7 +221,11 @@ chat.commands = {
 	end,
 
 	[string.lower(L["Add"])] = function(...)
-		dataManager:CreateByCommand(...)
+		dataManager:CreateByCommand(false, ...)
+	end,
+
+	[string.lower(L["Add"].."*")] = function(...)
+		dataManager:CreateByCommand(true, ...)
 	end,
 }
 

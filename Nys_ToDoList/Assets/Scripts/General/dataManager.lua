@@ -379,7 +379,7 @@ end
 ---@param location nil|false|true|string
 ---@param original boolean
 ---@return function
-function dataManager:ForEach(enum, location, original)
+function dataManager:ForEach(enum, location, original, onlyRoot)
 	--[[
 		* this func is used everywhere to loop through items, categories and tabs.
 		this is used in a for loop like pairs():
@@ -397,9 +397,13 @@ function dataManager:ForEach(enum, location, original)
 				-> if the enum is enums.item:
 						--> **ID** (specific tab or cat ID, we will only loop through items that are in the given cat, or that are in the given tab)
 				-> if the enum is enums.category:
-						--> **ID** (specific tab ID, we will only loop through categories that are in the given tab)
+						--> **ID** (specific tab ID or cat ID, we will only loop through categories that are in the given cat, or that are in the given tab)
 				-> if the enum is enums.tab:
 						--> **ID** (specific shown tab ID, we will only loop through tabs that are showing the given tab)
+			original 	==> bool, will only loop through elements that are native to the tab specified in location
+			onlyRoot 	==> bool, relevant only if enum is enums.category and location is a tabID.
+							--> if true, we will only loop through all root categories in the tab
+							--> if not true, we will loop through all categories in the tab, this includes sub-categories
 	]]
 
 	-- // check part
@@ -430,13 +434,23 @@ function dataManager:ForEach(enum, location, original)
 		getdatapos = 2
 		if dataManager:IsID(location) then -- specific tab ID
 			enum, isGlobal = dataManager:Find(location)
-			if enum == enums.tab then
+			if enum == enums.category then
 				checkFunc = function(ID, data)
+					if data.parentCatID ~= location then return false end
+					return true
+				end
+			elseif enum == enums.tab then
+				checkFunc = function(ID, data)
+					if onlyRoot and data.parentCatID then
+						return false
+					end
+
 					if original then
 						if data.originalTabID ~= location then return false end
 					else
 						if not data.tabIDs[location] then return false end
 					end
+
 					return true
 				end
 			else
@@ -745,8 +759,10 @@ end
 ---Creates a new tab and/or category and/or item using a command (string).
 ---The string can either be in one part, or in multiple parts.
 ---Format: "tab name+category name+new item name"
+---@param isGlobal boolean
 ---@param ... string All parameters will be converted to strings
-function dataManager:CreateByCommand(...)
+function dataManager:CreateByCommand(isGlobal, ...)
+	isGlobal = not not isGlobal
 	local args = {...}
 	for i,v in ipairs(args) do
 		args[i] = tostring(v)
@@ -756,30 +772,35 @@ function dataManager:CreateByCommand(...)
 	local input = string.join(" ", unpack(args))
 
 	local splitChar = '+' -- the delimitation character
-
-	local count = 0
-	for _ in string.gmatch(input, splitChar) do
-		count = count + 1
-	end
+	local splitCatChar = '-' -- the delimitation character for sub categories
 
 	local tabName, catName, itemName = string.split(splitChar, input)
 	tabName = tabName or ""
 	catName = catName or ""
 	itemName = itemName or ""
 
+	local catNames = {string.split(splitCatChar, catName)}
+
 	-- // input check
 	if tabName == "" then
-	-- or count > 0 and catName == ""
-	-- or count > 1 and itemName == ""
-	-- then
-		local str = "- "..chat.slashCommand..' '..string.lower(L["Add"])..' '
+		local str = "- "..chat.slashCommand..' '..string.lower(L["Add"].."[*]")..' '
 		chat:CustomPrintForced(L["Usage"]..":")
+		chat:CustomPrintForced(chat.slashCommand..' '..string.lower(L["Add"]).."  ("..L["Profile tabs"]..")")
+		chat:CustomPrintForced(chat.slashCommand..' '..string.lower(L["Add"].."*").." ("..L["Global tabs"]..")")
 		str = str..string.lower(L["Tab"])
 		chat:CustomPrintForced(str, true)
 		str = str..splitChar..string.lower(L["Category"])
+		local str2 = str
 		chat:CustomPrintForced(str, true)
 		str = str..splitChar..string.lower(L["Item"])
 		chat:CustomPrintForced(str, true)
+
+		str = str2..splitCatChar..string.lower(L["Category"])
+		chat:CustomPrintForced(str, true)
+
+		str = str..splitChar..string.lower(L["Item"])
+		chat:CustomPrintForced(str, true)
+		chat:CustomPrintForced("- ...", true)
 		return
 	end
 
@@ -791,17 +812,20 @@ function dataManager:CreateByCommand(...)
 	private.cmdRefreshTimerID = AceTimer:ScheduleTimer(function() refreshAuthorized = true mainFrame:Refresh() end, 0.0)
 
 	-- // tab
-	local tabID = dataManager:FindFirstIDByName(tabName, enums.tab) or dataManager:CreateTab(tabName)
+	local tabID = dataManager:FindFirstIDByName(tabName, enums.tab, isGlobal) or dataManager:CreateTab(tabName, isGlobal)
 	if not tabID then return end
 
 	-- // category
-	if catName == "" then return end
-	local catID = dataManager:FindFirstIDByName(catName, enums.category, tabID, true) or dataManager:CreateCategory(catName, tabID)
-	if not catID then return end
+	local lastCatID
+	for _,catName in ipairs(catNames) do
+		if catName == "" then return end
+		lastCatID = dataManager:FindFirstIDByName(catName, enums.category, not lastCatID and tabID or lastCatID, true, not lastCatID) or dataManager:CreateCategory(catName, tabID, lastCatID)
+	end
+	if not lastCatID then return end
 
 	-- // new item
 	if itemName == "" then return end
-	dataManager:CreateItem(itemName, tabID, catID)
+	dataManager:CreateItem(itemName, tabID, lastCatID)
 end
 
 -- // moving functions
