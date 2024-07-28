@@ -501,7 +501,7 @@ function widgets:NoPointsInteractiveLabel(parent, pointLeft, pointRight, name, t
 		if width < 18 then width = 18 end
 
 		interactiveLabel.Text:SetWidth(width) -- we do it a first time to update the wrapped state
-		interactiveLabel.Button:SetSize(interactiveLabel.Text:GetWrappedWidth(), interactiveLabel.Text:GetStringHeight())
+		interactiveLabel.Button:SetSize(math.max(interactiveLabel.Text:GetWrappedWidth(), 16), interactiveLabel.Text:GetStringHeight())
 
 		-- if after that the text is all on one line (no wrap),
 		-- we set its width to be its real visible size, not the one of the interactiveLabel
@@ -523,6 +523,16 @@ function widgets:NoPointsInteractiveLabel(parent, pointLeft, pointRight, name, t
 			private.Item_SetCheckBtnExtended(parent, not mainFrame.editMode)
 		end
 	end)
+
+	interactiveLabel.Button.IsHighlightShown = function(self)
+		return interactiveLabel.Button.ActiveLeft:IsShown()
+	end
+	interactiveLabel.Button.SetHighlightShown = function(self, show)
+		interactiveLabel.Button.ActiveLeft:SetShown(show)
+		interactiveLabel.Button.ActiveRight:SetShown(show)
+		interactiveLabel.Button.ActiveMiddle:SetShown(show)
+	end
+	interactiveLabel.Button:SetHighlightShown(false)
 
 	return interactiveLabel
 end
@@ -1327,7 +1337,7 @@ contentWidgets = {
 function private:Item_SetCheckBtnExtended(state)
 	if state then
 		if not utils:HasHyperlink(self.itemData.name) then -- so that we can actually click on the hyperlinks
-			self.checkBtn:SetHitRectInsets(0, -self.interactiveLabel.Text:GetWrappedWidth(), 0, -(self.interactiveLabel.Text:GetStringHeight()-self.interactiveLabel.Text:GetLineHeight()))
+			self.checkBtn:SetHitRectInsets(0, -(math.max(self.interactiveLabel.Text:GetWrappedWidth(), 16)), 0, -(self.interactiveLabel.Text:GetStringHeight()-self.interactiveLabel.Text:GetLineHeight()))
 		end
 	else
 		self.checkBtn:SetHitRectInsets(0, 0, 0, 0)

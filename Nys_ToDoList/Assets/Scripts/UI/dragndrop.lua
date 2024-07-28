@@ -320,6 +320,8 @@ function private:InitCategoryDrag()
 	private:CreateDuplicate(enums.category, draggingWidget.catID)
 
 	-- hiding the unnecessary things
+	draggingWidget.interactiveLabel.Text:SetTextColor(unpack(draggingWidget.color)) -- back to the default color
+	draggingWidget.interactiveLabel.Button:SetHighlightShown(false)
 	draggingWidget.emptyLabel:Hide()
 	draggingWidget.hiddenLabel:Hide()
 	draggingWidget.hoverFrame:Hide()
@@ -373,11 +375,9 @@ function private:InitItemDrag()
 	-- creating the duplicate, and getting the dragging's widget current position
 	private:CreateDuplicate(enums.item, draggingWidget.itemID)
 
-	-- hiding the buttons on the left of the dragging widget
+	-- hiding the unnecessary things
+	draggingWidget.interactiveLabel.Button:SetHighlightShown(false)
 	draggingWidget.editModeFrame:Hide()
-	draggingWidget.removeBtn:Hide()
-	draggingWidget.favoriteBtn:Hide()
-	draggingWidget.descBtn:Hide()
 
 	-- when we are dragging an item, we dim every place we can't drag it to (for a visual feedback)
 	local contentWidgets = mainFrame:GetContentWidgets()
@@ -435,11 +435,7 @@ end
 --/***************/ START&STOP /*****************/--
 
 function private:DragStart()
-	local widget = self:GetParent():GetParent()
-
-	if widget.enum == enums.category then
-		if not mainFrame.editMode then return end
-	end
+	if not mainFrame.editMode then return end
 
 	-- drag init
 	dragndrop.dragging = true
@@ -449,7 +445,7 @@ function private:DragStart()
 	lastCursorPosX = nil
 	lastCursorPosY = nil
 	tdlFrame = mainFrame:GetFrame()
-	draggingWidget = widget
+	draggingWidget = self:GetParent():GetParent()
 	targetDropFrame, newPos = nil, nil
 	startingTab, currentTab = nil, nil
 	dropLine = dropLine or CreateFrame("Frame", nil, tdlFrame.content, "NysTDL_DropLine") -- creating the drop line
@@ -603,6 +599,17 @@ function dragndrop:RegisterForDrag(widget)
 
 	-- / stop
 	dragFrame:HookScript("OnDragStop", private.DragStop)
+
+	-- / display
+	dragFrame:HookScript("OnEnter", function(self)
+		if dragndrop.dragging or not mainFrame.editMode then return end
+		dragFrame:SetHighlightShown(true)
+	end)
+	dragFrame:HookScript("OnLeave", function(self)
+		if dragFrame:IsHighlightShown() then
+			dragFrame:SetHighlightShown(false)
+		end
+	end)
 end
 
 function dragndrop:CancelDragging()
