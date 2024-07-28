@@ -100,6 +100,12 @@ function private:CreateDuplicate(enum, ID)
 	local contentWidgets = mainFrame:GetContentWidgets()
 	contentWidgets[ID] = nil
 	mainFrame:UpdateWidget(ID, enum)
+
+	-- dynamic content
+	if enum == enums.category then
+		contentWidgets[ID].addMode = draggingWidget.addMode
+	end
+
 	mainFrame:Refresh() -- IMPORTANT this refresh also acts as the call to UpdateDropFrames!
 
 	-- after this, now that we are dragging a duplicate widget, and the list looks like nothing changed,
@@ -143,19 +149,9 @@ end
 function private:IsCatDropValid(targetCatID)
 	-- TDLATER sub-cat drag&drop (fix (add) missing drop points (under sub-cats) & verify tab switch) -- TODO
 
-	-- returns false if:
-	-- - (1) the targetCatID's original tab is different from the one we're currently dragging
-	-- - (2) the targetCatID is a child of the category we're currently dragging
 	if not draggingWidget or not targetCatID or draggingWidget.enum ~= enums.category then return false end
 
-	local catData = select(3, dataManager:Find(targetCatID))
-
-	-- (1)
-	if draggingWidget.catData.originalTabID ~= catData.originalTabID then
-		return false
-	end
-
-	-- (2)
+	-- if the targetCatID is a child of the category we're currently dragging
 	if utils:HasValue(dataManager:GetParents(targetCatID), draggingWidget.catID) then
 		return false
 	end
@@ -335,22 +331,37 @@ function private:InitCategoryDrag()
 
 	-- when we are dragging a category, we dim every place we can't drag it to (for a visual feedback)
 	local contentWidgets = mainFrame:GetContentWidgets()
-	contentWidgets[draggingWidget.catID].tabulation:SetParent(contentWidgets[draggingWidget.catID]:GetParent()) -- keep it visible
-	contentWidgets[draggingWidget.catID]:SetAlpha(selectedDimAlpha)
-	-- for _,widget in pairs(contentWidgets) do
-	-- 	if widget.enum == enums.item then
-	-- 		widget:SetAlpha(forbiddenDimAlpha)
-	-- 	elseif widget.enum == enums.category then
-	-- 		widget.tabulation:SetAlpha(forbiddenDimAlpha)
-	-- 	end
-	-- end
+	do
+		-- keep some things bound to the widget visible even though the widget will be hidden
+		local widget = contentWidgets[draggingWidget.catID]
+		local widgetParent = widget:GetParent()
+		widget.tabulation:SetParent(widgetParent)
+		widget.addEditBox:SetParent(widgetParent)
+		widget.emptyLabel:SetParent(widgetParent)
+	end
 	for _,widget in pairs(contentWidgets) do
 		if widget.enum == enums.item then
 			if widget.itemData.favorite then
 				widget:SetAlpha(forbiddenDimAlpha)
 			end
+		elseif widget.enum == enums.category then
+			if not private:IsCatDropValid(widget.catID) then
+				widget:SetAlpha(forbiddenDimAlpha)
+				if widget.catID == draggingWidget.catID then
+					widget.tabulation:SetAlpha(forbiddenDimAlpha)
+					widget.emptyLabel:SetAlpha(forbiddenDimAlpha)
+					widget.addEditBox:SetAlpha(forbiddenDimAlpha)
+				end
+				for _,contentID in pairs(widget.catData.orderedContentIDs) do
+					local cwidget = contentWidgets[contentID]
+					cwidget:SetAlpha(forbiddenDimAlpha)
+				end
+			elseif dataManager:GetNextFavPos(widget.catID) ~= 1 then
+				widget.addEditBox:SetAlpha(forbiddenDimAlpha)
+			end
 		end
 	end
+	contentWidgets[draggingWidget.catID]:SetAlpha(selectedDimAlpha)
 
 	-- selecting the right drop frames to check
 	dropFrames = categoryDropFrames
@@ -405,15 +416,6 @@ function private:DropCategory()
 	if not mainFrame:GetFrame():IsMouseOver() then return end -- we cancel the drop if we were out of the frame
 
 	local newParentID = targetDropFrame.dropData.catID or false
-
-	-- if draggingWidget.catData.parentCatID then
-	-- 	startingTab = select(3, dataManager:Find(draggingWidget.catData.parentCatID)).originalTabID
-	-- end
-
-	-- if newParentID then
-	-- 	currentTab = select(3, dataManager:Find(newParentID)).originalTabID
-	-- end
-
 	mainFrame:DontRefreshNextTime()
 	dataManager:MoveCategory(draggingWidget.catID, newPos, newParentID, startingTab, currentTab)
 end
@@ -475,13 +477,18 @@ function private:DragStop()
 	-- we reset the alpha states
 	local contentWidgets = mainFrame:GetContentWidgets()
 	if draggingWidget.enum == enums.category then
-		contentWidgets[draggingWidget.catID].tabulation:SetParent(contentWidgets[draggingWidget.catID])
+		local widget = contentWidgets[draggingWidget.catID]
+		widget.tabulation:SetParent(widget)
+		widget.addEditBox:SetParent(widget)
+		widget.emptyLabel:SetParent(widget)
 	end
 	for _,widget in pairs(contentWidgets) do
 		widget:SetAlpha(normalAlpha)
-		-- if widget.enum == enums.category then
-		-- 	widget.tabulation:SetAlpha(normalAlpha)
-		-- end
+		if widget.enum == enums.category then
+			widget.tabulation:SetAlpha(normalAlpha)
+			widget.addEditBox:SetAlpha(normalAlpha)
+			widget.emptyLabel:SetAlpha(normalAlpha)
+		end
 	end
 
 	-- we hide the dragging widget, as well as the drop line
