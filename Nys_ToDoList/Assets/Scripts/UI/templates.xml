@@ -660,6 +660,28 @@
 		</Scripts>
 	</Frame>
 
+	<!-- Drop frame -->
+	<Frame name="NysTDL_DropFrame" virtual="true">
+		<Size x="1" y="1"/> <!-- Just so that we see the content of the frame -->
+		<Layers>
+			<Layer level="ARTWORK">
+				<Texture parentKey="Arrow" alpha="0.3">
+					<TexCoords left="0.756" right="0.848" top="0.841" bottom="0.864"/>
+					<Size x="11" y="11"/>
+					<Anchors>
+						<Anchor point="LEFT" x="-13" y="-3"/>
+					</Anchors>
+				</Texture>
+			</Layer>
+		</Layers>
+		<Scripts>
+			<OnLoad>
+				self.Arrow:SetTexture(NysTDL.enums.icons.dropArrow.info())
+				self.Arrow:SetRotation(0.77)
+			</OnLoad>
+		</Scripts>
+	</Frame>
+
 	<!-- Reused WoW template / $parentOverflowButton -->
 	<Button name="NysTDL_OverflowButton" virtual="true">
 		<!-- size and points and a lot of other things set in the code -->
