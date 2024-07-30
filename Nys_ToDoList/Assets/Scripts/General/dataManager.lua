@@ -840,11 +840,6 @@ function dataManager:MoveItem(itemID, newPos, newCatID)
 	-- // this func is used to move items from one cat to another, and/or from one position to an other
 	-- usage: dataManager:MoveItem(itemID, [newPos], [newCatID])
 
-	local _itemID, _newPos, _newCatID = itemID, newPos, newCatID
-	if dataManager:IsID(itemID) then _itemID = dataManager:GetName(itemID) end
-	if dataManager:IsID(newCatID) then _newCatID = dataManager:GetName(newCatID) end
-	print("dataManager:MoveItem("..tostring(_itemID)..", "..tostring(_newPos)..", "..tostring(_newCatID)..")")
-
 	-- / *** first things first, we validate all of the data *** /
 
 	local itemData = select(3, dataManager:Find(itemID))
@@ -930,13 +925,6 @@ function dataManager:MoveCategory(catID, newPos, newParentID, fromTabID, toTabID
 
 	local refreshID = dataManager:SetRefresh(false)
 
-	local _catID, _newPos, _newParentID, _fromTabID, _toTabID = catID, newPos, newParentID, fromTabID, toTabID
-	if dataManager:IsID(catID) then _catID = dataManager:GetName(catID) end
-	if dataManager:IsID(newParentID) then _newParentID = dataManager:GetName(newParentID) end
-	if dataManager:IsID(fromTabID) then _fromTabID = dataManager:GetName(fromTabID) end
-	if dataManager:IsID(toTabID) then _toTabID = dataManager:GetName(toTabID) end
-	print("dataManager:MoveCategory("..tostring(_catID)..", "..tostring(_newPos)..", "..tostring(_newParentID)..", "..tostring(_fromTabID)..", "..tostring(_toTabID)..")")
-
 	-- / *** first things first, we validate all of the data *** /
 
 	local catData, _, categoriesList, tabsList = select(3, dataManager:Find(catID))
@@ -982,7 +970,6 @@ function dataManager:MoveCategory(catID, newPos, newParentID, fromTabID, toTabID
 	-- because when we'll remove it from the oldPos, everything will go down by one, the newPos too
 	if newLoc == oldLoc
 	and newPos > oldPos then
-		print("dataManager:MoveCategory #00")
 		newPos = newPos - 1
 	end
 
@@ -993,8 +980,6 @@ function dataManager:MoveCategory(catID, newPos, newParentID, fromTabID, toTabID
 		return
 	end
 
-	print("dataManager:MoveCategory #01")
-
 	if newParentID then
 		if utils:HasValue(dataManager:GetParents(newParentID), catID) then
 			dataManager:SetRefresh(true, refreshID)
@@ -1003,8 +988,6 @@ function dataManager:MoveCategory(catID, newPos, newParentID, fromTabID, toTabID
 	end
 
 	if not oldParentID and newParentID then -- / from root cat to sub cat
-		print("dataManager:MoveCategory #02")
-
 		private:UpdateTabsDisplay(oldOriginalTabID, false, catID) -- & tremove from all roots
 
 		catData.parentCatID = newParentID
@@ -1013,8 +996,6 @@ function dataManager:MoveCategory(catID, newPos, newParentID, fromTabID, toTabID
 		private:UpdateTabsDisplay(newOriginalTabID, true, catID)
 		tinsert(newLoc, newPos, catID)
 	elseif oldParentID and not newParentID then -- / from sub cat to root cat
-		print("dataManager:MoveCategory #03")
-
 		private:UpdateTabsDisplay(oldOriginalTabID, false, catID)
 		tremove(oldLoc, oldPos)
 
@@ -1043,8 +1024,6 @@ function dataManager:MoveCategory(catID, newPos, newParentID, fromTabID, toTabID
 			end
 		end
 	elseif oldParentID and newParentID then -- / from sub cat to sub cat
-		print("dataManager:MoveCategory #04")
-
 		private:UpdateTabsDisplay(oldOriginalTabID, false, catID)
 		tremove(oldLoc, oldPos)
 
@@ -1055,20 +1034,15 @@ function dataManager:MoveCategory(catID, newPos, newParentID, fromTabID, toTabID
 		tinsert(newLoc, newPos, catID)
 	elseif not oldParentID and not newParentID then -- / from root cat to root cat
 		if fromTabID == toTabID then -- / change ordering in tab
-			print("dataManager:MoveCategory #05")
-
 			tremove(oldLoc, oldPos)
 			tinsert(newLoc, newPos, catID)
 		else -- / move category to new tab and make it the new originalTabID -- ***** TDLATER NOT TESTABLE RIGHT NOW *****
-			print("dataManager:MoveCategory #06")
-
 			-- if the category is already shown in the tab where we will drop it
 			if catData.tabIDs[newOriginalTabID] then
 				-- process the drop pos, because the indexes will potentially change when we remove it from that tab
 
 				oldPos = dataManager:GetPosData(catID, newOriginalTabID, true)
 				if newPos > oldPos then
-					print("dataManager:MoveCategory #07")
 					newPos = newPos - 1
 				end
 			end
@@ -1091,8 +1065,6 @@ function dataManager:MoveCategory(catID, newPos, newParentID, fromTabID, toTabID
 			-- / if we want to change this behavior, we should save all the pos data before the move, and process it here / --
 		end
 	end
-
-	print("dataManager:MoveCategory #4")
 
 	-- closed state processing
 	do

@@ -36,12 +36,12 @@ local forbiddenDimAlpha = 0.3
 
 local overHeightFrame = { 4, enums.ofsyContent/2+4 }
 local underHeightFrame = { 4, -enums.ofsyContent/2+4 }
-local overTabEmptyLabel = { -2, 2 } -- TDLATER TAB SWITCH
+local overTabEmptyLabel = { 4, enums.ofsyContent/2+3 }
 
 -- drag&drop data
 
 local draggingWidget
-local targetDropFrame, newPos
+local targetDropFrame
 local startingTab, currentTab
 
 local dragUpdate = CreateFrame("Frame", nil, UIParent)
@@ -169,13 +169,15 @@ function private:DragUpdateFunc()
 		end
 	end
 
-	if not targetDropFrame then return end -- just in case we didn't find anything
+	if not targetDropFrame then -- just in case we didn't find anything
+		dropLine:Hide()
+		return
+	end
 
 	-- now that we have the closest widget, we update the positions, so that we are ready for the drop
 	dropLine:ClearAllPoints()
 	dropLine:SetPoint("LEFT", targetDropFrame, "CENTER")
 	dropLine:Show()
-	newPos = targetDropFrame.dropData.pos
 end
 
 function private:IsCatDropValid(targetCatID)
@@ -302,6 +304,11 @@ function dragndrop:UpdateDropFrames()
 	wipe(categoryDropFrames)
 	wipe(favsDropFrames)
 	wipe(itemsDropFrames)
+	targetDropFrame = nil
+
+	for _,frame in pairs(dropFramesBank) do
+		if frame then frame:ClearAllPoints() frame:Hide() end
+	end
 
 	dropFrameNb = 0
 	local contentWidgets = mainFrame:GetContentWidgets()
@@ -340,6 +347,16 @@ function dragndrop:UpdateDropFrames()
 		-- drop frame after the last widget, in last position
 		dragndrop:CreateDropFrame(1, currentTab, nil, #tabData.orderedCatIDs+1)
 	end
+
+	-- refresh the selected drop frames
+	if dropFrames then
+		for _,frame in pairs(dropFrames) do
+			if frame then frame:Show() end
+		end
+	end
+
+	-- this will force private:DragUpdateFunc() to refresh on the next frame, even if we didn't move our mouse cursor
+	lastCursorPosX, lastCursorPosY = nil, nil
 end
 
 ---@param mode number ; 0 = over lastWidget's height frame, 1 = under lastWidget's height frame (or if opened category, under it), 2 = over empty label (of tab)
@@ -521,9 +538,8 @@ function private:DropCategory()
 	if not targetDropFrame then return end -- just in case we didn't find anything
 	if not mainFrame:GetFrame():IsMouseOver() then return end -- we cancel the drop if we were out of the frame
 
-	local newParentID = targetDropFrame.dropData.catID or false
 	mainFrame:DontRefreshNextTime()
-	dataManager:MoveCategory(draggingWidget.catID, newPos, newParentID, startingTab, currentTab)
+	dataManager:MoveCategory(draggingWidget.catID, targetDropFrame.dropData.pos, targetDropFrame.dropData.catID or false, startingTab, currentTab)
 end
 
 function private:DropItem()
@@ -533,9 +549,8 @@ function private:DropItem()
 	if not targetDropFrame then return end -- just in case we didn't find anything
 	if not mainFrame:GetFrame():IsMouseOver() then return end -- we cancel the drop if we were out of the frame
 
-	local targetCat = targetDropFrame.dropData.catID
 	mainFrame:DontRefreshNextTime()
-	dataManager:MoveItem(draggingWidget.itemID, newPos, targetCat)
+	dataManager:MoveItem(draggingWidget.itemID, targetDropFrame.dropData.pos, targetDropFrame.dropData.catID)
 end
 
 --/***************/ START&STOP /*****************/--
@@ -548,11 +563,10 @@ function private:DragStart()
 
 	-- vars reset & init
 	dropFrames = nil
-	lastCursorPosX = nil
-	lastCursorPosY = nil
+	lastCursorPosX, lastCursorPosY = nil, nil
+	targetDropFrame = nil
 	tdlFrame = mainFrame:GetFrame()
 	draggingWidget = self:GetParent():GetParent()
-	targetDropFrame, newPos = nil, nil
 	startingTab, currentTab = nil, nil
 	dropLine = dropLine or CreateFrame("Frame", nil, tdlFrame.content, "NysTDL_DropLine") -- creating the drop line
 	dropLine:SetFrameStrata("HIGH")
@@ -563,11 +577,6 @@ function private:DragStart()
 		LibQTip:Release(tooltip)
 		tooltip = nil
 	end
-
-	-- NysTDL.libs.AceTimer:ScheduleTimer(function() -- TDLATER TAB SWITCH
-	-- 	local id = dataManager:FindFirstIDByName("tab1", enums.tab, true)
-	-- 	mainFrame:ChangeTab(id)
-	-- end, 3)
 end
 
 function private:DragStop()
@@ -576,15 +585,6 @@ function private:DragStop()
 	dragndrop.dragging = false
 
 	-- // we reset everything
-
-	-- debug stuff -- REMOVE
-	-- if targetDropFrame then
-	--   print ("--------- Drop data: ----------")
-	--   print ("tab", targetDropFrame.dropData.tabID and dataManager:GetName(targetDropFrame.dropData.tabID) or nil)
-	--   print ("cat", targetDropFrame.dropData.catID and dataManager:GetName(targetDropFrame.dropData.catID) or nil)
-	--   print ("pos", targetDropFrame.dropData.pos)
-	--   print ("-------------------------------")
-	-- end
 
 	-- we reset the alpha states
 	local contentWidgets = mainFrame:GetContentWidgets()
@@ -607,7 +607,7 @@ function private:DragStop()
 	if draggingWidget then draggingWidget:StopMovingOrSizing() draggingWidget:ClearAllPoints() draggingWidget:Hide() end
 	if dropLine then dropLine:ClearAllPoints() dropLine:Hide() end
 	for _,frame in pairs(dropFramesBank) do
-		if frame then frame:Hide() end
+		if frame then frame:ClearAllPoints() frame:Hide() end
 	end
 
 	-- we stop the dragUpdate
@@ -694,33 +694,6 @@ function dragndrop:RegisterForDrag(widget)
 			if frame then frame:Show() end
 		end
 	end)
-
-	-- TODO DEBUG
-	dragFrame:HookScript("OnClick", function(self, button)
-		if button == "RightButton" then
-			print("-------------------")
-			if widget.enum == enums.item then
-				print("*** <item>")
-				print("** NAME = "..dataManager:GetName(widget.itemID))
-				print("* orig.tab = "..dataManager:GetName(widget.itemData.originalTabID))
-				for k,v in pairs(widget.itemData.tabIDs) do
-					if v then
-						print(dataManager:GetName(k))
-					end
-				end
-			else
-				print("*** <category>")
-				print("** NAME = "..dataManager:GetName(widget.catID))
-				print("* orig.tab = "..dataManager:GetName(widget.catData.originalTabID))
-				for k,v in pairs(widget.catData.tabIDs) do
-					if v then
-						print("- "..dataManager:GetName(k))
-					end
-				end
-			end
-		end
-	end)
-	dragFrame:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 
 	-- / stop
 	dragFrame:HookScript("OnDragStop", private.DragStop)
