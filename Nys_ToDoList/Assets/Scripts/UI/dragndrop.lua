@@ -154,11 +154,9 @@ function private:DragUpdateFunc()
 end
 
 function private:IsCatDropValid(targetCatID)
-	-- TDLATER sub-cat drag&drop (fix (add) missing drop points (under sub-cats) & verify tab switch) -- TODO
-
 	if not draggingWidget or not targetCatID or draggingWidget.enum ~= enums.category then return false end
 
-	-- if the targetCatID is a child of the category we're currently dragging
+	-- if the targetCatID is or is a child of the category we're currently dragging
 	if utils:HasValue(dataManager:GetParents(targetCatID), draggingWidget.catID) then
 		return false
 	end
@@ -220,6 +218,8 @@ function private:RecursiveUpdate(catWidget, w)
 end
 
 function dragndrop:UpdateDropFrames()
+	-- TDLATER sub-cat drag&drop (fix (add) missing drop points (under sub-cats) & verify tab switch) -- TODO
+
 	-- this is done once, each time we start a new drag&drop
 	-- OR we are dragging&dropping and there is a frame refresh
 

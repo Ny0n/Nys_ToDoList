@@ -1615,7 +1615,7 @@ function dataManager:IsHidden(ID, tabID)
 		return tabData.hideCheckedItems and objectData.checked
 	elseif enum == enums.category then
 		return (tabData.hideCompletedCategories and dataManager:IsCategoryCompleted(ID))
-		or (tabData.hideEmptyCategories and not next(objectData.orderedContentIDs))
+		or (tabData.hideEmptyCategories and dataManager:GetCatCheckedNumbers(ID) <= 0)
 	end
 
 	return false
@@ -1992,8 +1992,25 @@ end
 ---@param tabID string
 ---@return boolean
 function dataManager:IsTabContentHidden(tabID)
-	for catID in dataManager:ForEach(enums.category, tabID) do
+	for catID in dataManager:ForEach(enums.category, tabID, false, true) do
 		if not dataManager:IsHidden(catID, tabID) then
+			return false
+		end
+	end
+	return true
+end
+
+---Returns true if every element in the given category is hidden.
+---@param catID string
+---@return boolean
+function dataManager:IsCategoryContentHidden(catID, tabID)
+	for contentID in dataManager:ForEach(enums.category, catID) do
+		if not dataManager:IsHidden(contentID, tabID) then
+			return false
+		end
+	end
+	for contentID in dataManager:ForEach(enums.item, catID) do
+		if not dataManager:IsHidden(contentID, tabID) then
 			return false
 		end
 	end

@@ -432,6 +432,7 @@ function mainFrame:ToggleEditMode(state, forceUpdate)
 	tdlFrame.ScrollFrame.ScrollBar:SetPoint("BOTTOMRIGHT", tdlFrame.ScrollFrame, "BOTTOMRIGHT", 0, offsetY)
 
 	-- // refresh
+	if dragndrop.dragging and not mainFrame.editMode then dragndrop:CancelDragging() end
 	private:MenuClick() -- to close any opened sub-menu
 	mainFrame:Refresh()
 end
@@ -741,12 +742,11 @@ function private:RecursiveLoad(tabID, tabData, catWidget)
 
 	-- hiddenLabel : we show it if the category is completed
 	if not mainFrame.editMode then
-		if tabData.hideCheckedItems then
-			if dataManager:IsCategoryCompleted(catWidget.catID) then
-				rlHelper:ShowFrame(catWidget.hiddenLabel, enums.rlFrameType.label)
-				rlHelper:RefreshTabulationHeight(catWidget)
-				return
-			end
+		if (tabData.hideCheckedItems and dataManager:IsCategoryCompleted(catWidget.catID))
+		or (tabData.hideEmptyCategories and dataManager:IsCategoryContentHidden(catWidget.catID, tabID)) then
+			rlHelper:ShowFrame(catWidget.hiddenLabel, enums.rlFrameType.label)
+			rlHelper:RefreshTabulationHeight(catWidget)
+			return
 		end
 	end
 
