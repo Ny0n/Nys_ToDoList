@@ -1,3 +1,18 @@
+#### **7.3-beta**
+
+WIP
+
+***Ny's To-Do List***
+
+- Nested categories are here! >>>... updated /tdl add command
+- Reworked drag & drop, added feedback
+- Polished some visuals and tooltips
+- Miscellaneous fixes
+
+***Ny's To-Do List Backup (1.1)***
+
+- Upgraded the addon so that it can be used even when Ny's To-Do List is disabled
+
 #### **7.2.5**
 
 - Added support for The War Within (11.0.0)

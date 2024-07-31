@@ -3,7 +3,7 @@
 ## Interface-Classic: 11503
 ## Interface-Cata: 40400
 
-## Version: 7.2.5
+## Version: 7.3-beta
 
 ## Author: Nyony (on Twitch)
 ## Title: Ny's To-Do List

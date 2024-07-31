@@ -3,7 +3,7 @@
 ## Interface-Classic: 11503
 ## Interface-Cata: 40400
 
-## Version: 1.0.9
+## Version: 1.1
 
 ## Author: Nyony (on Twitch)
 ## Title: Ny's To-Do List Backup
