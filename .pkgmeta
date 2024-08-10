@@ -1,6 +1,6 @@
 package-as: Nys_ToDoList
 
-enable-toc-creation: yes
+enable-toc-creation: no
 
 enable-nolib-creation: no
 

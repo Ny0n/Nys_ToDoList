@@ -1,11 +1,11 @@
-#### **7.3-beta**
-
-WIP
+#### **7.3**
 
 ***Ny's To-Do List***
 
-- Nested categories are here! >>>... updated /tdl add command
-- Reworked drag & drop, added feedback
+- Added support for WoW Version 11.0.2 (TWW)
+- Nested categories are here! You can now add or move categories inside other categories
+- Reworked drag & drop and added feedback
+- Reworked the "/tdl add" command
 - Polished some visuals and tooltips
 - Miscellaneous fixes
 
@@ -15,7 +15,7 @@ WIP
 
 #### **7.2.5**
 
-- Added support for The War Within (11.0.0)
+- Added support for WoW Version 11.0.0 (TWW)
 - Bump interface number (1.15.3)
 
 #### **7.2.4**

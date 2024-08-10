@@ -82,7 +82,7 @@ function NysTDLBackup:ApplyPendingBackup()
 	local profileTable = data:GetCurrentProfile(true)
 	local backupTable = type(profileTable.pendingBackup) == "table" and profileTable.pendingBackup or nil
 
-	if data:IsValidBackupTable(backupTable) and (select(2, IsAddOnLoaded("Nys_ToDoList"))) then
+	if data:IsValidBackupTable(backupTable) and (select(2, C_AddOns.IsAddOnLoaded("Nys_ToDoList"))) then
 		-- Apply the pending backup directly, then invalidate it
 
 		for _, savedVar in ipairs(backupTable.savedVarsOrdered) do
@@ -504,7 +504,7 @@ function private:CreateNewBackup(profileID)
 	end
 
 	-- TDLATER only profileID.name or new addons list
-	local addonLoaded = (IsAddOnLoaded("Nys_ToDoList") and "Nys_ToDoList") or false
+	local addonLoaded = (C_AddOns.IsAddOnLoaded("Nys_ToDoList") and "Nys_ToDoList") or false
 	if not addonLoaded then
 		print("Error: private:CreateNewBackup #4 (addon not loaded)")
 		return
@@ -512,8 +512,8 @@ function private:CreateNewBackup(profileID)
 
 	-- @see data:IsValidBackupTable
 	local backupTable = {
-		addonName = tostring(GetAddOnMetadata(addonLoaded, "Title")),
-		addonVersion = tostring(GetAddOnMetadata(addonLoaded, "Version")),
+		addonName = tostring(C_AddOns.GetAddOnMetadata(addonLoaded, "Title")),
+		addonVersion = tostring(C_AddOns.GetAddOnMetadata(addonLoaded, "Version")),
 		timestamp = time(),
 		savedVarsOrdered = savedVarsOrdered,
 		savedVars = { },
@@ -664,10 +664,10 @@ function data:ApplyBackup(profileID, backupType, backupSlot)
 				else
 					-- mark the addons to be loaded on the next reload, save the backup that will be applied on reload, and reload
 					local addonToLoad = "Nys_ToDoList" -- TDLATER addons...
-					local loaded, reason = LoadAddOn(addonToLoad)
+					local loaded, reason = C_AddOns.LoadAddOn(addonToLoad)
 					if not loaded then
 						if reason == "DISABLED" then
-							EnableAddOn(addonToLoad)
+							C_AddOns.EnableAddOn(addonToLoad)
 						else
 							print("Error: data:ApplyBackup #3 - "..tostring(tostring(ADDON_LOAD_FAILED):format(addonToLoad, reason)))
 							return

@@ -35,8 +35,13 @@ local L = core.L
 
 -- data (from toc file)
 core.toc = {}
-core.toc.title = GetAddOnMetadata(addonName, "Title")
-core.toc.version = GetAddOnMetadata(addonName, "Version")
+core.toc.title = C_AddOns.GetAddOnMetadata(addonName, "Title")
+core.toc.version = C_AddOns.GetAddOnMetadata(addonName, "Version")
+
+core.toc.isDev = ""
+--@do-not-package@
+core.toc.isDev = " WIP"
+--@end-do-not-package@
 
 -- Variables
 core.addonName = addonName
@@ -65,11 +70,11 @@ core.loadFrame:RegisterEvent("PLAYER_LOGIN")
 function core:ADDON_LOADED(event, addonName)
 	-- Always happens before Nys_ToDoList's ADDON_LOADED event, because we are a dependency
 
-	if IsAddOnLoaded("Nys_ToDoList_Backup") then
+	if C_AddOns.IsAddOnLoaded("Nys_ToDoList_Backup") then
 		core.backupLoaded = true
 	end
 
-	if IsAddOnLoaded("Nys_ToDoList") then
+	if C_AddOns.IsAddOnLoaded("Nys_ToDoList") then
 		core.listLoaded = true
 	end
 

@@ -31,7 +31,7 @@ function options:Initialize()
 	panel.titleText = panel:CreateFontString()
 	panel.titleText:SetPoint("TOPLEFT", panel, "TOPLEFT", 10, -15)
 	panel.titleText:SetFontObject("GameFontNormalLarge")
-	panel.titleText:SetText(core.toc.title.." ("..core.toc.version..")")
+	panel.titleText:SetText(core.toc.title.." ("..core.toc.version..core.toc.isDev..")")
 
 	-- open list button
 	panel.openListButton = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")

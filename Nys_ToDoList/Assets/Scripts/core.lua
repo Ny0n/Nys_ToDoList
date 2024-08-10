@@ -144,8 +144,13 @@ end
 
 -- data (from toc file)
 core.toc = {}
-core.toc.title = GetAddOnMetadata(addonName, "Title") -- better than "Nys_ToDoList"
-core.toc.version = GetAddOnMetadata(addonName, "Version")
+core.toc.title = C_AddOns.GetAddOnMetadata(addonName, "Title") -- better than "Nys_ToDoList"
+core.toc.version = C_AddOns.GetAddOnMetadata(addonName, "Version")
+
+core.toc.isDev = ""
+--@do-not-package@
+core.toc.isDev = " WIP"
+--@end-do-not-package@
 
 -- Variables
 core.loaded = false

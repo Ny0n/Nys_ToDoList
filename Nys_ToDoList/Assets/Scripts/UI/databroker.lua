@@ -46,7 +46,7 @@ function private:DrawSimpleTooltip(tooltip)
 
 		-- then we create each line
 		tooltip:ClearLines()
-		tooltip:AddDoubleLine(core.toc.title, core.toc.version)
+		tooltip:AddDoubleLine(core.toc.title, core.toc.version..core.toc.isDev)
 		tooltip:AddLine(string.format("|cff%s%s|r", hex, L["Click"])..utils:GetMinusStr()..string.format("|cff%s%s|r", "FFFFFF", L["Toggle the list"]))
 		tooltip:AddLine(string.format("|cff%s%s|r", hex, L["Shift-Click"])..utils:GetMinusStr()..string.format("|cff%s%s|r", "FFFFFF", L["Open addon options"]))
 		tooltip:AddLine(string.format("|cff%s%s|r", hex, L["Ctrl-Click"])..utils:GetMinusStr()..string.format("|cff%s%s|r", "FFFFFF", NysTDL.acedb.profile.minimap.lock and L["Unlock minimap button"] or L["Lock minimap button"]))
@@ -99,7 +99,7 @@ function private:DrawAdvancedTooltip(tooltip)
 
 		-- then we create each line
 		tooltip:ClearLines()
-		tooltip:AddDoubleLine(core.toc.title, core.toc.version)
+		tooltip:AddDoubleLine(core.toc.title, core.toc.version..core.toc.isDev)
 		tooltip:AddLine("ADVANCED TOOLTIP")
 		tooltip:Show()
 	end

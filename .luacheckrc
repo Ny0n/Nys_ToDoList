@@ -47,6 +47,7 @@ globals = {
 	"_G",
 	"bit",
 	"Settings",
+	"C_AddOns",
 
 	-- FrameXML misc
 	"InterfaceOptions_AddCategory",
