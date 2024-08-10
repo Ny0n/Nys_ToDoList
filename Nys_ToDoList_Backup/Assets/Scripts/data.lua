@@ -80,20 +80,33 @@ data.backupCounts = {
 
 function NysTDLBackup:ApplyPendingBackup()
 	local profileTable = data:GetCurrentProfile(true)
-	local backupTable = type(profileTable.pendingBackup) == "table" and profileTable.pendingBackup or nil
+	if not profileTable then
+		print("Error: NysTDLBackup:ApplyPendingBackup #1")
+		return
+	end
 
-	if data:IsValidBackupTable(backupTable) and (select(2, C_AddOns.IsAddOnLoaded("Nys_ToDoList"))) then
+	if data:IsValidBackupTable(profileTable.pendingBackup) and (select(2, C_AddOns.IsAddOnLoaded("Nys_ToDoList"))) then
 		-- Apply the pending backup directly, then invalidate it
 
-		for _, savedVar in ipairs(backupTable.savedVarsOrdered) do
+		for _, savedVar in ipairs(profileTable.pendingBackup.savedVarsOrdered) do
 			if utils:IsValidVariableName(savedVar) then
-				_G[savedVar] = utils:Deepcopy(backupTable.savedVars[savedVar])
+				_G[savedVar] = utils:Deepcopy(profileTable.pendingBackup.savedVars[savedVar])
 			end
 		end
 
-		profileTable.pendingBackup = nil
-		collectgarbage()
+		data:ClearPendingBackup()
 	end
+end
+
+function data:ClearPendingBackup()
+	local profileTable = data:GetCurrentProfile(true)
+	if not profileTable then
+		print("Error: data:ClearPendingBackup #1")
+		return
+	end
+
+	profileTable.pendingBackup = nil
+	collectgarbage()
 end
 
 function private:GetDefaults()

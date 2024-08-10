@@ -89,6 +89,7 @@ function core:ADDON_LOADED(event, addonName)
 end
 
 function core:PLAYER_LOGIN(event)
+	data:ClearPendingBackup()
 	data:CheckForAutomaticSaves()
 	core.loadFrame:UnregisterEvent(event)
 end

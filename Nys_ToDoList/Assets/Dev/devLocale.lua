@@ -19,6 +19,7 @@ addonTable.devLocale = L
 
 --/************************************************/--
 
+L["Addon not loaded"] = true
 L["To add elements in a category, hover the name and press the %s icon"] = true
 L["Reorder"] = true
 L["A minimap button"] = true
