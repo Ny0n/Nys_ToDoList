@@ -1,9 +1,7 @@
 # /run print((select(4, GetBuildInfo())))
-## Interface: 100207, 110000
-## Interface-Classic: 11503
-## Interface-Cata: 40400
+## Interface: 110000, 11503, 40400, 110002
 
-## Version: 7.2.5
+## Version: 7.3-beta
 
 ## Author: Nyony (on Twitch)
 ## Title: Ny's To-Do List

@@ -19,6 +19,9 @@ addonTable.devLocale = L
 
 --/************************************************/--
 
+L["Addon not loaded"] = true
+L["To add elements in a category, hover the name and press the %s icon"] = true
+L["Reorder"] = true
 L["A minimap button"] = true
 L["A movable %s button"] = true
 L["A simple interface to remember everything you need to do!"] = true
@@ -198,9 +201,7 @@ L["Remember"] = true
 L["Remember undos"] = true
 L["Remove reset"] = true
 L["Rename"] = true
-L["Rename items and categories"] = true
 L["Reopen error message"] = true
-L["Reorder/Sort the list"] = true
 L["Reset"] = true
 L["Reset days"] = true
 L["Resetting this profile will also clear the list"] = true
@@ -241,7 +242,6 @@ L["This action will reload your UI"] = true
 L["This name already exists"] = true
 L["This will add your category to the current tab"] = true
 L["Thursday"] = true
-L["To add new items, hover the category names and press the %s icon"] = true
 L["To delete items and do a lot more, you can right-click anywhere on the list or click on this button to toggle the edit mode"] = true
 L["To toggle the list, you have several ways"] = true
 L["toggle"] = true

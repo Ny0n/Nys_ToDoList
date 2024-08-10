@@ -1,9 +1,7 @@
 # /run print((select(4, GetBuildInfo())))
-## Interface: 100207, 110000
-## Interface-Classic: 11503
-## Interface-Cata: 40400
+## Interface: 110000, 11503, 40400, 110002
 
-## Version: 1.0.9
+## Version: 1.1
 
 ## Author: Nyony (on Twitch)
 ## Title: Ny's To-Do List Backup
@@ -13,7 +11,6 @@
 ## SavedVariables: NysToDoListBackupDB
 
 ## DefaultState: enabled
-## LoadOnDemand: 1
 
 ## IconTexture: Interface\AddOns\Nys_ToDoList_Backup\Assets\Art\70_professions_scroll_03
 

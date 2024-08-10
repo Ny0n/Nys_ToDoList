@@ -432,6 +432,7 @@ function mainFrame:ToggleEditMode(state, forceUpdate)
 	tdlFrame.ScrollFrame.ScrollBar:SetPoint("BOTTOMRIGHT", tdlFrame.ScrollFrame, "BOTTOMRIGHT", 0, offsetY)
 
 	-- // refresh
+	if dragndrop.dragging and not mainFrame.editMode then dragndrop:CancelDragging() end
 	private:MenuClick() -- to close any opened sub-menu
 	mainFrame:Refresh()
 end
@@ -608,6 +609,74 @@ end
 
 -- // Content loading
 
+local rlHelper = {
+	deep = 0,
+
+	last = {},
+	new = {},
+
+	---@param frameType enums.rlFrameType
+	ShowFrame = function(self, frame, frameType)
+		self.new.relativeFrame = frame.heightFrame
+		self.new.frameType = frameType
+		self.new.deep = self.deep
+
+		local offsetX, offsetY = private:DetermineOffset(self.last, self.new)
+
+		frame:SetPoint("TOPLEFT", self.last.relativeFrame, "BOTTOMLEFT", offsetX, offsetY)
+		frame:Show()
+
+		self.last.relativeFrame = self.new.relativeFrame
+		self.last.frameType = self.new.frameType
+		self.last.deep = self.new.deep
+	end,
+
+	RefreshTabulationHeight = function(self, catWidget)
+		repeat
+			catWidget.tabulation:SetPoint("BOTTOM", self.last.relativeFrame, "BOTTOM", 0, 1)
+			catWidget = contentWidgets[catWidget.catData.parentCatID]
+		until not catWidget
+	end,
+}
+
+function private:DetermineOffset(last, new)
+	-- determine offsetX and offsetY by computing the last frame and new frame details
+
+	if last.frameType == enums.rlFrameType.empty then
+		return 0, 0
+	end
+
+	local offsetX, offsetY = 0, 0
+
+	local isSameDeep, isNewDeeper = last.deep == new.deep, new.deep > last.deep
+
+	offsetX = enums.ofsxContent * (new.deep - last.deep) + enums.ofsxItemIcons * (math.max(new.deep - 1, 0) - math.max(last.deep - 1, 0))
+
+	offsetY = -enums.ofsyContent
+
+	if not isSameDeep then
+		if isNewDeeper then
+			offsetY = -enums.ofsyCatContent
+		else
+			offsetY = -enums.ofsyContentCat
+		end
+	end
+
+	if last.frameType == enums.rlFrameType.addEditBox then
+		offsetY = offsetY + -3
+	end
+
+	if last.frameType == enums.rlFrameType.category and new.frameType ~= enums.rlFrameType.category and isSameDeep then
+		offsetY = offsetY + -3
+	end
+
+	if new.frameType == enums.rlFrameType.empty then
+		offsetY = -15
+	end
+
+	return offsetX, offsetY
+end
+
 function private:LoadContent()
 	-- // reloading of elements that need updates
 
@@ -630,51 +699,54 @@ function private:LoadContent()
 	end
 end
 
-function private:RecursiveLoad(tabID, tabData, catWidget, p)
+function private:RecursiveLoad(tabID, tabData, catWidget)
 	local catData = catWidget.catData
 	catWidget.addEditBox:Hide()
 	catWidget.emptyLabel:Hide()
 	catWidget.hiddenLabel:Hide()
+	catWidget.tabulation:Hide()
+
+	if catWidget.catData.originalTabID == tabID then
+		catWidget.originalTabLabel:Hide()
+	else -- if the tab is showing a cat that was not created here, we show the label specifying the cat's original tab
+		catWidget.originalTabLabel:SetText("("..dataManager:GetName(catWidget.catData.originalTabID)..")")
+		catWidget.originalTabLabel:Show()
+	end
 
 	-- if the cat is closed, ignore it
 	if catData.closedInTabIDs[tabID] then
-		p:SetY(-enums.ofsyCat)
 		return
 	end
 
-	p:SetX(enums.ofsxContent)
-	p:SetY(-enums.ofsyCatContent)
+	rlHelper.deep = rlHelper.deep + 1
+	local deep = rlHelper.deep
+
+	local isSubCat = deep > 1
+
+	catWidget.tabulation:SetPoint("TOP", catWidget.heightFrame, "BOTTOM", 6 + (isSubCat and enums.ofsxItemIcons or 0), -9)
+	catWidget.tabulation:SetShown(isSubCat)
 
 	-- add edit boxes : check for the flags and show them accordingly
 	local isAddBoxShown = widgets.aebShown[catWidget.catID] and bit.band(widgets.aebShown[catWidget.catID], widgets.aebShownFlags.item) ~= 0
 	if isAddBoxShown then -- item add edit box
-		p:ShowFrame(catWidget.addEditBox)
-
-		p:SetX(0)
-		p:SetY(-enums.ofsyContent-3)
+		rlHelper:ShowFrame(catWidget.addEditBox, enums.rlFrameType.addEditBox)
+		rlHelper:RefreshTabulationHeight(catWidget)
 	end
 
 	-- emptyLabel : we show it if there's nothing in the category
 	if not next(catData.orderedContentIDs) then
-		p:ShowFrame(catWidget.emptyLabel)
-
-		p:SetX(-enums.ofsxContent)
-		p:SetY(-enums.ofsyContentCat)
+		rlHelper:ShowFrame(catWidget.emptyLabel, enums.rlFrameType.label)
+		rlHelper:RefreshTabulationHeight(catWidget)
 		return
 	end
 
 	-- hiddenLabel : we show it if the category is completed
 	if not mainFrame.editMode then
-		if tabData.hideCheckedItems then
-			if not dataManager:IsParent(catWidget.catID) then
-				if dataManager:IsCategoryCompleted(catWidget.catID) then
-					p:ShowFrame(catWidget.hiddenLabel)
-
-					p:SetX(-enums.ofsxContent)
-					p:SetY(-enums.ofsyContentCat)
-					return
-				end
-			end
+		if (tabData.hideCheckedItems and dataManager:IsCategoryCompleted(catWidget.catID))
+		or (tabData.hideEmptyCategories and dataManager:IsCategoryContentHidden(catWidget.catID, tabID)) then
+			rlHelper:ShowFrame(catWidget.hiddenLabel, enums.rlFrameType.label)
+			rlHelper:RefreshTabulationHeight(catWidget)
+			return
 		end
 	end
 
@@ -682,26 +754,21 @@ function private:RecursiveLoad(tabID, tabData, catWidget, p)
 	for contentOrder,contentID in ipairs(catData.orderedContentIDs) do -- for everything in a category
 		local contentWidget = contentWidgets[contentID]
 		if not dataManager:IsHidden(contentID, tabID) then -- if it's not hidden, we show the corresponding widget
-			p:ShowFrame(contentWidget)
-			p:SetX(0)
+			rlHelper.deep = deep
+			rlHelper:ShowFrame(contentWidget, contentWidget.enum == enums.item and enums.rlFrameType.item or enums.rlFrameType.category)
+			rlHelper:RefreshTabulationHeight(catWidget)
 
 			if contentWidget.enum == enums.category then -- sub-category
-				private:RecursiveLoad(tabID, tabData, contentWidget, p)
-			elseif contentWidget.enum == enums.item then -- item
-				p:SetY(-enums.ofsyContent)
+				private:RecursiveLoad(tabID, tabData, contentWidget)
 			end
 		end
 	end
-
-	-- p.offsetY = enums.ofsyContent -- TDLATER take last used offset for sub-cats? (not sure of this comment tho)
-
-	p:SetX(-enums.ofsxContent)
-	p:SetY(-enums.ofsyContentCat)
 end
 
 function private:LoadList()
 	-- // generating all of the content (items, checkboxes, editboxes, category labels...)
 	-- it's the big big important generation loop (oof)
+	-- NOTE: Max 800 things to show in one tab or wow may crash due to an overflow error in the frame parent system!
 
 	-- first things first, we hide EVERY widget, so that we only show the good ones after
 	for _,contentWidget in pairs(contentWidgets) do
@@ -712,53 +779,28 @@ function private:LoadList()
 	-- let's go!
 	local tabID = database.ctab()
 	local tabData = select(3, dataManager:Find(tabID))
-	local p = { -- pos table TDLATER declare out of here for opti?
-		relativeFrame = tdlFrame.content.loadOrigin,
-		offsetX = 0,
-		offsetY = 0,
-		ShowFrame = function(self, frame)
-			frame:SetPoint("TOPLEFT", self.relativeFrame, "BOTTOMLEFT", self.offsetX, self.offsetY)
-			frame:Show()
-			self.relativeFrame = frame.heightFrame
-		end,
-		SetX = function(self, value)
-			self.offsetX = value
-		end,
-		SetY = function(self, value)
-			self.offsetY = value
-		end,
-		AddX = function(self, value)
-			self.offsetX = self.offsetX + value
-		end,
-		AddY = function(self, value)
-			self.offsetY = self.offsetY + value
-		end
-	}
+
+	rlHelper.last.relativeFrame = tdlFrame.content.loadOrigin
+	rlHelper.last.frameType = enums.rlFrameType.empty
+	rlHelper.last.deep = 0
 
 	-- base category widgets loop
 	for catOrder,catID in ipairs(tabData.orderedCatIDs) do
 		local catWidget = contentWidgets[catID]
 
 		if not dataManager:IsHidden(catID, tabID) then
-			p:ShowFrame(catWidget)
-			p:SetX(0)
+			rlHelper.deep = 0
+			rlHelper:ShowFrame(catWidget, enums.rlFrameType.category)
 
 			if catOrder == 1 then -- if it's the first loaded cat widget
 				tutorialsManager:SetPoint("introduction", "addItem", "RIGHT", catWidget, "LEFT", -23, 0) -- we put the corresponding tuto on it
 			end
 
-			if catWidget.catData.originalTabID == tabID then
-				catWidget.originalTabLabel:Hide()
-			else -- if the tab is showing a cat that was not created here, we show the label specifying the cat's original tab
-				catWidget.originalTabLabel:SetText("("..dataManager:GetName(catWidget.catData.originalTabID)..")")
-				catWidget.originalTabLabel:Show()
-			end
-
-			private:RecursiveLoad(tabID, tabData, catWidget, p)
+			private:RecursiveLoad(tabID, tabData, catWidget)
 		end
 	end
 
-	p:ShowFrame(tdlFrame.content.dummyBottomFrame) -- add a bit of space at the bottom
+	rlHelper:ShowFrame(tdlFrame.content.dummyBottomFrame, enums.rlFrameType.empty) -- add a bit of space at the bottom
 
 	-- drag&drop
 	if dragndrop.dragging then
@@ -947,7 +989,7 @@ function private:GenerateFrameContent()
 	menu.tabActionsButton:Hide()
 
 	-- undo button
-	menu.undoButton = widgets:IconTooltipButton(menu, "NysTDL_UndoButton", L["Undo last remove"].."\n".."("..L["Item"]:lower().."/"..L["Category"]:lower().."/"..L["Tab"]:lower()..")")
+	menu.undoButton = widgets:IconTooltipButton(menu, "NysTDL_UndoButton", {L["Undo last remove"], "("..L["Item"]:lower().."/"..L["Category"]:lower().."/"..L["Tab"]:lower()..")"})
 	menu.undoButton:SetPoint("CENTER", menu.tabActionsButton, "CENTER", spacing, 0)
 	menu.undoButton:SetScript("OnClick", function() dataManager:Undo() end)
 	menu.undoButton:Hide()
@@ -955,16 +997,17 @@ function private:GenerateFrameContent()
 	-- tutorialsManager:SetPoint("editmode", "undo", "BOTTOM", menu.undoButton, "TOP", 0, 18)
 
 	-- addon options button
-	menu.frameOptionsButton = widgets:IconTooltipButton(menu, "NysTDL_FrameOptionsButton", L["Click"].." - "..L["Open addon options"].."\n"..L["Shift-Click"].." - "..L["Open backup list"])
+	menu.frameOptionsButton = widgets:IconTooltipButton(menu, "NysTDL_FrameOptionsButton", {string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Left-Click"])..utils:GetMinusStr()..L["Open addon options"], string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Right-Click"])..utils:GetMinusStr()..L["Open backup list"]})
 	menu.frameOptionsButton:SetPoint("CENTER", menu.undoButton, "CENTER", spacing, 0)
-	menu.frameOptionsButton:SetScript("OnClick", function()
-		if IsShiftKeyDown() then
+	menu.frameOptionsButton:SetScript("OnClick", function(self, button)
+		if button == "RightButton" then
 			NysTDLBackup:OpenList()
 			tutorialsManager:Validate("backup", "optionsButton") -- tutorial
 		else
 			optionsManager:ToggleOptions(true)
 		end
 	end)
+	menu.frameOptionsButton:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 	tutorialsManager:SetPoint("backup", "optionsButton", "BOTTOM", tdlFrame.content.menu.frameOptionsButton, "TOP", 0, 18)
 
 	-- remaining numbers labels
@@ -1160,7 +1203,7 @@ function mainFrame:CreateTDLFrame()
 	-- -- // outside the scroll frame
 
 	-- resize button
-	tdlFrame.resizeButton = widgets:IconTooltipButton(tdlFrame, "NysTDL_TooltipResizeButton", L["Left-Click"].." - "..L["Resize"].."\n"..L["Right-Click"].." - "..L["Reset"])
+	tdlFrame.resizeButton = widgets:IconTooltipButton(tdlFrame, "NysTDL_TooltipResizeButton", {string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Left-Click"])..utils:GetMinusStr()..L["Resize"], string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Right-Click"])..utils:GetMinusStr()..L["Reset"]})
 	tdlFrame.resizeButton:SetPoint("BOTTOMRIGHT", -3, 3)
 	tdlFrame.resizeButton:SetScript("OnMouseDown", function(self, button)
 		if button == "LeftButton" then

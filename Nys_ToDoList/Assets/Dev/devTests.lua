@@ -80,31 +80,36 @@ function NysTDL:Tests(nb, ...)
 		-- end
 		-- print("<================>")
 	elseif nb == 4 then
-		NysTDL.tutorialsManager:ResetTuto("backup")
+		-- NysTDL.tutorialsManager:ResetTuto("backup")
 
-		-- -- ITEM EXPLOSION
-		-- local refreshID = dataManager:SetRefresh(false)
+		-- ITEM EXPLOSION
+		local refreshID = dataManager:SetRefresh(false)
 
-		-- local itemTabID, itemCatID
-		-- for tabID,tabData in dataManager:ForEach(enums.tab) do
-		-- 	if tabData.name == "All" then
-		-- 		itemCatID = dataManager:CreateCategory("EXPLOSION", tabID)
-		-- 		itemTabID = tabID
-		-- 	end
+		local itemTabID, itemCatID
+		for tabID,tabData in dataManager:ForEach(enums.tab) do
+			if tabData.name == "All" then
+				itemCatID = dataManager:CreateCategory("EXPLOSION", tabID)
+				itemTabID = tabID
+			end
+		end
+		for i = 1, 100 do
+			dataManager:CreateItem(tostring(i), itemTabID, itemCatID)
+		end
+
+		-- for i=1,2000 do
+		-- 	dataManager:Undo()
 		-- end
-		-- for i = 1, 100 do
-		-- 	dataManager:CreateItem(tostring(i), itemTabID, itemCatID)
-		-- end
 
-		-- -- for i=1,2000 do
-		-- -- 	dataManager:Undo()
-		-- -- end
+		dataManager:SetRefresh(true, refreshID)
 
-		-- dataManager:SetRefresh(true, refreshID)
-
-		-- mainFrame:Refresh()
+		mainFrame:Refresh()
 	elseif nb == 5 then
 		migration:TestFunc()
+
+		-- function NysTDLBackup:Scroll(backupType, scrollCount)
+		-- 	data:ScrollProfileBackupType(data:GetCurrentProfile(), backupType, scrollCount)
+		-- 	list:Refresh()
+		-- end
 	end
 	print("--Nys_Tests--")
 end

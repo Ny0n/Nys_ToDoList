@@ -674,7 +674,7 @@ function private:CreateAddonOptionsTable()
 	optionsManager.optionsTable = {
 		handler = optionsManager,
 		type = "group",
-		name = core.toc.title.." ("..core.toc.version..")",
+		name = core.toc.title.." ("..core.toc.version..core.toc.isDev..")",
 		get = function(info)
 			return NysTDL.acedb.profile[info[#info]]
 		end,

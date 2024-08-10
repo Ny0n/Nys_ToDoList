@@ -379,7 +379,7 @@ end
 ---@param location nil|false|true|string
 ---@param original boolean
 ---@return function
-function dataManager:ForEach(enum, location, original)
+function dataManager:ForEach(enum, location, original, onlyRoot)
 	--[[
 		* this func is used everywhere to loop through items, categories and tabs.
 		this is used in a for loop like pairs():
@@ -397,9 +397,13 @@ function dataManager:ForEach(enum, location, original)
 				-> if the enum is enums.item:
 						--> **ID** (specific tab or cat ID, we will only loop through items that are in the given cat, or that are in the given tab)
 				-> if the enum is enums.category:
-						--> **ID** (specific tab ID, we will only loop through categories that are in the given tab)
+						--> **ID** (specific tab ID or cat ID, we will only loop through categories that are in the given cat, or that are in the given tab)
 				-> if the enum is enums.tab:
 						--> **ID** (specific shown tab ID, we will only loop through tabs that are showing the given tab)
+			original 	==> bool, will only loop through elements that are native to the tab specified in location
+			onlyRoot 	==> bool, relevant only if enum is enums.category and location is a tabID.
+							--> if true, we will only loop through all root categories in the tab
+							--> if not true, we will loop through all categories in the tab, this includes sub-categories
 	]]
 
 	-- // check part
@@ -430,13 +434,23 @@ function dataManager:ForEach(enum, location, original)
 		getdatapos = 2
 		if dataManager:IsID(location) then -- specific tab ID
 			enum, isGlobal = dataManager:Find(location)
-			if enum == enums.tab then
+			if enum == enums.category then
 				checkFunc = function(ID, data)
+					if data.parentCatID ~= location then return false end
+					return true
+				end
+			elseif enum == enums.tab then
+				checkFunc = function(ID, data)
+					if onlyRoot and data.parentCatID then
+						return false
+					end
+
 					if original then
 						if data.originalTabID ~= location then return false end
 					else
 						if not data.tabIDs[location] then return false end
 					end
+
 					return true
 				end
 			else
@@ -598,7 +612,7 @@ function dataManager:AddCategory(catID, catData)
 	private:UpdateTabsDisplay(catData.originalTabID, true, catID)
 	if catData.parentCatID then
 		-- we add it ordered in its category/categories
-		local catOrder = dataManager:GetNextFavPos(catData.parentCatID)
+		local catOrder = dataManager:GetNextSubCatPos(catData.parentCatID)
 		tinsert(categoriesList[catData.parentCatID].orderedContentIDs, catOrder, catID)
 	end
 
@@ -632,7 +646,6 @@ function dataManager:CreateCategory(catName, tabID, parentCatID)
 	end
 
 	if parentCatID and not dataManager:IsID(parentCatID) then
-		-- chat:Print(L["The given parent category is not valid"]) -- TDLATER
 		return
 	end
 
@@ -746,8 +759,10 @@ end
 ---Creates a new tab and/or category and/or item using a command (string).
 ---The string can either be in one part, or in multiple parts.
 ---Format: "tab name+category name+new item name"
+---@param isGlobal boolean
 ---@param ... string All parameters will be converted to strings
-function dataManager:CreateByCommand(...)
+function dataManager:CreateByCommand(isGlobal, ...)
+	isGlobal = not not isGlobal
 	local args = {...}
 	for i,v in ipairs(args) do
 		args[i] = tostring(v)
@@ -757,30 +772,35 @@ function dataManager:CreateByCommand(...)
 	local input = string.join(" ", unpack(args))
 
 	local splitChar = '+' -- the delimitation character
-
-	local count = 0
-	for _ in string.gmatch(input, splitChar) do
-		count = count + 1
-	end
+	local splitCatChar = '-' -- the delimitation character for sub categories
 
 	local tabName, catName, itemName = string.split(splitChar, input)
 	tabName = tabName or ""
 	catName = catName or ""
 	itemName = itemName or ""
 
+	local catNames = {string.split(splitCatChar, catName)}
+
 	-- // input check
 	if tabName == "" then
-	-- or count > 0 and catName == ""
-	-- or count > 1 and itemName == ""
-	-- then
-		local str = "- "..chat.slashCommand..' '..string.lower(L["Add"])..' '
+		local str = "- "..chat.slashCommand..' '..string.lower(L["Add"].."[*]")..' '
 		chat:CustomPrintForced(L["Usage"]..":")
+		chat:CustomPrintForced(chat.slashCommand..' '..string.lower(L["Add"]).."  ("..L["Profile tabs"]..")")
+		chat:CustomPrintForced(chat.slashCommand..' '..string.lower(L["Add"].."*").." ("..L["Global tabs"]..")")
 		str = str..string.lower(L["Tab"])
 		chat:CustomPrintForced(str, true)
 		str = str..splitChar..string.lower(L["Category"])
+		local str2 = str
 		chat:CustomPrintForced(str, true)
 		str = str..splitChar..string.lower(L["Item"])
 		chat:CustomPrintForced(str, true)
+
+		str = str2..splitCatChar..string.lower(L["Category"])
+		chat:CustomPrintForced(str, true)
+
+		str = str..splitChar..string.lower(L["Item"])
+		chat:CustomPrintForced(str, true)
+		chat:CustomPrintForced("- ...", true)
 		return
 	end
 
@@ -792,17 +812,20 @@ function dataManager:CreateByCommand(...)
 	private.cmdRefreshTimerID = AceTimer:ScheduleTimer(function() refreshAuthorized = true mainFrame:Refresh() end, 0.0)
 
 	-- // tab
-	local tabID = dataManager:FindFirstIDByName(tabName, enums.tab) or dataManager:CreateTab(tabName)
+	local tabID = dataManager:FindFirstIDByName(tabName, enums.tab, isGlobal) or dataManager:CreateTab(tabName, isGlobal)
 	if not tabID then return end
 
 	-- // category
-	if catName == "" then return end
-	local catID = dataManager:FindFirstIDByName(catName, enums.category, tabID, true) or dataManager:CreateCategory(catName, tabID)
-	if not catID then return end
+	local lastCatID
+	for _,catName in ipairs(catNames) do
+		if catName == "" then return end
+		lastCatID = dataManager:FindFirstIDByName(catName, enums.category, not lastCatID and tabID or lastCatID, true, not lastCatID) or dataManager:CreateCategory(catName, tabID, lastCatID)
+	end
+	if not lastCatID then return end
 
 	-- // new item
 	if itemName == "" then return end
-	dataManager:CreateItem(itemName, tabID, catID)
+	dataManager:CreateItem(itemName, tabID, lastCatID)
 end
 
 -- // moving functions
@@ -837,7 +860,7 @@ function dataManager:MoveItem(itemID, newPos, newCatID)
 
 	-- pos
 	if type(newPos) ~= "number" then
-		newPos = 1
+		newPos = oldPos
 	else
 		newPos = utils:Clamp(newPos, 1, #newLoc + 1)
 	end
@@ -850,6 +873,10 @@ function dataManager:MoveItem(itemID, newPos, newCatID)
 	end
 
 	-- / *** then, we can start moving *** /
+
+	if dataManager:IsGlobal(oldCatID) ~= dataManager:IsGlobal(newCatID) then
+		return
+	end
 
 	tremove(oldLoc, oldPos)
 	tinsert(newLoc, newPos, itemID)
@@ -896,6 +923,8 @@ function dataManager:MoveCategory(catID, newPos, newParentID, fromTabID, toTabID
 	-- usage: dataManager:MoveCategory(catID, [newPos], [newParentID], [fromTabID], [toTabID])
 	-- newParentID == nil --> ignore, newParentID == false --> no parent, newParentID == ID --> new parent
 
+	local refreshID = dataManager:SetRefresh(false)
+
 	-- / *** first things first, we validate all of the data *** /
 
 	local catData, _, categoriesList, tabsList = select(3, dataManager:Find(catID))
@@ -907,12 +936,16 @@ function dataManager:MoveCategory(catID, newPos, newParentID, fromTabID, toTabID
 
 	-- loc, pos, parentCat
 	local oldLoc, oldPos = dataManager:GetPosData(catID, fromTabID)
-	local oldParentID = catData.parentCatID
+	local oldParentID = catData.parentCatID or nil
+	local oldParentData = oldParentID and select(3, dataManager:Find(oldParentID)) or nil
+	local oldOriginalTabID = catData.originalTabID
+	local oldParents = utils:Deepcopy(dataManager:GetParents(catID))
 
 	--> new data
 
 	-- toTab
 	toTabID = toTabID or database.ctab()
+	dataManager:Find(toTabID) -- tab check
 
 	-- parentCat
 	if newParentID == nil then
@@ -920,14 +953,15 @@ function dataManager:MoveCategory(catID, newPos, newParentID, fromTabID, toTabID
 	elseif newParentID == false then
 		newParentID = nil
 	end
+	local newParentData = newParentID and select(3, dataManager:Find(newParentID)) or nil
+	local newOriginalTabID = newParentData and newParentData.originalTabID or toTabID
 
 	-- loc
-	dataManager:Find(toTabID) -- tab check
 	local newLoc = newParentID and categoriesList[newParentID].orderedContentIDs or tabsList[toTabID].orderedCatIDs
 
 	-- pos
 	if type(newPos) ~= "number" then
-		newPos = 1
+		newPos = oldPos
 	else
 		newPos = utils:Clamp(newPos, 1, #newLoc + 1)
 	end
@@ -941,59 +975,124 @@ function dataManager:MoveCategory(catID, newPos, newParentID, fromTabID, toTabID
 
 	-- / *** then, we can start moving (oof) *** /
 
-	-- position (order)
-	if oldParentID and not newParentID then -- from sub-cat to normal cat
-		tremove(oldLoc, oldPos)
-
-		-- SPECIAL INSERT:
-		-- since we're transforming the cat from a sub-cat to a normal one,
-		-- we have to insert it back in each tab it is shown in
-		tinsert(newLoc, newPos, catID)
-		local firstParentID = tremove(dataManager:GetParents(catID))
-		for tabID in pairs(catData.tabIDs) do
-			if tabID ~= toTabID then -- if it's not the tab where we specifically decided to put it to newPos
-				local loc, pos = dataManager:GetPosData(firstParentID, tabID)
-				tinsert(loc, pos, catID) -- we put it over the cat we just extracted it from
-			end
-		end
-	elseif not oldParentID and newParentID then -- from normal cat to sub-cat
-		-- SPECIAL REMOVE:
-		-- since we're transforming the cat from a normal cat to a sub one,
-		-- we have to remove it from each tab it was shown in
-		for tabID in pairs(catData.tabIDs) do
-			local loc, pos = dataManager:GetPosData(catID, tabID)
-			tremove(loc, pos)
-		end
-
-		tinsert(newLoc, newPos, catID)
-	else -- from sub-cat to (maybe other) sub-cat (pos change) OR from normal cat to normal cat (pos change)
-		tremove(oldLoc, oldPos)
-		tinsert(newLoc, newPos, catID)
+	if dataManager:IsGlobal(fromTabID) ~= dataManager:IsGlobal(toTabID) then
+		dataManager:SetRefresh(true, refreshID)
+		return
 	end
 
-	catData.parentCatID = newParentID
-
-	-- tab
-	if fromTabID ~= toTabID then
-		-- category part
-		private:UpdateTabsDisplay(fromTabID, false, catID)
-		catData.originalTabID = toTabID
-		private:UpdateTabsDisplay(toTabID, true, catID)
-
-		-- we keep the closed state
-		catData.closedInTabIDs[toTabID] = catData.closedInTabIDs[fromTabID]
-		catData.closedInTabIDs[fromTabID] = nil
-
-		-- content part
-		for _,contentID in pairs(catData.orderedContentIDs) do
-			local enum = dataManager:Find(contentID)
-			if enum == enums.category then -- category
-				dataManager:MoveCategory(contentID, nil, nil, fromTabID, toTabID)
-			else -- item
-				dataManager:UpdateItemTab(contentID)
-			end
+	if newParentID then
+		if utils:HasValue(dataManager:GetParents(newParentID), catID) then
+			dataManager:SetRefresh(true, refreshID)
+			return
 		end
 	end
+
+	if not oldParentID and newParentID then -- / from root cat to sub cat
+		private:UpdateTabsDisplay(oldOriginalTabID, false, catID) -- & tremove from all roots
+
+		catData.parentCatID = newParentID
+		catData.originalTabID = newOriginalTabID
+
+		private:UpdateTabsDisplay(newOriginalTabID, true, catID)
+		tinsert(newLoc, newPos, catID)
+	elseif oldParentID and not newParentID then -- / from sub cat to root cat
+		private:UpdateTabsDisplay(oldOriginalTabID, false, catID)
+		tremove(oldLoc, oldPos)
+
+		catData.parentCatID = newParentID
+		catData.originalTabID = newOriginalTabID
+
+		private:UpdateTabsDisplay(newOriginalTabID, true, catID)-- & tinsert to all roots
+
+		-- SPECIAL MOVE:
+		-- right now the cat has been correctly rooted in every tab, but private:UpdateTabsDisplay puts it at index one
+
+		-- so here we change the cat order to where we moved it (+1 because now the cat is at index 1 in the tab)
+		dataManager:MoveCategory(catID, newPos+1, nil, newOriginalTabID, newOriginalTabID)
+
+		-- and here we change the cat order in every other tab it is shown in, to be placed just above the parent from which it was extracted
+		local oldRootParentID = tremove(oldParents)
+		if dataManager:IsID(oldRootParentID) then
+			local oldRootParentData = select(3, dataManager:Find(oldRootParentID))
+			for tabID in pairs(catData.tabIDs) do
+				if tabID ~= toTabID then -- if it's not the tab where we specifically decided to put it to newPos
+					if oldRootParentData.tabIDs[tabID] then -- and it is a tab where our old parent is present
+						-- we put it over it
+						dataManager:MoveCategory(catID, dataManager:GetPosData(oldRootParentID, tabID, true), nil, tabID, tabID)
+					end
+				end
+			end
+		end
+	elseif oldParentID and newParentID then -- / from sub cat to sub cat
+		private:UpdateTabsDisplay(oldOriginalTabID, false, catID)
+		tremove(oldLoc, oldPos)
+
+		catData.parentCatID = newParentID
+		catData.originalTabID = newOriginalTabID
+
+		private:UpdateTabsDisplay(newOriginalTabID, true, catID)
+		tinsert(newLoc, newPos, catID)
+	elseif not oldParentID and not newParentID then -- / from root cat to root cat
+		if fromTabID == toTabID then -- / change ordering in tab
+			tremove(oldLoc, oldPos)
+			tinsert(newLoc, newPos, catID)
+		else -- / move category to new tab and make it the new originalTabID -- ***** TDLATER NOT TESTABLE RIGHT NOW *****
+			-- if the category is already shown in the tab where we will drop it
+			if catData.tabIDs[newOriginalTabID] then
+				-- process the drop pos, because the indexes will potentially change when we remove it from that tab
+
+				oldPos = dataManager:GetPosData(catID, newOriginalTabID, true)
+				if newPos > oldPos then
+					newPos = newPos - 1
+				end
+			end
+
+			private:UpdateTabsDisplay(oldOriginalTabID, false, catID) -- & tremove from all roots
+
+			catData.parentCatID = newParentID
+			catData.originalTabID = newOriginalTabID
+
+			private:UpdateTabsDisplay(newOriginalTabID, true, catID)-- & tinsert to all roots
+
+			-- SPECIAL MOVE:
+			-- right now the cat has been correctly rooted in every tab, but private:UpdateTabsDisplay puts it at index one
+
+			-- so here we change the cat order to where we wanted to move it (+1 because now the cat is at index 1 in the tab)
+			dataManager:MoveCategory(catID, newPos+1, nil, newOriginalTabID, newOriginalTabID)
+
+			-- but halas we won't remember where the category was in other tabs that were showing it,
+			-- so except for the tab we dropped it in, the cat will reset to index 1 everywhere
+			-- / if we want to change this behavior, we should save all the pos data before the move, and process it here / --
+		end
+	end
+
+	-- closed state processing
+	do
+		-- we keep the closed state from before the move
+		if fromTabID ~= toTabID then
+			catData.closedInTabIDs[toTabID] = catData.closedInTabIDs[fromTabID]
+			catData.closedInTabIDs[fromTabID] = nil
+		end
+
+		-- and we remove the closed states from tabs we are no longer in
+		local copy = utils:Deepcopy(catData.closedInTabIDs)
+		wipe(catData.closedInTabIDs)
+		for tabID in pairs(catData.tabIDs) do
+			catData.closedInTabIDs[tabID] = copy[tabID]
+		end
+	end
+
+	-- content part
+	for _,contentID in pairs(catData.orderedContentIDs) do
+		local enum = dataManager:Find(contentID)
+		if enum == enums.category then -- category
+			dataManager:MoveCategory(contentID, nil, nil, fromTabID, toTabID)
+		else -- item
+			dataManager:UpdateItemTab(contentID)
+		end
+	end
+
+	dataManager:SetRefresh(true, refreshID)
 
 	mainFrame:Refresh()
 end
@@ -1095,12 +1194,11 @@ function dataManager:DeleteCat(catID)
 	for _,contentID in pairs(copy) do
 		local result, nb = nil, 0
 		if dataManager:Find(contentID) == enums.category then -- current ID is a sub-category
-			result, nb = dataManager:DeleteCat(contentID) -- TDLATER crash quand delete tab qui a des sub-cats ?
+			result, nb = dataManager:DeleteCat(contentID)
 		else -- current ID is an item
 			result = dataManager:DeleteItem(contentID)
 		end
-		nbToUndo = nbToUndo + nb
-		if result then nbToUndo = nbToUndo + 1 end
+		if result or nb > 0 then nbToUndo = nbToUndo + 1 end
 	end
 
 	local undoData = private:CreateUndo(catID)
@@ -1109,6 +1207,9 @@ function dataManager:DeleteCat(catID)
 	if #catData.orderedContentIDs == 0 then -- we removed everything from the cat, now we delete it
 		-- we update its data (pretty much the reverse actions of the Add func)
 		private:UpdateTabsDisplay(catData.originalTabID, false, catID)
+		if catData.parentCatID then
+			tremove(dataManager:GetPosData(catID))
+		end
 
 		dataManager:AddUndo(undoData)
 		categoriesList[catID] = nil -- delete action
@@ -1338,10 +1439,14 @@ end
 function private:UpdateCatShownTabID(catID, catData, tabID, tabData, shownTabID, modif)
 	if catData.originalTabID == shownTabID then -- important
 		catData.tabIDs[tabID] = modif
+
+		-- NOTE: this code is here because a category can be present in multiple tabs at the same time,
+		-- and it can be in different positions in each tab! Where an item is only present at one place in one category
+		-- Sub-Categories however, work just like items so the code here only affects root categories
 		if not catData.parentCatID then -- if it's not a sub-category, we edit it in its tab orders
 			if modif and not utils:HasValue(tabData.orderedCatIDs, catID) then
 				-- we add it ordered in the tab if it wasn't here already
-				tinsert(tabData.orderedCatIDs, 1, catID) -- TDLATER, IF I ever do cat fav it's not pos 1
+				tinsert(tabData.orderedCatIDs, 1, catID) -- TDLATER, IF I ever do cat fav (in tab root) it's not pos 1
 			elseif not modif and utils:HasValue(tabData.orderedCatIDs, catID) then
 				tremove(tabData.orderedCatIDs, select(2, utils:HasValue(tabData.orderedCatIDs, catID)))
 			end
@@ -1482,7 +1587,7 @@ function dataManager:IsHidden(ID, tabID)
 		return tabData.hideCheckedItems and objectData.checked
 	elseif enum == enums.category then
 		return (tabData.hideCompletedCategories and dataManager:IsCategoryCompleted(ID))
-		or (tabData.hideEmptyCategories and not next(objectData.orderedContentIDs))
+		or (tabData.hideEmptyCategories and dataManager:GetCatCheckedNumbers(ID) <= 0)
 	end
 
 	return false
@@ -1625,6 +1730,25 @@ function dataManager:GetNextFavPos(catID)
 	return lastFavPos + 1
 end
 
+---Finds and returns the index where the next sub category should preferably be added in the category
+---@param catID string
+---@return number
+function dataManager:GetNextSubCatPos(catID)
+	local catData = select(3, dataManager:Find(catID))
+	-- local lastPos = 0
+	-- for contentOrder,contentID in ipairs(catData.orderedContentIDs) do -- for everything that is in the cat
+	-- 	local enum, _, contentData = dataManager:Find(contentID)
+	-- 	if enum == enums.item then
+	-- 		if contentData.favorite then
+	-- 			lastPos = contentOrder
+	-- 		end
+	-- 	end
+	-- end
+
+	-- return #catData.orderedContentIDs + 1
+	return dataManager:GetNextFavPos(catID)
+end
+
 local T_GetParents = {}
 ---Recursively finds and returns a table containing each parent category for a given item/category.
 ---(if we give a category, it is also by default considered as a parent)
@@ -1739,7 +1863,7 @@ end
 ---@param tabID string
 function dataManager:ClearTab(tabID)
 	local copy = {}
-	for catID,catData in dataManager:ForEach(enums.category, tabID) do
+	for catID,catData in dataManager:ForEach(enums.category, tabID, false, true) do
 		copy[catID] = catData
 	end
 
@@ -1759,7 +1883,7 @@ function dataManager:ClearTab(tabID)
 
 	dataManager:SetRefresh(true, refreshID)
 
-	for _,_ in dataManager:ForEach(enums.category, tabID) do -- luacheck: ignore -- if there are cats left
+	for _,_ in dataManager:ForEach(enums.category, tabID, false, true) do -- luacheck: ignore -- if there are cats left
 		chat:Print(L["Could not empty tab"].." ("..L["Some of its content is protected"]..")")
 		break
 	end
@@ -1840,8 +1964,25 @@ end
 ---@param tabID string
 ---@return boolean
 function dataManager:IsTabContentHidden(tabID)
-	for catID in dataManager:ForEach(enums.category, tabID) do
+	for catID in dataManager:ForEach(enums.category, tabID, false, true) do
 		if not dataManager:IsHidden(catID, tabID) then
+			return false
+		end
+	end
+	return true
+end
+
+---Returns true if every element in the given category is hidden.
+---@param catID string
+---@return boolean
+function dataManager:IsCategoryContentHidden(catID, tabID)
+	for contentID in dataManager:ForEach(enums.category, catID) do
+		if not dataManager:IsHidden(contentID, tabID) then
+			return false
+		end
+	end
+	for contentID in dataManager:ForEach(enums.item, catID) do
+		if not dataManager:IsHidden(contentID, tabID) then
 			return false
 		end
 	end

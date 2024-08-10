@@ -1,6 +1,21 @@
+#### **7.3**
+
+***Ny's To-Do List***
+
+- Added support for WoW Version 11.0.2 (TWW)
+- Nested categories are here! You can now add or move categories inside other categories
+- Reworked drag & drop and added feedback
+- Reworked the "/tdl add" command
+- Polished some visuals and tooltips
+- Miscellaneous fixes
+
+***Ny's To-Do List Backup (1.1)***
+
+- Upgraded the addon so that it can be used even when Ny's To-Do List is disabled
+
 #### **7.2.5**
 
-- Added support for The War Within (11.0.0)
+- Added support for WoW Version 11.0.0 (TWW)
 - Bump interface number (1.15.3)
 
 #### **7.2.4**

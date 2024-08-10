@@ -178,6 +178,10 @@ function find_version()
 	# find and write to $version the main addon's current version number
 	version="$(grep -Pom1 "(?<=## Version: ).*" "$toc_file")"
 	test -n "$version" || error_msg "Could not find the addon's version number"
+
+	# $root_version excludes any suffix that starts with a hyphen, like "-beta" or "-alpha"
+	root_version="$(grep -Pom1 "(?<=## Version: )[^-\n]*" "$toc_file")"
+	test -n "$root_version" || error_msg "Could not find the addon's version number (without suffix)"
 }
 
 # ========== PACKAGE COMMAND ========== #
@@ -545,7 +549,7 @@ elif [ "$1" == "--publish" ]; then
 	test -z "$changelog"  || test -f "$changelog" || error_msg "Changelog not found" "vars" || custom_exit
 	if [ -f "$changelog" ]; then
 		changelog_version="$(head -n 1 "$changelog" | grep -oP "$changelog_pattern")"
-		test "$changelog_version" == "$version" || error_msg "Changelog is not up to date" || custom_exit
+		test "$changelog_version" == "$version" -o "$changelog_version" == "$root_version" || error_msg "Changelog is not up to date" || custom_exit
 	fi
 
 	read -p "$(echo -e "\e[1mPublish\e[0m $main_addon for version \e[4m$version\e[0m ? [y/N] ")" -n 1 -r

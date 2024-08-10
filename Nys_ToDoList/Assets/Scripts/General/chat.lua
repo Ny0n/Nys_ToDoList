@@ -181,7 +181,7 @@ chat.commands = {
 	[L["categories"]] = function()
 		chat:CustomPrintForced(L["Information on categories"]..":")
 		chat:CustomPrintForced("- "..L["Left-click on the category names to expand or shrink their content"]..".", true)
-		chat:CustomPrintForced("- "..utils:SafeStringFormat(L["To add new items, hover the category names and press the %s icon"], enums.icons.add.texHyperlinkChat)..".", true)
+		chat:CustomPrintForced("- "..utils:SafeStringFormat(L["To add elements in a category, hover the name and press the %s icon"], enums.icons.add.texHyperlinkChat).." ("..string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Left-Click"])..utils:GetMinusStr()..L["Add an item"]..", "..string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Right-Click"])..utils:GetMinusStr()..L["Add a category"]..").", true)
 	end,
 
 	[L["favorites"]] = function()
@@ -208,8 +208,8 @@ chat.commands = {
 		chat:CustomPrintForced("- "..L["Everything hidden becomes visible"], true)
 		chat:CustomPrintForced("- "..L["Delete items and categories"], true)
 		chat:CustomPrintForced("- "..L["Favorite and add descriptions on items"], true)
-		chat:CustomPrintForced("- "..L["Rename items and categories"].." ("..L["Double-Click"]..")", true)
-		chat:CustomPrintForced("- "..L["Reorder/Sort the list"].." ("..L["Drag and Drop"]..")", true)
+		chat:CustomPrintForced("- "..L["Rename"].." ("..L["Double-Click"]..")", true)
+		chat:CustomPrintForced("- "..L["Reorder"].." ("..L["Drag and Drop"]..")", true)
 		chat:CustomPrintForced("- "..L["Resize"].." ("..L["Button in the bottom-right"]..")", true)
 		chat:CustomPrintForced("- "..L["Access new buttons"].." (\""..L["Tab actions"].."\", \""..L["Undo last remove"].."\", \""..L["Open addon options"].."\")", true)
 		tutorialsManager:Validate("introduction", "editmodeChat")
@@ -221,7 +221,11 @@ chat.commands = {
 	end,
 
 	[string.lower(L["Add"])] = function(...)
-		dataManager:CreateByCommand(...)
+		dataManager:CreateByCommand(false, ...)
+	end,
+
+	[string.lower(L["Add"]).."*"] = function(...)
+		dataManager:CreateByCommand(true, ...)
 	end,
 }
 

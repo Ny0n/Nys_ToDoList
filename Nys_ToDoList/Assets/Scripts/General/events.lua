@@ -98,7 +98,7 @@ function events:Initialize()
 	end)
 
 	local LoadAddOn_Blizzard_EncounterJournal = false
-	hooksecurefunc("LoadAddOn", function(name)
+	hooksecurefunc(C_AddOns, "LoadAddOn", function(name)
 		if LoadAddOn_Blizzard_EncounterJournal then
 			return
 		end

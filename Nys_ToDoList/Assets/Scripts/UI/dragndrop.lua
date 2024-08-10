@@ -7,11 +7,17 @@ NysTDL.dragndrop = dragndrop
 
 -- Primary aliases
 
+local libs = NysTDL.libs
 local enums = NysTDL.enums
 local utils = NysTDL.utils
+local widgets = NysTDL.widgets
 local database = NysTDL.database
 local mainFrame = NysTDL.mainFrame
 local dataManager = NysTDL.dataManager
+
+-- Secondary aliases
+local L = libs.L
+local LibQTip = libs.LibQTip
 
 --/*******************************************************/--
 
@@ -28,21 +34,20 @@ local normalAlpha = 1
 local selectedDimAlpha = 0 -- TDLATER glow
 local forbiddenDimAlpha = 0.3
 
-local catTopPos = { 4, enums.ofsyCat/2+2 }
-local catItemPos = { enums.ofsxContent, -enums.ofsyCatContent/2+3 }
-local itemPos = { 0, -enums.ofsyContent/2+4 }
-local catBottomPos = { 4, -enums.ofsyCat/2 }
-local itemCatPos = { -enums.ofsxContent+4, -enums.ofsyContentCat/2 }
+local overHeightFrame = { 4, enums.ofsyContent/2+4 }
+local underHeightFrame = { 4, -enums.ofsyContent/2+4 }
+local overTabEmptyLabel = { 4, enums.ofsyContent/2+3 }
 
 -- drag&drop data
 
 local draggingWidget
-local targetDropFrame, newPos
+local targetDropFrame
 local startingTab, currentTab
 
 local dragUpdate = CreateFrame("Frame", nil, UIParent)
 local dropLine
-local minDist = 10000
+local tooltip
+local minDistY, minDistX = 10000, 10000
 
 local clickX, clickY -- for a clean drag&grop
 local listScale
@@ -80,19 +85,6 @@ function private:GetCursorScaledPosition()
 	return x/scale, y/scale
 end
 
-function private:TestDist(dropFrame, cursorY)
-	-- we get the distance between the given drop frame and the cursor,
-	-- to determine which one is the closest to it
-
-	local _, dropFrameY = dropFrame:GetCenter() -- LIST CS
-	local targetDropFrameDist = math.abs(cursorY-dropFrameY) -- dist
-
-	if targetDropFrameDist < minDist then -- new minimum?
-		targetDropFrame = dropFrame
-		minDist = targetDropFrameDist
-	end
-end
-
 function private:CreateDuplicate(enum, ID)
 	-- first in each drag, since we are stealing the widget we are dragging from the frame,
 	-- we create a new one to replace it
@@ -100,6 +92,12 @@ function private:CreateDuplicate(enum, ID)
 	local contentWidgets = mainFrame:GetContentWidgets()
 	contentWidgets[ID] = nil
 	mainFrame:UpdateWidget(ID, enum)
+
+	-- dynamic content
+	if enum == enums.category then
+		contentWidgets[ID].addMode = draggingWidget.addMode
+	end
+
 	mainFrame:Refresh() -- IMPORTANT this refresh also acts as the call to UpdateDropFrames!
 
 	-- after this, now that we are dragging a duplicate widget, and the list looks like nothing changed,
@@ -122,40 +120,70 @@ function private:DragUpdateFunc()
 	lastCursorPosX = cursorX
 	lastCursorPosY = cursorY
 
+	targetDropFrame = nil
+
 	-- // let's go!
 
-	minDist = 10000 -- we reset the dist to find the closest drop point each frame
+	-- we search the drop frame that is the closest to the cursor
+	-- * the search takes priority depending on the Y component
+	-- * if there are multiple drop frames that have the same Y component, we do another search through them based on the X component
+
+	minDistY = 10000
 	for _,dropFrame in pairs(dropFrames) do
 		if dropFrame:IsVisible() then -- we only care about a drop point if we can see it
-			private:TestDist(dropFrame, cursorY)
+			local _,dropFrameY = dropFrame:GetCenter() -- LIST CS
+			local targetDropFrameDist = math.abs(cursorY-dropFrameY) -- dist
+
+			if targetDropFrameDist < minDistY then -- new minimum?
+				minDistY = targetDropFrameDist
+			end
 		end
 	end
 
-	if not targetDropFrame then return end -- just in case we didn't find anything
+	local found = {}
+	for _,dropFrame in pairs(dropFrames) do
+		if dropFrame:IsVisible() then -- we only care about a drop point if we can see it
+			local _,dropFrameY = dropFrame:GetCenter() -- LIST CS
+			local targetDropFrameDist = math.abs(cursorY-dropFrameY) -- dist
+
+			if math.abs(targetDropFrameDist - minDistY) <= 1 then
+				tinsert(found, dropFrame)
+			end
+		end
+	end
+
+	targetDropFrame = found[1]
+
+	if #found > 1 then
+		minDistX = 10000
+		for _,dropFrame in pairs(found) do
+			if dropFrame:IsVisible() then -- we only care about a drop point if we can see it
+				local dropFrameX,_ = dropFrame:GetCenter() -- LIST CS
+				local targetDropFrameDist = math.abs(cursorX-dropFrameX) -- dist
+
+				if targetDropFrameDist < minDistX then -- new minimum?
+					minDistX = targetDropFrameDist
+					targetDropFrame = dropFrame
+				end
+			end
+		end
+	end
+
+	if not targetDropFrame then -- just in case we didn't find anything
+		dropLine:Hide()
+		return
+	end
 
 	-- now that we have the closest widget, we update the positions, so that we are ready for the drop
 	dropLine:ClearAllPoints()
 	dropLine:SetPoint("LEFT", targetDropFrame, "CENTER")
 	dropLine:Show()
-	newPos = targetDropFrame.dropData.pos
 end
 
 function private:IsCatDropValid(targetCatID)
-	do return false end -- TDLATER sub-cat drag&drop (fix (add) missing drop points (under sub-cats) & verify tab switch)
+	if not draggingWidget or not targetCatID or draggingWidget.enum ~= enums.category then return false end
 
-	-- returns false if:
-	-- - (1) the targetCatID's original tab is different from the one we're currently dragging
-	-- - (2) the targetCatID is a child of the category we're currently dragging
-	if not draggingWidget or not targetCatID or draggingWidget.enum ~= enums.category then return false end -- luacheck: ignore
-
-	local catData = select(3, dataManager:Find(targetCatID))
-
-	-- (1)
-	if draggingWidget.catData.originalTabID ~= catData.originalTabID then
-		return false
-	end
-
-	-- (2)
+	-- if the targetCatID is or is a child of the category we're currently dragging
 	if utils:HasValue(dataManager:GetParents(targetCatID), draggingWidget.catID) then
 		return false
 	end
@@ -170,49 +198,93 @@ end
 
 --/***************/ DROP FRAMES /*****************/--
 
-function private:RecursiveUpdate(catWidget, w)
-	local catID, catData, newDropFrame = catWidget.catID, catWidget.catData
+local rlHelperDeep = {
+	-- [deep] = lastWidget,
+	-- [deep] = lastWidget,
+	-- [deep] = lastWidget,
+}
+
+local rlHelper = {
+	deep = 0,
+	lastWidget = nil, -- lastWidget from any deep
+
+	SetDeep = function(self, deep)
+		-- -- nil all lastWidget that are deeper than us when we are going up
+		-- for d = #rlHelperDeep, 1, -1 do
+		-- 	if d > deep then
+		-- 		tremove(rlHelperDeep, d)
+		-- 		d = d - 1
+		-- 	end
+		-- end
+
+		-- nil all lastWidget that are as deep or deeper than us when we are going down
+		if deep > self.deep then
+			for d = #rlHelperDeep, 1, -1 do
+				if d >= deep then
+					tremove(rlHelperDeep, d)
+					d = d - 1
+				end
+			end
+		end
+
+		self.deep = deep
+	end,
+
+	GetLastWidget = function(self)
+		return rlHelperDeep[self.deep]
+	end,
+
+	GetLastWidgetFromDeep = function(self, deep)
+		return rlHelperDeep[deep]
+	end,
+
+	GetLastWidgetDeepest = function(self)
+		return rlHelperDeep[#rlHelperDeep]
+	end,
+
+	SetLastWidget = function(self, widget)
+		rlHelperDeep[self.deep] = widget
+		self.lastWidget = widget
+	end,
+}
+
+function private:RecursiveUpdate(catWidget)
+	local catID, catData = catWidget.catID, catWidget.catData
 	local contentWidgets = mainFrame:GetContentWidgets()
 
 	if catData.closedInTabIDs[currentTab] then -- if the cat is not closed
 		return
 	end
 
-	newDropFrame = dragndrop:CreateDropFrame(catWidget, true, unpack(catItemPos)) -- /*item/*cat/ first pos, under the cat
-	dragndrop:SetDropFrameData(newDropFrame, currentTab, catID, 1)
-	tinsert(favsDropFrames, newDropFrame) -- favs can always be placed first
-	if dataManager:GetNextFavPos(catID) == 1 then
-		tinsert(itemsDropFrames, newDropFrame) -- and normal items only if there are no favs
-	end
-	if private:IsCatDropValid(catID) then
-		tinsert(categoryDropFrames, newDropFrame)
-	end
+	rlHelper:SetDeep(rlHelper.deep + 1)
+	local deep = rlHelper.deep
 
 	-- content widgets loop
 	for contentOrder,contentID in ipairs(catData.orderedContentIDs) do -- for everything in a base category
-		local contentWidget = contentWidgets[contentID]
-		w.lastWidget = contentWidget
-
 		if not dataManager:IsHidden(contentID, currentTab) then -- since we are in edit mode when drag & dropping, this line doesn't really matter
-			if contentWidget.enum == enums.category then -- sub-category
-				private:RecursiveUpdate(contentWidget, w)
-			elseif contentWidget.enum == enums.item then -- item
-				newDropFrame = dragndrop:CreateDropFrame(contentWidget, true, unpack(itemPos)) -- /*item/*cat/ under each item/cat
-				dragndrop:SetDropFrameData(newDropFrame, currentTab, catID, contentOrder+1)
-				if contentWidget.itemData.favorite then
-					tinsert(favsDropFrames, newDropFrame) -- we can always place a fav item below a fav item
-					if dataManager:GetNextFavPos(catID) == contentOrder+1 then -- if it's the last fav in the cat, we can drop a normal item below it as well
-						tinsert(itemsDropFrames, newDropFrame)
-					end
-				else
-					tinsert(itemsDropFrames, newDropFrame) -- we can always place a normal item below a normal item
-				end
+			local contentWidget = contentWidgets[contentID]
 
-				if private:IsCatDropValid(catID) then
-					tinsert(categoryDropFrames, newDropFrame) -- we can place a category as a sub-cat anywhere, considering it's not inside itself
-				end
+			rlHelper:SetDeep(deep)
+			rlHelper:SetLastWidget(contentWidget)
+
+			-- drop frame over the widget
+			dragndrop:CreateDropFrame(0, currentTab, catID, contentOrder)
+
+			if contentWidget.enum == enums.category then -- sub-category
+				private:RecursiveUpdate(contentWidget)
 			end
 		end
+	end
+
+	rlHelper:SetDeep(deep)
+
+	if not rlHelper:GetLastWidget() then
+		-- if there was nothing in the category, we add one drop frame over the empty label
+		rlHelper:SetLastWidget(catWidget.emptyLabel)
+		dragndrop:CreateDropFrame(0, currentTab, catID, 1)
+	else
+		-- drop frame after the last widget, in last position
+		dragndrop:CreateDropFrame(1, currentTab, catID, #catData.orderedContentIDs+1)
 	end
 end
 
@@ -232,12 +304,17 @@ function dragndrop:UpdateDropFrames()
 	wipe(categoryDropFrames)
 	wipe(favsDropFrames)
 	wipe(itemsDropFrames)
+	targetDropFrame = nil
+
+	for _,frame in pairs(dropFramesBank) do
+		if frame then frame:ClearAllPoints() frame:Hide() end
+	end
 
 	dropFrameNb = 0
 	local contentWidgets = mainFrame:GetContentWidgets()
-	local w = {
-		lastWidget = nil,
-	}
+
+	rlHelper.deep = 0
+	wipe(rlHelperDeep)
 
 	-- // this is basically the same loop as the one in mainFrame,
 	-- but instead of adding drag&drop code in that file,
@@ -247,61 +324,103 @@ function dragndrop:UpdateDropFrames()
 	-- while figuring out every drop point, their data (pos), and UI positioning
 
 	for catOrder,catID in ipairs(tabData.orderedCatIDs) do -- for every base category
-		-- // categories
-		local catWidget = contentWidgets[catID]
-		w.lastWidget = catWidget
-
 		if not dataManager:IsHidden(catID, currentTab) then
-			local newDropFrame = dragndrop:CreateDropFrame(catWidget, false, unpack(catTopPos)) -- /*cat/ over each cat
-			dragndrop:SetDropFrameData(newDropFrame, currentTab, nil, catOrder) -- no parent cat (base cat)
-			tinsert(categoryDropFrames, newDropFrame)
+			local catWidget = contentWidgets[catID]
+
+			rlHelper:SetDeep(0)
+			rlHelper:SetLastWidget(catWidget)
+
+			-- drop frame over the widget
+			dragndrop:CreateDropFrame(0, currentTab, nil, catOrder)
 
 			-- // content
-			private:RecursiveUpdate(catWidget, w)
+			private:RecursiveUpdate(catWidget)
 		end
 	end
 
-	-- this part is specifically for the last category drop point (under the last shown item/cat)
-	if w.lastWidget then
-		local offset, catID
-		if w.lastWidget.enum == enums.category then
-			offset = catBottomPos
-			catID = w.lastWidget.catID
-		elseif w.lastWidget.enum == enums.item then
-			offset = itemCatPos
-			catID = w.lastWidget.itemData.catID
-		end
+	rlHelper:SetDeep(0)
 
-		local newDropFrame = dragndrop:CreateDropFrame(w.lastWidget, true, unpack(offset)) -- /*cat/ under the last category
-		dragndrop:SetDropFrameData(newDropFrame, currentTab, nil, dataManager:GetPosData(catID, nil, true)+1) -- no parent cat (base cat)
-		tinsert(categoryDropFrames, newDropFrame)
+	if not rlHelper:GetLastWidget() then
+		-- if there was nothing in the tab, we add one drop frame over the empty label
+		dragndrop:CreateDropFrame(2, currentTab, nil, 1)
+	else
+		-- drop frame after the last widget, in last position
+		dragndrop:CreateDropFrame(1, currentTab, nil, #tabData.orderedCatIDs+1)
 	end
+
+	-- refresh the selected drop frames
+	if dropFrames then
+		for _,frame in pairs(dropFrames) do
+			if frame then frame:Show() end
+		end
+	end
+
+	-- this will force private:DragUpdateFunc() to refresh on the next frame, even if we didn't move our mouse cursor
+	lastCursorPosX, lastCursorPosY = nil, nil
 end
 
-function dragndrop:CreateDropFrame(parent, isUnder, ofsx, ofsy)
+---@param mode number ; 0 = over lastWidget's height frame, 1 = under lastWidget's height frame (or if opened category, under it), 2 = over empty label (of tab)
+function dragndrop:CreateDropFrame(mode, tabID, catID, pos)
+	mode = type(mode) == "number" and mode or 2
+
 	-- here we get a drop frame (basically a drop point), or create one if it doesn't exist
 	dropFrameNb = dropFrameNb + 1
-
-	-- default values (just in case)
-	parent = parent or UIParent
-	ofsx = ofsx or 0
-	ofsy = ofsy or 0
 
 	-- create new or get next one
 	local dropFrame
 	if dropFramesBank[dropFrameNb] then
 		dropFrame = dropFramesBank[dropFrameNb]
 	else
-		dropFrame = CreateFrame("Frame", nil, parent)
+		dropFrame = CreateFrame("Frame", nil, tdlFrame.content, "NysTDL_DropFrame")
 		dropFrame:SetSize(1, 1)
+		dropFrame:Hide()
 		dropFrame.dropData = {}
 
 		tinsert(dropFramesBank, dropFrame)
 	end
 
 	dropFrame:ClearAllPoints()
-	dropFrame:SetParent(parent)
-	dropFrame:SetPoint("CENTER", parent.heightFrame, isUnder and "BOTTOMLEFT" or "TOPLEFT", ofsx, ofsy) -- LIST CS
+
+	local parent = rlHelper:GetLastWidget()
+
+	if mode == 0 then
+		-- / over the last widget's height frame
+		dropFrame:SetPoint("CENTER", parent.heightFrame, "TOPLEFT", unpack(overHeightFrame)) -- LIST CS
+	elseif mode == 1 then
+		if parent.enum == enums.category and not parent.catData.closedInTabIDs[currentTab] then
+			-- / under the last widget, which is an opened category
+			dropFrame:SetPoint("LEFT", parent.heightFrame, "LEFT", underHeightFrame[1], 0) -- LIST CS
+			local lastWidget = (rlHelper.lastWidget and rlHelper.lastWidget.heightFrame) and rlHelper.lastWidget.heightFrame or rlHelper.lastWidget
+			dropFrame:SetPoint("TOP", lastWidget, "BOTTOM", 0, underHeightFrame[2]) -- LIST CS
+		else
+			-- / under the last widget's height frame
+			dropFrame:SetPoint("CENTER", parent.heightFrame, "BOTTOMLEFT", unpack(underHeightFrame)) -- LIST CS
+		end
+	elseif mode == 2 then
+		-- / over the tab empty label
+		dropFrame:SetPoint("CENTER", tdlFrame.content.nothingLabel, "TOPLEFT", unpack(overTabEmptyLabel)) -- LIST CS
+	else
+		print("Error: dragndrop:CreateDropFrame #1 - invalid mode")
+		return
+	end
+
+	dragndrop:SetDropFrameData(dropFrame, tabID, catID, pos)
+
+	if catID then -- if we are inside a category
+		if dataManager:GetNextFavPos(catID) <= pos then
+			tinsert(itemsDropFrames, dropFrame)
+
+			if private:IsCatDropValid(catID) then
+				tinsert(categoryDropFrames, dropFrame)
+			end
+		end
+		if dataManager:GetNextFavPos(catID) >= pos then
+			tinsert(favsDropFrames, dropFrame)
+		end
+	else -- if we are at the root
+		tinsert(categoryDropFrames, dropFrame)
+	end
+
 	return dropFrame
 end
 
@@ -324,6 +443,8 @@ function private:InitCategoryDrag()
 	private:CreateDuplicate(enums.category, draggingWidget.catID)
 
 	-- hiding the unnecessary things
+	draggingWidget.interactiveLabel.Text:SetTextColor(unpack(draggingWidget.color)) -- back to the default color
+	draggingWidget.interactiveLabel.Button:SetHighlightShown(false)
 	draggingWidget.emptyLabel:Hide()
 	draggingWidget.hiddenLabel:Hide()
 	draggingWidget.hoverFrame:Hide()
@@ -331,15 +452,41 @@ function private:InitCategoryDrag()
 	draggingWidget.originalTabLabel:Hide()
 	draggingWidget.addEditBox:Hide()
 	draggingWidget.editModeFrame:Hide()
+	draggingWidget.tabulation:Hide()
 
 	-- when we are dragging a category, we dim every place we can't drag it to (for a visual feedback)
 	local contentWidgets = mainFrame:GetContentWidgets()
-	contentWidgets[draggingWidget.catID]:SetAlpha(selectedDimAlpha)
+	do
+		-- keep some things bound to the widget visible even though the widget will be hidden
+		local widget = contentWidgets[draggingWidget.catID]
+		local widgetParent = widget:GetParent()
+		widget.tabulation:SetParent(widgetParent)
+		widget.addEditBox:SetParent(widgetParent)
+		widget.emptyLabel:SetParent(widgetParent)
+	end
 	for _,widget in pairs(contentWidgets) do
 		if widget.enum == enums.item then
-			widget:SetAlpha(forbiddenDimAlpha)
+			if widget.itemData.favorite then
+				widget:SetAlpha(forbiddenDimAlpha)
+			end
+		elseif widget.enum == enums.category then
+			if not private:IsCatDropValid(widget.catID) then
+				widget:SetAlpha(forbiddenDimAlpha)
+				if widget.catID == draggingWidget.catID then
+					widget.tabulation:SetAlpha(forbiddenDimAlpha)
+					widget.emptyLabel:SetAlpha(forbiddenDimAlpha)
+					widget.addEditBox:SetAlpha(forbiddenDimAlpha)
+				end
+				for _,contentID in pairs(widget.catData.orderedContentIDs) do
+					local cwidget = contentWidgets[contentID]
+					cwidget:SetAlpha(forbiddenDimAlpha)
+				end
+			elseif dataManager:GetNextFavPos(widget.catID) ~= 1 then
+				widget.addEditBox:SetAlpha(forbiddenDimAlpha)
+			end
 		end
 	end
+	contentWidgets[draggingWidget.catID]:SetAlpha(selectedDimAlpha)
 
 	-- selecting the right drop frames to check
 	dropFrames = categoryDropFrames
@@ -351,11 +498,9 @@ function private:InitItemDrag()
 	-- creating the duplicate, and getting the dragging's widget current position
 	private:CreateDuplicate(enums.item, draggingWidget.itemID)
 
-	-- hiding the buttons on the left of the dragging widget
+	-- hiding the unnecessary things
+	draggingWidget.interactiveLabel.Button:SetHighlightShown(false)
 	draggingWidget.editModeFrame:Hide()
-	draggingWidget.removeBtn:Hide()
-	draggingWidget.favoriteBtn:Hide()
-	draggingWidget.descBtn:Hide()
 
 	-- when we are dragging an item, we dim every place we can't drag it to (for a visual feedback)
 	local contentWidgets = mainFrame:GetContentWidgets()
@@ -393,9 +538,8 @@ function private:DropCategory()
 	if not targetDropFrame then return end -- just in case we didn't find anything
 	if not mainFrame:GetFrame():IsMouseOver() then return end -- we cancel the drop if we were out of the frame
 
-	local newParentID = targetDropFrame.dropData.catID or false
 	mainFrame:DontRefreshNextTime()
-	dataManager:MoveCategory(draggingWidget.catID, newPos, newParentID, startingTab, currentTab)
+	dataManager:MoveCategory(draggingWidget.catID, targetDropFrame.dropData.pos, targetDropFrame.dropData.catID or false, startingTab, currentTab)
 end
 
 function private:DropItem()
@@ -405,34 +549,34 @@ function private:DropItem()
 	if not targetDropFrame then return end -- just in case we didn't find anything
 	if not mainFrame:GetFrame():IsMouseOver() then return end -- we cancel the drop if we were out of the frame
 
-	local targetCat = targetDropFrame.dropData.catID
 	mainFrame:DontRefreshNextTime()
-	dataManager:MoveItem(draggingWidget.itemID, newPos, targetCat)
+	dataManager:MoveItem(draggingWidget.itemID, targetDropFrame.dropData.pos, targetDropFrame.dropData.catID)
 end
 
 --/***************/ START&STOP /*****************/--
 
 function private:DragStart()
-	local widget = self:GetParent():GetParent()
-
-	if widget.enum == enums.category then
-		if not mainFrame.editMode then return end
-	end
+	if not mainFrame.editMode then return end
 
 	-- drag init
 	dragndrop.dragging = true
 
 	-- vars reset & init
 	dropFrames = nil
-	lastCursorPosX = nil
-	lastCursorPosY = nil
+	lastCursorPosX, lastCursorPosY = nil, nil
+	targetDropFrame = nil
 	tdlFrame = mainFrame:GetFrame()
-	draggingWidget = widget
-	targetDropFrame, newPos = nil, nil
+	draggingWidget = self:GetParent():GetParent()
 	startingTab, currentTab = nil, nil
 	dropLine = dropLine or CreateFrame("Frame", nil, tdlFrame.content, "NysTDL_DropLine") -- creating the drop line
+	dropLine:SetFrameStrata("HIGH")
 	dropLine:SetScale(utils:Clamp(listScale, 0, 1)) -- we need to re-set the scale of the drop line here (for reasons)
 	dropLine:Show()
+
+	if tooltip then
+		LibQTip:Release(tooltip)
+		tooltip = nil
+	end
 end
 
 function private:DragStop()
@@ -442,24 +586,29 @@ function private:DragStop()
 
 	-- // we reset everything
 
-	-- debug stuff -- REMOVE
-	-- if targetDropFrame then
-	--   print ("--------- Drop data: ----------")
-	--   print ("tab", targetDropFrame.dropData.tabID and dataManager:GetName(targetDropFrame.dropData.tabID) or nil)
-	--   print ("cat", targetDropFrame.dropData.catID and dataManager:GetName(targetDropFrame.dropData.catID) or nil)
-	--   print ("pos", targetDropFrame.dropData.pos)
-	--   print ("-------------------------------")
-	-- end
-
 	-- we reset the alpha states
 	local contentWidgets = mainFrame:GetContentWidgets()
+	if draggingWidget.enum == enums.category then
+		local widget = contentWidgets[draggingWidget.catID]
+		widget.tabulation:SetParent(widget)
+		widget.addEditBox:SetParent(widget)
+		widget.emptyLabel:SetParent(widget)
+	end
 	for _,widget in pairs(contentWidgets) do
 		widget:SetAlpha(normalAlpha)
+		if widget.enum == enums.category then
+			widget.tabulation:SetAlpha(normalAlpha)
+			widget.addEditBox:SetAlpha(normalAlpha)
+			widget.emptyLabel:SetAlpha(normalAlpha)
+		end
 	end
 
-	-- we hide the dragging widget, as well as the drop line
+	-- we hide the dragging widget, as well as the drop line and drop frames
 	if draggingWidget then draggingWidget:StopMovingOrSizing() draggingWidget:ClearAllPoints() draggingWidget:Hide() end
 	if dropLine then dropLine:ClearAllPoints() dropLine:Hide() end
+	for _,frame in pairs(dropFramesBank) do
+		if frame then frame:ClearAllPoints() frame:Hide() end
+	end
 
 	-- we stop the dragUpdate
 	dragUpdate:SetScript("OnUpdate", nil)
@@ -536,12 +685,46 @@ function dragndrop:RegisterForDrag(widget)
 
 	dragFrame:HookScript("OnDragStart", function()
 		if not dragndrop.dragging then return end
+
 		-- and finally, when everything is set up, we start the drop update managment
 		dragUpdate:SetScript("OnUpdate", private.DragUpdateFunc)
+
+		-- show the selected drop frames
+		for _,frame in pairs(dropFrames) do
+			if frame then frame:Show() end
+		end
 	end)
 
 	-- / stop
 	dragFrame:HookScript("OnDragStop", private.DragStop)
+
+	-- / display
+	dragFrame:HookScript("OnEnter", function(self)
+		if dragndrop.dragging or not mainFrame.editMode then return end
+		dragFrame:SetHighlightShown(true)
+
+        -- <!> tooltip content <!>
+
+        tooltip = widgets:AcquireTooltip("NysTDL_Tooltip_DragAndDrop", self)
+
+		tooltip:SetFont("GameTooltipText")
+
+		tooltip:ClearAllPoints()
+		tooltip:SetPoint("BOTTOMLEFT", self, "TOPLEFT", -5, 2)
+
+		tooltip:AddLine(string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Double-Click"])..utils:GetMinusStr()..L["Rename"])
+		tooltip:AddLine(string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Drag and Drop"])..utils:GetMinusStr()..L["Reorder"])
+	end)
+	dragFrame:HookScript("OnLeave", function(self)
+		if dragFrame:IsHighlightShown() then
+			dragFrame:SetHighlightShown(false)
+		end
+
+		if tooltip then
+			LibQTip:Release(tooltip)
+			tooltip = nil
+		end
+	end)
 end
 
 function dragndrop:CancelDragging()

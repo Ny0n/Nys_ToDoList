@@ -238,7 +238,7 @@ function widgets:DescriptionFrame(itemWidget)
 	-- / content of the frame / --
 
 	-- / resize button
-	descFrame.resizeButton = widgets:IconTooltipButton(descFrame, "NysTDL_TooltipResizeButton", L["Left-Click"].." - "..L["Resize"].."\n"..L["Right-Click"].." - "..L["Reset"])
+	descFrame.resizeButton = widgets:IconTooltipButton(descFrame, "NysTDL_TooltipResizeButton", {string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Left-Click"])..utils:GetMinusStr()..L["Resize"], string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Right-Click"])..utils:GetMinusStr()..L["Reset"]})
 	descFrame.resizeButton:SetPoint("BOTTOMRIGHT")
 	descFrame.resizeButton:SetScript("OnMouseDown", function(self, button)
 		if button == "LeftButton" then
@@ -269,7 +269,7 @@ function widgets:DescriptionFrame(itemWidget)
 	descFrame.closeButton:SetScript("OnClick", function() widgets:DescFrameHide(itemID) end)
 
 	-- / clear button
-	descFrame.clearButton = widgets:IconTooltipButton(descFrame, "NysTDL_ClearButton", L["Clear"].." ("..L["Right-Click"]..")")
+	descFrame.clearButton = widgets:IconTooltipButton(descFrame, "NysTDL_ClearButton", L["Clear"].." ("..string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Right-Click"])..")")
 	descFrame.clearButton:SetPoint("TOPRIGHT", descFrame.closeButton, "TOPLEFT", 2, 0)
 	descFrame.clearButton:RegisterForClicks("RightButtonUp") -- only responds to right-clicks
 	descFrame.clearButton:SetScript("OnClick", function(self)
@@ -501,7 +501,7 @@ function widgets:NoPointsInteractiveLabel(parent, pointLeft, pointRight, name, t
 		if width < 18 then width = 18 end
 
 		interactiveLabel.Text:SetWidth(width) -- we do it a first time to update the wrapped state
-		interactiveLabel.Button:SetSize(interactiveLabel.Text:GetWrappedWidth(), interactiveLabel.Text:GetStringHeight())
+		interactiveLabel.Button:SetSize(math.max(interactiveLabel.Text:GetWrappedWidth(), 16), interactiveLabel.Text:GetStringHeight())
 
 		-- if after that the text is all on one line (no wrap),
 		-- we set its width to be its real visible size, not the one of the interactiveLabel
@@ -523,6 +523,16 @@ function widgets:NoPointsInteractiveLabel(parent, pointLeft, pointRight, name, t
 			private.Item_SetCheckBtnExtended(parent, not mainFrame.editMode)
 		end
 	end)
+
+	interactiveLabel.Button.IsHighlightShown = function(self)
+		return interactiveLabel.Button.ActiveLeft:IsShown()
+	end
+	interactiveLabel.Button.SetHighlightShown = function(self, show)
+		interactiveLabel.Button.ActiveLeft:SetShown(show)
+		interactiveLabel.Button.ActiveRight:SetShown(show)
+		interactiveLabel.Button.ActiveMiddle:SetShown(show)
+	end
+	interactiveLabel.Button:SetHighlightShown(false)
 
 	return interactiveLabel
 end
@@ -611,7 +621,13 @@ end
 function widgets:IconTooltipButton(relativeFrame, template, tooltipText, tooltipOffsetX, tooltipOffsetY)
 	local btn = CreateFrame("Button", nil, relativeFrame, template)
 
-	if type(tooltipText) == "string" and tooltipText ~= "" then -- // Tooltip
+	local tooltipTexts
+	if type(tooltipText) ~= "table" then
+		tooltipTexts = {tostring(tooltipText)}
+	else
+		tooltipTexts = tooltipText
+	end
+	if type(tooltipTexts[1]) == "string" and tooltipTexts[1] ~= "" then -- // Tooltip
 		btn.tooltip = nil
 		btn:HookScript("OnEnter", function(self)
 			-- if the tooltip is already in use by someone else, return
@@ -622,7 +638,10 @@ function widgets:IconTooltipButton(relativeFrame, template, tooltipText, tooltip
 			-- we're good to go
 			btn.tooltip = widgets:AcquireTooltip("NysTDL_Tooltip_TooltipButton", self, tooltipOffsetX, tooltipOffsetY)
 			btn.tooltip:SetFont("GameTooltipText")
-			btn.tooltip:AddLine(tooltipText)
+
+			for _,text in ipairs(tooltipTexts) do
+				btn.tooltip:AddLine(text)
+			end
 		end)
 		btn:HookScript("OnLeave", function()
 			if btn.tooltip then
@@ -882,7 +901,7 @@ function widgets:DescButton(widget, parent)
 end
 
 function widgets:AddButton(widget, parent)
-	local btn = widgets:IconTooltipButton(parent, "NysTDL_AddButton", L["Add an item"])
+	local btn = widgets:IconTooltipButton(parent, "NysTDL_AddButton", {string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Left-Click"])..utils:GetMinusStr()..L["Add an item"], string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Right-Click"])..utils:GetMinusStr()..L["Add a category"]})
 
 	-- // Appearance
 
@@ -1019,16 +1038,26 @@ contentWidgets = {
 ]]
 
 function private:Category_SetEditMode(state)
+	local isSubCat = not not self.catData.parentCatID
 	if state then
 		self.editModeFrame:Show()
+
 		self.startPosFrame:SetPoint("LEFT", self, "LEFT", enums.ofsxItemIcons-3, 0)
+
 		self.interactiveLabel.Button:GetScript("OnLeave")(self.interactiveLabel.Button)
 		self.interactiveLabel.Text:SetMaxLines(math.min(self.interactiveLabel.Text:GetNumLines(), enums.maxWordWrapLines))
 	else
 		self.editModeFrame:Hide()
+
 		self.startPosFrame:SetPoint("LEFT", self, "LEFT", 0, 0)
+
 		self.interactiveLabel.Text:SetMaxLines(enums.maxWordWrapLines)
 	end
+
+	if isSubCat then
+		self.startPosFrame:SetPoint("LEFT", self, "LEFT", enums.ofsxItemIcons, 0)
+	end
+
 	self.interactiveLabel:GetScript("OnSizeChanged")(self.interactiveLabel, self.interactiveLabel:GetWidth())
 end
 
@@ -1192,16 +1221,30 @@ function widgets:CategoryWidget(catID, parentFrame)
 	-- / addItemBtn
 	categoryWidget.addItemBtn = widgets:AddButton(categoryWidget, categoryWidget.hoverFrame)
 	categoryWidget.addItemBtn:SetPoint("TOPLEFT", categoryWidget.hoverFrame, "TOPRIGHT", -hoverFrameExtent+5, -1)
-	categoryWidget.addItemBtn:SetScript("OnClick", function()
+	categoryWidget.addItemBtn:SetScript("OnClick", function(self, button)
 		if not widgets.aebShown[catID] then widgets.aebShown[catID] = 0 end
 
-		widgets.aebShown[catID] = bit.bxor(widgets.aebShown[catID], widgets.aebShownFlags.item)
+		local lastAddMode = categoryWidget.addMode or enums.item
+
+		if button == "RightButton" then
+			categoryWidget.addMode = enums.category
+		else
+			categoryWidget.addMode = enums.item
+		end
+
+		if lastAddMode == categoryWidget.addMode then
+			widgets.aebShown[catID] = bit.bxor(widgets.aebShown[catID], widgets.aebShownFlags.item) -- toggle
+		else
+			widgets.aebShown[catID] = bit.bor(widgets.aebShown[catID], widgets.aebShownFlags.item) -- on
+		end
+
 		mainFrame:Refresh()
 
 		if categoryWidget.addEditBox.edb:IsShown() then
 			widgets:SetFocusEditBox(categoryWidget.addEditBox.edb)
 		end
 	end)
+	categoryWidget.addItemBtn:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 	categoryWidget.addItemBtn:HookScript("OnEnter", function(self)
 		categoryWidget.hoverFrame:GetScript("OnEnter")(categoryWidget.hoverFrame)
 	end)
@@ -1210,11 +1253,17 @@ function widgets:CategoryWidget(catID, parentFrame)
 	end)
 
 	-- / addEditBox
-	categoryWidget.addEditBox = widgets:NoPointsCatEditBox(categoryWidget, L["Press enter to add"], true, parentFrame)
+	categoryWidget.addEditBox = widgets:NoPointsCatEditBox(categoryWidget, nil, true, parentFrame)
 	categoryWidget.addEditBox:Hide()
 	categoryWidget.addEditBox.edb:SetScript("OnEnterPressed", function(self)
-		if dataManager:CreateItem(self:GetText(), catData.originalTabID, catID) then -- calls mainFrame:Refresh()
-			self:SetText("") -- we clear the box if the adding was a success
+		if categoryWidget.addMode == enums.item then
+			if dataManager:CreateItem(self:GetText(), catData.originalTabID, catID) then -- calls mainFrame:Refresh()
+				self:SetText("") -- we clear the box if the adding was a success
+			end
+		elseif categoryWidget.addMode == enums.category then
+			if dataManager:CreateCategory(self:GetText(), catData.originalTabID, catID) then -- calls mainFrame:Refresh()
+				self:SetText("") -- we clear the box if the adding was a success
+			end
 		end
 		widgets:SetFocusEditBox(self)
 	end)
@@ -1225,6 +1274,12 @@ function widgets:CategoryWidget(catID, parentFrame)
 	end)
 	categoryWidget.addEditBox.edb:SetScript("OnShow", function(self)
 		tutorialsManager:Validate("introduction", "addItem") -- tutorial
+
+		if categoryWidget.addMode == enums.item then
+			categoryWidget.addEditBox.edb.Hint:SetText(L["Add an item"])
+		elseif categoryWidget.addMode == enums.category then
+			categoryWidget.addEditBox.edb.Hint:SetText(L["Add a category"])
+		end
 	end)
 	widgets:AddHyperlinkEditBox(categoryWidget.addEditBox.edb)
 
@@ -1250,6 +1305,9 @@ function widgets:CategoryWidget(catID, parentFrame)
 	-- categoryWidget.addCatEditBox:HookScript("OnEditFocusLost", function(self)
 	-- 	self:GetScript("OnEscapePressed")(self)
 	-- end)
+
+	-- / tabulation
+	categoryWidget.tabulation = widgets:Tabulation(categoryWidget)
 
 	-- / drag&drop
 	dragndrop:RegisterForDrag(categoryWidget)
@@ -1288,7 +1346,7 @@ contentWidgets = {
 function private:Item_SetCheckBtnExtended(state)
 	if state then
 		if not utils:HasHyperlink(self.itemData.name) then -- so that we can actually click on the hyperlinks
-			self.checkBtn:SetHitRectInsets(0, -self.interactiveLabel.Text:GetWrappedWidth(), 0, -(self.interactiveLabel.Text:GetStringHeight()-self.interactiveLabel.Text:GetLineHeight()))
+			self.checkBtn:SetHitRectInsets(0, -(math.max(self.interactiveLabel.Text:GetWrappedWidth(), 16)), 0, -(self.interactiveLabel.Text:GetStringHeight()-self.interactiveLabel.Text:GetLineHeight()))
 		end
 	else
 		self.checkBtn:SetHitRectInsets(0, 0, 0, 0)
@@ -1501,6 +1559,25 @@ function widgets:HorizontalDivider(parentFrame, width, height)
 	divider:SetSize(width or defaultWidth, height or defaultHeight)
 
 	return divider
+end
+
+---Creates a tabulation frame for sub-category display
+---Don't forget to call tabulation:SetPoint() (top and bottom) afterwards!
+---@return Frame tabulation
+function widgets:Tabulation(parentFrame)
+	local tabulation = CreateFrame("Frame", nil, parentFrame)
+	tabulation:SetWidth(10)
+	tabulation:Hide()
+
+	tabulation.line = tabulation:CreateLine()
+	tabulation.line:SetThickness(3)
+	tabulation.line:SetColorTexture(0.3, 0.3, 0.3, 0.5)
+	tabulation.line:SetStartPoint("TOP", tabulation)
+	tabulation.line:SetEndPoint("BOTTOM", tabulation)
+	tabulation.line:SetDrawLayer("BACKGROUND")
+	tabulation.line:Show()
+
+	return tabulation
 end
 
 function widgets:TabIconFrame(parentFrame, size, offsetX, offsetY, btnOffsetX, btnOffsetY, btnSizeX, btnSizeY)

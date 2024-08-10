@@ -40,7 +40,8 @@ local private = {}
 						}
 					},
 					...
-				}
+				},
+				pendingBackup = utils:Deepcopy(backupTable) or nil,
 			},
 			...
 		},
@@ -76,6 +77,37 @@ data.backupCounts = {
 }
 
 --/*******************/ Initialization /*************************/--
+
+function NysTDLBackup:ApplyPendingBackup()
+	local profileTable = data:GetCurrentProfile(true)
+	if not profileTable then
+		print("Error: NysTDLBackup:ApplyPendingBackup #1")
+		return
+	end
+
+	if data:IsValidBackupTable(profileTable.pendingBackup) and (select(2, C_AddOns.IsAddOnLoaded("Nys_ToDoList"))) then
+		-- Apply the pending backup directly, then invalidate it
+
+		for _, savedVar in ipairs(profileTable.pendingBackup.savedVarsOrdered) do
+			if utils:IsValidVariableName(savedVar) then
+				_G[savedVar] = utils:Deepcopy(profileTable.pendingBackup.savedVars[savedVar])
+			end
+		end
+
+		data:ClearPendingBackup()
+	end
+end
+
+function data:ClearPendingBackup()
+	local profileTable = data:GetCurrentProfile(true)
+	if not profileTable then
+		print("Error: data:ClearPendingBackup #1")
+		return
+	end
+
+	profileTable.pendingBackup = nil
+	collectgarbage()
+end
 
 function private:GetDefaults()
 	-- globally saved
@@ -393,6 +425,7 @@ function data:CreateNewProfile(name, isChar, savedVarNames)
 			lastWeekly = nil,
 		},
 		backups = { },
+		pendingBackup = nil,
 	}
 
 	local profileID = private:NewProfileID()
@@ -409,6 +442,10 @@ function data:CreateNewProfile(name, isChar, savedVarNames)
 end
 
 function data:CheckForAutomaticSaves()
+	if not core.listLoaded then
+		return
+	end
+
 	for profileID, profileTable in data:ForEachProfile() do
 		if data:IsProfileRelevant(profileID) then
 			if type(profileTable.autoSaveInfos) ~= "table" then profileTable.autoSaveInfos = {} end
@@ -480,7 +517,7 @@ function private:CreateNewBackup(profileID)
 	end
 
 	-- TDLATER only profileID.name or new addons list
-	local addonLoaded = (IsAddOnLoaded("Nys_ToDoList") and "Nys_ToDoList") or false
+	local addonLoaded = (C_AddOns.IsAddOnLoaded("Nys_ToDoList") and "Nys_ToDoList") or false
 	if not addonLoaded then
 		print("Error: private:CreateNewBackup #4 (addon not loaded)")
 		return
@@ -488,8 +525,8 @@ function private:CreateNewBackup(profileID)
 
 	-- @see data:IsValidBackupTable
 	local backupTable = {
-		addonName = tostring(GetAddOnMetadata(addonLoaded, "Title")),
-		addonVersion = tostring(GetAddOnMetadata(addonLoaded, "Version")),
+		addonName = tostring(C_AddOns.GetAddOnMetadata(addonLoaded, "Title")),
+		addonVersion = tostring(C_AddOns.GetAddOnMetadata(addonLoaded, "Version")),
 		timestamp = time(),
 		savedVarsOrdered = savedVarsOrdered,
 		savedVars = { },
@@ -615,7 +652,7 @@ function data:ApplyBackup(profileID, backupType, backupSlot)
 	if backupTable then
 		data:CreateStaticPopup(
 			L["APPLY this backup now?"].."\n".."\""..data:GetBackupDisplayName(backupTable, true).."\"".."\n\n** "..L["This action will reload your UI"].." **",
-			utils:SafeStringFormat(L["The current data will be backed up under the %s section"]..".", "\""..data.backupTypesDisplayNames[data.backupTypes.autoPreApplyBackup].."\""),
+			core.listLoaded and utils:SafeStringFormat(L["The current data will be backed up under the %s section"]..".", "\""..data.backupTypesDisplayNames[data.backupTypes.autoPreApplyBackup].."\"") or nil,
 			function()
 				-- recheck validity because we waited for an user action
 				backupTable = data:GetValidBackup(profileID, backupType, backupSlot)
@@ -624,17 +661,35 @@ function data:ApplyBackup(profileID, backupType, backupSlot)
 					return
 				end
 
-				-- make a backup of the current state before proceeding
-				local success = data:MakeBackup(profileID, data.backupTypes.autoPreApplyBackup, 1, true)
-				if not success then
-					print("Error: data:ApplyBackup #2")
-					return
-				end
-
-				for _, savedVar in ipairs(backupTable.savedVarsOrdered) do
-					if utils:IsValidVariableName(savedVar) then
-						_G[savedVar] = utils:Deepcopy(backupTable.savedVars[savedVar]) -- THE moment where we actually apply the backups
+				if core.listLoaded then
+					-- make a backup of the current state before proceeding
+					local success = data:MakeBackup(profileID, data.backupTypes.autoPreApplyBackup, 1, true)
+					if not success then
+						print("Error: data:ApplyBackup #2")
+						return
 					end
+
+					for _, savedVar in ipairs(backupTable.savedVarsOrdered) do
+						if utils:IsValidVariableName(savedVar) then
+							_G[savedVar] = utils:Deepcopy(backupTable.savedVars[savedVar]) -- THE moment where we actually apply the backups
+						end
+					end
+				else
+					-- mark the addons to be loaded on the next reload, save the backup that will be applied on reload, and reload
+					local addonToLoad = "Nys_ToDoList" -- TDLATER addons...
+					local loaded, reason = C_AddOns.LoadAddOn(addonToLoad)
+					if not loaded then
+						if reason == "DISABLED" then
+							C_AddOns.EnableAddOn(addonToLoad)
+						else
+							print("Error: data:ApplyBackup #3 - "..tostring(tostring(ADDON_LOAD_FAILED):format(addonToLoad, reason)))
+							return
+						end
+					end
+
+					-- note: we just went through data:GetValidBackup successfully, so we know the profile is valid
+					local profileTable = data:GetValidProfile(profileID)
+					profileTable.pendingBackup = utils:Deepcopy(backupTable)
 				end
 
 				ReloadUI()
