@@ -73,7 +73,7 @@ account_file_names+=("122995789#2")
 function usage()
 {
 	cat <<-'EOF' >&2
-	Usage: build.sh [MODE]
+	Usage: bash build.bash [MODE]
 	[MODE] can be ONE of these:
 
       --local [-b] [-a {args}]      Build the addon locally.
@@ -270,7 +270,7 @@ function package()
 
 		# we call release.txt with the good arguments
 		step_msg 5 "$steps" "Run the packaging script"
-		(cd "$package_dir" || exit; ./release.txt -r "$(pwd)" -d $args) || return
+		(cd "$package_dir" || exit; bash release.txt -r "$(pwd)" -d $args) || return
 
 		if [ "$1" == "-b" ]; then
 			step_msg 6 "$steps" "Create build symlinks"
