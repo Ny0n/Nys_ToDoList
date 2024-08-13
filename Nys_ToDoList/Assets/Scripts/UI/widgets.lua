@@ -487,7 +487,7 @@ function widgets:NoPointsInteractiveLabel(parent, pointLeft, pointRight, name, t
 	local interactiveLabel = CreateFrame("Frame", name, parent, "NysTDL_InteractiveLabel")
 	interactiveLabel:SetPoint("LEFT", pointLeft, "RIGHT", 0, 0) -- width
 	interactiveLabel:SetPoint("RIGHT", pointRight, "RIGHT", 0, 0) -- width
-	interactiveLabel:SetHeight(parent:GetHeight()) -- height
+	interactiveLabel:SetSize(1, parent:GetHeight())
 	interactiveLabel.pointLeft = pointLeft
 
 	parent.heightFrame = CreateFrame("Frame", nil, parent)
