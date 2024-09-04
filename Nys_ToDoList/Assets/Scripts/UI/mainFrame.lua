@@ -578,6 +578,7 @@ function mainFrame:UpdateWidget(ID, enum)
 		mainFrame:UpdateItemButtons(ID)
 	elseif enum == enums.category then
 		contentWidgets[ID] = widgets:CategoryWidget(ID, tdlFrame.content)
+		widgets.aebShown[ID] = 0 -- hide the category's add edit boxes
 	end
 end
 
