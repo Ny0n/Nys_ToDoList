@@ -427,7 +427,7 @@
 		</Size>
 		<Layers>
 			<Layer level="BACKGROUND">
-				<Texture name="$parentLeft" file="Interface\Buttons\UI-SilverButtonLG-Left-Up">
+				<Texture parentKey="Left" file="Interface\Buttons\UI-SilverButtonLG-Left-Up">
 					<Size>
 						<AbsDimension x="32" y="46"/>
 					</Size>
@@ -435,7 +435,7 @@
 						<Anchor point="TOPLEFT" x="0" y="0"/>
 					</Anchors>
 				</Texture>
-				<Texture name="$parentRight" file="Interface\Buttons\UI-SilverButtonLG-Right-Up">
+				<Texture parentKey="Right" file="Interface\Buttons\UI-SilverButtonLG-Right-Up">
 					<Size>
 						<AbsDimension x="32" y="46"/>
 					</Size>
@@ -443,18 +443,18 @@
 						<Anchor point="TOPRIGHT" x="0" y="0"/>
 					</Anchors>
 				</Texture>
-				<Texture name="$parentMiddle" file="Interface\Buttons\UI-SilverButtonLG-Mid-Up">
+				<Texture parentKey="Middle" file="Interface\Buttons\UI-SilverButtonLG-Mid-Up">
 					<Size>
 						<AbsDimension x="32" y="46"/>
 					</Size>
 					<Anchors>
-						<Anchor point="TOPLEFT" relativeTo="$parentLeft" relativePoint="TOPRIGHT" x="0" y="0"/>
-						<Anchor point="TOPRIGHT" relativeTo="$parentRight" relativePoint="TOPLEFT" x="0" y="0"/>
+						<Anchor point="TOPLEFT" relativeKey="$parent.Left" relativePoint="TOPRIGHT" x="0" y="0"/>
+						<Anchor point="TOPRIGHT" relativeKey="$parent.Right" relativePoint="TOPLEFT" x="0" y="0"/>
 					</Anchors>
 				</Texture>
 			</Layer>
 			<Layer level="HIGHLIGHT">
-				<Texture name="$parentLeft" file="Interface\Buttons\UI-SilverButtonLG-Left-Hi">
+				<Texture parentKey="Left" file="Interface\Buttons\UI-SilverButtonLG-Left-Hi">
 					<Size>
 						<AbsDimension x="32" y="46"/>
 					</Size>
@@ -462,7 +462,7 @@
 						<Anchor point="TOPLEFT" x="0" y="0"/>
 					</Anchors>
 				</Texture>
-				<Texture name="$parentRight" file="Interface\Buttons\UI-SilverButtonLG-Right-Hi">
+				<Texture parentKey="Right" file="Interface\Buttons\UI-SilverButtonLG-Right-Hi">
 					<Size>
 						<AbsDimension x="32" y="46"/>
 					</Size>
@@ -470,43 +470,17 @@
 						<Anchor point="TOPRIGHT" x="0" y="0"/>
 					</Anchors>
 				</Texture>
-				<Texture name="$parentMiddle" file="Interface\Buttons\UI-SilverButtonLG-Mid-Hi">
+				<Texture parentKey="Middle" file="Interface\Buttons\UI-SilverButtonLG-Mid-Hi">
 					<Size>
 						<AbsDimension x="32" y="46"/>
 					</Size>
 					<Anchors>
-						<Anchor point="TOPLEFT" relativeTo="$parentLeft" relativePoint="TOPRIGHT" x="0" y="0"/>
-						<Anchor point="TOPRIGHT" relativeTo="$parentRight" relativePoint="TOPLEFT" x="0" y="0"/>
+						<Anchor point="TOPLEFT" relativeKey="$parent.Left" relativePoint="TOPRIGHT" x="0" y="0"/>
+						<Anchor point="TOPRIGHT" relativeKey="$parent.Right" relativePoint="TOPLEFT" x="0" y="0"/>
 					</Anchors>
 				</Texture>
 			</Layer>
 		</Layers>
-		<Scripts>
-			<OnMouseDown>
-				if ( self:IsEnabled() ) then
-					local name = self:GetName()
-					_G[name.."Left"]:SetTexture("Interface\\Buttons\\UI-SilverButtonLG-Left-Down")
-					_G[name.."Middle"]:SetTexture("Interface\\Buttons\\UI-SilverButtonLG-Mid-Down")
-					_G[name.."Right"]:SetTexture("Interface\\Buttons\\UI-SilverButtonLG-Right-Down")
-					local contentsFrame = _G[name.."ContentsFrame"]
-					if ( contentsFrame ) then
-						contentsFrame:SetPoint("TOPLEFT", -2, -1)
-					end
-				end
-			</OnMouseDown>
-			<OnMouseUp>
-				if ( self:IsEnabled() ) then
-					local name = self:GetName()
-					_G[name.."Left"]:SetTexture("Interface\\Buttons\\UI-SilverButtonLG-Left-Up")
-					_G[name.."Middle"]:SetTexture("Interface\\Buttons\\UI-SilverButtonLG-Mid-Up")
-					_G[name.."Right"]:SetTexture("Interface\\Buttons\\UI-SilverButtonLG-Right-Up")
-					local contentsFrame = _G[name.."ContentsFrame"]
-					if ( contentsFrame ) then
-						contentsFrame:SetPoint("TOPLEFT", 0, 0)
-					end
-				end
-			</OnMouseUp>
-		</Scripts>
 	</Button>
 
 	<!-- Reused WoW template / HelpPlateTooltip -->
@@ -588,7 +562,7 @@
 		<!-- the size is set everytime the text changes, see the widgets.lua file (func: widgets.noPointsInteractiveLabel) -->
 		<Layers>
 			<Layer level="OVERLAY">
-				<FontString name="$parentText" parentKey="Text">
+				<FontString parentKey="Text">
 					<Anchors>
 						<Anchor point="TOPLEFT"/>
 					</Anchors>
@@ -596,7 +570,7 @@
 			</Layer>
 		</Layers>
 		<Frames>
-			<Button name="$parentButton" parentKey="Button" registerForClicks="LeftButtonUp">
+			<Button parentKey="Button" registerForClicks="LeftButtonUp">
 				<Anchors>
 					<Anchor point="TOPLEFT" relativeKey="$parent.Text"/>
 				</Anchors>
@@ -697,10 +671,10 @@
 	<Button name="NysTDL_OverflowListButton" virtual="true">
 		<Layers>
 			<Layer level="BACKGROUND">
-				<Texture name="$parentHighlight" file="Interface\QuestFrame\UI-QuestTitleHighlight" parentKey="Highlight" alphaMode="ADD" setAllPoints="true" hidden="true"/>
+				<Texture file="Interface\QuestFrame\UI-QuestTitleHighlight" parentKey="Highlight" alphaMode="ADD" setAllPoints="true" hidden="true"/>
 			</Layer>
 			<Layer level="BORDER">
-				<Texture name="$parentGlow" file="Interface\ChatFrame\ChatFrameTab-NewMessage" parentKey="Glow" alphaMode="ADD" hidden="true">
+				<Texture file="Interface\ChatFrame\ChatFrameTab-NewMessage" parentKey="Glow" alphaMode="ADD" hidden="true">
 					<Anchors>
 						<Anchor point="BOTTOMLEFT" x="8" y="-2"/>
 						<Anchor point="BOTTOMRIGHT" x="-8" y="-2"/>
@@ -708,12 +682,12 @@
 				</Texture>
 			</Layer>
 			<Layer level="ARTWORK">
-				<Texture name="$parentArrowLeft" file="Interface\ChatFrame\ChatFrameExpandArrow" parentKey="ArrowLEFT">
+				<Texture file="Interface\ChatFrame\ChatFrameExpandArrow" parentKey="ArrowLEFT">
 					<Anchors>
 						<Anchor point="LEFT" x="2" y="0"/>
 					</Anchors>
 				</Texture>
-				<Texture name="$parentArrowRight" file="Interface\ChatFrame\ChatFrameExpandArrow" parentKey="ArrowRIGHT">
+				<Texture file="Interface\ChatFrame\ChatFrameExpandArrow" parentKey="ArrowRIGHT">
 					<Anchors>
 						<Anchor point="RIGHT" x="-2" y="0"/>
 					</Anchors>
@@ -745,10 +719,10 @@
 	<Button name="NysTDL_CustomListButton" virtual="true">
 		<Layers>
 			<Layer level="BACKGROUND">
-				<Texture name="$parentHighlight" file="Interface\QuestFrame\UI-QuestTitleHighlight" parentKey="Highlight" alphaMode="ADD" setAllPoints="true" hidden="true"/>
+				<Texture file="Interface\QuestFrame\UI-QuestTitleHighlight" parentKey="Highlight" alphaMode="ADD" setAllPoints="true" hidden="true"/>
 			</Layer>
 			<Layer level="BORDER">
-				<Texture name="$parentGlow" file="Interface\ChatFrame\ChatFrameTab-NewMessage" parentKey="Glow" alphaMode="ADD" hidden="true">
+				<Texture file="Interface\ChatFrame\ChatFrameTab-NewMessage" parentKey="Glow" alphaMode="ADD" hidden="true">
 					<Anchors>
 						<Anchor point="BOTTOMLEFT" x="8" y="-2"/>
 						<Anchor point="BOTTOMRIGHT" x="-8" y="-2"/>

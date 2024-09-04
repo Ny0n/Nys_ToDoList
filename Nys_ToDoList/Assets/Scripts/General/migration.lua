@@ -833,7 +833,7 @@ function private:CreateWarning()
 
     -- /-> openListBtn
     local openListBtnPos = errMsgFieldPos - 50
-    content.openListBtn = widgets:Button("NysTDL_recoveryList_openListBtn_"..dataManager:NewID(), content, L["Open Recovery List"])
+    content.openListBtn = widgets:Button(nil, content, L["Open Recovery List"])
     content.openListBtn:SetPoint("TOP", content, "TOP", 0, openListBtnPos)
     content.openListBtn:SetScript("OnClick", function()
         frame:Hide()

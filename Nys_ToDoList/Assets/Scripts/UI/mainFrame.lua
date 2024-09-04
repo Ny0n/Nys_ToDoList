@@ -578,6 +578,7 @@ function mainFrame:UpdateWidget(ID, enum)
 		mainFrame:UpdateItemButtons(ID)
 	elseif enum == enums.category then
 		contentWidgets[ID] = widgets:CategoryWidget(ID, tdlFrame.content)
+		widgets.aebShown[ID] = 0 -- hide the category's add edit boxes
 	end
 end
 
@@ -910,23 +911,23 @@ function private:GenerateMenuTabActions()
 
 	local spacingY = -6
 
-	menuframe.btnCheck = widgets:Button("NysTDL_menuframe_btnCheck", menuframe, L["Check"], "Interface\\BUTTONS\\UI-CheckBox-Check")
+	menuframe.btnCheck = widgets:Button(nil, menuframe, L["Check"], "Interface\\BUTTONS\\UI-CheckBox-Check")
 	menuframe.btnCheck:SetPoint("TOPLEFT", menuframe.menuTitle, "BOTTOMLEFT", 3, -10)
 	menuframe.btnCheck:SetScript("OnClick", function() dataManager:ToggleTabChecked(database.ctab(), true) end)
 
-	menuframe.btnUncheck = widgets:Button("NysTDL_menuframe_btnUncheck", menuframe, L["Uncheck"], "Interface\\BUTTONS\\UI-CheckBox-Check-Disabled")
+	menuframe.btnUncheck = widgets:Button(nil, menuframe, L["Uncheck"], "Interface\\BUTTONS\\UI-CheckBox-Check-Disabled")
 	menuframe.btnUncheck:SetPoint("TOPLEFT", menuframe.btnCheck, "BOTTOMLEFT", 0, spacingY)
 	menuframe.btnUncheck:SetScript("OnClick", function() dataManager:ToggleTabChecked(database.ctab(), false) end)
 
-	menuframe.btnCloseCat = widgets:Button("NysTDL_menuframe_btnCloseCat", menuframe, L["Close All"], "Interface\\BUTTONS\\Arrow-Up-Disabled")
+	menuframe.btnCloseCat = widgets:Button(nil, menuframe, L["Close All"], "Interface\\BUTTONS\\Arrow-Up-Disabled")
 	menuframe.btnCloseCat:SetPoint("TOPLEFT", menuframe.btnUncheck, "BOTTOMLEFT", 0, spacingY)
 	menuframe.btnCloseCat:SetScript("OnClick", function() dataManager:ToggleTabClosed(database.ctab(), false) end)
 
-	menuframe.btnOpenCat = widgets:Button("NysTDL_menuframe_btnOpenCat", menuframe, L["Open All"], "Interface\\BUTTONS\\Arrow-Down-Up")
+	menuframe.btnOpenCat = widgets:Button(nil, menuframe, L["Open All"], "Interface\\BUTTONS\\Arrow-Down-Up")
 	menuframe.btnOpenCat:SetPoint("TOPLEFT", menuframe.btnCloseCat, "BOTTOMLEFT", 0, spacingY)
 	menuframe.btnOpenCat:SetScript("OnClick", function() dataManager:ToggleTabClosed(database.ctab(), true) end)
 
-	menuframe.btnClear = widgets:Button("NysTDL_menuframe_btnClear", menuframe, L["Clear"], "Interface\\GLUES\\LOGIN\\Glues-CheckBox-Check")
+	menuframe.btnClear = widgets:Button(nil, menuframe, L["Clear"], "Interface\\GLUES\\LOGIN\\Glues-CheckBox-Check")
 	menuframe.btnClear:SetPoint("TOPLEFT", menuframe.btnOpenCat, "BOTTOMLEFT", 0, spacingY)
 	menuframe.btnClear:SetScript("OnClick", function() dataManager:ClearTab(database.ctab()) end)
 end
