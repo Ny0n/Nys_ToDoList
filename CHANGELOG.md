@@ -1,3 +1,9 @@
+#### **7.4**
+
+- Added a new option to add elements last, instead of first
+- WIP drag and drop inter-tab
+- Bump interface number (1.15.4)
+
 #### **7.3.1**
 
 - Miscellaneous fixes

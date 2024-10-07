@@ -768,6 +768,11 @@ function private:CreateAddonOptionsTable()
 								name = L["Remember undos"],
 								desc = L["Save undos between sessions"],
 							}, -- rememberUndo
+							addLast = {
+								order = 3.7,
+								type = "toggle",
+								name = L["Add elements in last position"],
+							}, -- addLast
 							highlightOnFocus = {
 								order = 3.5,
 								type = "toggle",

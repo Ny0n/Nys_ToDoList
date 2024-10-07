@@ -533,8 +533,12 @@ function dataManager:AddItem(itemID, itemData)
 	-- then we update its data
 	private:UpdateTabsDisplay(itemData.originalTabID, true, itemID)
 	-- we add it ordered in its category
-	local itemOrder = dataManager:GetNextFavPos(itemData.catID)
-	tinsert(categoriesList[itemData.catID].orderedContentIDs, itemOrder, itemID)
+	if NysTDL.acedb.profile.addLast then
+		tinsert(categoriesList[itemData.catID].orderedContentIDs, itemID)
+	else
+		local itemOrder = dataManager:GetNextFavPos(itemData.catID)
+		tinsert(categoriesList[itemData.catID].orderedContentIDs, itemOrder, itemID)
+	end
 
 	dataManager:AddQuantity(enums.item, isGlobal, 1)
 
@@ -612,8 +616,12 @@ function dataManager:AddCategory(catID, catData)
 	private:UpdateTabsDisplay(catData.originalTabID, true, catID)
 	if catData.parentCatID then
 		-- we add it ordered in its category/categories
-		local catOrder = dataManager:GetNextSubCatPos(catData.parentCatID)
-		tinsert(categoriesList[catData.parentCatID].orderedContentIDs, catOrder, catID)
+		if NysTDL.acedb.profile.addLast then
+			tinsert(categoriesList[catData.parentCatID].orderedContentIDs, catID)
+		else
+			local catOrder = dataManager:GetNextSubCatPos(catData.parentCatID)
+			tinsert(categoriesList[catData.parentCatID].orderedContentIDs, catOrder, catID)
+		end
 	end
 
 	dataManager:AddQuantity(enums.category, isGlobal, 1)
@@ -1446,7 +1454,11 @@ function private:UpdateCatShownTabID(catID, catData, tabID, tabData, shownTabID,
 		if not catData.parentCatID then -- if it's not a sub-category, we edit it in its tab orders
 			if modif and not utils:HasValue(tabData.orderedCatIDs, catID) then
 				-- we add it ordered in the tab if it wasn't here already
-				tinsert(tabData.orderedCatIDs, 1, catID) -- TDLATER, IF I ever do cat fav (in tab root) it's not pos 1
+				if NysTDL.acedb.profile.addLast then
+					tinsert(tabData.orderedCatIDs, catID)
+				else
+					tinsert(tabData.orderedCatIDs, 1, catID) -- TDLATER, IF I ever do cat fav (in tab root) it's not pos 1
+				end
 			elseif not modif and utils:HasValue(tabData.orderedCatIDs, catID) then
 				tremove(tabData.orderedCatIDs, select(2, utils:HasValue(tabData.orderedCatIDs, catID)))
 			end
