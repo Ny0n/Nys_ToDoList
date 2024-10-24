@@ -19,6 +19,7 @@ addonTable.devLocale = L
 
 --/************************************************/--
 
+L["Add elements in last position"] = true
 L["Addon not loaded"] = true
 L["To add elements in a category, hover the name and press the %s icon"] = true
 L["Reorder"] = true

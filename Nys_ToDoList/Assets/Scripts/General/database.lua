@@ -126,6 +126,7 @@ database.defaults = {
 		descriptionTooltip = true,
 		openBehavior = 1,
 		frameScale = 1,
+		addLast = false,
 
 		--'Tabs' tab
 		instantRefresh = false, -- profile-wide
