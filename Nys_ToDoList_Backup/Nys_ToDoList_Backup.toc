@@ -1,5 +1,5 @@
 # /run print((select(4, GetBuildInfo())))
-## Interface: 110002, 40400, 11504
+## Interface: 110005, 40400, 11504
 
 ## Version: 1.1.2
 

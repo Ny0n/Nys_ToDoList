@@ -1,8 +1,7 @@
-#### **7.4**
+#### **7.3.2**
 
-- Added a new option to add elements last, instead of first
-- WIP drag and drop inter-tab
-- Bump interface number (1.15.4)
+- Bump interface number (11.0.5, 1.15.4)
+- Added a new option to add elements in last position, instead of first
 
 #### **7.3.1**
 
