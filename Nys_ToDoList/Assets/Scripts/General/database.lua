@@ -107,6 +107,7 @@ database.defaults = {
 		-- // Frame Options
 		framePos = { point = "CENTER", relativePoint = "CENTER", xOffset = 0, yOffset = 0 },
 		frameSize = { width = enums.tdlFrameDefaultWidth, height = enums.tdlFrameDefaultHeight },
+		frameStrata = "DIALOG",
 		frameAlpha = 75,
 		frameContentAlpha = 100,
 		affectDesc = true,

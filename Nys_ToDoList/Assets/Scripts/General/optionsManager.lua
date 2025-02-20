@@ -36,6 +36,13 @@ local private = {}
 
 local wDef = { toggle = 160, select = 265, range = 200, execute = 180, keybinding = 200, color = 180, input = 240 } -- the max width (this is for the locales), more than this and we scale
 
+local frameStratas = {
+	"DIALOG", -- [1]
+	"HIGH", -- [2]
+	"MEDIUM", -- [3]
+	"LOW", -- [4]
+}
+
 --/*******************/ OPTIONS TABLES /*************************/--
 
 function private:GetLeaf(info, x)
@@ -712,6 +719,22 @@ function private:CreateAddonOptionsTable()
 									return openBehaviors
 								end,
 							}, -- openBehavior
+							frameStrata = {
+								order = 1.35,
+								type = "select",
+								name = "",
+								values = function()
+									return frameStratas
+								end,
+								get = function()
+									return select(2, utils:HasValue(frameStratas, NysTDL.acedb.profile.frameStrata))
+								end,
+								set = function(info, value)
+									value = frameStratas[value]
+									NysTDL.acedb.profile.frameStrata = value
+									mainFrame.tdlFrame:SetFrameStrata(value)
+								end,
+							}, -- frameStrata
 							lockList = {
 								order = 1.4,
 								type = "toggle",
