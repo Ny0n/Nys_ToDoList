@@ -551,7 +551,7 @@ function private:CreateRecoveryList()
 
     -- properties
     frame:SetClampedToScreen(true)
-    frame:SetFrameStrata("MEDIUM")
+    frame:SetFrameLevel(1000)
 	frame:HookScript("OnUpdate", private.Event_recoveryFrame_OnUpdate)
 
     -- we resize the frame
@@ -655,13 +655,8 @@ function private:CreateRecoveryList()
     footer.copyBox:SetPoint("BOTTOMRIGHT", footer, "BOTTOMRIGHT", -10, 10)
     footer.copyBox.EditBox:SetFontObject("ChatFontNormal")
     footer.copyBox.EditBox:SetAutoFocus(false)
-	if utils:IsDF() then
-		footer.copyBox.ScrollBar.Forward:ClearAllPoints()
-		footer.copyBox.ScrollBar.Forward:SetPoint("BOTTOMRIGHT", footer.copyBox, "BOTTOMRIGHT", -1, 0)
-	else
-		footer.copyBox.ScrollBar.ScrollDownButton:ClearAllPoints()
-		footer.copyBox.ScrollBar.ScrollDownButton:SetPoint("BOTTOMRIGHT", footer.copyBox, "BOTTOMRIGHT", -1, 0)
-	end
+	footer.copyBox.ScrollBar.Forward:ClearAllPoints()
+	footer.copyBox.ScrollBar.Forward:SetPoint("BOTTOMRIGHT", footer.copyBox, "BOTTOMRIGHT", -1, 0)
 
     -- /--> char count
     footer.copyBox.EditBox:SetMaxLetters(enums.maxDescriptionCharCount)
@@ -675,13 +670,8 @@ function private:CreateRecoveryList()
     footer:SetScript("OnUpdate", function() -- don't ask me why
         footer.copyBox.EditBox:SetWidth(footer.copyBox:GetWidth() - 25)
         -- footer.copyBox.ScrollBar:Hide()
-		if utils:IsDF() then
-			footer.copyBox.ScrollBar.Back:Hide()
-			footer.copyBox.ScrollBar.Track.Thumb:Hide()
-		else
-			footer.copyBox.ScrollBar.ScrollUpButton:Hide()
-			footer.copyBox.ScrollBar.ThumbTexture:Hide()
-		end
+		footer.copyBox.ScrollBar.Back:Hide()
+		footer.copyBox.ScrollBar.Track.Thumb:Hide()
     end)
     widgets:SetHyperlinksEnabled(footer.copyBox.EditBox, true)
     recoveryList.copyBox = footer.copyBox.EditBox -- shortcut
@@ -738,7 +728,7 @@ function private:CreateWarning()
 
     -- properties
     frame:SetClampedToScreen(true)
-    frame:SetFrameStrata("MEDIUM")
+    frame:SetFrameLevel(1000)
     frame:EnableMouse(true)
 
     -- we resize the frame

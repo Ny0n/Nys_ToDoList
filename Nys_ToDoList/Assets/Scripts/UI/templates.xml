@@ -484,7 +484,7 @@
 	</Button>
 
 	<!-- Reused WoW template / HelpPlateTooltip -->
-	<Frame name="NysTDL_HelpPlateTooltip" inherits="GlowBoxTemplate" frameStrata="MEDIUM" frameLevel="200" virtual="true">
+	<Frame name="NysTDL_HelpPlateTooltip" inherits="GlowBoxTemplate" frameStrata="FULLSCREEN" virtual="true">
 		<Layers>
 			<Layer level="OVERLAY">
 				<FontString parentKey="Text" inherits="GameFontHighlightLeft">
