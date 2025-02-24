@@ -101,6 +101,10 @@ end
 
 -- // description frames
 
+function widgets:GetDescFrames()
+	return descFrames
+end
+
 function widgets:SetDescFramesAlpha(alpha)
 	-- first we update (or not) the saved variable
 	if NysTDL.acedb.profile.affectDesc then
@@ -206,6 +210,7 @@ function widgets:DescriptionFrame(itemWidget)
 	descFrame.itemData = itemData
 
 	-- properties
+	descFrame:SetFrameStrata(NysTDL.acedb.profile.frameStrata)
 	descFrame:EnableMouse(true)
 	descFrame:SetMovable(true)
 	descFrame:SetClampedToScreen(true)
