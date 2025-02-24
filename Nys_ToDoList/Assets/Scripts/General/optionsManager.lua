@@ -732,7 +732,14 @@ function private:CreateAddonOptionsTable()
 								set = function(info, value)
 									value = frameStratas[value]
 									NysTDL.acedb.profile.frameStrata = value
-									mainFrame.tdlFrame:SetFrameStrata(value)
+
+									local tdlFrame = mainFrame:GetFrame()
+									tdlFrame:SetFrameStrata(value)
+
+									local descFrames = widgets:GetDescFrames()
+									for _, descFrame in pairs(descFrames) do
+										descFrame:SetFrameStrata(value)
+									end
 								end,
 							}, -- frameStrata
 							lockList = {
