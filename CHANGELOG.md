@@ -1,4 +1,4 @@
-#### **7.3.4, 7.3.5**
+#### **7.3.5**
 
 - Bump interface number (11.1.0, 4.4.2, 1.15.6)
 - The list now appears above most UI elements, this can be changed in the options (new is "DIALOG", old was "LOW")
