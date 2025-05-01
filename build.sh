@@ -1,6 +1,11 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 : '
+
+========================================
+WARNING: Tested on Windows with Git Bash
+========================================
+
 
 This build script is used for 3 things:
 	- Package addons locally, using the latest BigWigsMods/packager/release.sh script
@@ -73,7 +78,7 @@ account_file_names+=("122995789#2")
 function usage()
 {
 	cat <<-'EOF' >&2
-	Usage: bash build.bash [MODE]
+	Usage: build.sh [MODE]
 	[MODE] can be ONE of these:
 
       --local [-b] [-a {args}]      Build the addon locally.
