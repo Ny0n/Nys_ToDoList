@@ -1,3 +1,7 @@
+#### **7.3.6**
+
+- Bump interface number (11.1.5, 1.15.7)
+
 #### **7.3.5**
 
 - Bump interface number (11.1.0, 4.4.2, 1.15.6)
