@@ -1,3 +1,7 @@
+#### **7.3.7**
+
+- Bump interface number (TWW 11.2.0, MoP 5.5.0)
+
 #### **7.3.6**
 
 - Bump interface number (11.1.5, 1.15.7)
