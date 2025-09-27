@@ -711,10 +711,12 @@ function private:CreateAddonOptionsTable()
 								name = L["Open behavior on login"],
 								values = function()
 									local openBehaviors = {
-										L["None"], -- [1]
-										L["Remember"], -- [2]
-										L["Open if not done"], -- [3]
-										L["Always open"], -- [4]
+										[1] = L["None"],
+										[2] = L["Remember"],
+										[4] = L["Always open"],
+										[5] = L["Open if not done"].." (<24h)",
+										[6] = L["Open if not done"].." (<7d)",
+										[7] = L["Open if not done"],
 									 }
 									return openBehaviors
 								end,

@@ -100,8 +100,8 @@ database.defaults = {
 
 		databrokerMode = enums.databrokerModes.simple,
 		isInMiniView = false,
+		isInClearView = false,
 		lastListVisibility = false,
-		lockList = false,
 		lockTdlButton = false,
 
 		-- // Frame Options

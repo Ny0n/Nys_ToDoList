@@ -750,8 +750,13 @@ end
 --/*******************/ INITIALIZATION /*************************/--
 
 function tabsFrame:CreateTabsFrame()
+	tabsFrame.tabsParentFrame = CreateFrame("Frame", nil, mainFrame.tdlFrame)
+	tabsFrame.tabsParentFrame:SetHeight(1)
+	tabsFrame.tabsParentFrame:SetPoint("TOPLEFT", mainFrame.tdlFrame, "BOTTOMLEFT", 0, 1)
+	tabsFrame.tabsParentFrame:SetPoint("TOPRIGHT", mainFrame.tdlFrame, "BOTTOMRIGHT", 0, 1)
+
 	-- // scrollFrame
-	scrollFrame = CreateFrame("ScrollFrame", nil, mainFrame.tdlFrame, "UIPanelScrollFrameTemplate")
+	scrollFrame = CreateFrame("ScrollFrame", nil, tabsFrame.tabsParentFrame, "UIPanelScrollFrameTemplate")
 	-- for scrollFrame:SetPoints(), see private:RefreshSize()
 	scrollFrame:SetClipsChildren(true)
 	scrollFrame.ScrollBar:Hide()
@@ -785,7 +790,7 @@ function tabsFrame:CreateTabsFrame()
 	-- // overflowButton / overflowButtonFrame
 	-- !! both overflowButtonFrame and overflowButtonFrame.backdrop are there only to beautify the button,
 	-- by creating a better backdrop and masking of the border
-	overflowButtonFrame = widgets:TabIconFrame(mainFrame.tdlFrame, overflowButtonSize, -overflowButtonRightOffsetX, overflowButtonOffsetY, 0, 4, 18, 12)
+	overflowButtonFrame = widgets:TabIconFrame(tabsFrame.tabsParentFrame, overflowButtonSize, -overflowButtonRightOffsetX, overflowButtonOffsetY, 0, 4, 18, 12)
 
 	overflowList = CreateFrame("Frame", nil, UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil)
 	overflowList:SetBackdrop(enums.backdrop)
@@ -817,7 +822,7 @@ function tabsFrame:CreateTabsFrame()
 	end)
 
 	-- // switchStateButton (switch global/profile)
-	switchStateButtonFrame = widgets:TabIconFrame(mainFrame.tdlFrame, overflowButtonSize, -overflowButtonRightOffsetX, overflowButtonOffsetY, 0, 3)
+	switchStateButtonFrame = widgets:TabIconFrame(tabsFrame.tabsParentFrame, overflowButtonSize, -overflowButtonRightOffsetX, overflowButtonOffsetY, 0, 3)
 
 	switchStateButtonFrame.btn:SetNormalTexture(enums.icons.global.info())
 	switchStateButtonFrame.btn.Texture:SetAlpha(0.9)

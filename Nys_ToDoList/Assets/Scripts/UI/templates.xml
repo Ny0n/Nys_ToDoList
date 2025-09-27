@@ -61,6 +61,7 @@
 				<!-- nudge and dim the icon down a little -->
 				local xOffset = -1
 				if self.name == "UndoButton" then xOffset = -2 end
+				if self.name == "MoveButton" then xOffset = 1 end
 
 				local yOffset = -2
 				if self.name == "UndoButton" then yOffset = -3 end
@@ -232,6 +233,24 @@
 			<Layer level="OVERLAY">
 				<Texture parentKey="Icon" file="Interface\COMMON\help-i">
 					<Size x="40" y="40"/>
+					<Anchors>
+						<Anchor point="CENTER"/>
+					</Anchors>
+				</Texture>
+			</Layer>
+		</Layers>
+	</Button>
+
+	<!-- Move button -->
+	<Button name="NysTDL_MoveButton" inherits="InlineHyperlinkFrameTemplate, NysTDL_IconButtonPositionScripts" virtual="true">
+		<Size x="20" y="20"/>
+		<KeyValues>
+			<KeyValue key="name" value="MoveButton"/>
+		</KeyValues>
+		<Layers>
+			<Layer level="OVERLAY">
+				<Texture parentKey="Icon" file="Interface\CURSOR\UI-Cursor-Move">
+					<Size x="20" y="20"/>
 					<Anchors>
 						<Anchor point="CENTER"/>
 					</Anchors>

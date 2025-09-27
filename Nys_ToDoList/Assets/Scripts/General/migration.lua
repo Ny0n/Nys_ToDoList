@@ -124,6 +124,12 @@ end
 function private:ProfileNewVersion()
     -- // updates each profile saved variables once after an update
 
+	if utils:IsVersionOlderThan(NysTDL.acedb.profile.latestVersion, "8.0") then
+        if NysTDL.acedb.profile.openBehavior == 3 then
+			NysTDL.acedb.profile.openBehavior = 5
+		end
+	end
+
     -- by default after each update, we empty the undo table
     wipe(NysTDL.acedb.profile.undoTable)
 

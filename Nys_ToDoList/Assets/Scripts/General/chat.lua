@@ -210,7 +210,7 @@ chat.commands = {
 		chat:CustomPrintForced("- "..L["Favorite and add descriptions on items"], true)
 		chat:CustomPrintForced("- "..L["Rename"].." ("..L["Double-Click"]..")", true)
 		chat:CustomPrintForced("- "..L["Reorder"].." ("..L["Drag and Drop"]..")", true)
-		chat:CustomPrintForced("- "..L["Resize"].." ("..L["Button in the bottom-right"]..")", true)
+		chat:CustomPrintForced("- "..L["Move"].." / "..L["Resize"].." ("..L["Button in the bottom-right"]..")", true)
 		chat:CustomPrintForced("- "..L["Access new buttons"].." (\""..L["Tab actions"].."\", \""..L["Undo last remove"].."\", \""..L["Open addon options"].."\")", true)
 		tutorialsManager:Validate("introduction", "editmodeChat")
 	end,

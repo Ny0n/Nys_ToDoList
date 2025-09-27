@@ -83,7 +83,7 @@ contentWidgets = {
 
 -- these are for code comfort
 
-local cursorX, cursorY, cursorDist = 0, 0, 10 -- for my special drag
+local cursorX, cursorY, cursorDist = 0, 0, 0 -- for my special drag
 local loadOriginSpec, loadOriginSpecClassic = { x = 0, y = 0 }, { x = -4, y = 0 }
 local sWidth, sWidthClassic = 34, 38
 
@@ -423,10 +423,11 @@ function mainFrame:ToggleEditMode(state, forceUpdate)
 	menu.remaining:SetPoint("LEFT", menu.helpButton, "CENTER", mainFrame.editMode and 170 or 80, 1)
 
 	-- resize button
+	tdlFrame.moveButton:SetShown(mainFrame.editMode)
 	tdlFrame.resizeButton:SetShown(mainFrame.editMode)
 
 	-- scroll bar
-	local emOffset = utils:IsDF() and 8 or 12
+	local emOffset = utils:IsDF() and 31 or 12 -- TODO
 	local offsetY = mainFrame.editMode and emOffset or 0
 	offsetY = offsetY + (utils:IsDF() and 7 or 17)
 	tdlFrame.ScrollFrame.ScrollBar:SetPoint("BOTTOMRIGHT", tdlFrame.ScrollFrame, "BOTTOMRIGHT", 0, offsetY)
@@ -460,6 +461,35 @@ function mainFrame:ToggleMinimalistView(state, forceUpdate)
 
 	-- // refresh
 	private:MenuClick()
+end
+
+function mainFrame:ToggleClearView(state, forceUpdate)
+	local orig = NysTDL.acedb.profile.isInClearView
+	if type(state) == "boolean" then
+		NysTDL.acedb.profile.isInClearView = state
+	else
+		NysTDL.acedb.profile.isInClearView = not orig
+	end
+	if not forceUpdate and orig == NysTDL.acedb.profile.isInClearView then return end
+
+	-- // start
+
+	local clearView = NysTDL.acedb.profile.isInClearView
+
+	local toHide = {
+		tdlFrame.Bg,
+		tdlFrame.NineSlice,
+		tdlFrame.CloseButton,
+		tabsFrame.tabsParentFrame,
+		tdlFrame.ScrollFrame.ScrollBar,
+	}
+
+	local toShow = {
+	}
+
+	tdlFrame:EnableMouse(not clearView)
+	for _,frame in ipairs(toHide) do frame:SetShown(not clearView) end
+	for _,frame in ipairs(toShow) do frame:SetShown(clearView)	end
 end
 
 function mainFrame:RefreshScale()
@@ -507,6 +537,7 @@ function mainFrame:Event_FrameContentAlphaSlider_OnValueChanged(value)
 	NysTDL.acedb.profile.frameContentAlpha = value
 	tdlFrame.ScrollFrame:SetAlpha(value/100)
 	tdlFrame.ScrollFrame.ScrollBar:SetAlpha(value/100)
+	tdlFrame.moveButton:SetAlpha(value/100)
 	tdlFrame.resizeButton:SetAlpha(value/100)
 	tdlFrame.viewButton:SetAlpha(value/100)
 	tdlFrame.CloseButton:SetAlpha(value/100)
@@ -1083,7 +1114,6 @@ function mainFrame:CreateTDLFrame()
 
 	-- properties
 	tdlFrame:SetFrameStrata(NysTDL.acedb.profile.frameStrata)
-	tdlFrame:EnableMouse(true)
 	tdlFrame:SetMovable(true)
 	tdlFrame:SetClampedToScreen(true)
 	tdlFrame:SetResizable(true)
@@ -1142,19 +1172,20 @@ function mainFrame:CreateTDLFrame()
 	tdlFrame.isMouseDown = false
 	tdlFrame.hasMoved = false
 	local function StopMoving(self)
-		self.isMouseDown = false
-		if self.hasMoved == true then
-			self.hasMoved = false
+		tdlFrame.isMouseDown = false
+		if tdlFrame.hasMoved == true then
+			tdlFrame.hasMoved = false
 
-			self:StopMovingOrSizing()
+			tdlFrame:StopMovingOrSizing()
 			local points, _ = NysTDL.acedb.profile.framePos, nil
-			points.point, _, points.relativePoint, points.xOffset, points.yOffset = self:GetPoint()
+			points.point, _, points.relativePoint, points.xOffset, points.yOffset = tdlFrame:GetPoint()
 		end
 	end
 	tdlFrame:HookScript("OnMouseDown", function(self, button)
 		if not NysTDL.acedb.profile.lockList then
 			if button == "LeftButton" then
-				self.isMouseDown = true
+				tdlFrame.isMouseDown = true
+				cursorDist = 10
 				cursorX, cursorY = GetCursorPosition()
 			end
 		end
@@ -1188,17 +1219,22 @@ function mainFrame:CreateTDLFrame()
 	end
 
 	-- view button
-	tdlFrame.viewButton = widgets:IconTooltipButton(tdlFrame, "NysTDL_ViewButton", L["Toggle menu"])
+	tdlFrame.viewButton = widgets:IconTooltipButton(tdlFrame, "NysTDL_ViewButton", {string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Left-Click"])..utils:GetMinusStr()..L["Toggle clear view"], string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Right-Click"])..utils:GetMinusStr()..L["Toggle menu"]})
 	tdlFrame.viewButton.Icon:SetTexture((enums.icons.view.info()))
 	if utils:IsDF() then
 		tdlFrame.viewButton:SetPoint("TOPRIGHT", tdlFrame, "TOPRIGHT", -6, -26)
 	else
 		tdlFrame.viewButton:SetPoint("TOPRIGHT", tdlFrame, "TOPRIGHT", -2.5, -21)
 	end
-	tdlFrame.viewButton:SetScript("OnClick", function()
-		mainFrame:ToggleMinimalistView()
+	tdlFrame.viewButton:SetScript("OnClick", function(self, button)
+		if button == "LeftButton" then
+			mainFrame:ToggleClearView()
+		elseif button == "RightButton" then
+			mainFrame:ToggleMinimalistView()
+		end
 		tutorialsManager:Validate("introduction", "miniView")
 	end)
+	tdlFrame.viewButton:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 	tutorialsManager:SetPoint("introduction", "miniView", "LEFT", tdlFrame.viewButton, "RIGHT", 18, 0)
 
 	-- -- // outside the scroll frame
@@ -1237,6 +1273,24 @@ function mainFrame:CreateTDLFrame()
 		local points = NysTDL.acedb.profile.framePos
 		tdlFrame:ClearAllPoints()
 		tdlFrame:SetPoint(points.point, nil, points.relativePoint, points.xOffset, points.yOffset) -- relativeFrame = nil -> entire screen
+	end)
+
+	-- move button, mainly for the clear view
+	tdlFrame.moveButton = widgets:IconTooltipButton(tdlFrame, "NysTDL_MoveButton", L["Move"], 0, 0)
+	tdlFrame.moveButton:SetAlpha(0.8)
+	tdlFrame.moveButton:HookScript("OnEnter", function(self) self:SetAlpha(1) end)
+	tdlFrame.moveButton:HookScript("OnLeave", function(self) self:SetAlpha(0.8) end)
+	tdlFrame.moveButton:HookScript("OnShow", function(self) self:SetAlpha(0.8) end)
+	tdlFrame.moveButton:SetPoint("BOTTOMRIGHT", -4, 20)
+	tdlFrame.moveButton:HookScript("OnMouseDown", function(self)
+		tdlFrame.isMouseDown = true
+		cursorDist = 0
+		cursorX, cursorY = GetCursorPosition()
+		if self.tooltip and self.tooltip.Hide then self.tooltip:Hide() end
+	end)
+	tdlFrame.moveButton:HookScript("OnMouseUp", function(self)
+		StopMoving()
+		if self.tooltip and self.tooltip.Show then self.tooltip:Show() end
 	end)
 
 	-- // inside the scroll frame
@@ -1281,6 +1335,7 @@ function mainFrame:Init()
 	-- we reset the edit mode & view state
 	mainFrame:ToggleEditMode(false, true)
 	mainFrame:ToggleMinimalistView(NysTDL.acedb.profile.isInMiniView, true)
+	mainFrame:ToggleClearView(NysTDL.acedb.profile.isInClearView, true)
 
 	--widgets:SetEditBoxesHyperlinksEnabled(true) -- see func details for why I'm not using it
 
@@ -1294,13 +1349,22 @@ function mainFrame:Init()
 	if openBehavior ~= 1 then
 		if openBehavior == 2 then
 			tdlFrame:SetShown(lastListVisibility)
-		elseif openBehavior == 3 then
+		elseif openBehavior == 4 then
+			tdlFrame:Show()
+		elseif openBehavior == 5 then
 			local maxTime = time() + 86400 -- in the next 24 hours
 			dataManager:DoIfFoundTabMatch(maxTime, "totalUnchecked", function()
 				tdlFrame:Show()
 			end)
-		elseif openBehavior == 4 then
-			tdlFrame:Show()
+		elseif openBehavior == 6 then
+			local maxTime = time() + (86400*7) -- in the next week
+			dataManager:DoIfFoundTabMatch(maxTime, "totalUnchecked", function()
+				tdlFrame:Show()
+			end)
+		elseif openBehavior == 7 then
+			if dataManager:GetRemainingNumbers(nil).totalUnchecked > 0 then -- anything
+				tdlFrame:Show()
+			end
 		end
 	end
 end
