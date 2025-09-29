@@ -60,13 +60,14 @@
 				if not self:IsEnabled() then return end
 				<!-- nudge and dim the icon down a little -->
 				local xOffset = -1
-				if self.name == "UndoButton" then xOffset = -2 end
+				<!-- if self.name == "UndoButton" then xOffset = -2 end -->
+				if self.name == "CategoryButton" then xOffset = 0 end
 				if self.name == "MoveButton" then xOffset = 1 end
 				if self.name == "cvSwitchButton" then xOffset = -2 end
-				if self.name == "ViewButton" then xOffset = -2 end
+				<!-- if self.name == "ViewButton" then xOffset = -2 end -->
 
 				local yOffset = -2
-				if self.name == "UndoButton" then yOffset = -3 end
+				<!-- if self.name == "UndoButton" then yOffset = -3 end -->
 				if self.name == "CategoryButton" then yOffset = -3 end
 
 				self.Icon:SetPoint("CENTER", xOffset, yOffset)
@@ -79,13 +80,13 @@
 				if not self:IsEnabled() then return end
 				<!-- reset the icon's position and opacity -->
 				local xOffset = 0
-				if self.name == "UndoButton" then xOffset = -0.5 end
-				if self.name == "CategoryButton" then xOffset = 0.5 end
+				<!-- if self.name == "UndoButton" then xOffset = -1 end -->
+				if self.name == "CategoryButton" then xOffset = 1 end
 				if self.name == "cvSwitchButton" then xOffset = -1 end
-				if self.name == "ViewButton" then xOffset = -0.5 end
+				<!-- if self.name == "ViewButton" then xOffset = -1 end -->
 
 				local yOffset = 0
-				if self.name == "UndoButton" then yOffset = -0.5 end
+				<!-- if self.name == "UndoButton" then yOffset = -1 end -->
 				if self.name == "CategoryButton" then yOffset = -1 end
 
 				self.Icon:SetPoint("CENTER", xOffset, yOffset)
@@ -100,13 +101,13 @@
 			<OnShow>
 				<!-- reset the icon's position and opacity -->
 				local xOffset = 0
-				if self.name == "UndoButton" then xOffset = -0.5 end
-				if self.name == "CategoryButton" then xOffset = 0.5 end
+				<!-- if self.name == "UndoButton" then xOffset = -1 end -->
+				if self.name == "CategoryButton" then xOffset = 1 end
 				if self.name == "cvSwitchButton" then xOffset = -1 end
-				if self.name == "ViewButton" then xOffset = -0.5 end
+				<!-- if self.name == "ViewButton" then xOffset = -1 end -->
 
 				local yOffset = 0
-				if self.name == "UndoButton" then yOffset = -0.5 end
+				<!-- if self.name == "UndoButton" then yOffset = -1 end -->
 				if self.name == "CategoryButton" then yOffset = -1 end
 
 				self.Icon:SetPoint("CENTER", xOffset, yOffset)
@@ -232,7 +233,7 @@
 		<Layers>
 			<Layer level="OVERLAY">
 				<Texture parentKey="Icon" file="Interface\Buttons\UI-OptionsButton">
-					<Size x="15" y="15"/>
+					<Size x="16" y="16"/>
 					<Anchors>
 						<Anchor point="CENTER"/>
 					</Anchors>
@@ -297,7 +298,7 @@
 
 	<!-- View button -->
 	<Button name="NysTDL_ViewButton" inherits="NysTDL_IconButtonTemplate, NysTDL_IconButtonPositionScripts" virtual="true">
-		<Size x="25" y="25"/>
+		<Size x="26" y="26"/>
 		<KeyValues>
 			<KeyValue key="name" value="ViewButton"/>
 		</KeyValues>

@@ -122,7 +122,7 @@ enums.icons = {
 		texCoords = { 0.000976562, 0.616211, 0.749023, 0.75 },
 	},
 	add = {
-		info = function() return enums.artPath.."UIMinimap", 17, 17 end,
+		info = function() return enums.artPath.."UIMinimap", 18, 18 end,
 		texCoords = { 0.00390625, 0.0703125, 0.548828, 0.582031 },
 		texHyperlinkTuto = "|T"..enums.artPath.."UIMinimap:18:18:1:-4:256:512:0:18:280:298|t", -- |TtexturePath:width(px):Height(px):offsetX(px):offsetY(px):textureFileWidth(px):textureFileHeight(px):texCoordsStartX(px):texCoordsEndX(px):texCoordsStartY(px):texCoordsEndY(px)|t
 		texHyperlinkChat = "|T"..enums.artPath.."UIMinimap:18:18:1:0:256:512:0:18:280:298|t",

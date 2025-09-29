@@ -512,9 +512,14 @@ function mainFrame:ToggleClearView(state, forceUpdate)
 	tdlFrame.cvMenu:SetShown(clearView)
 
 	if clearView then
+		local margin = 12
+		tdlFrame:SetClampRectInsets(17-margin, -5+margin, -6+margin, 4-margin) -- better fine tuning for the clear view
+		tdlFrame:RePoint()
 		tutorialsManager:SetPoint("introduction", "miniView", "RIGHT", tdlFrame.cvViewButton, "LEFT", -18, 0, "RIGHT")
 		tutorialsManager:SetPoint("tabSwitchState", "explainSwitchButton", "BOTTOM", tdlFrame.cvTabsSwitchState, "TOP", 0, 22, "DOWN")
 	else
+		tdlFrame:SetClampRectInsets(4, 0, -1, 1) -- perfectly in sync with the visual
+		tdlFrame:RePoint()
 		tutorialsManager:SetPoint("introduction", "miniView", "LEFT", tdlFrame.viewButton, "RIGHT", 18, 0, "LEFT")
 		tutorialsManager:SetPoint("tabSwitchState", "explainSwitchButton", "LEFT", tabsFrame.switchStateButtonFrame, "RIGHT", 22, 0, "LEFT")
 	end
@@ -1000,7 +1005,7 @@ function private:GenerateFrameContent()
 	tdlFrame.cvViewButton = widgets:IconTooltipButton(tdlFrame.cvMenu, "NysTDL_ViewButton", tdlFrame.viewButtonTooltip)
 	tdlFrame.cvViewButton:SetPoint("TOPLEFT", tdlFrame.cvMenu, 13, -1)
 	tdlFrame.cvViewButton:SetSize(32, 32)
-	tdlFrame.cvViewButton.Icon:SetSize(17, 22)
+	tdlFrame.cvViewButton.Icon:SetSize(16, 20)
 	tdlFrame.cvViewButton.Icon:SetTexture((enums.icons.view.info()))
 	tdlFrame.cvViewButton.Icon:SetVertexColor(0.85, 0.85, 0.85)
 	tdlFrame.cvViewButton:SetScript("OnClick", tdlFrame.viewButtonOnClick)
@@ -1037,7 +1042,7 @@ function private:GenerateFrameContent()
 
 	-- edit mode button
 	menu.editModeButton = widgets:IconTooltipButton(menu, "NysTDL_EditModeButton", L["Toggle edit mode"])
-	menu.editModeButton:SetPoint("CENTER", menu, "CENTER", unpack(menuOrigin))
+	menu.editModeButton:SetPoint("CENTER", menu, "TOPLEFT", unpack(menuOrigin))
 	menu.editModeButton:SetScript("OnClick", function()
 		tutorialsManager:Validate("introduction", "editmode") -- I need to place this here to be sure it was a user action
 		mainFrame:ToggleEditMode()
@@ -1178,6 +1183,13 @@ function mainFrame:CreateTDLFrame()
 
 	tutorialsManager:SetPoint("introduction", "getMoreInfo", "BOTTOM", tdlFrame, "TOP", 0, 18)
 
+	-- helper
+	tdlFrame.RePoint = function(self)
+		local points = NysTDL.acedb.profile.framePos
+		tdlFrame:ClearAllPoints()
+		tdlFrame:SetPoint(points.point, nil, points.relativePoint, points.xOffset, points.yOffset) -- relativeFrame = nil -> entire screen
+	end
+
 	-- title
 	if utils:IsDF() then
 		tdlFrame.TitleText = tdlFrame.NineSlice.TitleText
@@ -1315,9 +1327,7 @@ function mainFrame:CreateTDLFrame()
 		tdlFrame:SetSize(enums.tdlFrameDefaultWidth, enums.tdlFrameDefaultHeight)
 
 		-- we reposition the frame, because SetSize can actually move it in some cases
-		local points = NysTDL.acedb.profile.framePos
-		tdlFrame:ClearAllPoints()
-		tdlFrame:SetPoint(points.point, nil, points.relativePoint, points.xOffset, points.yOffset) -- relativeFrame = nil -> entire screen
+		tdlFrame:RePoint()
 	end)
 
 	-- move button, mainly for the clear view
@@ -1366,9 +1376,7 @@ function mainFrame:Init()
 	mainFrame:RefreshScale()
 
 	-- we reposition the frame
-	local points = NysTDL.acedb.profile.framePos
-	tdlFrame:ClearAllPoints()
-	tdlFrame:SetPoint(points.point, nil, points.relativePoint, points.xOffset, points.yOffset) -- relativeFrame = nil -> entire screen
+	tdlFrame:RePoint()
 
 	-- and update its elements opacity
 	mainFrame:Event_FrameAlphaSlider_OnValueChanged(NysTDL.acedb.profile.frameAlpha)
