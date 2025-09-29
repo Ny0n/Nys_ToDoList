@@ -421,10 +421,10 @@ function mainFrame:ToggleEditMode(state, forceUpdate)
 	tdlFrame.resizeButton:SetShown(mainFrame.editMode)
 
 	-- scroll bar
-	local emOffset = utils:IsDF() and 31 or 12 -- TODO
+	local emOffset = utils:IsDF() and 32 or 12 -- TODO
 	local offsetY = mainFrame.editMode and emOffset or 0
-	offsetY = offsetY + (utils:IsDF() and 7 or 17)
-	tdlFrame.ScrollFrame.ScrollBar:SetPoint("BOTTOMRIGHT", tdlFrame.ScrollFrame, "BOTTOMRIGHT", 0, offsetY)
+	offsetY = offsetY + (utils:IsDF() and 12 or 17)
+	tdlFrame.ScrollFrame.ScrollBar:SetPoint("BOTTOMRIGHT", tdlFrame, "BOTTOMRIGHT", -38, offsetY) -- TODO CLASSIC?
 
 	-- // refresh
 	if dragndrop.dragging and not mainFrame.editMode then dragndrop:CancelDragging() end
@@ -997,7 +997,7 @@ function private:GenerateFrameContent()
 	local spacing = 30
 
 	-- CLEAR VIEW menu
-	tdlFrame.cvMenu = CreateFrame("Frame", "NysTDL_tdlFrame.cvMenu", tdlFrame)
+	tdlFrame.cvMenu = CreateFrame("Frame", "NysTDL_tdlFrame.cvMenu", tdlFrame.clipFrame)
 	tdlFrame.cvMenu:SetSize(1, 1)
 	tdlFrame.cvMenu:SetPoint("TOPLEFT", tdlFrame, 0, 0)
 
@@ -1035,7 +1035,7 @@ function private:GenerateFrameContent()
 	tdlFrame.cvMenu.lineBottom = widgets:HorizontalDivider(tdlFrame.cvMenu)
 	tdlFrame.cvMenu.lineBottom:SetPoint("TOPLEFT", tdlFrame.cvMenu, "TOPLEFT", lineBottom.x, -40)
 
-	tdlFrame.menu = CreateFrame("Frame", "NysTDL_tdlFrame.menu", tdlFrame)
+	tdlFrame.menu = CreateFrame("Frame", "NysTDL_tdlFrame.menu", tdlFrame.clipFrame)
 	tdlFrame.menu:SetPoint("TOPLEFT", tdlFrame, 4, -24)
 	tdlFrame.menu:SetSize(1, 1)
 	local menu = tdlFrame.menu
@@ -1190,6 +1190,12 @@ function mainFrame:CreateTDLFrame()
 		tdlFrame:SetPoint(points.point, nil, points.relativePoint, points.xOffset, points.yOffset) -- relativeFrame = nil -> entire screen
 	end
 
+	-- i can't clip with tdlframe or LOTS of things will get hidden, so i create a sub clip frame for only what i need
+	tdlFrame.clipFrame = CreateFrame("Frame", nil, tdlFrame)
+	tdlFrame.clipFrame:SetPoint("TOPLEFT", tdlFrame, 0, 0)
+	tdlFrame.clipFrame:SetPoint("BOTTOMRIGHT", tdlFrame, -4 -sWidth, 4) -- * same as scrollframe
+	tdlFrame.clipFrame:SetClipsChildren(true)
+
 	-- title
 	if utils:IsDF() then
 		tdlFrame.TitleText = tdlFrame.NineSlice.TitleText
@@ -1253,8 +1259,8 @@ function mainFrame:CreateTDLFrame()
 
 	sWidth = utils:IsDF() and sWidth or sWidthClassic
 
-	tdlFrame.ScrollFrame = CreateFrame("ScrollFrame", "NysTDL_tdlFrame.ScrollFrame", tdlFrame, utils:IsDF() and "ScrollFrameTemplate" or "UIPanelScrollFrameTemplate")
-	tdlFrame.ScrollFrame:SetPoint("BOTTOMRIGHT", tdlFrame, "BOTTOMRIGHT", -4 -sWidth, 4)
+	tdlFrame.ScrollFrame = CreateFrame("ScrollFrame", "NysTDL_tdlFrame.ScrollFrame", tdlFrame.clipFrame, utils:IsDF() and "ScrollFrameTemplate" or "UIPanelScrollFrameTemplate")
+	tdlFrame.ScrollFrame:SetPoint("BOTTOMRIGHT", tdlFrame, "BOTTOMRIGHT", -4 -sWidth, 4) -- * same as clipframe
 	tdlFrame.ScrollFrame:SetScript("OnMouseWheel", mainFrame.Event_ScrollFrame_OnMouseWheel)
 	tdlFrame.ScrollFrame:SetClipsChildren(true)
 
