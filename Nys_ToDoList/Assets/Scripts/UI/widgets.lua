@@ -441,10 +441,17 @@ function widgets:TutorialFrame(tutoCategory, tutoName, showCloseButton, arrowSid
 	tutoFrame.Text:SetText(text)
 	tutoFrame.Text:SetWidth(width-15-15)
 
-	if arrowSide == "UP" then tutoFrame.ArrowDOWN:Show()
-	elseif arrowSide == "DOWN" then tutoFrame.ArrowUP:Show()
-	elseif arrowSide == "LEFT" then tutoFrame.ArrowRIGHT:Show()
-	elseif arrowSide == "RIGHT" then tutoFrame.ArrowLEFT:Show() end
+	tutoFrame.SetArrowSide = function(self, arrowSide)
+		tutoFrame.ArrowDOWN:Hide()
+		tutoFrame.ArrowUP:Hide()
+		tutoFrame.ArrowRIGHT:Hide()
+		tutoFrame.ArrowLEFT:Hide()
+		if arrowSide == "UP" then tutoFrame.ArrowDOWN:Show()
+		elseif arrowSide == "DOWN" then tutoFrame.ArrowUP:Show()
+		elseif arrowSide == "LEFT" then tutoFrame.ArrowRIGHT:Show()
+		elseif arrowSide == "RIGHT" then tutoFrame.ArrowLEFT:Show() end
+	end
+	tutoFrame:SetArrowSide(arrowSide)
 
 	if showCloseButton then
 		tutoFrame.closeButton = CreateFrame("Button", nil, tutoFrame, "UIPanelCloseButton")
@@ -623,38 +630,68 @@ function widgets:Button(name, relativeFrame, text, iconPath, fc, bonusWidth)
 	return btn
 end
 
-function widgets:IconTooltipButton(relativeFrame, template, tooltipText, tooltipOffsetX, tooltipOffsetY)
-	local btn = CreateFrame("Button", nil, relativeFrame, template)
+function widgets:AddTooltipToButton(btn, tooltipText, tooltipOffsetX, tooltipOffsetY)
+	if not btn then return end
+	--[[
+		A tooltip button has these fields, that can be modified :
 
-	local tooltipTexts
-	if type(tooltipText) ~= "table" then
-		tooltipTexts = {tostring(tooltipText)}
-	else
-		tooltipTexts = tooltipText
-	end
-	if type(tooltipTexts[1]) == "string" and tooltipTexts[1] ~= "" then -- // Tooltip
-		btn.tooltip = nil
-		btn:HookScript("OnEnter", function(self)
+		btn.tooltipText : table of strings, one string = one line of tooltip
+		btn.tooltipOffsetX : number
+		btn.tooltipOffsetY : number
+
+		btn.RefreshTooltip() : function, call it if any of the above values changes
+	]]
+
+	btn.tooltip = nil
+	btn.tooltipText = tooltipText
+
+	btn.tooltipOffsetX = tooltipOffsetX
+	btn.tooltipOffsetY = tooltipOffsetY
+
+	local OnEnter = function(self)
+		if type(btn.tooltipText) ~= "table" then
+			btn.tooltipText = {tostring(btn.tooltipText)}
+		end
+		if type(btn.tooltipText[1]) == "string" and btn.tooltipText[1] ~= "" then -- // Tooltip
 			-- if the tooltip is already in use by someone else, return
 			if LibQTip:IsAcquired("NysTDL_Tooltip_TooltipButton") then
 				return
 			end
 
 			-- we're good to go
-			btn.tooltip = widgets:AcquireTooltip("NysTDL_Tooltip_TooltipButton", self, tooltipOffsetX, tooltipOffsetY)
+			btn.tooltip = widgets:AcquireTooltip("NysTDL_Tooltip_TooltipButton", self, btn.tooltipOffsetX, btn.tooltipOffsetY)
 			btn.tooltip:SetFont("GameTooltipText")
 
-			for _,text in ipairs(tooltipTexts) do
+			for _,text in ipairs(btn.tooltipText) do
 				btn.tooltip:AddLine(text)
 			end
-		end)
-		btn:HookScript("OnLeave", function()
-			if btn.tooltip then
-				LibQTip:Release(btn.tooltip)
-				btn.tooltip = nil
-			end
-		end)
+		end
+		btn.isHovered = true
 	end
+
+	local OnLeave = function(self)
+		if btn.tooltip then
+			LibQTip:Release(btn.tooltip)
+			btn.tooltip = nil
+		end
+		btn.isHovered = false
+	end
+
+	btn:HookScript("OnEnter", OnEnter)
+	btn:HookScript("OnLeave", OnLeave)
+
+	btn.RefreshTooltip = function(self)
+		if btn.isHovered then
+			OnLeave(self)
+			OnEnter(self)
+		end
+	end
+end
+
+function widgets:IconTooltipButton(relativeFrame, template, tooltipText, tooltipOffsetX, tooltipOffsetY)
+	local btn = CreateFrame("Button", nil, relativeFrame, template)
+
+	widgets:AddTooltipToButton(btn, tooltipText, tooltipOffsetX, tooltipOffsetY)
 
 	return btn
 end
@@ -1622,6 +1659,8 @@ function widgets:TabIconFrame(parentFrame, size, offsetX, offsetY, btnOffsetX, b
 		self:ClearAllPoints()
 		self:SetPoint("CENTER", self:GetParent(), "CENTER", btnOffsetX, btnOffsetY)
 	end)
+
+	widgets:AddTooltipToButton(frame.btn, "...", 12, 8)
 
 	return frame
 end

@@ -114,8 +114,8 @@ enums.icons = {
 		texCoords = { 0.328, 0.436, 0.015, 0.074 },
 	},
 	profile = {
-		info = function() return enums.artPath.."UIMicroMenu2x", 14, 16.5 end,
-		texCoords = { 0.328, 0.438, 0.438, 0.502 },
+		info = function() return enums.artPath.."UIMicroMenu2x", 14.5, 16.5 end,
+		texCoords = { 0.328, 0.444, 0.432, 0.502 },
 	},
 	divider = {
 		info = function() return enums.artPath.."Options", 200, 2 end,

@@ -91,7 +91,7 @@ end
 chat.commandLocales = {
 	isOK = true,
 	list = {
-		["info"] = true,
+		["help"] = true,
 		["toggle"] = true,
 		["categories"] = true,
 		["hyperlinks"] = true,
@@ -220,7 +220,7 @@ function NysTDL:OnInitialize()
     -- // addon fully loaded!
 
     local hex = utils:RGBToHex(database.themes.theme2)
-    chat:Print(L["Addon loaded!"].." ("..string.format("|cff%s%s|r", hex, chat.slashCommand.." "..L["info"])..")")
+    chat:Print(L["Addon loaded!"].." "..utils:SafeStringFormat(L["Type %s for more information"], string.format("|cff%s%s|r", hex, chat.slashCommand..' '..L["help"])))
 
     -- checking for an addon update
     if core.addonUpdated then

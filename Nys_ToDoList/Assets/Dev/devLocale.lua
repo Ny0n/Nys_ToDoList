@@ -19,8 +19,18 @@ addonTable.devLocale = L
 
 --/************************************************/--
 
+-- TODO CLEANUP
+
+-- L["info"] = true
+-- L["If you're having any problems or you just want more information, you can always click here to print help in the chat!"] = true
+-- L["Please type %s and read the chat message for more information about this mode"]
+
 L["Toggle clear view"] = true
 L["Move"] = true
+L["Current"] = true -- specify
+L["No global data found"] = true -- specify
+L["Type %s for more information"] = true
+L["help"] = true
 
 L["Add elements in last position"] = true
 L["Addon not loaded"] = true
@@ -145,11 +155,9 @@ L["Highlight edit boxes"] = true
 L["Hour"] = true
 L["Hourly reminder"] = true
 L["hyperlinks"] = true
-L["If you're having any problems or you just want more information, you can always click here to print help in the chat!"] = true
 L["Import"] = true
 L["Import successful"] = true
 L["Import tabs"] = true
-L["info"] = true
 L["Information"] = true
 L["Information on categories"] = true
 L["Instant refresh"] = true

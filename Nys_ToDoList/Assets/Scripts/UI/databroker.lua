@@ -9,6 +9,7 @@ NysTDL.databroker = databroker
 
 local libs = NysTDL.libs
 local core = NysTDL.core
+local chat = NysTDL.chat
 local utils = NysTDL.utils
 local enums = NysTDL.enums
 local database = NysTDL.database
@@ -50,6 +51,22 @@ function private:DrawSimpleTooltip(tooltip)
 		tooltip:AddLine(string.format("|cff%s%s|r", hex, L["Click"])..utils:GetMinusStr()..string.format("|cff%s%s|r", "FFFFFF", L["Toggle the list"]))
 		tooltip:AddLine(string.format("|cff%s%s|r", hex, L["Shift-Click"])..utils:GetMinusStr()..string.format("|cff%s%s|r", "FFFFFF", L["Open addon options"]))
 		tooltip:AddLine(string.format("|cff%s%s|r", hex, L["Ctrl-Click"])..utils:GetMinusStr()..string.format("|cff%s%s|r", "FFFFFF", NysTDL.acedb.profile.minimap.lock and L["Unlock minimap button"] or L["Lock minimap button"]))
+
+		-- local str = L["At any time, you can type %s to get more information"]
+		-- local end_idx = string.find(str, "%%s")
+		-- if end_idx then
+		-- 	-- tooltip:AddLine(" ")
+		-- 	local left = string.sub(str, 1, end_idx+1)
+		-- 	local right = string.sub(str, end_idx+3)
+		-- 	tooltip:AddLine(string.format("|cff%s%s|r", "AAAAAA", utils:SafeStringFormat(left, "\""..chat.slashCommand..' '..L["help"].."\"")))
+		-- 	if type(right) == "string" and #right > 0 then
+		-- 		tooltip:AddLine(string.format("|cff%s%s|r", "AAAAAA", right))
+		-- 	end
+		-- end
+
+		tooltip:AddLine(" ")
+		tooltip:AddLine(string.format("|cff%s%s|r", "AAAAAA", utils:SafeStringFormat(L["Type %s for more information"], string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme2), chat.slashCommand..' '..L["help"]))))
+
 		tooltip:Show()
 	end
 end

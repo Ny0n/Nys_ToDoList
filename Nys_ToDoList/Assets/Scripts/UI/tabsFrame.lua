@@ -338,23 +338,9 @@ function private:RefreshSize()
 
 	local hasGlobalData = dataManager:HasGlobalData()
 
-	if hasGlobalData then
+	if hasGlobalData then -- because the switch tabs state button will be shown
 		overflowButtonFrame:SetPoint("TOPRIGHT", mainFrame.tdlFrame, "BOTTOMRIGHT", -overflowButtonWidth-inBetweenButtonOffset, overflowButtonOffsetY)
-		switchStateButtonFrame:SetShown(true)
-
-		if database.ctabstate() then
-			-- global
-			switchStateButtonFrame.btn.Texture:SetTexCoord(unpack(enums.icons.global.texCoords))
-			switchStateButtonFrame.btn:SetSize(select(2, enums.icons.global.info()))
-		else
-			-- profile
-			switchStateButtonFrame.btn.Texture:SetTexCoord(unpack(enums.icons.profile.texCoords))
-			switchStateButtonFrame.btn:SetSize(select(2, enums.icons.profile.info()))
-		end
-
 		rightOffset = -overflowButtonWidth
-	else
-		switchStateButtonFrame:SetShown(false)
 	end
 
 	if hasGlobalData and hasOverflow then
@@ -404,6 +390,8 @@ function private:RefreshPoints()
 end
 
 function private:RefreshOverflowList()
+	-- TODO if clear view is active, different list and function
+
 	-- updates the pos of each ListButtonWidget, which ones are shown, and adapts the height of the overflowList
 	for _,listButton in pairs(listButtonWidgets) do
 		listButton:ClearAllPoints()
@@ -546,6 +534,14 @@ end
 
 --/*******************/ GENERAL /*************************/--
 
+function tabsFrame:TryShowOverflowList()
+	if not overflowList:IsShown() then -- if we're about to show the list, we refresh it
+		private:RefreshOverflowList()
+	end
+
+	overflowList:SetShown(not overflowList:IsShown()) -- toggles the overflowList
+end
+
 function tabsFrame:HideOverflowList()
 	if overflowList then
 		overflowList:Hide()
@@ -659,6 +655,56 @@ function tabsFrame:SetContentAlpha(alpha)
 	end
 end
 
+function tabsFrame:UpdateTabSwitchButtonVisuals()
+	local s = {L["Switch Global/Profile"]}
+
+	if dataManager:HasGlobalData() then
+		local s2 = L["Current"]..": "..(database.ctabstate() and L["Global tabs"] or L["Profile tabs"])
+		s2 = utils:ColorText(database.themes.theme, s2)
+		table.insert(s, s2)
+	else
+		table.insert(s, utils:ColorText(database.themes.red, L["No global data found"]))
+	end
+
+	if database.ctabstate() then
+		-- global
+		switchStateButtonFrame.btn.Texture:SetTexCoord(unpack(enums.icons.global.texCoords))
+		switchStateButtonFrame.btn:SetSize(select(2, enums.icons.global.info()))
+
+		-- switchStateButtonFrame.btn.Texture:SetDesaturated(true)
+		-- switchStateButtonFrame.btn.Texture:SetVertexColor(1, 0, 1)
+
+		mainFrame.tdlFrame.cvTabsSwitchState.Icon:SetTexCoord(unpack(enums.icons.global.texCoords))
+		mainFrame.tdlFrame.cvTabsSwitchState.Icon:SetSize(select(2, enums.icons.global.info()))
+
+		-- mainFrame.tdlFrame.cvTabsSwitchState.Icon:SetDesaturated(true)
+		-- mainFrame.tdlFrame.cvTabsSwitchState.Icon:SetVertexColor(1, 0, 0.1)
+	else
+		-- profile
+		switchStateButtonFrame.btn.Texture:SetTexCoord(unpack(enums.icons.profile.texCoords))
+		switchStateButtonFrame.btn:SetSize(select(2, enums.icons.profile.info()))
+
+		-- switchStateButtonFrame.btn.Texture:SetDesaturated(true)
+		-- switchStateButtonFrame.btn.Texture:SetVertexColor(0, 1, 1)
+
+		mainFrame.tdlFrame.cvTabsSwitchState.Icon:SetTexCoord(unpack(enums.icons.profile.texCoords))
+		mainFrame.tdlFrame.cvTabsSwitchState.Icon:SetSize(select(2, enums.icons.profile.info()))
+
+		-- mainFrame.tdlFrame.cvTabsSwitchState.Icon:SetDesaturated(true)
+		-- mainFrame.tdlFrame.cvTabsSwitchState.Icon:SetVertexColor(0, 1, 1)
+	end
+
+	switchStateButtonFrame.btn.tooltipText = s
+	switchStateButtonFrame.btn:RefreshTooltip()
+	switchStateButtonFrame:SetShown(dataManager:HasGlobalData())
+
+	mainFrame.tdlFrame.cvTabsSwitchState.tooltipText = s
+	mainFrame.tdlFrame.cvTabsSwitchState:RefreshTooltip()
+	-- mainFrame.tdlFrame.cvTabsSwitchState:SetEnabled(dataManager:HasGlobalData())
+
+	tutorialsManager:Refresh()
+end
+
 function tabsFrame:UpdateTab(tabID)
 	-- updates (create/update) the given tab's associated button
 
@@ -745,6 +791,9 @@ function tabsFrame:Refresh()
 
 	-- there we update the alpha of everyone (bc maybe we're not hovering the scrollFrame, so any refresh does it as well, thanks WoW API ;)
 	private:SetTabWidgetsContentAlpha(NysTDL.acedb.profile.frameContentAlpha/100, true)
+
+	-- refresh BOTH switchStateButtonFrame, the one from here and the one from the list's clear view
+	tabsFrame:UpdateTabSwitchButtonVisuals()
 end
 
 --/*******************/ INITIALIZATION /*************************/--
@@ -813,16 +862,12 @@ function tabsFrame:CreateTabsFrame()
 	overflowList.content.title:SetFontObject("GameFontHighlight")
 	overflowList.content.title:SetText(L["Other Tabs"])
 
-	overflowButtonFrame.btn:SetScript("OnClick", function()
-		if not overflowList:IsShown() then -- if we're about to show the list, we refresh it
-			private:RefreshOverflowList()
-		end
-
-		overflowList:SetShown(not overflowList:IsShown()) -- toggles the overflowList
-	end)
+	overflowButtonFrame.btn:SetScript("OnClick", tabsFrame.TryShowOverflowList)
+	overflowButtonFrame.btn.tooltipText = L["Other Tabs"]
 
 	-- // switchStateButton (switch global/profile)
 	switchStateButtonFrame = widgets:TabIconFrame(tabsFrame.tabsParentFrame, overflowButtonSize, -overflowButtonRightOffsetX, overflowButtonOffsetY, 0, 3)
+	tabsFrame.switchStateButtonFrame = switchStateButtonFrame
 
 	switchStateButtonFrame.btn:SetNormalTexture(enums.icons.global.info())
 	switchStateButtonFrame.btn.Texture:SetAlpha(0.9)
@@ -831,9 +876,6 @@ function tabsFrame:CreateTabsFrame()
 	switchStateButtonFrame.btn:SetScript("OnClick", function()
 		tabsFrame:SwitchState(nil) -- toggle
 	end)
-
-	-- tuto
-	tutorialsManager:SetPoint("tabSwitchState", "explainSwitchButton", "LEFT", switchStateButtonFrame, "RIGHT", 22, 0)
 end
 
 function tabsFrame:Init()
