@@ -89,7 +89,7 @@ local sWidth, sWidthClassic = 34, 38
 
 local loadOriginOffset, loadOriginOffsetClassic = { 14 + loadOriginSpec.x, -9 + loadOriginSpec.y }, { 14 + loadOriginSpecClassic.x, -12 + loadOriginSpecClassic.y }
 local lineBottom, lineBottomClassic = { x = 12 + loadOriginSpec.x, y = -45 + loadOriginSpec.y }, { x = 12 + loadOriginSpecClassic.x, y = -45 + loadOriginSpecClassic.y }
-local menuOrigin, menuOriginClassic = { 25 + loadOriginSpec.x, -22 + loadOriginSpec.y }, { 25 + loadOriginSpecClassic.x, -22 + loadOriginSpecClassic.y }
+local menuOrigin, menuOriginClassic = { 27 + loadOriginSpec.x, -22 + loadOriginSpec.y }, { 25 + loadOriginSpecClassic.x, -22 + loadOriginSpecClassic.y }
 
 -- // WoW & Lua APIs
 
@@ -513,13 +513,15 @@ function mainFrame:ToggleClearView(state, forceUpdate)
 
 	if clearView then
 		local margin = 12
-		tdlFrame:SetClampRectInsets(17-margin, -5+margin, -6+margin, 4-margin) -- better fine tuning for the clear view
+		tdlFrame:SetClampRectInsets(19-margin, -5+margin, -6+margin, 4-margin) -- better fine tuning for the clear view
 		tdlFrame:RePoint()
+		tdlFrame.menu:SetPoint("TOPLEFT", tdlFrame, 4, -24)
 		tutorialsManager:SetPoint("introduction", "miniView", "RIGHT", tdlFrame.cvViewButton, "LEFT", -18, 0, "RIGHT")
 		tutorialsManager:SetPoint("tabSwitchState", "explainSwitchButton", "BOTTOM", tdlFrame.cvTabsSwitchState, "TOP", 0, 22, "DOWN")
 	else
 		tdlFrame:SetClampRectInsets(4, 0, -1, 1) -- perfectly in sync with the visual
 		tdlFrame:RePoint()
+		tdlFrame.menu:SetPoint("TOPLEFT", tdlFrame.dummyScaleMenu, -5, 0)
 		tutorialsManager:SetPoint("introduction", "miniView", "LEFT", tdlFrame.viewButton, "RIGHT", 18, 0, "LEFT")
 		tutorialsManager:SetPoint("tabSwitchState", "explainSwitchButton", "LEFT", tabsFrame.switchStateButtonFrame, "RIGHT", 22, 0, "LEFT")
 	end
@@ -528,10 +530,14 @@ end
 function mainFrame:RefreshScale()
 	-- // content font size (scale)
 
-	local scale = NysTDL.acedb.profile.frameScale
+	local contentScale = NysTDL.acedb.profile.frameScale
+	local menuScale = NysTDL.acedb.profile.menuSize
 
-	tdlFrame.content:SetScale(scale)
-	dragndrop:SetScale(scale*tdlFrame:GetScale())
+	tdlFrame.cvMenu:SetScale(menuScale)
+	tdlFrame.menu:SetScale(menuScale)
+	-- tdlFrame.content.dummyScaleOrigin:SetScale(menuScale)
+	tdlFrame.content:SetScale(contentScale)
+	dragndrop:SetScale(contentScale*tdlFrame:GetScale())
 
 	-- tutorialsManager:SetFramesScale(scale)
 end
@@ -575,6 +581,7 @@ function mainFrame:Event_FrameContentAlphaSlider_OnValueChanged(value)
 	tdlFrame.viewButton:SetAlpha(value/100)
 	tdlFrame.CloseButton:SetAlpha(value/100)
 	tdlFrame.cvMenu:SetAlpha(value/100)
+	tdlFrame.menu:SetAlpha(value/100)
 
 	-- and that's why the min opacity is 0.6!
 	if utils:IsDF() then
@@ -999,7 +1006,7 @@ function private:GenerateFrameContent()
 	-- CLEAR VIEW menu
 	tdlFrame.cvMenu = CreateFrame("Frame", "NysTDL_tdlFrame.cvMenu", tdlFrame.clipFrame)
 	tdlFrame.cvMenu:SetSize(1, 1)
-	tdlFrame.cvMenu:SetPoint("TOPLEFT", tdlFrame, 0, 0)
+	tdlFrame.cvMenu:SetPoint("TOPLEFT", tdlFrame, 2, 0)
 
 	-- CLEAR VIEW view button
 	tdlFrame.cvViewButton = widgets:IconTooltipButton(tdlFrame.cvMenu, "NysTDL_ViewButton", tdlFrame.viewButtonTooltip)
@@ -1035,8 +1042,8 @@ function private:GenerateFrameContent()
 	tdlFrame.cvMenu.lineBottom = widgets:HorizontalDivider(tdlFrame.cvMenu)
 	tdlFrame.cvMenu.lineBottom:SetPoint("TOPLEFT", tdlFrame.cvMenu, "TOPLEFT", lineBottom.x, -40)
 
+	tdlFrame.dummyScaleMenu = widgets:Dummy(tdlFrame, tdlFrame, 9, -24)
 	tdlFrame.menu = CreateFrame("Frame", "NysTDL_tdlFrame.menu", tdlFrame.clipFrame)
-	tdlFrame.menu:SetPoint("TOPLEFT", tdlFrame, 4, -24)
 	tdlFrame.menu:SetSize(1, 1)
 	local menu = tdlFrame.menu
 
@@ -1162,10 +1169,10 @@ function mainFrame:CreateTDLFrame()
 	tdlFrame:SetClampedToScreen(true)
 	tdlFrame:SetResizable(true)
 	if tdlFrame.SetResizeBounds then
-		tdlFrame:SetResizeBounds(90, 180, 600, 800)
+		tdlFrame:SetResizeBounds(90, 180, enums.tdlFrameMaxWidth, enums.tdlFrameMaxHeight)
 	else
 		tdlFrame:SetMinResize(90, 180)
-		tdlFrame:SetMaxResize(600, 800)
+		tdlFrame:SetMaxResize(enums.tdlFrameMaxWidth, enums.tdlFrameMaxHeight)
 	end
 	tdlFrame:SetToplevel(true)
 

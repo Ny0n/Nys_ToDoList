@@ -57,6 +57,8 @@ enums.idtype = "string"
 enums.tdlFrameDefaultWidth = 340
 enums.tdlFrameDefaultHeight = 400
 enums.rightPointDistance = 297
+enums.tdlFrameMaxWidth = 1000
+enums.tdlFrameMaxHeight = 0 -- whatever bro
 
 enums.ofsxItemIcons = 20
 

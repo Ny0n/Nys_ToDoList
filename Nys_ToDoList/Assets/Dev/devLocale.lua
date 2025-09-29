@@ -31,6 +31,8 @@ L["Current"] = true -- specify
 L["No global data found"] = true -- specify
 L["Type %s for more information"] = true
 L["help"] = true
+L["Frame priority"] = true
+L["Menu size"] = true
 
 L["Add elements in last position"] = true
 L["Addon not loaded"] = true

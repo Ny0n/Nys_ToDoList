@@ -309,10 +309,10 @@ function widgets:DescriptionFrame(itemWidget)
 		local minHeight = descFrameInfo.height+descFrame.heightFrame:GetHeight()
 		descFrame:SetHeight(math.max(minHeight, descFrame:GetHeight()))
 		if descFrame.SetResizeBounds then
-			descFrame:SetResizeBounds(75, minHeight, 600, 800)
+			descFrame:SetResizeBounds(75, minHeight, enums.tdlFrameMaxWidth, enums.tdlFrameMaxHeight)
 		else
 			descFrame:SetMinResize(75, minHeight)
-			descFrame:SetMaxResize(600, 800)
+			descFrame:SetMaxResize(enums.tdlFrameMaxWidth, enums.tdlFrameMaxHeight)
 		end
 	end)
 
