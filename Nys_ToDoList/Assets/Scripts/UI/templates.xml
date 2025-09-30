@@ -65,10 +65,12 @@
 				if self.name == "MoveButton" then xOffset = 1 end
 				if self.name == "cvSwitchButton" then xOffset = -2 end
 				<!-- if self.name == "ViewButton" then xOffset = -2 end -->
+				if self.name == "cvTabsDropdown" then xOffset = -2 end
 
 				local yOffset = -2
 				<!-- if self.name == "UndoButton" then yOffset = -3 end -->
 				if self.name == "CategoryButton" then yOffset = -3 end
+				if self.name == "cvTabsDropdown" then yOffset = 0 end
 
 				self.Icon:SetPoint("CENTER", xOffset, yOffset)
 
@@ -84,10 +86,12 @@
 				if self.name == "CategoryButton" then xOffset = 1 end
 				if self.name == "cvSwitchButton" then xOffset = -1 end
 				<!-- if self.name == "ViewButton" then xOffset = -1 end -->
+				if self.name == "cvTabsDropdown" then xOffset = -1 end
 
 				local yOffset = 0
 				<!-- if self.name == "UndoButton" then yOffset = -1 end -->
 				if self.name == "CategoryButton" then yOffset = -1 end
+				if self.name == "cvTabsDropdown" then yOffset = 2 end
 
 				self.Icon:SetPoint("CENTER", xOffset, yOffset)
 
@@ -105,10 +109,12 @@
 				if self.name == "CategoryButton" then xOffset = 1 end
 				if self.name == "cvSwitchButton" then xOffset = -1 end
 				<!-- if self.name == "ViewButton" then xOffset = -1 end -->
+				if self.name == "cvTabsDropdown" then xOffset = -1 end
 
 				local yOffset = 0
 				<!-- if self.name == "UndoButton" then yOffset = -1 end -->
 				if self.name == "CategoryButton" then yOffset = -1 end
+				if self.name == "cvTabsDropdown" then yOffset = 2 end
 
 				self.Icon:SetPoint("CENTER", xOffset, yOffset)
 
@@ -698,7 +704,7 @@
 	<Button name="NysTDL_OverflowButton" virtual="true">
 		<!-- size and points and a lot of other things set in the code -->
 		<NormalTexture file="Interface\BUTTONS\Arrow-Down-Down" parentKey="Texture">
-			<TexCoords left="0" right="1" top="0" bottom="0.5"/>
+			<TexCoords left="0" right="1" top="0" bottom="0.45"/>
 		</NormalTexture>
 		<HighlightTexture alpha="0.7" parentKey="Highlight" file="Interface\BUTTONS\UI-Common-MouseHilight" alphaMode="ADD" desaturated="true">
 			<Color r="1" g="0.84" b="0"/>
@@ -719,19 +725,37 @@
 					</Anchors>
 				</Texture>
 			</Layer>
-			<Layer level="ARTWORK">
-				<Texture file="Interface\ChatFrame\ChatFrameExpandArrow" parentKey="ArrowLEFT">
-					<Anchors>
-						<Anchor point="LEFT" x="2" y="0"/>
-					</Anchors>
-				</Texture>
-				<Texture file="Interface\ChatFrame\ChatFrameExpandArrow" parentKey="ArrowRIGHT">
-					<Anchors>
-						<Anchor point="RIGHT" x="-2" y="0"/>
-					</Anchors>
-				</Texture>
-			</Layer>
 		</Layers>
+		<Frames>
+			<Frame parentKey="Arrows">
+				<Anchors>
+					<Anchor point="CENTER"/>
+				</Anchors>
+				<Layers>
+					<Layer level="ARTWORK">
+						<Texture file="Interface\ChatFrame\ChatFrameExpandArrow" parentKey="ArrowLEFT">
+							<Anchors>
+								<Anchor point="LEFT" x="2" y="0"/>
+							</Anchors>
+						</Texture>
+						<Texture file="Interface\ChatFrame\ChatFrameExpandArrow" parentKey="ArrowRIGHT">
+							<Anchors>
+								<Anchor point="RIGHT" x="-2" y="0"/>
+							</Anchors>
+						</Texture>
+					</Layer>
+				</Layers>
+				<Scripts>
+					<OnLoad>
+						self:SetAllPoints(self:GetParent());
+
+						-- Promote arrows to the button (parent of self)
+						self:GetParent().ArrowLEFT = self.ArrowLEFT
+						self:GetParent().ArrowRIGHT = self.ArrowRIGHT
+					</OnLoad>
+				</Scripts>
+			</Frame>
+		</Frames>
 		<Scripts>
 			<OnLoad>
 				SetClampedTextureRotation(self.ArrowLEFT, 180)

@@ -520,16 +520,26 @@ function mainFrame:ToggleClearView(state, forceUpdate)
 	tdlFrame.cvMenu:SetShown(clearView)
 
 	if clearView then
+		tabsFrame.overflowList:ClearAllPoints()
+		tabsFrame.overflowList:SetPoint("TOP", tdlFrame.cvTabsDropdown, "BOTTOM", 0, 0)
+
 		local margin = 12
 		tdlFrame:SetClampRectInsets(19-margin, -5+margin, -6+margin, 4-margin) -- better fine tuning for the clear view
 		tdlFrame:RePoint()
+
 		tdlFrame.menu:SetPoint("TOPLEFT", tdlFrame, 4, -24)
+
 		tutorialsManager:SetPoint("introduction", "miniView", "RIGHT", tdlFrame.cvViewButton, "LEFT", -18, 0, "RIGHT")
 		tutorialsManager:SetPoint("tabSwitchState", "explainSwitchButton", "BOTTOM", tdlFrame.cvTabsSwitchState, "TOP", 0, 22, "DOWN")
 	else
+		tabsFrame.overflowList:ClearAllPoints()
+		tabsFrame.overflowList:SetPoint("TOPRIGHT", tabsFrame.overflowButtonFrame, "BOTTOMRIGHT", 0, -8)
+
 		tdlFrame:SetClampRectInsets(4, 0, -1, 1) -- perfectly in sync with the visual
 		tdlFrame:RePoint()
+
 		tdlFrame.menu:SetPoint("TOPLEFT", tdlFrame.dummyScaleMenu, -5, 0)
+
 		tutorialsManager:SetPoint("introduction", "miniView", "LEFT", tdlFrame.viewButton, "RIGHT", 18, 0, "LEFT")
 		tutorialsManager:SetPoint("tabSwitchState", "explainSwitchButton", "LEFT", tabsFrame.switchStateButtonFrame, "RIGHT", 22, 0, "LEFT")
 	end
@@ -1046,6 +1056,10 @@ function private:GenerateFrameContent()
 	tdlFrame.cvTabsDropdown = widgets:IconTooltipButton(tdlFrame.cvMenu, "NysTDL_CategoryButton", L["Other Tabs"])
 	tdlFrame.cvTabsDropdown:SetPoint("CENTER", tdlFrame.cvTabsSwitchState, "CENTER", spacing, 0)
 	tdlFrame.cvTabsDropdown:SetScript("OnClick", tabsFrame.TryShowOverflowList)
+	tdlFrame.cvTabsDropdown.name = "cvTabsDropdown"
+	tdlFrame.cvTabsDropdown.Icon:SetSize(17, 12)
+	tdlFrame.cvTabsDropdown.Icon:SetTexture("Interface\\BUTTONS\\Arrow-Down-Down")
+	tdlFrame.cvTabsDropdown.Icon:SetTexCoord(0, 1, 0, 0.45)
 
 	-- CLEAR VIEW current tab text
 	tdlFrame.cvCurrentTabText = widgets:NoPointsLabel(tdlFrame.cvMenu, nil, "...")

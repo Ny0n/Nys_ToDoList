@@ -392,35 +392,53 @@ end
 function private:RefreshOverflowList()
 	-- TODO if clear view is active, different list and function
 
+	-- visual changes in clear view
+	local clearView = NysTDL.acedb.profile.isInClearView
+
 	-- updates the pos of each ListButtonWidget, which ones are shown, and adapts the height of the overflowList
 	for _,listButton in pairs(listButtonWidgets) do
 		listButton:ClearAllPoints()
 		listButton:Hide()
 		listButton.ArrowLEFT:Hide()
 		listButton.ArrowRIGHT:Hide()
+		listButton:SetIsDisplayOnly(false)
 	end
 
 	local tabsList = select(3, dataManager:GetData(database.ctabstate()))
 	local lastWidget, rightSide
+
+	local displayWidget = function(widget)
+		if not lastWidget then
+			widget:SetPoint("TOP", overflowList.content.title, "BOTTOM", 0, -5)
+		else
+			widget:SetPoint("TOP", lastWidget, "BOTTOM", 0, -2)
+		end
+		widget:Show()
+
+		if rightSide then
+			widget.ArrowRIGHT:Show()
+		else
+			widget.ArrowLEFT:Show()
+		end
+
+		lastWidget = widget
+	end
+
 	for _,tabID in ipairs(tabsList.orderedTabIDs) do
 		if listButtonWidgets[tabID] then
-			if utils:HasValue(_shownWholeTabs, tabID) then
-				rightSide = true
-			else -- !! if the tab is not already shown as a button under the list
-				if not lastWidget then
-					listButtonWidgets[tabID]:SetPoint("TOP", overflowList.content.title, "BOTTOM", 0, -5)
+			if clearView then
+				if database.ctab() == tabID then
+					rightSide = true
+					-- listButtonWidgets[tabID]:SetIsDisplayOnly(true) -- NEVERMIND I DONT LIKE IT
 				else
-					listButtonWidgets[tabID]:SetPoint("TOP", lastWidget, "BOTTOM", 0, -2)
+					displayWidget(listButtonWidgets[tabID])
 				end
-				listButtonWidgets[tabID]:Show()
-
-				if rightSide then
-					listButtonWidgets[tabID].ArrowRIGHT:Show()
-				else
-					listButtonWidgets[tabID].ArrowLEFT:Show()
+			else
+				if utils:HasValue(_shownWholeTabs, tabID) then
+					rightSide = true
+				else -- !! if the tab is not already shown as a button under the list
+					displayWidget(listButtonWidgets[tabID])
 				end
-
-				lastWidget = listButtonWidgets[tabID]
 			end
 		end
 	end
@@ -525,9 +543,29 @@ function private:ListButtonWidget(tabID, parentFrame)
 	listButtonWidget:SetSize(parentFrame:GetWidth()-12, listButtonWidgetHeight)
 	listButtonWidget:GetFontString():SetWordWrap(false)
 	listButtonWidget:SetScript("OnClick", function(self)
-		tabWidgets[self.tabID]:Click()
-		private:SetTabWidgetsContentAlpha(NysTDL.acedb.profile.frameContentAlpha/100, true) -- I hate this alpha problem, but whatever, this fixes it
+		if NysTDL.acedb.profile.isInClearView then -- different behavior in clear view
+			mainFrame:ChangeTab(self.tabID)
+			tabsFrame:Refresh()
+			tabsFrame:HideOverflowList()
+		else
+			tabWidgets[self.tabID]:Click()
+			private:SetTabWidgetsContentAlpha(NysTDL.acedb.profile.frameContentAlpha/100, true) -- I hate this alpha problem, but whatever, this fixes it
+		end
 	end)
+
+	listButtonWidget.SetIsDisplayOnly = function(self, isDisplay)
+		if isDisplay then
+			self.Arrows:Hide()
+			self.Highlight:Show()
+			self.Highlight:SetDesaturated(true)
+			self:SetEnabled(false)
+		else
+			self.Arrows:Show()
+			self.Highlight:Hide()
+			self.Highlight:SetDesaturated(false)
+			self:SetEnabled(true)
+		end
+	end
 
 	return listButtonWidget
 end
@@ -550,7 +588,7 @@ end
 
 function tabsFrame:GLOBAL_MOUSE_DOWN()
 	-- to replicate the behavior of the GameTooltip
-	if overflowList and not overflowList:IsMouseOver() and not overflowButtonFrame:IsMouseOver() then
+	if overflowList and not overflowList:IsMouseOver() and not overflowButtonFrame:IsMouseOver() and not mainFrame.tdlFrame.cvTabsDropdown:IsMouseOver() then
 		tabsFrame:HideOverflowList()
 	end
 end
@@ -594,10 +632,10 @@ function tabsFrame:SetAlpha(alpha)
 		switchStateButtonFrame.backdrop.Center:SetAlpha(alpha)
 	end
 
-	-- overflowList
-	if overflowList then
-		overflowList.Center:SetAlpha(alpha)
-	end
+	-- -- overflowList
+	-- if overflowList then
+	-- 	overflowList.Center:SetAlpha(alpha)
+	-- end
 end
 
 function private:SetTabWidgetsContentAlpha(alpha, forAll)
@@ -845,13 +883,14 @@ function tabsFrame:CreateTabsFrame()
 	overflowList:SetBackdrop(enums.backdrop)
 	overflowList:SetBackdropColor(utils:ThemeDownTo01(enums.backdropColor, true))
 	overflowList:SetBackdropBorderColor(utils:ThemeDownTo01(enums.backdropBorderColor, true))
-	overflowList:SetPoint("TOPRIGHT", overflowButtonFrame, "BOTTOMRIGHT", 0, -8)
 	overflowList:SetSize(150, 1) -- the height is updated dynamically
 	overflowList:EnableMouse(true)
 	overflowList:SetClampedToScreen(true)
 	overflowList:SetFrameStrata("TOOLTIP")
 	overflowList:SetToplevel(true)
 	overflowList:Hide()
+	-- point set in clear view toggle, bc it depends on which button we are pressing
+	tabsFrame.overflowList = overflowList
 
 	overflowList.content = CreateFrame("Frame", nil, overflowList)
 	overflowList.content:SetPoint("TOPLEFT", overflowList, "TOPLEFT")
@@ -864,6 +903,7 @@ function tabsFrame:CreateTabsFrame()
 
 	overflowButtonFrame.btn:SetScript("OnClick", tabsFrame.TryShowOverflowList)
 	overflowButtonFrame.btn.tooltipText = L["Other Tabs"]
+	tabsFrame.overflowButtonFrame = overflowButtonFrame
 
 	-- // switchStateButton (switch global/profile)
 	switchStateButtonFrame = widgets:TabIconFrame(tabsFrame.tabsParentFrame, overflowButtonSize, -overflowButtonRightOffsetX, overflowButtonOffsetY, 0, 3)
