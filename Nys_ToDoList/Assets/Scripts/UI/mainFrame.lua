@@ -442,20 +442,28 @@ local onChangeView = function()
 
 	tdlFrame.ScrollFrame:ClearPoint("TOPLEFT")
 
-	tdlFrame.content.loadOrigin:SetPoint("TOPLEFT", tdlFrame.content, "TOPLEFT", loadOriginOffset[1], loadOriginOffset[2])
+	tdlFrame.content.dummyScaleOrigin2:SetPoint("TOPLEFT", tdlFrame.scrollChild, 5, 0) -- for the not clear view convergence i set with the menu dummy scale (9 instead of 4 so +5)
+
+	if clearView then
+		tdlFrame.content.dummyScaleOrigin:SetPoint("TOPLEFT", tdlFrame.scrollChild, loadOriginOffset[1], loadOriginOffset[2])
+	else
+		tdlFrame.content.dummyScaleOrigin:SetPoint("TOPLEFT", tdlFrame.content.dummyScaleOrigin2, loadOriginOffset[1]-5, loadOriginOffset[2])
+	end
 
 	if miniView then
 		if clearView then
 			tdlFrame.ScrollFrame:SetPoint("TOP", tdlFrame.cvMenu.lineBottom, "BOTTOM", 0, -1)
 			tdlFrame.ScrollFrame:SetPoint("LEFT", tdlFrame, "LEFT", 4, 0)
 		else
-			tdlFrame.content.loadOrigin:SetPoint("TOPLEFT", tdlFrame.content, "TOPLEFT", loadOriginOffset[1], loadOriginOffset[2] - 3)
 			tdlFrame.ScrollFrame:SetPoint("TOPLEFT", tdlFrame, "TOPLEFT", 4, -22)
+			tdlFrame.content.dummyScaleOrigin2:SetPoint("TOPLEFT", tdlFrame.scrollChild, 5, -3)
 		end
 	else
 		tdlFrame.ScrollFrame:SetPoint("TOP", tdlFrame.menu.lineBottom, "BOTTOM", 0, -1)
 		tdlFrame.ScrollFrame:SetPoint("LEFT", tdlFrame, "LEFT", 4, 0)
 	end
+
+	mainFrame:RefreshScale()
 end
 
 function mainFrame:ToggleMinimalistView(state, forceUpdate)
@@ -535,9 +543,14 @@ function mainFrame:RefreshScale()
 
 	tdlFrame.cvMenu:SetScale(menuScale)
 	tdlFrame.menu:SetScale(menuScale)
-	-- tdlFrame.content.dummyScaleOrigin:SetScale(menuScale)
 	tdlFrame.content:SetScale(contentScale)
 	dragndrop:SetScale(contentScale*tdlFrame:GetScale())
+
+	if NysTDL.acedb.profile.isInMiniView and not NysTDL.acedb.profile.isInClearView then
+		tdlFrame.content.dummyScaleOrigin:SetScale(1)
+	else
+		tdlFrame.content.dummyScaleOrigin:SetScale(menuScale)
+	end
 
 	-- tutorialsManager:SetFramesScale(scale)
 end
@@ -1140,7 +1153,9 @@ function private:GenerateFrameContent()
 
 	-- // the content, below the menu
 
-	content.loadOrigin = widgets:Dummy(content, content, 0, 0)
+	content.dummyScaleOrigin = widgets:Dummy(tdlFrame.scrollChild)
+	content.dummyScaleOrigin2 = widgets:Dummy(tdlFrame.scrollChild)
+	content.loadOrigin = widgets:Dummy(content, tdlFrame.content.dummyScaleOrigin)
 
 	content.nothingLabel = widgets:HintLabel(content, nil, L["Empty tab"].."\n"..L["Start by adding a new category!"])
 	content.nothingLabel:SetPoint("TOPLEFT", content.loadOrigin, "TOPLEFT", 0, 0)
