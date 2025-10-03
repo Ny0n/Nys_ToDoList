@@ -384,7 +384,7 @@ function private:CreateTutorials()
 
 	private:CreateTutoFrame(cat, "addNewCat", false, "UP", L["Start by adding a new category!"], 240)
 	private:CreateTutoFrame(cat, "addCat", true, "UP", L["This will add your category to the current tab"], 240)
-	private:CreateTutoFrame(cat, "addItem", false, "RIGHT", utils:SafeStringFormat(L["To add elements in a category, hover the name and press the %s icon"], enums.icons.add.texHyperlinkTuto).."\n"..string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Left-Click"])..utils:GetMinusStr()..L["Add an item"].."\n"..string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Right-Click"])..utils:GetMinusStr()..L["Add a category"], 270)
+	private:CreateTutoFrame(cat, "addItem", false, "RIGHT", utils:SafeStringFormat(L["To add elements in a category, hover the name and press the %s icon"], enums.icons.add.texHyperlinkTuto), 270)
 	private:CreateTutoFrame(cat, "editmode", false, "RIGHT", L["To delete items and do a lot more, you can right-click anywhere on the list or click on this button to toggle the edit mode"], 300)
 	private:CreateTutoFrame(cat, "getMoreInfo", true, nil, utils:SafeStringFormat(L["Type %s for more information"], string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme2), chat.slashCommand..' '..L["help"])), 290)
 	private:CreateTutoFrame(cat, "miniView", true, "LEFT", L["One last thing: you can change what you see using this button. It's up to you now!"], 240)
