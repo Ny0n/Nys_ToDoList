@@ -21,8 +21,8 @@ addonTable.devLocale = L
 
 L["Toggle clear view"] = true
 L["Move"] = true
-L["Current"] = true -- specify
-L["No global data found"] = true -- specify
+L["Current"] = true
+L["No global data found"] = true
 L["Type %s for more information"] = true
 L["help"] = true
 L["Frame priority"] = true
