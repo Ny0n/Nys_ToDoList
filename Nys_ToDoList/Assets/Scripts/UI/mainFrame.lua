@@ -84,7 +84,7 @@ contentWidgets = {
 -- these are for code comfort
 
 local cursorX, cursorY, cursorDist = 0, 0, 0 -- for my special drag
-local loadOriginSpec, loadOriginSpecClassic = { x = 0, y = 0 }, { x = -4, y = 0 } -- TODO CLASSIC?
+local loadOriginSpec, loadOriginSpecClassic = { x = 0, y = 0 }, { x = -4, y = 0 }
 local sWidth, sWidthClassic = 34, 38
 
 local loadOriginOffset, loadOriginOffsetClassic = { 14 + loadOriginSpec.x, -9 + loadOriginSpec.y }, { 14 + loadOriginSpecClassic.x, -12 + loadOriginSpecClassic.y }
@@ -421,10 +421,10 @@ function mainFrame:ToggleEditMode(state, forceUpdate)
 	tdlFrame.resizeButton:SetShown(mainFrame.editMode)
 
 	-- scroll bar
-	local emOffset = utils:IsDF() and 32 or 12 -- TODO
+	local emOffset = utils:IsDF() and 32 or 37
 	local offsetY = mainFrame.editMode and emOffset or 0
-	offsetY = offsetY + (utils:IsDF() and 12 or 17)
-	tdlFrame.ScrollFrame.ScrollBar:SetPoint("BOTTOMRIGHT", tdlFrame, "BOTTOMRIGHT", -38, offsetY) -- TODO CLASSIC?
+	offsetY = offsetY + (utils:IsDF() and 12 or 21)
+	tdlFrame.ScrollFrame.ScrollBar:SetPoint("BOTTOMRIGHT", tdlFrame, "BOTTOMRIGHT", -38, offsetY)
 
 	-- // refresh
 	if dragndrop.dragging and not mainFrame.editMode then dragndrop:CancelDragging() end
@@ -510,9 +510,25 @@ function mainFrame:ToggleClearView(state, forceUpdate)
 
 	tdlFrame:EnableMouse(not clearView)
 
-	tdlFrame.Bg:SetShown(not clearView)
-	tdlFrame.NineSlice:SetShown(not clearView)
-	tdlFrame.CloseButton:SetShown(not clearView)
+	if not utils:IsDF() then
+		tdlFrame.Bg:SetShown(not clearView)
+		tdlFrame.CloseButton:SetShown(not clearView)
+		tdlFrame.TitleBg:SetShown(not clearView)
+		tdlFrame.TopTileStreaks:SetShown(not clearView)
+		tdlFrame.TopLeftCorner:SetShown(not clearView)
+		tdlFrame.TopRightCorner:SetShown(not clearView)
+		tdlFrame.TopBorder:SetShown(not clearView)
+		tdlFrame.TitleText:SetShown(not clearView)
+		tdlFrame.BotLeftCorner:SetShown(not clearView)
+		tdlFrame.BotRightCorner:SetShown(not clearView)
+		tdlFrame.BottomBorder:SetShown(not clearView)
+		tdlFrame.LeftBorder:SetShown(not clearView)
+		tdlFrame.RightBorder:SetShown(not clearView)
+	else
+		tdlFrame.Bg:SetShown(not clearView)
+		tdlFrame.CloseButton:SetShown(not clearView)
+		tdlFrame.NineSlice:SetShown(not clearView)
+	end
 	tabsFrame.tabsParentFrame:SetShown(not clearView)
 	tdlFrame.ScrollFrame.ScrollBar:SetShown(not clearView)
 	tdlFrame.viewButton:SetShown(not clearView)
@@ -1029,7 +1045,7 @@ function private:GenerateFrameContent()
 	-- CLEAR VIEW menu
 	tdlFrame.cvMenu = CreateFrame("Frame", "NysTDL_tdlFrame.cvMenu", tdlFrame.clipFrame)
 	tdlFrame.cvMenu:SetSize(1, 1)
-	tdlFrame.cvMenu:SetPoint("TOPLEFT", tdlFrame, 2, 0)
+	tdlFrame.cvMenu:SetPoint("TOPLEFT", tdlFrame, utils:IsDF() and 2 or -4, 0)
 
 	-- CLEAR VIEW view button
 	tdlFrame.cvViewButton = widgets:IconTooltipButton(tdlFrame.cvMenu, "NysTDL_ViewButton", tdlFrame.viewButtonTooltip)
@@ -1306,11 +1322,16 @@ function mainFrame:CreateTDLFrame()
 	tdlFrame.ScrollFrame.ScrollBar.GetParent = function() -- go along now, you didn't see anything
 		return tdlFrame.ScrollFrame
 	end
-	if utils:IsDF() then -- TODO CLASSIC
+	if utils:IsDF() then
 		tdlFrame.ScrollFrame.ScrollBar:SetPoint("TOPLEFT", tdlFrame, "TOPRIGHT", 0, -30-24)
 	else
 		tdlFrame.ScrollFrame.ScrollBar:SetScale(1.05)
-		tdlFrame.ScrollFrame.ScrollBar:SetPoint("TOPLEFT", tdlFrame.ScrollFrame, "TOPRIGHT", 51, -37)
+		tdlFrame.ScrollFrame.ScrollBar:SetPoint("TOPLEFT", tdlFrame, "TOPRIGHT", 9, -60)
+		tdlFrame.ScrollFrame.ScrollBar:HookScript("OnShow", function(self) -- classic scroll bar has a mind of its own
+			if NysTDL.acedb.profile.isInClearView then
+				self:Hide()
+			end
+		end)
 	end
 
 	-- view button

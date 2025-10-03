@@ -5,8 +5,11 @@
 	<!--@do-not-package@-->
 	<Script file="..\Assets\Dev\devLocale.lua"/>
 	<!--@end-do-not-package@-->
-	<Script file="deDE.lua"/>
+
+	<!-- Default locale -->
 	<Script file="enUS.lua"/>
+
+	<Script file="deDE.lua"/>
 	<Script file="esES.lua"/>
 	<Script file="esMX.lua"/>
 	<Script file="frFR.lua"/>

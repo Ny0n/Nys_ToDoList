@@ -390,8 +390,6 @@ function private:RefreshPoints()
 end
 
 function private:RefreshOverflowList()
-	-- TODO if clear view is active, different list and function
-
 	-- visual changes in clear view
 	local clearView = NysTDL.acedb.profile.isInClearView
 

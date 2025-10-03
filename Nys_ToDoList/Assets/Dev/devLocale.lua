@@ -19,12 +19,6 @@ addonTable.devLocale = L
 
 --/************************************************/--
 
--- TODO CLEANUP
-
--- L["info"] = true
--- L["If you're having any problems or you just want more information, you can always click here to print help in the chat!"] = true
--- L["Please type %s and read the chat message for more information about this mode"]
-
 L["Toggle clear view"] = true
 L["Move"] = true
 L["Current"] = true -- specify
@@ -33,7 +27,6 @@ L["Type %s for more information"] = true
 L["help"] = true
 L["Frame priority"] = true
 L["Menu size"] = true
-
 L["Add elements in last position"] = true
 L["Addon not loaded"] = true
 L["To add elements in a category, hover the name and press the %s icon"] = true
@@ -200,7 +193,6 @@ L["Other Tabs"] = true
 L["Overwrite"] = true
 L["OVERWRITE this backup now?"] = true
 L["Please copy and post this error message as an issue on GitHub so that I can fix this problem as quickly as possible"] = true
-L["Please type %s and read the chat message for more information about this mode"] = true
 L["Pre-Backup"] = true
 L["Press enter to add"] = true
 L["Profile tabs"] = true
