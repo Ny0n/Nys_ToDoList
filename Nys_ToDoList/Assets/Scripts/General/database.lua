@@ -102,6 +102,7 @@ database.defaults = {
 		isInMiniView = false,
 		isInClearView = false,
 		lastListVisibility = false,
+		lockList = false,
 		lockTdlButton = false,
 
 		-- // Frame Options
