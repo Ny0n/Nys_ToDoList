@@ -1,3 +1,11 @@
+#### **7.4**
+
+- Added a clear theme, a new visual style! (also called clear view mode)
+- Add new "Open Behavior" variations in the options
+- Add new "Menu Size" in the options, independent from the "Font Size" option
+- Changed a few other things (menu, edit mode move button, options order, commands)
+- Bump interface number (TWW 11.2.5, MoP 5.5.1)
+
 #### **7.3.7**
 
 - Bump interface number (TWW 11.2.0, MoP 5.5.0)

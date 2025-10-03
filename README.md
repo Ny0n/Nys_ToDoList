@@ -7,7 +7,11 @@ This addon provides a simple list where you can view and store all your to-do's,
 and everything can be sorted as daily or weekly, in which case it will reset automatically when the time comes!
 You also have the possibility to favorite / add descriptions on items, and even create custom tabs with custom resets.
 
-If you are having any problems, tap the information button on the list to print help in the chat, it will surely give you the answers you are looking for.
+You can also switch to a clear theme. It’s just a visual style, so feel free to choose it if you prefer the look!
+
+![Preview](https://github.com/Ny0n/Nys_ToDoList/blob/main/.other/previews/previewClearSmall.png?raw=true)
+
+If you are having any problems, type **/tdl help** to print help in the chat, it will surely give you the answers you are looking for.
 
 #### **How to toggle:**
 
