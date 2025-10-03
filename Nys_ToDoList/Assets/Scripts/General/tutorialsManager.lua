@@ -443,6 +443,31 @@ function private:CreateTutorials()
 
 	-- // ******************** // --
 
+	-- one shot tutorial only if conditions are met (@see private:GlobalNewVersion() in migration.lua)
+	cat = "newClearView"
+
+	tp:GenerateTutoTable(cat,
+		{
+			IsEnabled = function(self)
+				return not tp:ValueBool(self.tutoCategory)
+				and NysTDL.acedb.global.tutorials_progression["newClearView_isEnabled"] == true
+			end,
+			tutosOrdered = {
+				"tuto",
+			},
+			OnFinish = function(self)
+				-- when this tuto is completed OR we reset all tutorials (wipe tutorials_progression),
+				-- it will never be shown again
+				NysTDL.acedb.global.tutorials_progression["newClearView_isEnabled"] = nil
+				NysTDL.acedb.global.tutorials_progression[cat] = nil
+			end,
+		}
+	)
+
+	private:CreateTutoFrame(cat, "tuto", true, "LEFT", "("..tostring(NEW).."!) "..string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Right-Click"])..utils:GetMinusStr()..L["Toggle clear view"], 280)
+
+	-- // ******************** // --
+
 	-- cat = "editmode"
 
 	-- tp:GenerateTutoTable(cat,

@@ -546,6 +546,7 @@ function mainFrame:ToggleClearView(state, forceUpdate)
 		tdlFrame.menu:SetPoint("TOPLEFT", tdlFrame, 4, -24)
 
 		tutorialsManager:SetPoint("introduction", "miniView", "RIGHT", tdlFrame.cvViewButton, "LEFT", -18, 0, "RIGHT")
+		tutorialsManager:SetPoint("newClearView", "tuto", "RIGHT", tdlFrame.cvViewButton, "LEFT", -18, 0, "RIGHT")
 		tutorialsManager:SetPoint("tabSwitchState", "explainSwitchButton", "BOTTOM", tdlFrame.cvTabsSwitchState, "TOP", 0, 22, "DOWN")
 	else
 		tabsFrame.overflowList:ClearAllPoints()
@@ -557,6 +558,7 @@ function mainFrame:ToggleClearView(state, forceUpdate)
 		tdlFrame.menu:SetPoint("TOPLEFT", tdlFrame.dummyScaleMenu, -5, 0)
 
 		tutorialsManager:SetPoint("introduction", "miniView", "LEFT", tdlFrame.viewButton, "RIGHT", 18, 0, "LEFT")
+		tutorialsManager:SetPoint("newClearView", "tuto", "LEFT", tdlFrame.viewButton, "RIGHT", 18, 0, "LEFT")
 		tutorialsManager:SetPoint("tabSwitchState", "explainSwitchButton", "LEFT", tabsFrame.switchStateButtonFrame, "RIGHT", 22, 0, "LEFT")
 	end
 end
@@ -1342,6 +1344,7 @@ function mainFrame:CreateTDLFrame()
 		elseif button == "RightButton" then
 			mainFrame:ToggleClearView()
 			tutorialsManager:Validate("introduction", "miniView")
+			tutorialsManager:Validate("newClearView", "tuto")
 		end
 	end
 

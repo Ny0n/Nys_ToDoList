@@ -74,6 +74,16 @@ end
 function private:GlobalNewVersion()
     -- // updates the global saved variables once after an update
 
+	if utils:IsVersionOlderThan(NysTDL.acedb.global.latestVersion, "7.4") then
+        if NysTDL.acedb.global.latestVersion ~= "" then -- are we UPGRADING the addon?
+			if type(NysTDL.acedb.global.tutorials_progression) == "table" then
+				if NysTDL.acedb.global.tutorials_progression["introduction"] == true then -- is the intro tutorial already done?
+					NysTDL.acedb.global.tutorials_progression["newClearView_isEnabled"] = true -- then show the custom tutorial once
+				end
+			end
+		end
+	end
+
     if utils:IsVersionOlderThan(NysTDL.acedb.global.latestVersion, "7.0-alpha") then
         local oldProgression = NysTDL.acedb.global.tuto_progression
         local newProgression = NysTDL.acedb.global.tutorials_progression
@@ -124,7 +134,7 @@ end
 function private:ProfileNewVersion()
     -- // updates each profile saved variables once after an update
 
-	if utils:IsVersionOlderThan(NysTDL.acedb.profile.latestVersion, "8.0") then
+	if utils:IsVersionOlderThan(NysTDL.acedb.profile.latestVersion, "7.4") then
         if NysTDL.acedb.profile.openBehavior == 3 then
 			NysTDL.acedb.profile.openBehavior = 5
 		end
