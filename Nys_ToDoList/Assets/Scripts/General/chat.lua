@@ -143,7 +143,7 @@ chat.commands = {
 		mainFrame:Toggle()
 	end,
 
-	[L["info"]] = function()
+	[L["help"]] = function()
 		local hex = utils:RGBToHex(database.themes.theme2)
 		local slashCommand = chat.slashCommand..' '
 
@@ -166,6 +166,7 @@ chat.commands = {
 		end
 
 		chat:CustomPrintForced(str)
+		tutorialsManager:Validate("introduction", "getMoreInfo")
 	end,
 
 	[L["toggle"]] = function()
@@ -210,8 +211,8 @@ chat.commands = {
 		chat:CustomPrintForced("- "..L["Favorite and add descriptions on items"], true)
 		chat:CustomPrintForced("- "..L["Rename"].." ("..L["Double-Click"]..")", true)
 		chat:CustomPrintForced("- "..L["Reorder"].." ("..L["Drag and Drop"]..")", true)
-		chat:CustomPrintForced("- "..L["Resize"].." ("..L["Button in the bottom-right"]..")", true)
-		chat:CustomPrintForced("- "..L["Access new buttons"].." (\""..L["Tab actions"].."\", \""..L["Undo last remove"].."\", \""..L["Open addon options"].."\")", true)
+		chat:CustomPrintForced("- "..L["Move"].." / "..L["Resize"].." ("..L["Button in the bottom-right"]..")", true)
+		chat:CustomPrintForced("- "..L["Access new buttons"].." (\""..L["Tab actions"].."\", \""..L["Undo last remove"].."\")", true)
 		tutorialsManager:Validate("introduction", "editmodeChat")
 	end,
 
@@ -261,7 +262,7 @@ function chat.HandleSlashCommands(str)
 			end
 		else
 			-- does not exist!
-			chat.commands[L["info"]]()
+			chat.commands[L["help"]]()
 			return
 		end
 	end

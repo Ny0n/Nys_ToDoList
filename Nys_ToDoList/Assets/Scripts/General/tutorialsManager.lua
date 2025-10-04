@@ -16,6 +16,7 @@ local utils = NysTDL.utils
 local widgets = NysTDL.widgets
 local database = NysTDL.database
 local mainFrame = NysTDL.mainFrame
+local dataManager = NysTDL.dataManager
 
 -- Secondary aliases
 
@@ -208,7 +209,7 @@ function private:CreateTutoFrame(tutoCategory, tutoName, showCloseButton, arrowS
 	tutorialFrames[gn(tutoCategory, tutoName)] = widgets:TutorialFrame(tutoCategory, tutoName, showCloseButton, arrowSide, text, width)
 end
 
-function tutorialsManager:SetPoint(tutoCategory, tutoName, point, relativeTo, relativePoint, ofsx, ofsy)
+function tutorialsManager:SetPoint(tutoCategory, tutoName, point, relativeTo, relativePoint, ofsx, ofsy, optArrowSide)
 	-- sets the points and target frame of a given tutorial
 	local frameName = gn(tutoCategory, tutoName)
 	local tutoFrame = tutorialFrames[frameName]
@@ -216,6 +217,7 @@ function tutorialsManager:SetPoint(tutoCategory, tutoName, point, relativeTo, re
 		tutorialFramesTarget[frameName] = relativeTo
 		tutoFrame:ClearAllPoints()
 		tutoFrame:SetPoint(point, relativeTo, relativePoint, ofsx, ofsy)
+		if optArrowSide then tutoFrame:SetArrowSide(optArrowSide) end
 
 		if relativeTo and relativeTo.HookScript and relativeTo.IsVisible then
 			-- bind visibility scripts (only once!)
@@ -370,7 +372,6 @@ function private:CreateTutorials()
 				"addCat",
 				"addItem",
 				"editmode",
-				"editmodeChat",
 				"getMoreInfo",
 				"miniView",
 			},
@@ -383,10 +384,9 @@ function private:CreateTutorials()
 
 	private:CreateTutoFrame(cat, "addNewCat", false, "UP", L["Start by adding a new category!"], 240)
 	private:CreateTutoFrame(cat, "addCat", true, "UP", L["This will add your category to the current tab"], 240)
-	private:CreateTutoFrame(cat, "addItem", false, "RIGHT", utils:SafeStringFormat(L["To add elements in a category, hover the name and press the %s icon"], enums.icons.add.texHyperlinkTuto).."\n"..string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Left-Click"])..utils:GetMinusStr()..L["Add an item"].."\n"..string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Right-Click"])..utils:GetMinusStr()..L["Add a category"], 270)
-	private:CreateTutoFrame(cat, "editmode", false, "DOWN", L["To delete items and do a lot more, you can right-click anywhere on the list or click on this button to toggle the edit mode"], 300)
-	private:CreateTutoFrame(cat, "editmodeChat", true, "RIGHT", utils:SafeStringFormat(L["Please type %s and read the chat message for more information about this mode"], "\""..chat.slashCommand..' '..L["editmode"].."\""), 275)
-	private:CreateTutoFrame(cat, "getMoreInfo", false, "RIGHT", L["If you're having any problems or you just want more information, you can always click here to print help in the chat!"], 290)
+	private:CreateTutoFrame(cat, "addItem", false, "RIGHT", utils:SafeStringFormat(L["To add elements in a category, hover the name and press the %s icon"], enums.icons.add.texHyperlinkTuto), 270)
+	private:CreateTutoFrame(cat, "editmode", false, "RIGHT", L["To delete items and do a lot more, you can right-click anywhere on the list or click on this button to toggle the edit mode"], 300)
+	private:CreateTutoFrame(cat, "getMoreInfo", true, nil, utils:SafeStringFormat(L["Type %s for more information"], string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme2), chat.slashCommand..' '..L["help"])), 290)
 	private:CreateTutoFrame(cat, "miniView", true, "LEFT", L["One last thing: you can change what you see using this button. It's up to you now!"], 240)
 
 	-- // ******************** // --
@@ -395,6 +395,11 @@ function private:CreateTutorials()
 
 	tp:GenerateTutoTable(cat,
 		{
+			IsEnabled = function(self)
+				return tp:ValueBool("introduction")
+				and not tp:ValueBool(self.tutoCategory)
+				and dataManager:HasGlobalData()
+			end,
 			tutosOrdered = {
 				"explainSwitchButton",
 			},
@@ -420,7 +425,7 @@ function private:CreateTutorials()
 		}
 	)
 
-	private:CreateTutoFrame(cat, "optionsButton", false, "DOWN", L["You have a lot of data? Don't forget to make backups from time to time!"].." ("..string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Right-Click"])..")", 240)
+	private:CreateTutoFrame(cat, "optionsButton", false, "LEFT", L["You have a lot of data? Don't forget to make backups from time to time!"].." ("..string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Right-Click"])..")", 240)
 
 	-- // ******************** // --
 
@@ -435,6 +440,31 @@ function private:CreateTutorials()
 	)
 
 	private:CreateTutoFrame(cat, "explainFrame", true, "DOWN", L["You can click on any name to put it in the input field below, you can then Ctrl+C/Ctrl+V"], 200)
+
+	-- // ******************** // --
+
+	-- one shot tutorial only if conditions are met (@see private:GlobalNewVersion() in migration.lua)
+	cat = "newClearView"
+
+	tp:GenerateTutoTable(cat,
+		{
+			IsEnabled = function(self)
+				return not tp:ValueBool(self.tutoCategory)
+				and NysTDL.acedb.global.tutorials_progression["newClearView_isEnabled"] == true
+			end,
+			tutosOrdered = {
+				"tuto",
+			},
+			OnFinish = function(self)
+				-- when this tuto is completed OR we reset all tutorials (wipe tutorials_progression),
+				-- it will never be shown again
+				NysTDL.acedb.global.tutorials_progression["newClearView_isEnabled"] = nil
+				NysTDL.acedb.global.tutorials_progression[cat] = nil
+			end,
+		}
+	)
+
+	private:CreateTutoFrame(cat, "tuto", true, "LEFT", "("..tostring(NEW).."!) "..string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Right-Click"])..utils:GetMinusStr()..L["Toggle clear view"], 280)
 
 	-- // ******************** // --
 

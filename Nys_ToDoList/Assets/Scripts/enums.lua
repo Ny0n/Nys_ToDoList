@@ -57,6 +57,8 @@ enums.idtype = "string"
 enums.tdlFrameDefaultWidth = 340
 enums.tdlFrameDefaultHeight = 400
 enums.rightPointDistance = 297
+enums.tdlFrameMaxWidth = 1000
+enums.tdlFrameMaxHeight = 0 -- whatever bro
 
 enums.ofsxItemIcons = 20
 
@@ -114,15 +116,15 @@ enums.icons = {
 		texCoords = { 0.328, 0.436, 0.015, 0.074 },
 	},
 	profile = {
-		info = function() return enums.artPath.."UIMicroMenu2x", 14, 16.5 end,
-		texCoords = { 0.328, 0.438, 0.438, 0.502 },
+		info = function() return enums.artPath.."UIMicroMenu2x", 14.5, 16.5 end,
+		texCoords = { 0.328, 0.444, 0.432, 0.502 },
 	},
 	divider = {
 		info = function() return enums.artPath.."Options", 200, 2 end,
 		texCoords = { 0.000976562, 0.616211, 0.749023, 0.75 },
 	},
 	add = {
-		info = function() return enums.artPath.."UIMinimap", 17, 17 end,
+		info = function() return enums.artPath.."UIMinimap", 18, 18 end,
 		texCoords = { 0.00390625, 0.0703125, 0.548828, 0.582031 },
 		texHyperlinkTuto = "|T"..enums.artPath.."UIMinimap:18:18:1:-4:256:512:0:18:280:298|t", -- |TtexturePath:width(px):Height(px):offsetX(px):offsetY(px):textureFileWidth(px):textureFileHeight(px):texCoordsStartX(px):texCoordsEndX(px):texCoordsStartY(px):texCoordsEndY(px)|t
 		texHyperlinkChat = "|T"..enums.artPath.."UIMinimap:18:18:1:0:256:512:0:18:280:298|t",

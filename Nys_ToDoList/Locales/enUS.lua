@@ -1,7 +1,11 @@
 local addonName = ...
 
--- default language
-local L = LibStub("AceLocale-3.0"):NewLocale(addonName, "enUS", true)
+local default = true
+local silent = true
+--@do-not-package@
+silent = false
+--@end-do-not-package@
+local L = LibStub("AceLocale-3.0"):NewLocale(addonName, "enUS", default, silent)
 
 -- ============================================ --
 

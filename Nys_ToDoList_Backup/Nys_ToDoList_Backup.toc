@@ -1,7 +1,7 @@
 # /run print((select(4, GetBuildInfo())))
-## Interface: 110200, 110107, 50500, 11507
+## Interface: 110205, 110200, 50501, 11507
 
-## Version: 1.1.6
+## Version: 1.1.7
 
 ## Author: Nyony (on Twitch)
 ## Title: Ny's To-Do List Backup

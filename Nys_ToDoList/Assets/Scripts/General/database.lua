@@ -100,6 +100,7 @@ database.defaults = {
 
 		databrokerMode = enums.databrokerModes.simple,
 		isInMiniView = false,
+		isInClearView = false,
 		lastListVisibility = false,
 		lockList = false,
 		lockTdlButton = false,
@@ -127,6 +128,7 @@ database.defaults = {
 		descriptionTooltip = true,
 		openBehavior = 1,
 		frameScale = 1,
+		menuSize = 1,
 		addLast = false,
 
 		--'Tabs' tab

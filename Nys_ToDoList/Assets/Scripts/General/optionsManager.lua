@@ -711,18 +711,20 @@ function private:CreateAddonOptionsTable()
 								name = L["Open behavior on login"],
 								values = function()
 									local openBehaviors = {
-										L["None"], -- [1]
-										L["Remember"], -- [2]
-										L["Open if not done"], -- [3]
-										L["Always open"], -- [4]
+										[1] = L["None"],
+										[2] = L["Remember"],
+										[4] = L["Always open"],
+										[5] = L["Open if not done"].." (<24h)",
+										[6] = L["Open if not done"].." (<7d)",
+										[7] = L["Open if not done"],
 									 }
 									return openBehaviors
 								end,
 							}, -- openBehavior
 							frameStrata = {
-								order = 1.35,
+								order = 1.8,
 								type = "select",
-								name = "",
+								name = L["Frame priority"],
 								values = function()
 									return frameStratas
 								end,
@@ -743,10 +745,22 @@ function private:CreateAddonOptionsTable()
 								end,
 							}, -- frameStrata
 							lockList = {
-								order = 1.4,
+								order = 1.9,
 								type = "toggle",
 								name = L["Lock position"],
 							}, -- lockList
+							menuSize = {
+								order = 1.29,
+								type = "range",
+								name = L["Menu size"],
+								min = 0.5,
+								max = 2,
+								step = 0.01,
+								set = function(info, value)
+									NysTDL.acedb.profile.menuSize = value
+									mainFrame:RefreshScale()
+								end,
+							}, -- frameScale
 							frameScale = {
 								order = 1.3,
 								type = "range",
@@ -983,6 +997,12 @@ function private:CreateAddonOptionsTable()
 							}, -- spacer331
 							spacer399 = {
 								order = 3.99,
+								type = "description",
+								width = "full",
+								name = "\n",
+							}, -- spacer399
+							spacer179 = {
+								order = 1.79,
 								type = "description",
 								width = "full",
 								name = "\n",
