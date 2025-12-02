@@ -1,7 +1,7 @@
 # /run print((select(4, GetBuildInfo())))
-## Interface: 110205, 110200, 50501, 11507
+## Interface: 120000, 110207, 110205, 50502, 50501, 11508, 11507
 
-## Version: 7.4
+## Version: 7.4.1
 
 ## Author: Nyony (on Twitch)
 ## Title: Ny's To-Do List
