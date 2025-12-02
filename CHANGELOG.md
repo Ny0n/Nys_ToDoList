@@ -1,3 +1,8 @@
+#### **7.4.1**
+
+- Fix for Midnight
+- Bump interface number (Midnight 12.0, TWW 11.2.7, MoP 5.5.2, Classic 1.15.8)
+
 #### **7.4**
 
 - Added a clear theme, a new visual style! (also called clear view mode)

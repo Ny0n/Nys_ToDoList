@@ -426,7 +426,7 @@ function widgets:SetHyperlinksEnabled(frame, enabled)
 	if enabled then
 		frame:SetHyperlinksEnabled(true) -- to enable OnHyperlinkClick
 		frame:SetScript("OnHyperlinkClick", function(_, linkData, link, button)
-			ChatFrame_OnHyperlinkShow(ChatFrame1, linkData, link, button)
+			SetItemRef(linkData, link, button)
 		end)
 	else
 		frame:SetHyperlinksEnabled(false) -- to disable OnHyperlinkClick

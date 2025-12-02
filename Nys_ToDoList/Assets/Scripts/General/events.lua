@@ -10,6 +10,7 @@ NysTDL.events = events
 local libs = NysTDL.libs
 local core = NysTDL.core
 local chat = NysTDL.chat
+local utils = NysTDL.utils
 local widgets = NysTDL.widgets
 local tabsFrame = NysTDL.tabsFrame
 local optionsManager = NysTDL.optionsManager
@@ -79,13 +80,16 @@ function events:Initialize()
 	AceEvent:RegisterEvent("GLOBAL_MOUSE_DOWN", events.GLOBAL_MOUSE_DOWN)
 
 	-- hooks
+
+	--// ReloadUI
 	hooksecurefunc("ReloadUI", function()
 		NysTDL.acedb.global.UI_reloading = true
 		NysTDL.acedb.global.warnTimerRemaining = AceTimer:TimeLeft(warnTimer) -- if we are reloading, we keep in mind how much time there was left to our repeating warn timer
 	end) -- this is for knowing when the addon is loading, if it was a UI reload or the player logging in
 
+	--// ChatFrame InsertLink
 	local canInsertLink = true
-	hooksecurefunc("ChatEdit_InsertLink", function(...) -- this is for adding hyperlinks in my addon edit boxes
+	local hookedInsertLink = function(...) -- this is for adding hyperlinks in my addon edit boxes
 		if canInsertLink then
 			AceTimer:ScheduleTimer(function() -- this is a fix to a bug that calls this func 2 times instead of one
 				canInsertLink = true
@@ -95,8 +99,15 @@ function events:Initialize()
 			return widgets:EditBoxInsertLink(...)
 		end
 		return true
-	end)
+	end
 
+	if utils:IsMidnight() then
+		hooksecurefunc(ChatFrameUtil, "InsertLink", hookedInsertLink)
+	else
+		hooksecurefunc("ChatEdit_InsertLink", hookedInsertLink)
+	end
+
+	--// EncounterJournal OnClick
 	local LoadAddOn_Blizzard_EncounterJournal = false
 	hooksecurefunc(C_AddOns, "LoadAddOn", function(name)
 		if LoadAddOn_Blizzard_EncounterJournal then

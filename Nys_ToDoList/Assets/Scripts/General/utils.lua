@@ -179,6 +179,12 @@ function utils:IsDF()
 	return LE_EXPANSION_LEVEL_CURRENT >= 9
 end
 
+---Quick and easy check to know if we are currently running Midnight or not
+---@return boolean
+function utils:IsMidnight()
+	return LE_EXPANSION_LEVEL_CURRENT >= 11
+end
+
 ---To copy any table.
 ---@param orig table
 ---@param copies any Do not use

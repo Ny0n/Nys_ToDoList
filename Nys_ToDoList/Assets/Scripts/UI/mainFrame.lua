@@ -1325,7 +1325,8 @@ function mainFrame:CreateTDLFrame()
 		return tdlFrame.ScrollFrame
 	end
 	if utils:IsDF() then
-		tdlFrame.ScrollFrame.ScrollBar:SetPoint("TOPLEFT", tdlFrame, "TOPRIGHT", 0, -30-24)
+		local offsetX = (utils:IsMidnight() and -19 or 0)
+		tdlFrame.ScrollFrame.ScrollBar:SetPoint("TOPLEFT", tdlFrame, "TOPRIGHT", offsetX, -30-24)
 	else
 		tdlFrame.ScrollFrame.ScrollBar:SetScale(1.05)
 		tdlFrame.ScrollFrame.ScrollBar:SetPoint("TOPLEFT", tdlFrame, "TOPRIGHT", 9, -60)
