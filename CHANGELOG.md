@@ -1,3 +1,8 @@
+#### **7.4.2**
+
+- Fix hyperlinks (shift-click)
+- Bump interface number (MoP 5.5.3)
+
 #### **7.4.1**
 
 - Fix for Midnight
