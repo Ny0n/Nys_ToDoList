@@ -101,7 +101,7 @@ function events:Initialize()
 		return true
 	end
 
-	if utils:IsMidnight() then
+	if type(ChatFrameUtil) == "table" and type(ChatFrameUtil.InsertLink) == "function" then
 		hooksecurefunc(ChatFrameUtil, "InsertLink", hookedInsertLink)
 	else
 		hooksecurefunc("ChatEdit_InsertLink", hookedInsertLink)
