@@ -287,8 +287,8 @@ function mainFrame:UpdateItemNamesColor()
 
 			-- also new thing, if global items are account-wide we add a visual to them (see widgets.lua private:Item_RefreshCharTooltip() for a fun comment)
 			contentWidget.checkBtn.charTexture:SetShown(database.ctabstate())
-			contentWidget.checkBtn.charTexture:SetDesaturated(not not contentWidget.itemData.isCharacterSpecific)
-			contentWidget.checkBtn.charTexture:SetAlpha(not not contentWidget.itemData.isCharacterSpecific and 0.5 or 1)
+			contentWidget.checkBtn.charTexture:SetDesaturated(not contentWidget.itemData.isAccountWide)
+			contentWidget.checkBtn.charTexture:SetAlpha(not contentWidget.itemData.isAccountWide and 0.5 or 1)
 		end
 	end
 end
@@ -375,7 +375,7 @@ function mainFrame:UpdateItemButtons(itemID)
 
 	local charBtnTooltipText = {
 		L["Toggle Check Behavior"],
-		utils:ColorText(database.themes.theme, L["Current"]..": "..(itemWidget.itemData.isCharacterSpecific and L["Character Specific"] or L["Account-wide"])),
+		utils:ColorText(database.themes.theme, L["Current"]..": "..(itemWidget.itemData.isAccountWide and L["Account-wide"] or L["Character Specific"])),
 	}
 	itemWidget.charBtn.tooltipText = charBtnTooltipText
 	itemWidget.charBtn:RefreshTooltip()

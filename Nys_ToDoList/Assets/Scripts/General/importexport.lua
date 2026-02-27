@@ -435,7 +435,7 @@ function importexport:LaunchImportProcess(encodedData)
 		for _,elementInfo in ipairs(data.elements) do
 			elementInfo.isGlobal = not elementInfo.isGlobal
 			if not elementInfo.isGlobal and elementInfo.enum == enums.item then -- item
-				elementInfo.data.isCharacterSpecific = false
+				elementInfo.data.isAccountWide = false
 			end
 		end
 	end

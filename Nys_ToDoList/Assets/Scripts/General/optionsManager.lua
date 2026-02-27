@@ -833,7 +833,6 @@ function private:CreateAddonOptionsTable()
 								end,
 								set = function(info, value)
 									NysTDL.acedb.global.defaultCheckState = value
-									mainFrame:Refresh() -- TODO needed ?
 								end,
 								name = L["Check Behavior"],
 								desc = L["Default check behavior for newly created global items"]..".\n"..L["For Global tabs only. Items can either be checked once and update on every character, or they can be checked independently for every character"],

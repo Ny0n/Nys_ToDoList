@@ -566,9 +566,9 @@ function dataManager:CreateItem(itemName, tabID, catID)
 		return false
 	end
 
-	local isCharacterSpecific = false
-	if dataManager:IsGlobal(tabID) then
-		isCharacterSpecific = NysTDL.acedb.global.defaultCheckState == 1 -- see optionsManager.lua defaultCheckState
+	local isAccountWide = false
+	if dataManager:IsGlobal(tabID) then -- TODO mainFrame.currentstateblabla ou carrément en param de CreateItem ?
+		isAccountWide = NysTDL.acedb.global.defaultCheckState == 2 -- see optionsManager.lua defaultCheckState
 	end
 
 	local itemData = { -- itemData
@@ -583,7 +583,7 @@ function dataManager:CreateItem(itemName, tabID, catID)
 		checked = false,
 		favorite = false,
 		description = false,
-		isCharacterSpecific = isCharacterSpecific, -- used in global tabs
+		isAccountWide = isAccountWide, -- used in global tabs, true => use checked, false => use characterChecked
 		characterChecked = { -- used in global tabs
 			-- if name exists in table, then item is checked for said name
 			-- ["name-server"] = <formatted name string>,
@@ -1631,15 +1631,23 @@ function dataManager:ToggleChecked(itemID, state)
 		newState = not currentState
 	end
 
-	if isGlobal and itemData.isCharacterSpecific then
-		if type(itemData.characterChecked) ~= "table" then itemData.characterChecked = {} end
-		if newState then
-			itemData.characterChecked[utils:GetPlayerFullName()] = utils:BuildPlayerUnitString()
-		else
-			itemData.characterChecked[utils:GetPlayerFullName()] = nil
+	if resetManager:isResettingGET() and not newState then
+		-- behavior is different if the item is being reset by the automatic daily/weekly reset
+		itemData.checked = false
+		if type(itemData.characterChecked) == "table" then
+			wipe(itemData.characterChecked)
 		end
 	else
-		itemData.checked = newState
+		if isGlobal and not itemData.isAccountWide then
+			if type(itemData.characterChecked) ~= "table" then itemData.characterChecked = {} end
+			if newState then
+				itemData.characterChecked[utils:GetPlayerFullName()] = utils:BuildPlayerUnitString()
+			else
+				itemData.characterChecked[utils:GetPlayerFullName()] = nil
+			end
+		else
+			itemData.checked = newState
+		end
 	end
 
 	-- refresh the mainFrame
@@ -1707,23 +1715,23 @@ function dataManager:UpdateDescription(itemID, description)
 	return itemData.description
 end
 
----Changes the character specific state of the given item.
+---Changes the account wide state of the given item, if it is a global item.
 ---@param itemID string
----@param state nil|false|true nil => toggle | false => global | true => character
+---@param state nil|false|true nil => toggle | false => character | true => global
 ---@return boolean newState
-function dataManager:ToggleCharSpecific(itemID, state)
+function dataManager:ToggleAccountWide(itemID, state) -- TODO euh
 	local isGlobal, itemData = select(2, dataManager:Find(itemID))
 	local currentState = dataManager:IsItemChecked(itemData)
 
 	if not isGlobal then
-		itemData.isCharacterSpecific = false
+		itemData.isAccountWide = false
 		return false
 	end
 
 	if state == nil then
-		itemData.isCharacterSpecific = not itemData.isCharacterSpecific
+		itemData.isAccountWide = not itemData.isAccountWide
 	else
-		itemData.isCharacterSpecific = not not state
+		itemData.isAccountWide = not not state
 	end
 
 	-- opti, dont call refresh 10 times thx
@@ -1736,7 +1744,7 @@ function dataManager:ToggleCharSpecific(itemID, state)
 	mainFrame:UpdateItemButtons(itemID)
 	mainFrame:Refresh()
 
-	return itemData.isCharacterSpecific
+	return itemData.isAccountWide
 end
 
 -- categories
@@ -1964,12 +1972,12 @@ function dataManager:DeleteCheckedItems(tabID)
 	local refreshID = dataManager:SetRefresh(false)
 
 	local nbToUndo = 0
-	for itemID,itemData in pairs(T_DeleteCheckedItems) do -- for each item in the tab
-		itemData.checked = false -- so that if we undo it, it doesn't get deleted right away TODO
+	for itemID in pairs(T_DeleteCheckedItems) do -- for each item in the tab
+		dataManager:ToggleChecked(itemID, false) -- so that if we undo it, it doesn't get deleted right away
 		if dataManager:DeleteItem(itemID) then
 			nbToUndo = nbToUndo + 1
 		else
-			itemData.checked = true
+			dataManager:ToggleChecked(itemID, true)
 		end
 	end
 
@@ -2211,7 +2219,7 @@ function dataManager:IsItemChecked(itemData)
 
 	local isGlobal = dataManager:IsGlobal(itemData.originalTabID)
 
-	if isGlobal and itemData.isCharacterSpecific then
+	if isGlobal and not itemData.isAccountWide then
 		if type(itemData.characterChecked) == "table" then
 			return not not itemData.characterChecked[utils:GetPlayerFullName()]
 		end

@@ -955,7 +955,7 @@ function widgets:CharButton(widget, parent)
 	-- these are for changing the color depending on the mouse actions (since they are custom xml)
 	-- and yea, this one's a bit complicated too because it works in very specific ways
 	btn:HookScript("OnEnter", function(self)
-		if widget.itemData.isCharacterSpecific then
+		if not widget.itemData.isAccountWide then
 			self.Icon:SetDesaturated(nil)
 			self.Icon:SetVertexColor(1, 1, 1)
 		else
@@ -963,7 +963,7 @@ function widgets:CharButton(widget, parent)
 		end
 	end)
 	btn:HookScript("OnLeave", function(self)
-		if widget.itemData.isCharacterSpecific then
+		if not widget.itemData.isAccountWide then
 			if tonumber(string.format("%.1f", self.Icon:GetAlpha())) ~= 0.5 then -- if we are currently clicking on the button
 				self.Icon:SetDesaturated(1)
 				self.Icon:SetVertexColor(0.4, 0.4, 0.4)
@@ -974,7 +974,7 @@ function widgets:CharButton(widget, parent)
 	end)
 	btn:HookScript("OnMouseUp", function(self)
 		self:SetAlpha(1)
-		if widget.itemData.isCharacterSpecific then
+		if not widget.itemData.isAccountWide then
 			self.Icon:SetDesaturated(1)
 			self.Icon:SetVertexColor(0.4, 0.4, 0.4)
 		end
@@ -984,7 +984,7 @@ function widgets:CharButton(widget, parent)
 	end)
 	btn:HookScript("OnShow", function(self)
 		self:SetAlpha(1)
-		if widget.itemData.isCharacterSpecific then
+		if not widget.itemData.isAccountWide then
 			self.Icon:SetDesaturated(1)
 			self.Icon:SetVertexColor(0.4, 0.4, 0.4)
 		else
@@ -1498,14 +1498,23 @@ function private:Item_SetEditMode(state)
 	mainFrame:UpdateItemButtons(self.itemID)
 end
 
+local T_Item_RefreshCharTooltip = {}
 function private:Item_RefreshCharTooltip()
 	-- here database.ctabstate() is a nasty shortcut to check if the item is currently global or not without going through dataManager:Find(ID)
 	-- but it should work, not the prettiest thing ever but /shrug
 	local itemWidget = self.itemWidget -- self is checkBtn
-	if database.ctabstate() and itemWidget.itemData.isCharacterSpecific and next(itemWidget.itemData.characterChecked) then
+	if database.ctabstate() and not itemWidget.itemData.isAccountWide and next(itemWidget.itemData.characterChecked) then
+		-- sort alphabetically
+		wipe(T_Item_RefreshCharTooltip)
+		for fullName in pairs(itemWidget.itemData.characterChecked) do
+			table.insert(T_Item_RefreshCharTooltip, fullName)
+		end
+		table.sort(T_Item_RefreshCharTooltip)
+
+		-- then display
 		self.tooltipText = {"Checked on:\n"}
-		for _,formattedName in pairs(itemWidget.itemData.characterChecked) do -- TODO trier alphabetique
-			table.insert(self.tooltipText, formattedName)
+		for fullName in ipairs(T_Item_RefreshCharTooltip) do
+			table.insert(self.tooltipText, itemWidget.itemData.characterChecked[fullName])
 		end
 	else
 		self.tooltipText = nil
@@ -1575,7 +1584,7 @@ function widgets:ItemWidget(itemID, parentFrame)
 
 	-- / charBtn
 	itemWidget.charBtn = widgets:CharButton(itemWidget, emf)
-	itemWidget.charBtn:SetScript("OnClick", function() dataManager:ToggleCharSpecific(itemID) end)
+	itemWidget.charBtn:SetScript("OnClick", function() dataManager:ToggleAccountWide(itemID) end)
 
 	-- / drag&drop
 	dragndrop:RegisterForDrag(itemWidget)
