@@ -220,7 +220,7 @@ end
 function mainFrame:UpdateCheckedStates()
 	for _,contentWidget in pairs(contentWidgets) do
 		if contentWidget.enum == enums.item then -- for every item checkboxes
-			contentWidget.checkBtn:SetChecked(contentWidget.itemData.checked)
+			contentWidget.checkBtn:SetChecked(dataManager:IsItemChecked(contentWidget.itemData))
 		end
 	end
 end
@@ -274,7 +274,7 @@ function mainFrame:UpdateItemNamesColor()
 	for _, contentWidget in pairs(contentWidgets) do
 		if contentWidget.enum == enums.item then -- for every item widget
 			-- we color in accordance to their checked state
-			if contentWidget.itemData.checked then
+			if dataManager:IsItemChecked(contentWidget.itemData) then
 				contentWidget.interactiveLabel.Text:SetTextColor(0, 1, 0) -- green
 			else
 				if contentWidget.itemData.favorite then
@@ -284,6 +284,11 @@ function mainFrame:UpdateItemNamesColor()
 					-- contentWidget.interactiveLabel.Text:SetTextColor(1, 1, 1) -- white
 				end
 			end
+
+			-- also new thing, if global items are account-wide we add a visual to them (see widgets.lua private:Item_RefreshCharTooltip() for a fun comment)
+			contentWidget.checkBtn.charTexture:SetShown(database.ctabstate())
+			contentWidget.checkBtn.charTexture:SetDesaturated(not not contentWidget.itemData.isCharacterSpecific)
+			contentWidget.checkBtn.charTexture:SetAlpha(not not contentWidget.itemData.isCharacterSpecific and 0.5 or 1)
 		end
 	end
 end
@@ -366,16 +371,24 @@ function mainFrame:UpdateItemButtons(itemID)
 	itemWidget.removeBtn:GetScript("OnShow")(itemWidget.removeBtn)
 	itemWidget.favoriteBtn:GetScript("OnShow")(itemWidget.favoriteBtn)
 	itemWidget.descBtn:GetScript("OnShow")(itemWidget.descBtn)
+	itemWidget.charBtn:GetScript("OnShow")(itemWidget.charBtn)
+
+	local charBtnTooltipText = {
+		L["Toggle Check Behavior"],
+		utils:ColorText(database.themes.theme, L["Current"]..": "..(itemWidget.itemData.isCharacterSpecific and L["Character Specific"] or L["Account-wide"])),
+	}
+	itemWidget.charBtn.tooltipText = charBtnTooltipText
+	itemWidget.charBtn:RefreshTooltip()
 
 	if mainFrame.editMode then
 		itemWidget.removeBtn:Show()
 		itemWidget.favoriteBtn:Show()
 		itemWidget.descBtn:Show()
+		-- charBtn shown state is managed in widgets.lua private:Item_SetEditMode(state)
 		return
 	end
 
 	-- first we hide each button to show the good one afterwards
-	itemWidget.removeBtn:Hide()
 	itemWidget.descBtn:Hide()
 	itemWidget.favoriteBtn:Hide()
 

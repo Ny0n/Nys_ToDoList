@@ -639,7 +639,9 @@ function widgets:AddTooltipToButton(btn, tooltipText, tooltipOffsetX, tooltipOff
 		btn.tooltipOffsetX : number
 		btn.tooltipOffsetY : number
 
-		btn.RefreshTooltip() : function, call it if any of the above values changes
+		btn:RefreshTooltip(self) : function, call it if any of the above values changes
+		btn:OnTooltipEnter(self) : function, nonexistant but if you create it, it gets called first before the tooltip's OnEnter,
+			you can dynamically change tooltip text here everytime the player hovers the button
 	]]
 
 	btn.tooltip = nil
@@ -649,8 +651,11 @@ function widgets:AddTooltipToButton(btn, tooltipText, tooltipOffsetX, tooltipOff
 	btn.tooltipOffsetY = tooltipOffsetY
 
 	local OnEnter = function(self)
+		if type(btn.OnTooltipEnter) == "function" then
+			btn:OnTooltipEnter()
+		end
 		if type(btn.tooltipText) ~= "table" then
-			btn.tooltipText = {tostring(btn.tooltipText)}
+			btn.tooltipText = {btn.tooltipText}
 		end
 		if type(btn.tooltipText[1]) == "string" and btn.tooltipText[1] ~= "" then -- // Tooltip
 			-- if the tooltip is already in use by someone else, return
@@ -940,6 +945,59 @@ function widgets:DescButton(widget, parent)
 	end)
 
   return btn
+end
+
+function widgets:CharButton(widget, parent)
+	local btn = CreateFrame("Button", nil, parent, "NysTDL_CharButton")
+
+	-- // Appearance
+
+	-- these are for changing the color depending on the mouse actions (since they are custom xml)
+	-- and yea, this one's a bit complicated too because it works in very specific ways
+	btn:HookScript("OnEnter", function(self)
+		if widget.itemData.isCharacterSpecific then
+			self.Icon:SetDesaturated(nil)
+			self.Icon:SetVertexColor(1, 1, 1)
+		else
+			self:SetAlpha(0.6)
+		end
+	end)
+	btn:HookScript("OnLeave", function(self)
+		if widget.itemData.isCharacterSpecific then
+			if tonumber(string.format("%.1f", self.Icon:GetAlpha())) ~= 0.5 then -- if we are currently clicking on the button
+				self.Icon:SetDesaturated(1)
+				self.Icon:SetVertexColor(0.4, 0.4, 0.4)
+			end
+		else
+			self:SetAlpha(1)
+		end
+	end)
+	btn:HookScript("OnMouseUp", function(self)
+		self:SetAlpha(1)
+		if widget.itemData.isCharacterSpecific then
+			self.Icon:SetDesaturated(1)
+			self.Icon:SetVertexColor(0.4, 0.4, 0.4)
+		end
+	end)
+	btn:HookScript("PostClick", function(self)
+		self:GetScript("OnShow")(self)
+	end)
+	btn:HookScript("OnShow", function(self)
+		self:SetAlpha(1)
+		if widget.itemData.isCharacterSpecific then
+			self.Icon:SetDesaturated(1)
+			self.Icon:SetVertexColor(0.4, 0.4, 0.4)
+		else
+			self.Icon:SetDesaturated(nil)
+			self.Icon:SetVertexColor(1, 1, 1)
+		end
+	end)
+
+	-- // Tooltip
+
+	widgets:AddTooltipToButton(btn, {"..."})
+
+	return btn
 end
 
 function widgets:AddButton(widget, parent)
@@ -1398,13 +1456,26 @@ end
 function private:Item_SetEditMode(state)
 	if state then
 		self.editModeFrame:Show()
+		self.editModeFrame:SetScript("OnShow", function()
+			local offset = 1
 
-		self.favoriteBtn:SetParent(self.editModeFrame)
-		self.favoriteBtn:SetPoint("LEFT", self, "LEFT", enums.ofsxItemIcons, -2)
-		self.descBtn:SetParent(self.editModeFrame)
-		self.descBtn:SetPoint("LEFT", self, "LEFT", enums.ofsxItemIcons*2, 1)
+			self.favoriteBtn:SetParent(self.editModeFrame)
+			self.favoriteBtn:SetPoint("LEFT", self, "LEFT", enums.ofsxItemIcons*offset, -2)
+			offset = offset + 1
 
-		self.startPosFrame:SetPoint("LEFT", self, "LEFT", enums.ofsxItemIcons*3, 0)
+			self.descBtn:SetParent(self.editModeFrame)
+			self.descBtn:SetPoint("LEFT", self, "LEFT", enums.ofsxItemIcons*offset, 1)
+			offset = offset + 1
+
+			self.charBtn:SetParent(self.editModeFrame)
+			self.charBtn:SetPoint("LEFT", self, "LEFT", enums.ofsxItemIcons*offset, 1)
+			offset = offset + (database.ctabstate() and 1 or 0)
+
+			self.charBtn:SetShown(database.ctabstate())
+
+			self.startPosFrame:SetPoint("LEFT", self, "LEFT", enums.ofsxItemIcons*offset, 0)
+		end)
+		self.editModeFrame:GetScript("OnShow")()
 
 		self.interactiveLabel.Button:Show()
 		self.interactiveLabel.Text:SetMaxLines(math.min(self.interactiveLabel.Text:GetNumLines(), enums.maxWordWrapLines))
@@ -1427,6 +1498,20 @@ function private:Item_SetEditMode(state)
 	mainFrame:UpdateItemButtons(self.itemID)
 end
 
+function private:Item_RefreshCharTooltip()
+	-- here database.ctabstate() is a nasty shortcut to check if the item is currently global or not without going through dataManager:Find(ID)
+	-- but it should work, not the prettiest thing ever but /shrug
+	local itemWidget = self.itemWidget -- self is checkBtn
+	if database.ctabstate() and itemWidget.itemData.isCharacterSpecific and next(itemWidget.itemData.characterChecked) then
+		self.tooltipText = {"Checked on:\n"}
+		for _,formattedName in pairs(itemWidget.itemData.characterChecked) do -- TODO trier alphabetique
+			table.insert(self.tooltipText, formattedName)
+		end
+	else
+		self.tooltipText = nil
+	end
+end
+
 function widgets:ItemWidget(itemID, parentFrame)
 	local itemWidget = CreateFrame("Frame", nil, parentFrame, nil)
 	itemWidget:SetSize(1, 16) -- so that its children are visible
@@ -1447,8 +1532,18 @@ function widgets:ItemWidget(itemID, parentFrame)
 	-- / checkBtn
 	itemWidget.checkBtn = CreateFrame("CheckButton", nil, itemWidget, "UICheckButtonTemplate")
 	itemWidget.checkBtn:SetPoint("LEFT", itemWidget.startPosFrame, "LEFT", -3, 0)
-	itemWidget.checkBtn:SetScript("OnClick", function() dataManager:ToggleChecked(itemID) end)
+	itemWidget.checkBtn:SetScript("OnClick", function() dataManager:ToggleChecked(itemID) itemWidget.checkBtn:RefreshTooltip() end)
 	itemWidget.SetCheckBtnExtended = private.Item_SetCheckBtnExtended
+
+	itemWidget.checkBtn.charTexture = itemWidget.checkBtn:CreateTexture(nil, "ARTWORK", nil, 7)
+	itemWidget.checkBtn.charTexture:SetPoint("TOPLEFT", itemWidget.checkBtn, -2.5, 0.5)
+	itemWidget.checkBtn.charTexture:SetPoint("BOTTOMRIGHT", itemWidget.checkBtn, 2, 0)
+	itemWidget.checkBtn.charTexture:SetTexture("Interface\\AddOns\\Nys_ToDoList\\Assets\\Art\\UI-AutoCastableOverlay")
+	itemWidget.checkBtn.charTexture:Hide()
+
+	widgets:AddTooltipToButton(itemWidget.checkBtn)
+	itemWidget.checkBtn.OnTooltipEnter = private.Item_RefreshCharTooltip
+	itemWidget.checkBtn.itemWidget = itemWidget
 
 	-- / interactiveLabel
 	itemWidget.interactiveLabel = widgets:NoPointsInteractiveLabel(itemWidget, itemWidget.checkBtn, parentFrame, nil, itemData.name, "GameFontNormalLargeLeftTop")
@@ -1477,6 +1572,10 @@ function widgets:ItemWidget(itemID, parentFrame)
 	-- / descBtn
 	itemWidget.descBtn = widgets:DescButton(itemWidget, emf)
 	itemWidget.descBtn:SetScript("OnClick", function() widgets:DescriptionFrame(itemWidget) end)
+
+	-- / charBtn
+	itemWidget.charBtn = widgets:CharButton(itemWidget, emf)
+	itemWidget.charBtn:SetScript("OnClick", function() dataManager:ToggleCharSpecific(itemID) end)
 
 	-- / drag&drop
 	dragndrop:RegisterForDrag(itemWidget)

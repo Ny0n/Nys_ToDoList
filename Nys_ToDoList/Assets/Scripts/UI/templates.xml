@@ -392,6 +392,25 @@
 		</Layers>
 	</Button>
 
+	<!-- Description button -->
+	<Button name="NysTDL_CharButton" inherits="InlineHyperlinkFrameTemplate, NysTDL_IconButtonPositionScripts" virtual="true">
+		<Size x="13" y="13"/> <!-- Size of interactable zone -->
+		<KeyValues>
+			<KeyValue key="name" value="CharButton"/>
+		</KeyValues>
+		<Layers>
+			<Layer level="OVERLAY">
+				<Texture parentKey="Icon" file="Interface\AddOns\Nys_ToDoList\Assets\Art\UIMicroMenu2x">
+					<TexCoords left="0.328" right="0.436" top="0.02" bottom="0.074"/>
+					<Size x="12" y="12"/> <!-- Size of the texture -->
+					<Anchors>
+						<Anchor point="CENTER"/>
+					</Anchors>
+				</Texture>
+			</Layer>
+		</Layers>
+	</Button>
+
 	<!-- Add button (item/sub-cat) -->
 	<Button name="NysTDL_AddButton" inherits="NysTDL_IconButtonPositionScripts" virtual="true">
 		<Size x="17" y="17"/> <!-- Size of interactable zone -->

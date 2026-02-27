@@ -278,7 +278,9 @@ function importexport:LaunchExportProcess(tabsToMigrate, onlyReturn)
 			tinsert(exportData.elements, private:GenerateInfoTable(catID)) -- categories
 		end
 		for itemID in dataManager:ForEach(enums.item, tabID, true) do
-			tinsert(exportData.elements, private:GenerateInfoTable(itemID)) -- items
+			local itemInfoTable = private:GenerateInfoTable(itemID)
+			wipe(itemInfoTable.data.characterChecked)
+			tinsert(exportData.elements, itemInfoTable) -- items
 		end
 	end
 
@@ -432,6 +434,9 @@ function importexport:LaunchImportProcess(encodedData)
 		-- switch elements global state
 		for _,elementInfo in ipairs(data.elements) do
 			elementInfo.isGlobal = not elementInfo.isGlobal
+			if not elementInfo.isGlobal and elementInfo.enum == enums.item then -- item
+				elementInfo.data.isCharacterSpecific = false
+			end
 		end
 	end
 

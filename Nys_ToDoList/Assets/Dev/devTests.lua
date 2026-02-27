@@ -87,7 +87,7 @@ function NysTDL:Tests(nb, ...)
 
 		local itemTabID, itemCatID
 		for tabID,tabData in dataManager:ForEach(enums.tab) do
-			if tabData.name == "All" then
+			if tabData.name == "EXPLOSION" then
 				itemCatID = dataManager:CreateCategory("EXPLOSION", tabID)
 				itemTabID = tabID
 			end
