@@ -9,6 +9,7 @@ NysTDL.mainFrame = mainFrame
 
 local libs = NysTDL.libs
 local core = NysTDL.core
+local chat = NysTDL.chat
 local enums = NysTDL.enums
 local utils = NysTDL.utils
 local widgets = NysTDL.widgets
@@ -851,6 +852,11 @@ function private:RecursiveLoad(tabID, tabData, catWidget)
 	if isAddBoxShown then -- item add edit box
 		rlHelper:ShowFrame(catWidget.addEditBox, enums.rlFrameType.addEditBox)
 		rlHelper:RefreshTabulationHeight(catWidget)
+
+		if catWidget.addMode == enums.item and not rlHelper.shownCharBtnTuto then
+			tutorialsManager:SetPoint("tabSwitchState", "explainCharButton", "TOP", catWidget.addEditBox.charBtn, "BOTTOM", 0.5, -22)
+			rlHelper.shownCharBtnTuto = true
+		end
 	end
 
 	-- emptyLabel : we show it if there's nothing in the category
@@ -903,6 +909,7 @@ function private:LoadList()
 	rlHelper.last.relativeFrame = tdlFrame.content.loadOrigin
 	rlHelper.last.frameType = enums.rlFrameType.empty
 	rlHelper.last.deep = 0
+	rlHelper.shownCharBtnTuto = false
 
 	-- base category widgets loop
 	for catOrder,catID in ipairs(tabData.orderedCatIDs) do
@@ -1119,7 +1126,7 @@ function private:GenerateFrameContent()
 	tutorialsManager:SetPoint("introduction", "addNewCat", "TOP", menu.categoryButton, "BOTTOM", 0, -18)
 
 	-- addon options button
-	menu.frameOptionsButton = widgets:IconTooltipButton(menu, "NysTDL_FrameOptionsButton", {string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Left-Click"])..utils:GetMinusStr()..L["Open addon options"], string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Right-Click"])..utils:GetMinusStr()..L["Open backup list"]})
+	menu.frameOptionsButton = widgets:IconTooltipButton(menu, "NysTDL_FrameOptionsButton", {string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Left-Click"])..utils:GetMinusStr()..L["Open addon options"], string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Right-Click"])..utils:GetMinusStr()..L["Open backup list"], "", utils:SafeStringFormat(string.format("|cff%s%s|r", "AAAAAA", L["Type %s for more information"]), utils:ColorText(database.themes.theme2, chat.slashCommand..' '..string.lower(L["help"])))})
 	menu.frameOptionsButton:SetPoint("CENTER", menu.categoryButton, "CENTER", spacing, 0)
 	menu.frameOptionsButton:SetScript("OnClick", function(self, button)
 		if button == "RightButton" then
@@ -1242,6 +1249,7 @@ function mainFrame:CreateTDLFrame()
 	end)
 
 	tutorialsManager:SetPoint("introduction", "getMoreInfo", "BOTTOM", tdlFrame, "TOP", 0, 18)
+	tutorialsManager:SetPoint("newCharBtn", "tuto", "BOTTOM", tdlFrame, "TOP", 0, 18)
 
 	-- helper
 	tdlFrame.RePoint = function(self)

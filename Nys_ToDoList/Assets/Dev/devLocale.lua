@@ -19,11 +19,21 @@ addonTable.devLocale = L
 
 --/************************************************/--
 
+L["Tab Management"] = true -- to be removed
+
+L["Information on tabs"] = true
+L["New tabs can be created in the addon options"] = true
+L["Linked to the currently selected profile"] = true
+L["Account-wide and shared across all profiles and characters"] = true
+L["Use this button to toggle the default item check behavior. You can also change it in Edit Mode"] = true
+L["Automatic resets (e.g. Daily/Weekly) can be set per tab in the '%s' section"] = true
+L["Items in Global tabs can now be checked separately for each character. In Edit Mode, you can change their check behavior using the %s button next to them or the updated %s Tab Actions button"] = true
 L["Checked on all characters"] = true
 L["Checked on:"] = true
 L["Character-specific"] = true
 L["Toggle check behavior"] = true
 L["Global tabs only"] = true
+L["Select a tab on the left to customize it"] = true
 L["Items can either be checked once and updated for every character (account-wide), or checked separately for each character (character-specific)"] = true
 
 L["Toggle clear view"] = true
@@ -245,7 +255,6 @@ L["Sunday"] = true
 L["Switch Global/Profile"] = true
 L["Tab"] = true
 L["Tab actions"] = true
-L["Tab Management"] = true
 L["Tabs"] = true
 L["The %s command"] = true
 L["The current data will be backed up under the %s section"] = true

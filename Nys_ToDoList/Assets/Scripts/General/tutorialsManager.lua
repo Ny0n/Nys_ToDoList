@@ -402,11 +402,13 @@ function private:CreateTutorials()
 			end,
 			tutosOrdered = {
 				"explainSwitchButton",
+				"explainCharButton",
 			},
 		}
 	)
 
 	private:CreateTutoFrame(cat, "explainSwitchButton", true, "LEFT", L["You can click on this button to switch between global and profile tabs"], 285)
+	private:CreateTutoFrame(cat, "explainCharButton", true, "UP", L["Use this button to toggle the default item check behavior. You can also change it in Edit Mode"], 285)
 
 	-- // ******************** // --
 
@@ -464,7 +466,39 @@ function private:CreateTutorials()
 		}
 	)
 
-	private:CreateTutoFrame(cat, "tuto", true, "LEFT", "("..tostring(NEW).."!) "..string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Right-Click"])..utils:GetMinusStr()..L["Toggle clear view"], 280)
+	private:CreateTutoFrame(cat, "tuto", true, "LEFT", utils:ColorText({1*255, 0.82*255, 0}, "("..tostring(NEW).."!) ")..string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Right-Click"])..utils:GetMinusStr()..L["Toggle clear view"], 280)
+
+	-- // ******************** // --
+
+	-- one shot tutorial only if conditions are met (@see private:GlobalNewVersion() in migration.lua)
+	cat = "newCharBtn"
+
+	tp:GenerateTutoTable(cat,
+		{
+			IsEnabled = function(self)
+				return tp:ValueBool("introduction")
+				and not tp:ValueBool(self.tutoCategory)
+				and NysTDL.acedb.global.tutorials_progression["newCharBtn_isEnabled"] == true
+			end,
+			tutosOrdered = {
+				"tuto",
+			},
+			OnFinish = function(self)
+				-- when this tuto is completed OR we reset all tutorials (wipe tutorials_progression),
+				-- it will never be shown again
+				NysTDL.acedb.global.tutorials_progression["newCharBtn_isEnabled"] = nil
+				NysTDL.acedb.global.tutorials_progression[cat] = nil
+			end,
+		}
+	)
+
+	private:CreateTutoFrame(cat, "tuto", true, "BOTTOM",
+	utils:ColorText({1*255, 0.82*255, 0}, "("..tostring(NEW).."!) ")..
+		utils:SafeStringFormat(L["Items in Global tabs can now be checked separately for each character. In Edit Mode, you can change their check behavior using the %s button next to them or the updated %s Tab Actions button"]..
+			utils:ColorText({140, 140, 140}, "\n"..L["Global tabs only"]..". "..
+				utils:SafeStringFormat(string.format("|cff%s%s|r", "AAAAAA", L["Type %s for more information"]), utils:ColorText(database.themes.theme2, chat.slashCommand..' '..string.lower(L["Tabs"])))
+			), enums.icons.global.texHyperlinkTuto, enums.icons.global.texHyperlinkTuto2),
+	310)
 
 	-- // ******************** // --
 

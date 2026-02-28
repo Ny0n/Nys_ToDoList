@@ -9,9 +9,11 @@ NysTDL.optionsManager = optionsManager
 
 local libs = NysTDL.libs
 local core = NysTDL.core
+local chat = NysTDL.chat
 local enums = NysTDL.enums
 local utils = NysTDL.utils
 local widgets = NysTDL.widgets
+local database = NysTDL.database
 local mainFrame = NysTDL.mainFrame
 local tabsFrame = NysTDL.tabsFrame
 local databroker = NysTDL.databroker
@@ -583,6 +585,29 @@ local tabManagementTable = {
 }
 
 local tabAddTable = {
+	info1 = {
+		order = 1.32,
+		type = "description",
+		name = function()
+			return utils:SafeStringFormat(string.format("|cff%s%s|r", "AAAAAA", L["Type %s for more information"]), utils:ColorText(database.themes.theme2, chat.slashCommand..' '..string.lower(L["Tabs"])))
+		end,
+		width = "full",
+		fontSize = "medium",
+	},
+	-- info2 = {
+	-- 	order = 1.05,
+	-- 	type = "description",
+	-- 	name = L["New tabs can be created here"],
+	-- 	width = "full",
+	-- 	fontSize = "medium",
+	-- },
+	info3 = {
+		order = 1.31,
+		type = "description",
+		name = L["Select a tab on the left to customize it"],
+		width = "full",
+		fontSize = "medium",
+	},
 	addGlobalInput = {
 		order = 1.1,
 		type = "input",
@@ -608,7 +633,31 @@ local tabAddTable = {
 
 	-- / layout widgets / --
 
+	header1 = {
+		order = 0.01,
+		type = "header",
+		name = L["Create new"],
+	},
+
 	-- spacers
+	spacer00 = {
+		order = 1.09,
+		type = "description",
+		width = "full",
+		name = "",
+	},
+	spacer000 = {
+		order = 1.309,
+		type = "description",
+		width = "full",
+		name = " ",
+	},
+	spacer0000 = {
+		order = 1.315,
+		type = "description",
+		width = "full",
+		name = " ",
+	},
 	spacer0 = {
 		order = 1.109,
 		type = "description",
@@ -642,6 +691,12 @@ local tabAddTable = {
 		name = "",
 		image = enums.icons.profile.info,
 		imageCoords = enums.icons.profile.texCoords,
+	},
+	spacer3 = {
+		order = 1.29,
+		type = "description",
+		width = "full",
+		name = "",
 	},
 }
 
@@ -1115,13 +1170,24 @@ function private:CreateAddonOptionsTable()
 									private:RefreshTabManagement()
 									widgets:UpdateTDLButtonColor() -- in case we changed reset times
 									tabsFrame:Refresh() -- in case we changed tab data
+
+									-- -- attempt at opening the tree by default
+									-- local frame = AceConfigDialog.OpenFrames[core.addonName]
+									-- if frame and frame.status and frame.status.selected then
+									-- 	print("yo")
+									-- 	local selectedGroup = frame.status.selected
+									-- 	AceConfigDialog:SelectGroup(core.addonName, "main", "tabs", "groupGlobalTabManagement")
+									-- 	AceConfigDialog:SelectGroup(core.addonName, "main", "tabs", "groupProfileTabManagement")
+									-- 	AceConfigDialog:SelectGroup(core.addonName, unpack(selectedGroup))
+									-- end
+
 									return true
 								end,
 							}, -- optionsUpdater
 							groupTabManagement = {
 								order = 1,
 								type = "group",
-								name = L["Tab Management"],
+								name = L["Create new"],
 								args = tabAddTable,
 							},
 							groupGlobalTabManagement = {

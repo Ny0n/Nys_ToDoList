@@ -461,6 +461,7 @@ function widgets:TutorialFrame(tutoCategory, tutoName, showCloseButton, arrowSid
 		tutoFrame.Text:SetWidth(width-15-25) -- we add an offset because of the close button
 	end
 
+	tutoFrame:SetClampedToScreen(true)
 	tutoFrame:SetWidth(width)
 	tutoFrame:Hide() -- we hide them by default, we show them only when we need to
 
@@ -1366,12 +1367,15 @@ function widgets:CategoryWidget(catID, parentFrame)
 		mainFrame:Refresh()
 
 		if categoryWidget.addEditBox.edb:IsShown() then
-			widgets:SetFocusEditBox(categoryWidget.addEditBox.edb)
-
 			-- reset the isAccountWide state on the edit box everytime we reopen it in item mode,
 			-- but NOT if we create an item or refresh the list
 			categoryWidget.addEditBox.isAccountWide = false
 			categoryWidget.addEditBox.charBtn:GetScript("OnShow")(categoryWidget.addEditBox.charBtn) -- refresh button visual
+			mainFrame:Refresh() -- mainly for tutorials
+		end
+
+		if categoryWidget.addEditBox.edb:IsShown() then
+			widgets:SetFocusEditBox(categoryWidget.addEditBox.edb)
 		end
 	end)
 	categoryWidget.addItemBtn:RegisterForClicks("LeftButtonUp", "RightButtonUp")

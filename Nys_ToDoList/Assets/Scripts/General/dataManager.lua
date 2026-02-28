@@ -2208,7 +2208,7 @@ end
 ---@param itemData table (not item id because optiiii)
 ---@return boolean
 function dataManager:IsItemChecked(itemData)
-	if not dataManager:IsID(itemData.originalTabID) then
+	if not dataManager:IsID(itemData.originalTabID) or not dataManager:IsID(itemData.catID) then
 		return false
 	end
 

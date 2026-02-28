@@ -37,7 +37,10 @@ local addonName = core.addonName
 function NysTDL:Tests(nb, ...)
 	nb = nb or 0
 	if nb == 0 then
-		-- print((select(4, GetBuildInfo())))
+		tutorialsManager:Reset()
+		NysTDL.acedb.global.tutorials_progression["introduction"] = true
+		NysTDL.acedb.global.tutorials_progression["backup"] = true
+		tutorialsManager:Refresh()
 	elseif nb == 1 then
 		-- AceConfigDialog:Open(addonName)
 	elseif nb == 2 then
