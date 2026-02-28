@@ -19,11 +19,12 @@ addonTable.devLocale = L
 
 --/************************************************/--
 
-L["Character Specific"] = true
-L["Toggle Check Behavior"] = true
-L["Check Behavior"] = true
-L["Default check behavior for newly created global items"] = true
-L["For Global tabs only. Items can either be checked once and update on every character, or they can be checked independently for every character"] = true
+L["Checked on all characters"] = true
+L["Checked on:"] = true
+L["Character-specific"] = true
+L["Toggle check behavior"] = true
+L["Global tabs only"] = true
+L["Items can either be checked once and updated for every character (account-wide), or checked separately for each character (character-specific)"] = true
 
 L["Toggle clear view"] = true
 L["Move"] = true

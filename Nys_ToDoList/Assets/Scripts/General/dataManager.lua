@@ -566,11 +566,6 @@ function dataManager:CreateItem(itemName, tabID, catID)
 		return false
 	end
 
-	local isAccountWide = false
-	if dataManager:IsGlobal(tabID) then -- TODO mainFrame.currentstateblabla ou carrément en param de CreateItem ?
-		isAccountWide = NysTDL.acedb.global.defaultCheckState == 2 -- see optionsManager.lua defaultCheckState
-	end
-
 	local itemData = { -- itemData
 		name = itemName,
 		originalTabID = tabID,
@@ -583,7 +578,7 @@ function dataManager:CreateItem(itemName, tabID, catID)
 		checked = false,
 		favorite = false,
 		description = false,
-		isAccountWide = isAccountWide, -- used in global tabs, true => use checked, false => use characterChecked
+		isAccountWide = false, -- used in global tabs, true => use checked, false => use characterChecked
 		characterChecked = { -- used in global tabs
 			-- if name exists in table, then item is checked for said name
 			-- ["name-server"] = <formatted name string>,

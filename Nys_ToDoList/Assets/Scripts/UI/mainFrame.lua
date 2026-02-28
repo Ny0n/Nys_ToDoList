@@ -373,13 +373,6 @@ function mainFrame:UpdateItemButtons(itemID)
 	itemWidget.descBtn:GetScript("OnShow")(itemWidget.descBtn)
 	itemWidget.charBtn:GetScript("OnShow")(itemWidget.charBtn)
 
-	local charBtnTooltipText = {
-		L["Toggle Check Behavior"],
-		utils:ColorText(database.themes.theme, L["Current"]..": "..(itemWidget.itemData.isAccountWide and L["Account-wide"] or L["Character Specific"])),
-	}
-	itemWidget.charBtn.tooltipText = charBtnTooltipText
-	itemWidget.charBtn:RefreshTooltip()
-
 	if mainFrame.editMode then
 		itemWidget.removeBtn:Show()
 		itemWidget.favoriteBtn:Show()

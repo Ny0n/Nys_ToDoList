@@ -279,7 +279,9 @@ function importexport:LaunchExportProcess(tabsToMigrate, onlyReturn)
 		end
 		for itemID in dataManager:ForEach(enums.item, tabID, true) do
 			local itemInfoTable = private:GenerateInfoTable(itemID)
-			wipe(itemInfoTable.data.characterChecked)
+			if type(itemInfoTable) == "table" and type(itemInfoTable.data) == "table" and type(itemInfoTable.data.characterChecked) == "table" then
+				wipe(itemInfoTable.data.characterChecked)
+			end
 			tinsert(exportData.elements, itemInfoTable) -- items
 		end
 	end

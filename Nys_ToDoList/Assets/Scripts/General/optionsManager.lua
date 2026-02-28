@@ -43,11 +43,6 @@ local frameStratas = {
 	"LOW", -- [4]
 }
 
-local defaultCheckState = {
-	L["Character Specific"], -- [1]
-	L["Account-wide"], -- [2]
-}
-
 --/*******************/ OPTIONS TABLES /*************************/--
 
 function private:GetLeaf(info, x)
@@ -822,21 +817,6 @@ function private:CreateAddonOptionsTable()
 								type = "toggle",
 								name = L["Add elements in last position"],
 							}, -- addLast
-							charDefault = {
-								order = 3.71,
-								type = "select",
-								values = function()
-									return defaultCheckState
-								end,
-								get = function()
-									return NysTDL.acedb.global.defaultCheckState
-								end,
-								set = function(info, value)
-									NysTDL.acedb.global.defaultCheckState = value
-								end,
-								name = L["Check Behavior"],
-								desc = L["Default check behavior for newly created global items"]..".\n"..L["For Global tabs only. Items can either be checked once and update on every character, or they can be checked independently for every character"],
-							}, -- charDefault
 							highlightOnFocus = {
 								order = 3.5,
 								type = "toggle",

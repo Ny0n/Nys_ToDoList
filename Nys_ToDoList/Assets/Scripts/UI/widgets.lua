@@ -638,6 +638,7 @@ function widgets:AddTooltipToButton(btn, tooltipText, tooltipOffsetX, tooltipOff
 		btn.tooltipText : table of strings, one string = one line of tooltip
 		btn.tooltipOffsetX : number
 		btn.tooltipOffsetY : number
+		btn.tooltipWidth : number !!set it as any number if you want the width to be limited
 
 		btn:RefreshTooltip(self) : function, call it if any of the above values changes
 		btn:OnTooltipEnter(self) : function, nonexistant but if you create it, it gets called first before the tooltip's OnEnter,
@@ -665,10 +666,11 @@ function widgets:AddTooltipToButton(btn, tooltipText, tooltipOffsetX, tooltipOff
 
 			-- we're good to go
 			btn.tooltip = widgets:AcquireTooltip("NysTDL_Tooltip_TooltipButton", self, btn.tooltipOffsetX, btn.tooltipOffsetY)
-			btn.tooltip:SetFont("GameTooltipText")
 
-			for _,text in ipairs(btn.tooltipText) do
-				btn.tooltip:AddLine(text)
+			btn.tooltip:SetFont("GameTooltipText")
+			for i,text in ipairs(btn.tooltipText) do
+				btn.tooltip:AddLine()
+				btn.tooltip:SetCell(i, 1, text, nil, nil, nil, nil, nil, nil, btn.tooltipWidth or nil)
 			end
 		end
 		btn.isHovered = true
@@ -947,7 +949,7 @@ function widgets:DescButton(widget, parent)
   return btn
 end
 
-function widgets:CharButton(widget, parent)
+function widgets:CharButton(widget, parent, categoryWidget)
 	local btn = CreateFrame("Button", nil, parent, "NysTDL_CharButton")
 
 	-- // Appearance
@@ -955,7 +957,7 @@ function widgets:CharButton(widget, parent)
 	-- these are for changing the color depending on the mouse actions (since they are custom xml)
 	-- and yea, this one's a bit complicated too because it works in very specific ways
 	btn:HookScript("OnEnter", function(self)
-		if not widget.itemData.isAccountWide then
+		if (widget and not widget.itemData.isAccountWide) or (categoryWidget and not categoryWidget.addEditBox.isAccountWide) then
 			self.Icon:SetDesaturated(nil)
 			self.Icon:SetVertexColor(1, 1, 1)
 		else
@@ -963,7 +965,7 @@ function widgets:CharButton(widget, parent)
 		end
 	end)
 	btn:HookScript("OnLeave", function(self)
-		if not widget.itemData.isAccountWide then
+		if (widget and not widget.itemData.isAccountWide) or (categoryWidget and not categoryWidget.addEditBox.isAccountWide) then
 			if tonumber(string.format("%.1f", self.Icon:GetAlpha())) ~= 0.5 then -- if we are currently clicking on the button
 				self.Icon:SetDesaturated(1)
 				self.Icon:SetVertexColor(0.4, 0.4, 0.4)
@@ -974,7 +976,7 @@ function widgets:CharButton(widget, parent)
 	end)
 	btn:HookScript("OnMouseUp", function(self)
 		self:SetAlpha(1)
-		if not widget.itemData.isAccountWide then
+		if (widget and not widget.itemData.isAccountWide) or (categoryWidget and not categoryWidget.addEditBox.isAccountWide) then
 			self.Icon:SetDesaturated(1)
 			self.Icon:SetVertexColor(0.4, 0.4, 0.4)
 		end
@@ -984,18 +986,41 @@ function widgets:CharButton(widget, parent)
 	end)
 	btn:HookScript("OnShow", function(self)
 		self:SetAlpha(1)
-		if not widget.itemData.isAccountWide then
+		if (widget and not widget.itemData.isAccountWide) or (categoryWidget and not categoryWidget.addEditBox.isAccountWide) then
 			self.Icon:SetDesaturated(1)
 			self.Icon:SetVertexColor(0.4, 0.4, 0.4)
 		else
 			self.Icon:SetDesaturated(nil)
 			self.Icon:SetVertexColor(1, 1, 1)
 		end
+
+		local charBtnTooltipText = {}
+		table.insert(charBtnTooltipText, utils:ColorText({1*255, 0.82*255, 0}, L["Toggle check behavior"]))
+		-- if categoryWidget then
+		-- 	table.insert(charBtnTooltipText, "")
+		-- 	table.insert(charBtnTooltipText, utils:ColorText(database.themes.theme2, L["Default check behavior for new items"]))
+		-- end
+		table.insert(charBtnTooltipText, "")
+		table.insert(charBtnTooltipText, L["Items can either be checked once and updated for every character (account-wide), or checked separately for each character (character-specific)"] .. ". " .. L["Global tabs only"])
+		table.insert(charBtnTooltipText, "")
+		local isAccountWide = false
+		if widget then isAccountWide = widget.itemData.isAccountWide
+		elseif categoryWidget then isAccountWide = categoryWidget.addEditBox.isAccountWide end
+		table.insert(charBtnTooltipText, utils:ColorText(database.themes.theme, L["Current"]..": "..(isAccountWide and L["Account-wide"] or L["Character-specific"])))
+
+		if widget then
+			widget.charBtn.tooltipText = charBtnTooltipText
+			widget.charBtn:RefreshTooltip()
+		elseif categoryWidget then
+			categoryWidget.addEditBox.charBtn.tooltipText = charBtnTooltipText
+			categoryWidget.addEditBox.charBtn:RefreshTooltip()
+		end
 	end)
 
 	-- // Tooltip
 
 	widgets:AddTooltipToButton(btn, {"..."})
+	btn.tooltipWidth = 280
 
 	return btn
 end
@@ -1342,6 +1367,11 @@ function widgets:CategoryWidget(catID, parentFrame)
 
 		if categoryWidget.addEditBox.edb:IsShown() then
 			widgets:SetFocusEditBox(categoryWidget.addEditBox.edb)
+
+			-- reset the isAccountWide state on the edit box everytime we reopen it in item mode,
+			-- but NOT if we create an item or refresh the list
+			categoryWidget.addEditBox.isAccountWide = false
+			categoryWidget.addEditBox.charBtn:GetScript("OnShow")(categoryWidget.addEditBox.charBtn) -- refresh button visual
 		end
 	end)
 	categoryWidget.addItemBtn:RegisterForClicks("LeftButtonUp", "RightButtonUp")
@@ -1357,7 +1387,13 @@ function widgets:CategoryWidget(catID, parentFrame)
 	categoryWidget.addEditBox:Hide()
 	categoryWidget.addEditBox.edb:SetScript("OnEnterPressed", function(self)
 		if categoryWidget.addMode == enums.item then
-			if dataManager:CreateItem(self:GetText(), catData.originalTabID, catID) then -- calls mainFrame:Refresh()
+			local itemID = dataManager:CreateItem(self:GetText(), catData.originalTabID, catID)
+			if itemID then -- calls mainFrame:Refresh()
+				if categoryWidget.addEditBox.isAccountWide then
+					-- default isAccountWide state when creating the item,
+					-- lets us easily create it how we want without having to go in edit mode
+					dataManager:ToggleAccountWide(itemID, true)
+				end
 				self:SetText("") -- we clear the box if the adding was a success
 			end
 		elseif categoryWidget.addMode == enums.category then
@@ -1380,8 +1416,25 @@ function widgets:CategoryWidget(catID, parentFrame)
 		elseif categoryWidget.addMode == enums.category then
 			categoryWidget.addEditBox.edb.Hint:SetText(L["Add a category"])
 		end
+
+		local isCharBtnShown = dataManager:IsGlobal(categoryWidget.catID) and categoryWidget.addMode == enums.item
+		categoryWidget.addEditBox.charBtn:SetShown(isCharBtnShown)
+
+		-- --v1
+		-- local xOffset = 14
+		-- categoryWidget.addEditBox.edb:SetTextInsets(isCharBtnShown and xOffset or 0, 0, 0, 0)
+		-- categoryWidget.addEditBox.edb:SetHitRectInsets(isCharBtnShown and xOffset or 0, 0, 0, 0)
+		-- categoryWidget.addEditBox.edb.Hint:SetPoint("LEFT", categoryWidget.addEditBox.edb, "LEFT", isCharBtnShown and xOffset + 3 or 3, -1)
+		-- categoryWidget.addEditBox.charBtn.Icon:SetSize(10, 10)
+
+		--v2
+		categoryWidget.addEditBox.startPosFrame:SetPoint("LEFT", categoryWidget.addEditBox, "LEFT", isCharBtnShown and enums.ofsxItemIcons*2 + 5 or enums.ofsxItemIcons+5, 0)
 	end)
 	widgets:AddHyperlinkEditBox(categoryWidget.addEditBox.edb)
+
+	categoryWidget.addEditBox.charBtn = widgets:CharButton(nil, categoryWidget.addEditBox, categoryWidget)
+	categoryWidget.addEditBox.charBtn:SetPoint("LEFT", categoryWidget.addEditBox, "LEFT", enums.ofsxItemIcons-0.5, -0.5)
+	categoryWidget.addEditBox.charBtn:SetScript("OnClick", function() categoryWidget.addEditBox.isAccountWide = not categoryWidget.addEditBox.isAccountWide end)
 
 	-- -- TDLATER sub-cat creation
 	-- -- / addCatEditBox
@@ -1503,7 +1556,7 @@ function private:Item_RefreshCharTooltip()
 	-- here database.ctabstate() is a nasty shortcut to check if the item is currently global or not without going through dataManager:Find(ID)
 	-- but it should work, not the prettiest thing ever but /shrug
 	local itemWidget = self.itemWidget -- self is checkBtn
-	if database.ctabstate() and not itemWidget.itemData.isAccountWide and next(itemWidget.itemData.characterChecked) then
+	if database.ctabstate() and not itemWidget.itemData.isAccountWide and type(itemWidget.itemData.characterChecked) == "table" and next(itemWidget.itemData.characterChecked) then
 		-- sort alphabetically
 		wipe(T_Item_RefreshCharTooltip)
 		for fullName in pairs(itemWidget.itemData.characterChecked) do
@@ -1512,10 +1565,12 @@ function private:Item_RefreshCharTooltip()
 		table.sort(T_Item_RefreshCharTooltip)
 
 		-- then display
-		self.tooltipText = {"Checked on:\n"}
-		for fullName in ipairs(T_Item_RefreshCharTooltip) do
+		self.tooltipText = {L["Checked on:"]}
+		for _,fullName in ipairs(T_Item_RefreshCharTooltip) do
 			table.insert(self.tooltipText, itemWidget.itemData.characterChecked[fullName])
 		end
+	elseif database.ctabstate() and itemWidget.itemData.isAccountWide and itemWidget.itemData.checked then
+		self.tooltipText = {utils:ColorText({1*255, 0.82*255, 0}, L["Checked on all characters"])}
 	else
 		self.tooltipText = nil
 	end
@@ -1625,7 +1680,7 @@ function widgets:NoPointsCatEditBox(parent, hint, fullWidget, pointRight)
 	edb.Hint:SetFontObject("GameFontNormal")
 	edb.Hint:SetTextColor(0.35, 0.35, 0.35)
 	edb.Hint:SetText(hint or "")
-	edb.Hint:SetPoint("LEFT", edb, "LEFT", 3, -1)
+	edb.Hint:SetPoint("LEFT", edb, "LEFT", 3, -1) -- see "categoryWidget.addEditBox.edb:SetScript("OnShow"" (ctrl+f), left point is moved there
 	edb.Hint:SetPoint("RIGHT", edb, "RIGHT", -6, -1)
 	edb.Hint:SetJustifyV("TOP")
 	edb.Hint:SetJustifyH("LEFT")
