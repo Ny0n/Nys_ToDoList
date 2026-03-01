@@ -1649,7 +1649,9 @@ function dataManager:ToggleChecked(itemID, state)
 	if NysTDL.acedb.profile.instantRefresh then
 		mainFrame:Refresh()
 	else
-		mainFrame:UpdateVisuals()
+		if refreshAuthorized then
+			mainFrame:UpdateVisuals()
+		end
 	end
 
 	return newState

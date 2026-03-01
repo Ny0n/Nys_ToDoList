@@ -1119,7 +1119,8 @@ function private.TabActionsMenuInitialize(self, level)
 		end
 		info.notCheckable = true
 		info.keepShownOnClick = true
-		UIDropDownMenu_AddButton(info, level)
+		local btn = UIDropDownMenu_AddButton(info, level)
+		btn.Icon:SetSize(15, 15)
 	end
 end
 
