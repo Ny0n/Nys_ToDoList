@@ -361,7 +361,7 @@ function utils:BuildPlayerUnitString()
         )
     end
 
-    local raceIcon = "|TInterface\\Icons\\Achievement_Character_" .. raceFile .. "_" .. genderSuffix .. ":16|t"
+    local raceIcon = "|TInterface\\CHARACTERFRAME\\TemporaryPortrait-" .. genderSuffix .. "-" .. raceFile .. ":16|t"
 
     return raceIcon .. " " .. classColor .. fullName .. "|r"
 end

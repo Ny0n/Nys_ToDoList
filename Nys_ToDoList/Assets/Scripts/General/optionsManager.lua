@@ -1174,7 +1174,6 @@ function private:CreateAddonOptionsTable()
 									-- -- attempt at opening the tree by default
 									-- local frame = AceConfigDialog.OpenFrames[core.addonName]
 									-- if frame and frame.status and frame.status.selected then
-									-- 	print("yo")
 									-- 	local selectedGroup = frame.status.selected
 									-- 	AceConfigDialog:SelectGroup(core.addonName, "main", "tabs", "groupGlobalTabManagement")
 									-- 	AceConfigDialog:SelectGroup(core.addonName, "main", "tabs", "groupProfileTabManagement")

@@ -1031,6 +1031,9 @@ function private.TabActionsMenuInitialize(self, level)
 		info.notCheckable = true
 		UIDropDownMenu_AddButton(info, level)
 
+		-- separator
+		UIDropDownMenu_AddSeparator(level)
+
 		wipe(info)
 		info.text = L["Check"]
 		info.icon = "Interface\\BUTTONS\\UI-CheckBox-Check"
@@ -1121,6 +1124,20 @@ function private.TabActionsMenuInitialize(self, level)
 		info.keepShownOnClick = true
 		local btn = UIDropDownMenu_AddButton(info, level)
 		btn.Icon:SetSize(15, 15)
+
+		-- separator
+		UIDropDownMenu_AddSeparator(level)
+
+		-- close button
+		wipe(info)
+		info.notCheckable = true
+		info.text = CLOSE
+		info.func = function(self)
+			if UIDROPDOWNMENU_OPEN_MENU == self then
+				CloseDropDownMenus()
+			end
+		end
+		UIDropDownMenu_AddButton(info, level)
 	end
 end
 

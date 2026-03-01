@@ -611,8 +611,8 @@ function private.TabsSelectMenuInitialize(self, level)
 		info.notCheckable = true
 		--[[titleButton = ]]UIDropDownMenu_AddButton(info, level)
 
-		-- -- separator
-		-- UIDropDownMenu_AddSeparator(level)
+		-- separator
+		UIDropDownMenu_AddSeparator(level)
 
 		wipe(info)
 		info.text = CHECK_ALL
@@ -661,15 +661,15 @@ function private.TabsSelectMenuInitialize(self, level)
 		profileButton = UIDropDownMenu_AddButton(info, level)
 		-- _G[profileButton:GetName().."Icon"]:SetSize(12, 14)
 
-		-- -- separator
-		-- UIDropDownMenu_AddSeparator(level)
+		-- separator
+		UIDropDownMenu_AddSeparator(level)
 
-		-- -- close button
-		-- wipe(info)
-		-- info.notCheckable = true
-		-- info.text = CLOSE
-		-- info.func = self.HideMenu
-		-- UIDropDownMenu_AddButton(info, level)
+		-- close button
+		wipe(info)
+		info.notCheckable = true
+		info.text = CLOSE
+		info.func = self.HideMenu
+		UIDropDownMenu_AddButton(info, level)
 	elseif level == 2 then
 		local isGlobal = UIDROPDOWNMENU_MENU_VALUE == "global"
 
