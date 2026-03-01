@@ -1904,6 +1904,22 @@ function dataManager:ToggleTabChecked(tabID, state)
 	mainFrame:Refresh()
 end
 
+---Calls dataManager:ToggleAccountWide on everything in the given tab.
+---@param tabID string
+---@param state any See dataManager:ToggleAccountWide
+function dataManager:ToggleTabAccountWide(tabID, state)
+	local refreshID = dataManager:SetRefresh(false)
+
+	for itemID in dataManager:ForEach(enums.item, tabID) do
+		dataManager:ToggleAccountWide(itemID, state)
+	end
+
+	dataManager:SetRefresh(true, refreshID)
+
+	-- refresh the mainFrame
+	mainFrame:Refresh()
+end
+
 ---Calls dataManager:ToggleClosed on everything in the given tab.
 ---@param tabID string
 ---@param state any See dataManager:ToggleClosed

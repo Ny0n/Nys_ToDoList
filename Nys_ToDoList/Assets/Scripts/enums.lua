@@ -34,7 +34,7 @@ enums.tab = "ENUMS_TAB"
 enums.menus = {
 	addcat = "ENUMS_MENUS_1", -- addcat menu
 	frameopt = "ENUMS_MENUS_2", -- frameopt menu UNUSED
-	tabact = "ENUMS_MENUS_3", -- tabactions menu
+	tabact = "ENUMS_MENUS_3", -- tabactions menu UNUSED
 }
 
 ---@class enums.databrokerModes
