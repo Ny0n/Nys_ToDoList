@@ -1,3 +1,10 @@
+#### **7.5**
+
+- Added character-specific check for items in global tabs!
+- New tutorials and help commands (/tdl tabs) have been added to explain the feature
+- Reworked the Tab Actions button in Edit Mode
+- Bump interface number (Midnight 12.0.1, TBC 2.5.5)
+
 #### **7.4.2**
 
 - Fix hyperlinks (shift-click)

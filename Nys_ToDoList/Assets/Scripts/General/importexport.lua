@@ -279,9 +279,12 @@ function importexport:LaunchExportProcess(tabsToMigrate, onlyReturn)
 		end
 		for itemID in dataManager:ForEach(enums.item, tabID, true) do
 			local itemInfoTable = private:GenerateInfoTable(itemID)
+
+			-- don't export character names, those are private >:(
 			if type(itemInfoTable) == "table" and type(itemInfoTable.data) == "table" and type(itemInfoTable.data.characterChecked) == "table" then
 				wipe(itemInfoTable.data.characterChecked)
 			end
+
 			tinsert(exportData.elements, itemInfoTable) -- items
 		end
 	end
@@ -436,7 +439,9 @@ function importexport:LaunchImportProcess(encodedData)
 		-- switch elements global state
 		for _,elementInfo in ipairs(data.elements) do
 			elementInfo.isGlobal = not elementInfo.isGlobal
-			if not elementInfo.isGlobal and elementInfo.enum == enums.item then -- item
+
+			-- items in profile tabs cannot be account wide
+			if not elementInfo.isGlobal and elementInfo.enum == enums.item and type(elementInfo.data) == "table" then -- item
 				elementInfo.data.isAccountWide = false
 			end
 		end

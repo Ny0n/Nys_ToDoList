@@ -1391,8 +1391,8 @@ function widgets:CategoryWidget(catID, parentFrame)
 	categoryWidget.addEditBox:Hide()
 	categoryWidget.addEditBox.edb:SetScript("OnEnterPressed", function(self)
 		if categoryWidget.addMode == enums.item then
-			local itemID = dataManager:CreateItem(self:GetText(), catData.originalTabID, catID)
-			if itemID then -- calls mainFrame:Refresh()
+			local itemID = dataManager:CreateItem(self:GetText(), catData.originalTabID, catID) -- calls mainFrame:Refresh()
+			if itemID then
 				if categoryWidget.addEditBox.isAccountWide then
 					-- default isAccountWide state when creating the item,
 					-- lets us easily create it how we want without having to go in edit mode
@@ -1424,21 +1424,13 @@ function widgets:CategoryWidget(catID, parentFrame)
 		local isCharBtnShown = dataManager:IsGlobal(categoryWidget.catID) and categoryWidget.addMode == enums.item
 		categoryWidget.addEditBox.charBtn:SetShown(isCharBtnShown)
 
-		-- --v1
-		-- local xOffset = 14
-		-- categoryWidget.addEditBox.edb:SetTextInsets(isCharBtnShown and xOffset or 0, 0, 0, 0)
-		-- categoryWidget.addEditBox.edb:SetHitRectInsets(isCharBtnShown and xOffset or 0, 0, 0, 0)
-		-- categoryWidget.addEditBox.edb.Hint:SetPoint("LEFT", categoryWidget.addEditBox.edb, "LEFT", isCharBtnShown and xOffset + 3 or 3, -1)
-		-- categoryWidget.addEditBox.charBtn.Icon:SetSize(10, 10)
-
-		--v2
 		categoryWidget.addEditBox.startPosFrame:SetPoint("LEFT", categoryWidget.addEditBox, "LEFT", isCharBtnShown and enums.ofsxItemIcons*2 + 5 or enums.ofsxItemIcons+5, 0)
 	end)
 	widgets:AddHyperlinkEditBox(categoryWidget.addEditBox.edb)
 
 	categoryWidget.addEditBox.charBtn = widgets:CharButton(nil, categoryWidget.addEditBox, categoryWidget)
 	categoryWidget.addEditBox.charBtn:SetPoint("LEFT", categoryWidget.addEditBox, "LEFT", enums.ofsxItemIcons-0.5, -0.5)
-	categoryWidget.addEditBox.charBtn:SetScript("OnClick", function() categoryWidget.addEditBox.isAccountWide = not categoryWidget.addEditBox.isAccountWide end)
+	categoryWidget.addEditBox.charBtn:SetScript("OnClick", function() categoryWidget.addEditBox.isAccountWide = not categoryWidget.addEditBox.isAccountWide end) -- PostClick script refreshes it
 
 	-- -- TDLATER sub-cat creation
 	-- -- / addCatEditBox
@@ -1514,23 +1506,16 @@ function private:Item_SetEditMode(state)
 	if state then
 		self.editModeFrame:Show()
 		self.editModeFrame:SetScript("OnShow", function()
-			local offset = 1
-
 			self.favoriteBtn:SetParent(self.editModeFrame)
-			self.favoriteBtn:SetPoint("LEFT", self, "LEFT", enums.ofsxItemIcons*offset, -2)
-			offset = offset + 1
+			self.favoriteBtn:SetPoint("LEFT", self, "LEFT", enums.ofsxItemIcons*1, -2)
 
 			self.descBtn:SetParent(self.editModeFrame)
-			self.descBtn:SetPoint("LEFT", self, "LEFT", enums.ofsxItemIcons*offset, 1)
-			offset = offset + 1
+			self.descBtn:SetPoint("LEFT", self, "LEFT", enums.ofsxItemIcons*2, 1)
 
-			self.charBtn:SetParent(self.editModeFrame)
-			self.charBtn:SetPoint("LEFT", self, "LEFT", enums.ofsxItemIcons*offset, 1)
-			offset = offset + (database.ctabstate() and 1 or 0)
-
+			local startPosFrameOffset = (database.ctabstate() and 4 or 3) -- depends on if charBtn is shown or not
 			self.charBtn:SetShown(database.ctabstate())
 
-			self.startPosFrame:SetPoint("LEFT", self, "LEFT", enums.ofsxItemIcons*offset, 0)
+			self.startPosFrame:SetPoint("LEFT", self, "LEFT", enums.ofsxItemIcons*startPosFrameOffset, 0)
 		end)
 		self.editModeFrame:GetScript("OnShow")()
 
@@ -1643,6 +1628,7 @@ function widgets:ItemWidget(itemID, parentFrame)
 
 	-- / charBtn
 	itemWidget.charBtn = widgets:CharButton(itemWidget, emf)
+	itemWidget.charBtn:SetPoint("LEFT", emf, "LEFT", enums.ofsxItemIcons*3, 1)
 	itemWidget.charBtn:SetScript("OnClick", function() dataManager:ToggleAccountWide(itemID) end)
 
 	-- / drag&drop
@@ -1684,7 +1670,7 @@ function widgets:NoPointsCatEditBox(parent, hint, fullWidget, pointRight)
 	edb.Hint:SetFontObject("GameFontNormal")
 	edb.Hint:SetTextColor(0.35, 0.35, 0.35)
 	edb.Hint:SetText(hint or "")
-	edb.Hint:SetPoint("LEFT", edb, "LEFT", 3, -1) -- see "categoryWidget.addEditBox.edb:SetScript("OnShow"" (ctrl+f), left point is moved there
+	edb.Hint:SetPoint("LEFT", edb, "LEFT", 3, -1)
 	edb.Hint:SetPoint("RIGHT", edb, "RIGHT", -6, -1)
 	edb.Hint:SetJustifyV("TOP")
 	edb.Hint:SetJustifyH("LEFT")

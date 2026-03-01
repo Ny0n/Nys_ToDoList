@@ -1716,7 +1716,7 @@ end
 ---@param itemID string
 ---@param state nil|false|true nil => toggle | false => character | true => global
 ---@return boolean newState
-function dataManager:ToggleAccountWide(itemID, state) -- TODO euh
+function dataManager:ToggleAccountWide(itemID, state)
 	local isGlobal, itemData = select(2, dataManager:Find(itemID))
 	local currentState = dataManager:IsItemChecked(itemData)
 
@@ -1731,11 +1731,9 @@ function dataManager:ToggleAccountWide(itemID, state) -- TODO euh
 		itemData.isAccountWide = not not state
 	end
 
-	-- opti, dont call refresh 10 times thx
-	local auth = dataManager.authorized
-	dataManager.authorized = false
+	local refreshID = dataManager:SetRefresh(false)
 	dataManager:ToggleChecked(itemID, currentState)
-	dataManager.authorized = auth
+	dataManager:SetRefresh(true, refreshID)
 
 	-- refresh the mainFrame
 	mainFrame:UpdateItemButtons(itemID)
@@ -2223,7 +2221,7 @@ function dataManager:GetCatCheckedNumbers(catID)
 end
 
 ---Returns whether the item is checked, mainly useful for checking the accountWide option in global tabs
----@param itemData table (not item id because optiiii)
+---@param itemData table (not itemID because optimization, and itemID would mean changing too much stuff everywhere)
 ---@return boolean
 function dataManager:IsItemChecked(itemData)
 	if not dataManager:IsID(itemData.originalTabID) or not dataManager:IsID(itemData.catID) then

@@ -68,8 +68,6 @@ database.defaults = {
 		tutorials_progression = {},
 		UI_reloading = false,
 		warnTimerRemaining = 0,
-
-		defaultCheckState = 1 -- see defaultCheckState in optionsManager.lua
 	},
 	profile = {
 		-- // Version

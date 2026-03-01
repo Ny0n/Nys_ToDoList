@@ -493,11 +493,10 @@ function private:CreateTutorials()
 	)
 
 	private:CreateTutoFrame(cat, "tuto", true, "BOTTOM",
-	utils:ColorText({1*255, 0.82*255, 0}, "("..tostring(NEW).."!) ")..
-		utils:SafeStringFormat(L["Items in Global tabs can now be checked separately for each character. In Edit Mode, you can change their check behavior using the %s button next to them or the updated %s Tab Actions button"]..
-			utils:ColorText({140, 140, 140}, "\n"..L["Global tabs only"]..". "..
-				utils:SafeStringFormat(string.format("|cff%s%s|r", "AAAAAA", L["Type %s for more information"]), utils:ColorText(database.themes.theme2, chat.slashCommand..' '..string.lower(L["Tabs"])))
-			), enums.icons.global.texHyperlinkTuto, enums.icons.global.texHyperlinkTuto2),
+	utils:ColorText({1*255, 0.82*255, 0}, "("..tostring(NEW).."!) ")
+	..utils:SafeStringFormat(L["Items in Global tabs can now be checked separately for each character. In Edit Mode, you can change their check behavior using the %s button next to them or the updated %s Tab Actions button"]
+	.."\n"..utils:ColorText({140, 140, 140}, L["Global tabs only"]..". "..utils:SafeStringFormat(string.format("|cff%s%s|r", "AAAAAA", L["Type %s for more information"]), utils:ColorText(database.themes.theme2, chat.slashCommand..' '..string.lower(L["Tabs"])))),
+	enums.icons.global.texHyperlinkTuto, enums.icons.global.texHyperlinkTuto2),
 	310)
 
 	-- // ******************** // --
