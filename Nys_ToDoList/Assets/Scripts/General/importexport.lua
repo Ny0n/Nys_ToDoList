@@ -280,9 +280,16 @@ function importexport:LaunchExportProcess(tabsToMigrate, onlyReturn)
 		for itemID in dataManager:ForEach(enums.item, tabID, true) do
 			local itemInfoTable = private:GenerateInfoTable(itemID)
 
-			-- don't export character names, those are private >:(
-			if type(itemInfoTable) == "table" and type(itemInfoTable.data) == "table" and type(itemInfoTable.data.characterChecked) == "table" then
-				wipe(itemInfoTable.data.characterChecked)
+			if type(itemInfoTable) == "table" and type(itemInfoTable.data) == "table" then
+				-- don't export character names, those are private >:(
+				if type(itemInfoTable.data.characterChecked) == "table" then
+					wipe(itemInfoTable.data.characterChecked)
+				end
+
+				-- we force uncheck any character-specific global item, because we just deleted all characters from the item anyways
+				if itemInfoTable.isGlobal and not itemInfoTable.data.isAccountWide then
+					itemInfoTable.data.checked = false
+				end
 			end
 
 			tinsert(exportData.elements, itemInfoTable) -- items

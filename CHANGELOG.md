@@ -1,4 +1,4 @@
-#### **7.5**
+#### **7.5.1**
 
 - Added character-specific check for items in global tabs!
 - New tutorials and help commands (/tdl tabs) have been added to explain the feature
