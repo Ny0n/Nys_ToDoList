@@ -63,6 +63,7 @@ wow_versions+=("_ptr_")
 wow_versions+=("_ptr2_")
 wow_versions+=("_retail_")
 wow_versions+=("_xptr_")
+wow_versions+=("_anniversary_")
 
 # --symlink -s
 

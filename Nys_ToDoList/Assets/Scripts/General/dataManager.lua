@@ -575,15 +575,15 @@ function dataManager:CreateItem(itemName, tabID, catID)
 		},
 		catID = catID, -- for convenience when deleting items, so that we can remove them from its respective category easily
 		-- item specific data
-		-- accountWide = false, -- user set, used in global tabs
-		-- accountChecked = { -- user set, used in global tabs
-		--   -- [profileName] = false or true, -- first one is self, and is the only one for profile items
-		--   -- [profileName] = false or true, -- others are used only for global items
-		--   -- ...
-		-- },
 		checked = false,
 		favorite = false,
 		description = false,
+		isAccountWide = false, -- used in global tabs, true => use checked, false => use characterChecked
+		characterChecked = { -- used in global tabs
+			-- if name exists in table, then item is checked for said name
+			-- ["name-server"] = <formatted name string>,
+			-- ...
+		},
 	}
 
 	return dataManager:AddItem(dataManager:NewID(), itemData)
@@ -1596,7 +1596,7 @@ function dataManager:IsHidden(ID, tabID)
 	local tabData = select(3, dataManager:Find(tabID))
 
 	if enum == enums.item then
-		return tabData.hideCheckedItems and objectData.checked
+		return tabData.hideCheckedItems and dataManager:IsItemChecked(objectData)
 	elseif enum == enums.category then
 		return (tabData.hideCompletedCategories and dataManager:IsCategoryCompleted(ID))
 		or (tabData.hideEmptyCategories and dataManager:GetCatCheckedNumbers(ID) <= 0)
@@ -1618,24 +1618,43 @@ end
 ---@param state nil|false|true nil => toggle | false => uncheck | true => check
 ---@return boolean newState
 function dataManager:ToggleChecked(itemID, state)
-	local itemData = select(3, dataManager:Find(itemID))
+	local isGlobal, itemData = select(2, dataManager:Find(itemID))
+	local currentState = dataManager:IsItemChecked(itemData)
 
+	local newState = not not state
 	if state == nil then
-		itemData.checked = not itemData.checked
-	elseif state == false then
+		newState = not currentState
+	end
+
+	if resetManager:isResettingGET() and not newState then
+		-- behavior is different if the item is being reset by the automatic daily/weekly reset
 		itemData.checked = false
-	elseif state == true then
-		itemData.checked = true
+		if type(itemData.characterChecked) == "table" then
+			wipe(itemData.characterChecked)
+		end
+	else
+		if isGlobal and not itemData.isAccountWide then
+			if type(itemData.characterChecked) ~= "table" then itemData.characterChecked = {} end
+			if newState then
+				itemData.characterChecked[utils:GetPlayerFullName()] = utils:BuildPlayerUnitString()
+			else
+				itemData.characterChecked[utils:GetPlayerFullName()] = nil
+			end
+		else
+			itemData.checked = newState
+		end
 	end
 
 	-- refresh the mainFrame
 	if NysTDL.acedb.profile.instantRefresh then
 		mainFrame:Refresh()
 	else
-		mainFrame:UpdateVisuals()
+		if refreshAuthorized then
+			mainFrame:UpdateVisuals()
+		end
 	end
 
-	return itemData.checked
+	return newState
 end
 
 ---Changes the favorite state of the given item.
@@ -1691,6 +1710,36 @@ function dataManager:UpdateDescription(itemID, description)
 	mainFrame:UpdateItemButtons(itemID)
 
 	return itemData.description
+end
+
+---Changes the account wide state of the given item, if it is a global item.
+---@param itemID string
+---@param state nil|false|true nil => toggle | false => character | true => global
+---@return boolean newState
+function dataManager:ToggleAccountWide(itemID, state)
+	local isGlobal, itemData = select(2, dataManager:Find(itemID))
+	local currentState = dataManager:IsItemChecked(itemData)
+
+	if not isGlobal then
+		itemData.isAccountWide = false
+		return false
+	end
+
+	if state == nil then
+		itemData.isAccountWide = not itemData.isAccountWide
+	else
+		itemData.isAccountWide = not not state
+	end
+
+	local refreshID = dataManager:SetRefresh(false)
+	dataManager:ToggleChecked(itemID, currentState)
+	dataManager:SetRefresh(true, refreshID)
+
+	-- refresh the mainFrame
+	mainFrame:UpdateItemButtons(itemID)
+	mainFrame:Refresh()
+
+	return itemData.isAccountWide
 end
 
 -- categories
@@ -1855,6 +1904,22 @@ function dataManager:ToggleTabChecked(tabID, state)
 	mainFrame:Refresh()
 end
 
+---Calls dataManager:ToggleAccountWide on everything in the given tab.
+---@param tabID string
+---@param state any See dataManager:ToggleAccountWide
+function dataManager:ToggleTabAccountWide(tabID, state)
+	local refreshID = dataManager:SetRefresh(false)
+
+	for itemID in dataManager:ForEach(enums.item, tabID) do
+		dataManager:ToggleAccountWide(itemID, state)
+	end
+
+	dataManager:SetRefresh(true, refreshID)
+
+	-- refresh the mainFrame
+	mainFrame:Refresh()
+end
+
 ---Calls dataManager:ToggleClosed on everything in the given tab.
 ---@param tabID string
 ---@param state any See dataManager:ToggleClosed
@@ -1910,7 +1975,7 @@ local T_DeleteCheckedItems = {}
 function dataManager:DeleteCheckedItems(tabID)
 	wipe(T_DeleteCheckedItems)
 	for itemID,itemData in dataManager:ForEach(enums.item, tabID) do
-		if itemData.originalTabID == tabID and itemData.checked then -- if the item is native to the tab and checked
+		if itemData.originalTabID == tabID and dataManager:IsItemChecked(itemData) then -- if the item is native to the tab and checked
 			T_DeleteCheckedItems[itemID] = itemData
 		end
 	end
@@ -1918,12 +1983,12 @@ function dataManager:DeleteCheckedItems(tabID)
 	local refreshID = dataManager:SetRefresh(false)
 
 	local nbToUndo = 0
-	for itemID,itemData in pairs(T_DeleteCheckedItems) do -- for each item in the tab
-		itemData.checked = false -- so that if we undo it, it doesn't get deleted right away
+	for itemID in pairs(T_DeleteCheckedItems) do -- for each item in the tab
+		dataManager:ToggleChecked(itemID, false) -- so that if we undo it, it doesn't get deleted right away
 		if dataManager:DeleteItem(itemID) then
 			nbToUndo = nbToUndo + 1
 		else
-			itemData.checked = true
+			dataManager:ToggleChecked(itemID, true)
 		end
 	end
 
@@ -2055,7 +2120,7 @@ function dataManager:GetRemainingNumbers(isGlobal, tabID, catID)
 	local location = catID or tabID or isGlobal
 	for _,itemData in dataManager:ForEach(enums.item, location) do -- for each item that is in the location
 		if not tabID or itemData.tabIDs[tabID] then
-			if itemData.checked then
+			if dataManager:IsItemChecked(itemData) then
 				t.totalChecked = t.totalChecked + 1
 				if itemData.description then t.checkedDesc = t.checkedDesc + 1 end
 				if itemData.favorite then t.checkedFav = t.checkedFav + 1 end
@@ -2112,7 +2177,7 @@ function dataManager:GetCatNumbers(catID)
 		elseif widget.enum == enums.item then
 			t.items = t.items + 1
 			local itemData = widget.itemData
-			if itemData.checked then t.checked = t.checked + 1 end
+			if dataManager:IsItemChecked(itemData) then t.checked = t.checked + 1 end
 			if itemData.description then t.desc = t.desc + 1 end
 			if itemData.favorite then t.favs = t.favs + 1 end
 			if not itemData.description and not itemData.favorite then t.normal = t.normal + 1 end
@@ -2148,9 +2213,29 @@ function dataManager:GetCatCheckedNumbers(catID)
 			total, checked = total + subTotal, checked + subChecked
 		elseif widget.enum == enums.item then
 			total = total + 1
-			if widget.itemData.checked then checked = checked + 1 end
+			if dataManager:IsItemChecked(widget.itemData) then checked = checked + 1 end
 		end
 	end
 
 	return total, checked
+end
+
+---Returns whether the item is checked, mainly useful for checking the accountWide option in global tabs
+---@param itemData table (not itemID because optimization, and itemID would mean changing too much stuff everywhere)
+---@return boolean
+function dataManager:IsItemChecked(itemData)
+	if not dataManager:IsID(itemData.originalTabID) or not dataManager:IsID(itemData.catID) then
+		return false
+	end
+
+	local isGlobal = dataManager:IsGlobal(itemData.originalTabID)
+
+	if isGlobal and not itemData.isAccountWide then
+		if type(itemData.characterChecked) == "table" then
+			return not not itemData.characterChecked[utils:GetPlayerFullName()]
+		end
+		return false
+	end
+
+	return not not itemData.checked
 end

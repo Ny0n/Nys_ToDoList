@@ -150,6 +150,7 @@ chat.commands = {
 		local str = L["Here are a few commands to help you"]..":\n"
 
 		str = str.." -- "..string.format("|cff%s%s|r", hex, slashCommand..L["toggle"])
+		str = str.." -- "..string.format("|cff%s%s|r", hex, slashCommand..string.lower(L["Tabs"]))
 		str = str.." -- "..string.format("|cff%s%s|r", hex, slashCommand..L["categories"])
 		str = str.." -- "..string.format("|cff%s%s|r", hex, slashCommand..L["hyperlinks"])
 		str = str.." -- "..string.format("|cff%s%s|r", hex, slashCommand..L["editmode"])
@@ -177,6 +178,15 @@ chat.commands = {
 		chat:CustomPrintForced("- "..L["Databroker plugin (e.g. Titan Panel)"], true)
 		chat:CustomPrintForced("- "..L["Key binding"], true)
 		chat:CustomPrintForced(L["You can go to the addon options in the game's interface settings to customize this"]..".", true)
+	end,
+
+	[string.lower(L["Tabs"])] = function()
+		chat:CustomPrintForced(L["Information on tabs"]..":")
+		chat:CustomPrintForced("- "..L["New tabs can be created in the addon options"]..".", true)
+		chat:CustomPrintForced("- "..utils:SafeStringFormat(L["Automatic resets (e.g. Daily/Weekly) can be set per tab in the '%s' section"], L["Auto-Reset"])..".", true)
+		chat:CustomPrintForced("- "..enums.icons.profile.texHyperlinkChat.." "..utils:ColorText({1*255, 0.82*255, 0}, L["Profile tabs"])..": "..L["Linked to the currently selected profile"]..".", true)
+		chat:CustomPrintForced("- "..enums.icons.global.texHyperlinkChat.." "..utils:ColorText({1*255, 0.82*255, 0}, L["Global tabs"])..": "..L["Account-wide and shared across all profiles and characters"]..".", true)
+		chat:CustomPrintForced("- "..enums.icons.global.texHyperlinkChat.." "..utils:ColorText({1*255, 0.82*255, 0}, L["Global tabs only"])..": "..L["Items can either be checked once and updated for every character (account-wide), or checked separately for each character (character-specific)"]..".", true)
 	end,
 
 	[L["categories"]] = function()
@@ -209,6 +219,7 @@ chat.commands = {
 		chat:CustomPrintForced("- "..L["Everything hidden becomes visible"], true)
 		chat:CustomPrintForced("- "..L["Delete items and categories"], true)
 		chat:CustomPrintForced("- "..L["Favorite and add descriptions on items"], true)
+		chat:CustomPrintForced("- "..L["Toggle check behavior"] .. " (" .. L["Global tabs only"] .. ")", true)
 		chat:CustomPrintForced("- "..L["Rename"].." ("..L["Double-Click"]..")", true)
 		chat:CustomPrintForced("- "..L["Reorder"].." ("..L["Drag and Drop"]..")", true)
 		chat:CustomPrintForced("- "..L["Move"].." / "..L["Resize"].." ("..L["Button in the bottom-right"]..")", true)

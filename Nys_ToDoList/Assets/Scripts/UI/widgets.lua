@@ -461,6 +461,7 @@ function widgets:TutorialFrame(tutoCategory, tutoName, showCloseButton, arrowSid
 		tutoFrame.Text:SetWidth(width-15-25) -- we add an offset because of the close button
 	end
 
+	tutoFrame:SetClampedToScreen(true)
 	tutoFrame:SetWidth(width)
 	tutoFrame:Hide() -- we hide them by default, we show them only when we need to
 
@@ -638,8 +639,11 @@ function widgets:AddTooltipToButton(btn, tooltipText, tooltipOffsetX, tooltipOff
 		btn.tooltipText : table of strings, one string = one line of tooltip
 		btn.tooltipOffsetX : number
 		btn.tooltipOffsetY : number
+		btn.tooltipWidth : number !!set it as any number if you want the width to be limited
 
-		btn.RefreshTooltip() : function, call it if any of the above values changes
+		btn:RefreshTooltip(self) : function, call it if any of the above values changes
+		btn:OnTooltipEnter(self) : function, nonexistant but if you create it, it gets called first before the tooltip's OnEnter,
+			you can dynamically change tooltip text here everytime the player hovers the button
 	]]
 
 	btn.tooltip = nil
@@ -649,8 +653,11 @@ function widgets:AddTooltipToButton(btn, tooltipText, tooltipOffsetX, tooltipOff
 	btn.tooltipOffsetY = tooltipOffsetY
 
 	local OnEnter = function(self)
+		if type(btn.OnTooltipEnter) == "function" then
+			btn:OnTooltipEnter()
+		end
 		if type(btn.tooltipText) ~= "table" then
-			btn.tooltipText = {tostring(btn.tooltipText)}
+			btn.tooltipText = {btn.tooltipText}
 		end
 		if type(btn.tooltipText[1]) == "string" and btn.tooltipText[1] ~= "" then -- // Tooltip
 			-- if the tooltip is already in use by someone else, return
@@ -660,10 +667,11 @@ function widgets:AddTooltipToButton(btn, tooltipText, tooltipOffsetX, tooltipOff
 
 			-- we're good to go
 			btn.tooltip = widgets:AcquireTooltip("NysTDL_Tooltip_TooltipButton", self, btn.tooltipOffsetX, btn.tooltipOffsetY)
-			btn.tooltip:SetFont("GameTooltipText")
 
-			for _,text in ipairs(btn.tooltipText) do
-				btn.tooltip:AddLine(text)
+			btn.tooltip:SetFont("GameTooltipText")
+			for i,text in ipairs(btn.tooltipText) do
+				btn.tooltip:AddLine()
+				btn.tooltip:SetCell(i, 1, text, nil, nil, nil, nil, nil, nil, btn.tooltipWidth or nil)
 			end
 		end
 		btn.isHovered = true
@@ -940,6 +948,82 @@ function widgets:DescButton(widget, parent)
 	end)
 
   return btn
+end
+
+function widgets:CharButton(widget, parent, categoryWidget)
+	local btn = CreateFrame("Button", nil, parent, "NysTDL_CharButton")
+
+	-- // Appearance
+
+	-- these are for changing the color depending on the mouse actions (since they are custom xml)
+	-- and yea, this one's a bit complicated too because it works in very specific ways
+	btn:HookScript("OnEnter", function(self)
+		if (widget and not widget.itemData.isAccountWide) or (categoryWidget and not categoryWidget.addEditBox.isAccountWide) then
+			self.Icon:SetDesaturated(nil)
+			self.Icon:SetVertexColor(1, 1, 1)
+		else
+			self:SetAlpha(0.6)
+		end
+	end)
+	btn:HookScript("OnLeave", function(self)
+		if (widget and not widget.itemData.isAccountWide) or (categoryWidget and not categoryWidget.addEditBox.isAccountWide) then
+			if tonumber(string.format("%.1f", self.Icon:GetAlpha())) ~= 0.5 then -- if we are currently clicking on the button
+				self.Icon:SetDesaturated(1)
+				self.Icon:SetVertexColor(0.4, 0.4, 0.4)
+			end
+		else
+			self:SetAlpha(1)
+		end
+	end)
+	btn:HookScript("OnMouseUp", function(self)
+		self:SetAlpha(1)
+		if (widget and not widget.itemData.isAccountWide) or (categoryWidget and not categoryWidget.addEditBox.isAccountWide) then
+			self.Icon:SetDesaturated(1)
+			self.Icon:SetVertexColor(0.4, 0.4, 0.4)
+		end
+	end)
+	btn:HookScript("PostClick", function(self)
+		self:GetScript("OnShow")(self)
+	end)
+	btn:HookScript("OnShow", function(self)
+		self:SetAlpha(1)
+		if (widget and not widget.itemData.isAccountWide) or (categoryWidget and not categoryWidget.addEditBox.isAccountWide) then
+			self.Icon:SetDesaturated(1)
+			self.Icon:SetVertexColor(0.4, 0.4, 0.4)
+		else
+			self.Icon:SetDesaturated(nil)
+			self.Icon:SetVertexColor(1, 1, 1)
+		end
+
+		local charBtnTooltipText = {}
+		table.insert(charBtnTooltipText, utils:ColorText({1*255, 0.82*255, 0}, L["Toggle check behavior"]))
+		-- if categoryWidget then
+		-- 	table.insert(charBtnTooltipText, "")
+		-- 	table.insert(charBtnTooltipText, utils:ColorText(database.themes.theme2, L["Default check behavior for new items"]))
+		-- end
+		table.insert(charBtnTooltipText, "")
+		table.insert(charBtnTooltipText, L["Items can either be checked once and updated for every character (account-wide), or checked separately for each character (character-specific)"] .. ". " .. L["Global tabs only"])
+		table.insert(charBtnTooltipText, "")
+		local isAccountWide = false
+		if widget then isAccountWide = widget.itemData.isAccountWide
+		elseif categoryWidget then isAccountWide = categoryWidget.addEditBox.isAccountWide end
+		table.insert(charBtnTooltipText, utils:ColorText(database.themes.theme, L["Current"]..": "..(isAccountWide and L["Account-wide"] or L["Character-specific"])))
+
+		if widget then
+			widget.charBtn.tooltipText = charBtnTooltipText
+			widget.charBtn:RefreshTooltip()
+		elseif categoryWidget then
+			categoryWidget.addEditBox.charBtn.tooltipText = charBtnTooltipText
+			categoryWidget.addEditBox.charBtn:RefreshTooltip()
+		end
+	end)
+
+	-- // Tooltip
+
+	widgets:AddTooltipToButton(btn, {"..."})
+	btn.tooltipWidth = 280
+
+	return btn
 end
 
 function widgets:AddButton(widget, parent)
@@ -1283,6 +1367,14 @@ function widgets:CategoryWidget(catID, parentFrame)
 		mainFrame:Refresh()
 
 		if categoryWidget.addEditBox.edb:IsShown() then
+			-- reset the isAccountWide state on the edit box everytime we reopen it in item mode,
+			-- but NOT if we create an item or refresh the list
+			categoryWidget.addEditBox.isAccountWide = false
+			categoryWidget.addEditBox.charBtn:GetScript("OnShow")(categoryWidget.addEditBox.charBtn) -- refresh button visual
+			mainFrame:Refresh() -- mainly for tutorials
+		end
+
+		if categoryWidget.addEditBox.edb:IsShown() then
 			widgets:SetFocusEditBox(categoryWidget.addEditBox.edb)
 		end
 	end)
@@ -1299,7 +1391,13 @@ function widgets:CategoryWidget(catID, parentFrame)
 	categoryWidget.addEditBox:Hide()
 	categoryWidget.addEditBox.edb:SetScript("OnEnterPressed", function(self)
 		if categoryWidget.addMode == enums.item then
-			if dataManager:CreateItem(self:GetText(), catData.originalTabID, catID) then -- calls mainFrame:Refresh()
+			local itemID = dataManager:CreateItem(self:GetText(), catData.originalTabID, catID) -- calls mainFrame:Refresh()
+			if itemID then
+				if categoryWidget.addEditBox.isAccountWide then
+					-- default isAccountWide state when creating the item,
+					-- lets us easily create it how we want without having to go in edit mode
+					dataManager:ToggleAccountWide(itemID, true)
+				end
 				self:SetText("") -- we clear the box if the adding was a success
 			end
 		elseif categoryWidget.addMode == enums.category then
@@ -1322,8 +1420,17 @@ function widgets:CategoryWidget(catID, parentFrame)
 		elseif categoryWidget.addMode == enums.category then
 			categoryWidget.addEditBox.edb.Hint:SetText(L["Add a category"])
 		end
+
+		local isCharBtnShown = dataManager:IsGlobal(categoryWidget.catID) and categoryWidget.addMode == enums.item
+		categoryWidget.addEditBox.charBtn:SetShown(isCharBtnShown)
+
+		categoryWidget.addEditBox.startPosFrame:SetPoint("LEFT", categoryWidget.addEditBox, "LEFT", isCharBtnShown and enums.ofsxItemIcons*2 + 5 or enums.ofsxItemIcons+5, 0)
 	end)
 	widgets:AddHyperlinkEditBox(categoryWidget.addEditBox.edb)
+
+	categoryWidget.addEditBox.charBtn = widgets:CharButton(nil, categoryWidget.addEditBox, categoryWidget)
+	categoryWidget.addEditBox.charBtn:SetPoint("LEFT", categoryWidget.addEditBox, "LEFT", enums.ofsxItemIcons-0.5, -0.5)
+	categoryWidget.addEditBox.charBtn:SetScript("OnClick", function() categoryWidget.addEditBox.isAccountWide = not categoryWidget.addEditBox.isAccountWide end) -- PostClick script refreshes it
 
 	-- -- TDLATER sub-cat creation
 	-- -- / addCatEditBox
@@ -1398,13 +1505,19 @@ end
 function private:Item_SetEditMode(state)
 	if state then
 		self.editModeFrame:Show()
+		self.editModeFrame:SetScript("OnShow", function()
+			self.favoriteBtn:SetParent(self.editModeFrame)
+			self.favoriteBtn:SetPoint("LEFT", self, "LEFT", enums.ofsxItemIcons*1, -2)
 
-		self.favoriteBtn:SetParent(self.editModeFrame)
-		self.favoriteBtn:SetPoint("LEFT", self, "LEFT", enums.ofsxItemIcons, -2)
-		self.descBtn:SetParent(self.editModeFrame)
-		self.descBtn:SetPoint("LEFT", self, "LEFT", enums.ofsxItemIcons*2, 1)
+			self.descBtn:SetParent(self.editModeFrame)
+			self.descBtn:SetPoint("LEFT", self, "LEFT", enums.ofsxItemIcons*2, 1)
 
-		self.startPosFrame:SetPoint("LEFT", self, "LEFT", enums.ofsxItemIcons*3, 0)
+			local startPosFrameOffset = (database.ctabstate() and 4 or 3) -- depends on if charBtn is shown or not
+			self.charBtn:SetShown(database.ctabstate())
+
+			self.startPosFrame:SetPoint("LEFT", self, "LEFT", enums.ofsxItemIcons*startPosFrameOffset, 0)
+		end)
+		self.editModeFrame:GetScript("OnShow")()
 
 		self.interactiveLabel.Button:Show()
 		self.interactiveLabel.Text:SetMaxLines(math.min(self.interactiveLabel.Text:GetNumLines(), enums.maxWordWrapLines))
@@ -1427,6 +1540,31 @@ function private:Item_SetEditMode(state)
 	mainFrame:UpdateItemButtons(self.itemID)
 end
 
+local T_Item_RefreshCharTooltip = {}
+function private:Item_RefreshCharTooltip()
+	-- here database.ctabstate() is a nasty shortcut to check if the item is currently global or not without going through dataManager:Find(ID)
+	-- but it should work, not the prettiest thing ever but /shrug
+	local itemWidget = self.itemWidget -- self is checkBtn
+	if database.ctabstate() and not itemWidget.itemData.isAccountWide and type(itemWidget.itemData.characterChecked) == "table" and next(itemWidget.itemData.characterChecked) then
+		-- sort alphabetically
+		wipe(T_Item_RefreshCharTooltip)
+		for fullName in pairs(itemWidget.itemData.characterChecked) do
+			table.insert(T_Item_RefreshCharTooltip, fullName)
+		end
+		table.sort(T_Item_RefreshCharTooltip)
+
+		-- then display
+		self.tooltipText = {L["Checked on:"]}
+		for _,fullName in ipairs(T_Item_RefreshCharTooltip) do
+			table.insert(self.tooltipText, itemWidget.itemData.characterChecked[fullName])
+		end
+	elseif database.ctabstate() and itemWidget.itemData.isAccountWide and itemWidget.itemData.checked then
+		self.tooltipText = {utils:ColorText({1*255, 0.82*255, 0}, L["Checked on all characters"])}
+	else
+		self.tooltipText = nil
+	end
+end
+
 function widgets:ItemWidget(itemID, parentFrame)
 	local itemWidget = CreateFrame("Frame", nil, parentFrame, nil)
 	itemWidget:SetSize(1, 16) -- so that its children are visible
@@ -1447,8 +1585,18 @@ function widgets:ItemWidget(itemID, parentFrame)
 	-- / checkBtn
 	itemWidget.checkBtn = CreateFrame("CheckButton", nil, itemWidget, "UICheckButtonTemplate")
 	itemWidget.checkBtn:SetPoint("LEFT", itemWidget.startPosFrame, "LEFT", -3, 0)
-	itemWidget.checkBtn:SetScript("OnClick", function() dataManager:ToggleChecked(itemID) end)
+	itemWidget.checkBtn:SetScript("OnClick", function() dataManager:ToggleChecked(itemID) itemWidget.checkBtn:RefreshTooltip() end)
 	itemWidget.SetCheckBtnExtended = private.Item_SetCheckBtnExtended
+
+	itemWidget.checkBtn.charTexture = itemWidget.checkBtn:CreateTexture(nil, "ARTWORK", nil, 7)
+	itemWidget.checkBtn.charTexture:SetPoint("TOPLEFT", itemWidget.checkBtn, -2.5, 0.5)
+	itemWidget.checkBtn.charTexture:SetPoint("BOTTOMRIGHT", itemWidget.checkBtn, 2, 0)
+	itemWidget.checkBtn.charTexture:SetTexture("Interface\\AddOns\\Nys_ToDoList\\Assets\\Art\\UI-AutoCastableOverlay")
+	itemWidget.checkBtn.charTexture:Hide()
+
+	widgets:AddTooltipToButton(itemWidget.checkBtn)
+	itemWidget.checkBtn.OnTooltipEnter = private.Item_RefreshCharTooltip
+	itemWidget.checkBtn.itemWidget = itemWidget
 
 	-- / interactiveLabel
 	itemWidget.interactiveLabel = widgets:NoPointsInteractiveLabel(itemWidget, itemWidget.checkBtn, parentFrame, nil, itemData.name, "GameFontNormalLargeLeftTop")
@@ -1477,6 +1625,11 @@ function widgets:ItemWidget(itemID, parentFrame)
 	-- / descBtn
 	itemWidget.descBtn = widgets:DescButton(itemWidget, emf)
 	itemWidget.descBtn:SetScript("OnClick", function() widgets:DescriptionFrame(itemWidget) end)
+
+	-- / charBtn
+	itemWidget.charBtn = widgets:CharButton(itemWidget, emf)
+	itemWidget.charBtn:SetPoint("LEFT", emf, "LEFT", enums.ofsxItemIcons*3, 1)
+	itemWidget.charBtn:SetScript("OnClick", function() dataManager:ToggleAccountWide(itemID) end)
 
 	-- / drag&drop
 	dragndrop:RegisterForDrag(itemWidget)

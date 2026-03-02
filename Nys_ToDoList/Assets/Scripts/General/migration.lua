@@ -74,17 +74,7 @@ end
 function private:GlobalNewVersion()
     -- // updates the global saved variables once after an update
 
-	if utils:IsVersionOlderThan(NysTDL.acedb.global.latestVersion, "7.4") then
-        if NysTDL.acedb.global.latestVersion ~= "" then -- are we UPGRADING the addon?
-			if type(NysTDL.acedb.global.tutorials_progression) == "table" then
-				if NysTDL.acedb.global.tutorials_progression["introduction"] == true then -- is the intro tutorial already done?
-					NysTDL.acedb.global.tutorials_progression["newClearView_isEnabled"] = true -- then show the custom tutorial once
-				end
-			end
-		end
-	end
-
-    if utils:IsVersionOlderThan(NysTDL.acedb.global.latestVersion, "7.0-alpha") then
+	if utils:IsVersionOlderThan(NysTDL.acedb.global.latestVersion, "7.0-alpha") then
         local oldProgression = NysTDL.acedb.global.tuto_progression
         local newProgression = NysTDL.acedb.global.tutorials_progression
 
@@ -128,6 +118,28 @@ function private:GlobalNewVersion()
 				resetManager:UpdateResetDay(weeklyTabID, resetDate.wday, true)
 			end
 		end)
+	end
+
+	if utils:IsVersionOlderThan(NysTDL.acedb.global.latestVersion, "7.4") then
+        if NysTDL.acedb.global.latestVersion ~= "" then -- are we UPGRADING the addon?
+			if type(NysTDL.acedb.global.tutorials_progression) == "table" then
+				if NysTDL.acedb.global.tutorials_progression["introduction"] == true then -- is the intro tutorial already done?
+					NysTDL.acedb.global.tutorials_progression["newClearView_isEnabled"] = true -- then show the custom tutorial once
+				end
+			end
+		end
+	end
+
+	if utils:IsVersionOlderThan(NysTDL.acedb.global.latestVersion, "7.5") then
+		if type(NysTDL.acedb.global.tutorials_progression) == "table" then
+			if NysTDL.acedb.global.tutorials_progression["tabSwitchState"] == true then
+				NysTDL.acedb.global.tutorials_progression["tabSwitchState"] = 1
+			end
+
+			if NysTDL.acedb.global.latestVersion ~= "" then -- are we UPGRADING the addon?
+				NysTDL.acedb.global.tutorials_progression["newCharBtn_isEnabled"] = true
+			end
+		end
 	end
 end
 

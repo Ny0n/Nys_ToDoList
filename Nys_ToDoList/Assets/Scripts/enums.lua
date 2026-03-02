@@ -34,7 +34,7 @@ enums.tab = "ENUMS_TAB"
 enums.menus = {
 	addcat = "ENUMS_MENUS_1", -- addcat menu
 	frameopt = "ENUMS_MENUS_2", -- frameopt menu UNUSED
-	tabact = "ENUMS_MENUS_3", -- tabactions menu
+	tabact = "ENUMS_MENUS_3", -- tabactions menu UNUSED
 }
 
 ---@class enums.databrokerModes
@@ -114,10 +114,14 @@ enums.icons = {
 	global = {
 		info = function() return enums.artPath.."UIMicroMenu2x", 14.5, 15 end,
 		texCoords = { 0.328, 0.436, 0.015, 0.074 },
+		texHyperlinkTuto = "|T"..enums.artPath.."UIMicroMenu2x:12:12:0.5:-5:256:512:84:112:8:38|t",
+		texHyperlinkChat = "|T"..enums.artPath.."UIMicroMenu2x:11:11:1:1:256:512:84:112:8:38|t",
+		texHyperlinkTuto2 = "|TInterface\\BUTTONS\\UI-GuildButton-MOTD-Up:14:14:0.5:-5|t",
 	},
 	profile = {
 		info = function() return enums.artPath.."UIMicroMenu2x", 14.5, 16.5 end,
 		texCoords = { 0.328, 0.444, 0.432, 0.502 },
+		texHyperlinkChat = "|T"..enums.artPath.."UIMicroMenu2x:13:11:1:0:256:512:84:113:221:257|t",
 	},
 	divider = {
 		info = function() return enums.artPath.."Options", 200, 2 end,

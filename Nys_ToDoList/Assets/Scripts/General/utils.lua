@@ -322,3 +322,46 @@ end
 function utils:GetMinusStr()
 	return string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme_yellow), " - ")
 end
+
+---Helper
+---@return string name-server
+function utils:GetPlayerFullName()
+	return UnitName("player") .. "-" .. GetRealmName()
+end
+
+---Helper
+---@return string the fully formated string
+function utils:BuildPlayerUnitString()
+	if not UnitExists("player") then
+        return ""
+    end
+
+	local name = UnitName("player")
+	local realm = GetRealmName()
+    local _, classToken = UnitClass("player")
+    local _, raceFile = UnitRace("player")
+	local gender = UnitSex("player")
+
+    local fullName = name .. "-" .. realm
+
+	local genderSuffix = "Male" -- fallback
+    if gender == 3 then
+        genderSuffix = "Female"
+    elseif gender == 2 then
+        genderSuffix = "Male"
+    end
+
+    local classColor = "|cffffffff" -- fallback
+    local color = RAID_CLASS_COLORS[classToken]
+    if color then
+        classColor = string.format("|cff%02x%02x%02x",
+            color.r * 255,
+            color.g * 255,
+            color.b * 255
+        )
+    end
+
+    local raceIcon = "|TInterface\\CHARACTERFRAME\\TemporaryPortrait-" .. genderSuffix .. "-" .. raceFile .. ":16|t"
+
+    return raceIcon .. " " .. classColor .. fullName .. "|r"
+end

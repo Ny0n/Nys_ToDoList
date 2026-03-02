@@ -9,6 +9,7 @@ NysTDL.mainFrame = mainFrame
 
 local libs = NysTDL.libs
 local core = NysTDL.core
+local chat = NysTDL.chat
 local enums = NysTDL.enums
 local utils = NysTDL.utils
 local widgets = NysTDL.widgets
@@ -141,8 +142,6 @@ function private:MenuClick(menuEnum)
 		menu.categoryButton.Icon:SetDesaturated(1) menu.categoryButton.Icon:SetVertexColor(1, 1, 1)
 		widgets:SetFocusEditBox(menuFrames[enums.menus.addcat].categoryEditBox)
 		tutorialsManager:Validate("introduction", "addNewCat") -- tutorial
-	elseif selected == enums.menus.tabact then -- tab actions menu
-		menu.tabActionsButton.Icon:SetDesaturated(1)
 	end
 end
 
@@ -220,7 +219,7 @@ end
 function mainFrame:UpdateCheckedStates()
 	for _,contentWidget in pairs(contentWidgets) do
 		if contentWidget.enum == enums.item then -- for every item checkboxes
-			contentWidget.checkBtn:SetChecked(contentWidget.itemData.checked)
+			contentWidget.checkBtn:SetChecked(dataManager:IsItemChecked(contentWidget.itemData))
 		end
 	end
 end
@@ -274,7 +273,7 @@ function mainFrame:UpdateItemNamesColor()
 	for _, contentWidget in pairs(contentWidgets) do
 		if contentWidget.enum == enums.item then -- for every item widget
 			-- we color in accordance to their checked state
-			if contentWidget.itemData.checked then
+			if dataManager:IsItemChecked(contentWidget.itemData) then
 				contentWidget.interactiveLabel.Text:SetTextColor(0, 1, 0) -- green
 			else
 				if contentWidget.itemData.favorite then
@@ -284,6 +283,11 @@ function mainFrame:UpdateItemNamesColor()
 					-- contentWidget.interactiveLabel.Text:SetTextColor(1, 1, 1) -- white
 				end
 			end
+
+			-- also new thing, if global items are account-wide we add a visual to them (see widgets.lua private:Item_RefreshCharTooltip() for a fun comment)
+			contentWidget.checkBtn.charTexture:SetShown(database.ctabstate())
+			contentWidget.checkBtn.charTexture:SetDesaturated(not contentWidget.itemData.isAccountWide)
+			contentWidget.checkBtn.charTexture:SetAlpha(not contentWidget.itemData.isAccountWide and 0.5 or 1)
 		end
 	end
 end
@@ -366,16 +370,17 @@ function mainFrame:UpdateItemButtons(itemID)
 	itemWidget.removeBtn:GetScript("OnShow")(itemWidget.removeBtn)
 	itemWidget.favoriteBtn:GetScript("OnShow")(itemWidget.favoriteBtn)
 	itemWidget.descBtn:GetScript("OnShow")(itemWidget.descBtn)
+	itemWidget.charBtn:GetScript("OnShow")(itemWidget.charBtn)
 
 	if mainFrame.editMode then
 		itemWidget.removeBtn:Show()
 		itemWidget.favoriteBtn:Show()
 		itemWidget.descBtn:Show()
+		-- charBtn shown state is managed in widgets.lua private:Item_SetEditMode(state)
 		return
 	end
 
 	-- first we hide each button to show the good one afterwards
-	itemWidget.removeBtn:Hide()
 	itemWidget.descBtn:Hide()
 	itemWidget.favoriteBtn:Hide()
 
@@ -845,6 +850,11 @@ function private:RecursiveLoad(tabID, tabData, catWidget)
 	if isAddBoxShown then -- item add edit box
 		rlHelper:ShowFrame(catWidget.addEditBox, enums.rlFrameType.addEditBox)
 		rlHelper:RefreshTabulationHeight(catWidget)
+
+		if catWidget.addMode == enums.item and not rlHelper.shownCharBtnTuto then
+			tutorialsManager:SetPoint("tabSwitchState", "explainCharButton", "TOP", catWidget.addEditBox.charBtn, "BOTTOM", 0.5, -22)
+			rlHelper.shownCharBtnTuto = true
+		end
 	end
 
 	-- emptyLabel : we show it if there's nothing in the category
@@ -897,6 +907,7 @@ function private:LoadList()
 	rlHelper.last.relativeFrame = tdlFrame.content.loadOrigin
 	rlHelper.last.frameType = enums.rlFrameType.empty
 	rlHelper.last.deep = 0
+	rlHelper.shownCharBtnTuto = false
 
 	-- base category widgets loop
 	for catOrder,catID in ipairs(tabData.orderedCatIDs) do
@@ -1001,32 +1012,133 @@ function private:GenerateMenuAddACategory()
 	tutorialsManager:SetPoint("introduction", "addCat", "TOP", menuframe.categoryEditBox, "BOTTOM", 0, -22)
 end
 
-function private:GenerateMenuTabActions()
-	local menuframe = tdlFrame.menu.menuFrames[enums.menus.tabact]
+function private:OpenTabActionsMenu()
+	local TabActionsDropDown = CreateFrame("Frame", "NysTDL_importexport_TabsSelectMenu", UIParent, "UIDropDownMenuTemplate")
+	UIDropDownMenu_Initialize(TabActionsDropDown, private.TabActionsMenuInitialize, "MENU")
+	ToggleDropDownMenu(1, nil, TabActionsDropDown, tdlFrame.menu.tabActionsButton, 0, 0)
+end
 
-	--/************************************************/--
+function private.TabActionsMenuInitialize(self, level)
+	if not level then return end
 
-	local spacingY = -6
+	local info = UIDropDownMenu_CreateInfo()
+	local fontObject = "GameFontHighlightSmallLeft"
 
-	menuframe.btnCheck = widgets:Button(nil, menuframe, L["Check"], "Interface\\BUTTONS\\UI-CheckBox-Check")
-	menuframe.btnCheck:SetPoint("TOPLEFT", tdlFrame.menu, "BOTTOMLEFT", lineBottom.x+3+3, lineBottom.y)
-	menuframe.btnCheck:SetScript("OnClick", function() dataManager:ToggleTabChecked(database.ctab(), true) end)
+	if level == 1 then
+		wipe(info)
+		info.isTitle = true
+		info.text = L["Tab actions"]
+		info.notCheckable = true
+		UIDropDownMenu_AddButton(info, level)
 
-	menuframe.btnUncheck = widgets:Button(nil, menuframe, L["Uncheck"], "Interface\\BUTTONS\\UI-CheckBox-Check-Disabled")
-	menuframe.btnUncheck:SetPoint("TOPLEFT", menuframe.btnCheck, "BOTTOMLEFT", 0, spacingY)
-	menuframe.btnUncheck:SetScript("OnClick", function() dataManager:ToggleTabChecked(database.ctab(), false) end)
+		-- separator
+		UIDropDownMenu_AddSeparator(level)
 
-	menuframe.btnCloseCat = widgets:Button(nil, menuframe, L["Close All"], "Interface\\BUTTONS\\Arrow-Up-Disabled")
-	menuframe.btnCloseCat:SetPoint("TOPLEFT", menuframe.btnUncheck, "BOTTOMLEFT", 0, spacingY)
-	menuframe.btnCloseCat:SetScript("OnClick", function() dataManager:ToggleTabClosed(database.ctab(), false) end)
+		wipe(info)
+		info.text = L["Check"]
+		info.icon = "Interface\\BUTTONS\\UI-CheckBox-Check"
+		info.func = function()
+			dataManager:ToggleTabChecked(database.ctab(), true)
+		end
+		info.notCheckable = true
+		info.keepShownOnClick = true
+		UIDropDownMenu_AddButton(info, level)
 
-	menuframe.btnOpenCat = widgets:Button(nil, menuframe, L["Open All"], "Interface\\BUTTONS\\Arrow-Down-Up")
-	menuframe.btnOpenCat:SetPoint("TOPLEFT", menuframe.btnCloseCat, "BOTTOMLEFT", 0, spacingY)
-	menuframe.btnOpenCat:SetScript("OnClick", function() dataManager:ToggleTabClosed(database.ctab(), true) end)
+		wipe(info)
+		info.text = L["Uncheck"]
+		info.icon = "Interface\\BUTTONS\\UI-CheckBox-Check-Disabled"
+		info.func = function()
+			dataManager:ToggleTabChecked(database.ctab(), false)
+		end
+		info.notCheckable = true
+		info.keepShownOnClick = true
+		UIDropDownMenu_AddButton(info, level)
 
-	menuframe.btnClear = widgets:Button(nil, menuframe, L["Clear"], "Interface\\GLUES\\LOGIN\\Glues-CheckBox-Check")
-	menuframe.btnClear:SetPoint("TOPLEFT", menuframe.btnOpenCat, "BOTTOMLEFT", 0, spacingY)
-	menuframe.btnClear:SetScript("OnClick", function() dataManager:ClearTab(database.ctab()) end)
+		if database.ctabstate() then
+			wipe(info)
+			info.text = L["Account-wide"]
+			info.icon = enums.icons.global.info()
+			info.tCoordLeft = enums.icons.global.texCoords[1]
+			info.tCoordRight = enums.icons.global.texCoords[2]
+			info.tCoordTop = enums.icons.global.texCoords[3]
+			info.tCoordBottom = enums.icons.global.texCoords[4]
+			info.iconXOffset = -2
+			info.func = function()
+				dataManager:ToggleTabAccountWide(database.ctab(), true)
+			end
+			info.notCheckable = true
+			info.keepShownOnClick = true
+			local btn = UIDropDownMenu_AddButton(info, level)
+			btn.Icon:SetSize(12, 12)
+
+			wipe(info)
+			info.text = L["Character-specific"]
+			info.icon = enums.icons.global.info()
+			info.tCoordLeft = enums.icons.global.texCoords[1]
+			info.tCoordRight = enums.icons.global.texCoords[2]
+			info.tCoordTop = enums.icons.global.texCoords[3]
+			info.tCoordBottom = enums.icons.global.texCoords[4]
+			info.iconXOffset = -2
+			info.func = function()
+				dataManager:ToggleTabAccountWide(database.ctab(), false)
+			end
+			info.notCheckable = true
+			info.keepShownOnClick = true
+			local btn = UIDropDownMenu_AddButton(info, level)
+			btn.Icon:SetSize(12, 12)
+			btn.Icon:SetDesaturated(1)
+			btn.Icon:SetVertexColor(0.4, 0.4, 0.4)
+		end
+
+		wipe(info)
+		info.text = L["Open All"]
+		info.icon = "Interface\\BUTTONS\\Arrow-Down-Up"
+		info.func = function()
+			dataManager:ToggleTabClosed(database.ctab(), true)
+		end
+		info.notCheckable = true
+		info.keepShownOnClick = true
+		local btn = UIDropDownMenu_AddButton(info, level)
+		btn.Icon:ClearAllPoints()
+		btn.Icon:SetPoint("RIGHT", btn, "RIGHT", 2, -5)
+
+		wipe(info)
+		info.text = L["Close All"]
+		info.icon = "Interface\\BUTTONS\\Arrow-Down-Disabled"
+		info.func = function()
+			dataManager:ToggleTabClosed(database.ctab(), false)
+		end
+		info.notCheckable = true
+		info.keepShownOnClick = true
+		local btn = UIDropDownMenu_AddButton(info, level)
+		btn.Icon:ClearAllPoints()
+		btn.Icon:SetPoint("RIGHT", btn, "RIGHT", 2, -5)
+
+		wipe(info)
+		info.text = L["Clear"]
+		info.icon = "Interface\\GLUES\\LOGIN\\Glues-CheckBox-Check"
+		info.func = function()
+			dataManager:ClearTab(database.ctab())
+		end
+		info.notCheckable = true
+		info.keepShownOnClick = true
+		local btn = UIDropDownMenu_AddButton(info, level)
+		btn.Icon:SetSize(15, 15)
+
+		-- separator
+		UIDropDownMenu_AddSeparator(level)
+
+		-- close button
+		wipe(info)
+		info.notCheckable = true
+		info.text = CLOSE
+		info.func = function(self)
+			if UIDROPDOWNMENU_OPEN_MENU == self then
+				CloseDropDownMenus()
+			end
+		end
+		UIDropDownMenu_AddButton(info, level)
+	end
 end
 
 function private:GenerateFrameContent()
@@ -1113,7 +1225,7 @@ function private:GenerateFrameContent()
 	tutorialsManager:SetPoint("introduction", "addNewCat", "TOP", menu.categoryButton, "BOTTOM", 0, -18)
 
 	-- addon options button
-	menu.frameOptionsButton = widgets:IconTooltipButton(menu, "NysTDL_FrameOptionsButton", {string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Left-Click"])..utils:GetMinusStr()..L["Open addon options"], string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Right-Click"])..utils:GetMinusStr()..L["Open backup list"]})
+	menu.frameOptionsButton = widgets:IconTooltipButton(menu, "NysTDL_FrameOptionsButton", {string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Left-Click"])..utils:GetMinusStr()..L["Open addon options"], string.format("|cff%s%s|r", utils:RGBToHex(database.themes.theme), L["Right-Click"])..utils:GetMinusStr()..L["Open backup list"], "", utils:SafeStringFormat(string.format("|cff%s%s|r", "AAAAAA", L["Type %s for more information"]), utils:ColorText(database.themes.theme2, chat.slashCommand..' '..string.lower(L["help"])))})
 	menu.frameOptionsButton:SetPoint("CENTER", menu.categoryButton, "CENTER", spacing, 0)
 	menu.frameOptionsButton:SetScript("OnClick", function(self, button)
 		if button == "RightButton" then
@@ -1132,7 +1244,7 @@ function private:GenerateFrameContent()
 	menu.tabActionsButton = widgets:IconTooltipButton(menu, "NysTDL_TabActionsButton", L["Tab actions"])
 	menu.tabActionsButton:SetPoint("CENTER", menu.frameOptionsButton, "CENTER", 30, 0)
 	menu.tabActionsButton:SetScript("OnClick", function()
-		private:MenuClick(enums.menus.tabact)
+		private:OpenTabActionsMenu()
 	end)
 	menu.tabActionsButton:Hide()
 
@@ -1155,6 +1267,7 @@ function private:GenerateFrameContent()
 	menu.remainingFavsNumber:SetFontObject("GameFontNormalLarge")
 
 	-- // menus
+	-- edit: not a lot left now...
 	local menuWidth, menuEnum = menu:GetWidth()
 	menu.menuFrames = {
 		-- these will be replaced in the code,
@@ -1172,14 +1285,6 @@ function private:GenerateFrameContent()
 	menu.menuFrames[menuEnum]:SetPoint("TOPLEFT", menu, "TOPLEFT", 0, lineBottom.y)
 	menu.menuFrames[menuEnum]:SetSize(menuWidth, 75) -- CVAL (coded value, non automatic)
 	private:GenerateMenuAddACategory()
-
-	-- / tab actions sub-menu
-
-	menuEnum = enums.menus.tabact
-	menu.menuFrames[menuEnum] = CreateFrame("Frame", nil, menu)
-	menu.menuFrames[menuEnum]:SetPoint("TOPLEFT", menu, "TOPLEFT", 0, lineBottom.y)
-	menu.menuFrames[menuEnum]:SetSize(menuWidth, 242) -- CVAL
-	private:GenerateMenuTabActions()
 
 	menu.lineBottom = widgets:HorizontalDivider(menu)
 
@@ -1236,6 +1341,7 @@ function mainFrame:CreateTDLFrame()
 	end)
 
 	tutorialsManager:SetPoint("introduction", "getMoreInfo", "BOTTOM", tdlFrame, "TOP", 0, 18)
+	tutorialsManager:SetPoint("newCharBtn", "tuto", "BOTTOM", tdlFrame, "TOP", 0, 18)
 
 	-- helper
 	tdlFrame.RePoint = function(self)

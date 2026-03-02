@@ -25,6 +25,7 @@ local AceTimer = libs.AceTimer
 local private = {}
 
 local autoResetedThisSession = false
+local isResetting = false
 
 --/*******************/ TABS RESET MANAGMENT /*************************/--
 
@@ -32,6 +33,10 @@ local autoResetedThisSession = false
 
 function resetManager:autoResetedThisSessionGET()
 	return autoResetedThisSession
+end
+
+function resetManager:isResettingGET()
+	return isResetting
 end
 
 -- managment
@@ -374,7 +379,9 @@ function AceTimer:Timer_ResetTab(tabID, timerResetID)
 	activeTimerIDs[tabID][timerResetID] = nil
 
 	-- then we uncheck the tab (this is the auto-uncheck func after all)
+	isResetting = true
 	dataManager:ToggleTabChecked(tabID, false)
+	isResetting = false
 
 	-- and finally, we check if we need to restart timers for the tab
 	if not next(tabData.reset.nextResetTimes) then -- if the last reset for the day was done
@@ -404,7 +411,9 @@ function resetManager:Initialize(profileChanged)
 		-- in which case we uncheck the tab
 		for _,targetTime in pairs(tabData.reset.nextResetTimes) do
 			if currentTime >= targetTime then
+				isResetting = true
 				dataManager:ToggleTabChecked(tabID, false)
+				isResetting = false
 				autoResetedThisSession = true
 				break
 			end

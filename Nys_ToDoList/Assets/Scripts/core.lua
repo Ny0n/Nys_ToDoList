@@ -100,6 +100,7 @@ chat.commandLocales = {
 		["descriptions"] = true,
 		["tutorial"] = true,
 		["Add"] = true,
+		["Tabs"] = true,
 	},
 	temp = {
 		-- checking if each chat command's locale is different, otherwise we won't be able to use them
