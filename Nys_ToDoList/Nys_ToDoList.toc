@@ -1,7 +1,7 @@
 # /run print((select(4, GetBuildInfo())))
 ## Interface: 120001, 50503, 20505, 11508
 
-## Version: 7.5
+## Version: 7.5.1
 
 ## Author: Nyony (on Twitch)
 ## Title: Ny's To-Do List

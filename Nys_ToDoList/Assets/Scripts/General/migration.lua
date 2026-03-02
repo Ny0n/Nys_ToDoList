@@ -140,6 +140,16 @@ function private:GlobalNewVersion()
 				NysTDL.acedb.global.tutorials_progression["newCharBtn_isEnabled"] = true
 			end
 		end
+
+		-- transfer checked states. this isn't perfect but at least we can see what was checked before we updated
+		pcall(function()
+			for _,itemData in dataManager:ForEach(enums.item, true) do
+				if itemData.checked then
+					if type(itemData.characterChecked) ~= "table" then itemData.characterChecked = {} end
+					itemData.characterChecked[utils:GetPlayerFullName()] = utils:BuildPlayerUnitString()
+				end
+			end
+		end)
 	end
 end
 
