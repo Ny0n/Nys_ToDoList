@@ -1,3 +1,8 @@
+#### **7.5.4**
+
+- WoW Forever Fixes
+- Bump interface number (Midnight 12.1.5, Forever 1.60.1, TBC 2.5.6, Classic 1.15.9)
+
 #### **7.5.3**
 
 - Quick fix for the latest blizz oopsie (only mists got affected right now, comments in toc files broke everything)

@@ -173,16 +173,16 @@ function utils:DimTheme(theme, dim)
 	return T_DimTheme
 end
 
----Quick and easy check to know if we are currently running Dragonflight or not
+---For Dragonflight and up and forever
 ---@return boolean
 function utils:IsDF()
-	return LE_EXPANSION_LEVEL_CURRENT >= 9
+	return LE_EXPANSION_LEVEL_CURRENT >= 9 or WOW_PROJECT_CAMELOT ~= nil
 end
 
----Quick and easy check to know if we are currently running Midnight or not
+---For Midnight and up and forever
 ---@return boolean
 function utils:IsMidnight()
-	return LE_EXPANSION_LEVEL_CURRENT >= 11
+	return LE_EXPANSION_LEVEL_CURRENT >= 11 or WOW_PROJECT_CAMELOT ~= nil
 end
 
 ---To copy any table.

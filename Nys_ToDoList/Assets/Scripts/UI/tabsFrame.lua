@@ -49,7 +49,7 @@ local selectedTabBackdropOffsetX = -1
 local unselectedTabBackdropOffsetX = -1
 local selectedTabBackdropOffsetY = 4
 local unselectedTabBackdropOffsetY = 4
-local tabsOffsetY = 1
+local tabsOffsetY = WOW_PROJECT_CAMELOT ~= nil and -3 or 1
 
 if not utils:IsDF() then -- classic
 	overflowButtonSize = 30
@@ -467,7 +467,7 @@ function private:TabWidget(tabID, parentFrame)
 
 	_currentID = _currentID + 1
 	local parentName = parentFrame:GetName() or "NysTDL_tdlFrame"
-	local tabWidget = CreateFrame("Button", parentName.."Tab"..tostring(_currentID), parentFrame, utils:IsDF() and "CharacterFrameTabTemplate" or "CharacterFrameTabButtonTemplate")
+	local tabWidget = CreateFrame("Button", parentName.."Tab"..tostring(_currentID), parentFrame, utils:IsDF() and "PanelTabButtonTemplate" or "CharacterFrameTabButtonTemplate")
 
 	-- // backdrop
 	-- I'm adding a backdrop only for the edge, so that we still see it when we lower the frame opacity

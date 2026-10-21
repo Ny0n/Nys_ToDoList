@@ -460,7 +460,9 @@ local onChangeView = function()
 			tdlFrame.ScrollFrame:SetPoint("TOP", tdlFrame.cvMenu.lineBottom, "BOTTOM", 0, -1)
 			tdlFrame.ScrollFrame:SetPoint("LEFT", tdlFrame, "LEFT", 4, 0)
 		else
-			tdlFrame.ScrollFrame:SetPoint("TOPLEFT", tdlFrame, "TOPLEFT", 4, -22)
+			local scrollFrameOffsetY = -22
+			if WOW_PROJECT_CAMELOT ~= nil then scrollFrameOffsetY = -26 end
+			tdlFrame.ScrollFrame:SetPoint("TOPLEFT", tdlFrame, "TOPLEFT", 4, scrollFrameOffsetY)
 			tdlFrame.content.dummyScaleOrigin2:SetPoint("TOPLEFT", tdlFrame.scrollChild, 5, -3)
 		end
 	else
@@ -1420,7 +1422,9 @@ function mainFrame:CreateTDLFrame()
 	sWidth = utils:IsDF() and sWidth or sWidthClassic
 
 	tdlFrame.ScrollFrame = CreateFrame("ScrollFrame", "NysTDL_tdlFrame.ScrollFrame", tdlFrame.clipFrame, utils:IsDF() and "ScrollFrameTemplate" or "UIPanelScrollFrameTemplate")
-	tdlFrame.ScrollFrame:SetPoint("BOTTOMRIGHT", tdlFrame, "BOTTOMRIGHT", -4 -sWidth, 4) -- * same as clipframe
+	local scrollFrameOffsetY = 4
+	if WOW_PROJECT_CAMELOT ~= nil then scrollFrameOffsetY = 6 end
+	tdlFrame.ScrollFrame:SetPoint("BOTTOMRIGHT", tdlFrame, "BOTTOMRIGHT", -4 -sWidth, scrollFrameOffsetY) -- * same as clipframe
 	tdlFrame.ScrollFrame:SetScript("OnMouseWheel", mainFrame.Event_ScrollFrame_OnMouseWheel)
 	tdlFrame.ScrollFrame:SetClipsChildren(true)
 
@@ -1434,9 +1438,9 @@ function mainFrame:CreateTDLFrame()
 		local offsetX = (utils:IsMidnight() and -19 or 0)
 		tdlFrame.ScrollFrame.ScrollBar:SetPoint("TOPLEFT", tdlFrame, "TOPRIGHT", offsetX, -30-24)
 	else
-		local offsetX = ((LE_EXPANSION_LEVEL_CURRENT >= 4) and -15 or 9) -- actually crazy
+		-- local offsetX = ((LE_EXPANSION_LEVEL_CURRENT >= 4) and -15 or 9) -- actually crazy
 		tdlFrame.ScrollFrame.ScrollBar:SetScale(1.05)
-		tdlFrame.ScrollFrame.ScrollBar:SetPoint("TOPLEFT", tdlFrame, "TOPRIGHT", offsetX, -60)
+		tdlFrame.ScrollFrame.ScrollBar:SetPoint("TOPLEFT", tdlFrame, "TOPRIGHT", -15, -60)
 		tdlFrame.ScrollFrame.ScrollBar:HookScript("OnShow", function(self) -- classic scroll bar has a mind of its own
 			if NysTDL.acedb.profile.isInClearView then
 				self:Hide()
