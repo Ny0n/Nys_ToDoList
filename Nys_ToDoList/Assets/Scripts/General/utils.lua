@@ -176,13 +176,13 @@ end
 ---For Dragonflight and up and forever
 ---@return boolean
 function utils:IsDF()
-	return LE_EXPANSION_LEVEL_CURRENT >= 9 or WOW_PROJECT_CAMELOT ~= nil
+	return LE_EXPANSION_LEVEL_CURRENT >= 9 or WOW_PROJECT_ID == WOW_PROJECT_CAMELOT
 end
 
 ---For Midnight and up and forever
 ---@return boolean
 function utils:IsMidnight()
-	return LE_EXPANSION_LEVEL_CURRENT >= 11 or WOW_PROJECT_CAMELOT ~= nil
+	return LE_EXPANSION_LEVEL_CURRENT >= 11 or WOW_PROJECT_ID == WOW_PROJECT_CAMELOT
 end
 
 ---To copy any table.
@@ -324,9 +324,18 @@ function utils:GetMinusStr()
 end
 
 ---Helper
----@return string name-server
+---@return string name-server or firstname lastname, always supposed to be unique
 function utils:GetPlayerFullName()
-	return UnitName("player") .. "-" .. GetRealmName()
+	if type(RegionalUniqueNamesEnabled) == "function" and RegionalUniqueNamesEnabled() then
+		local firstName, lastName = UnitNameUnmodified("player")
+		if lastName then
+			return firstName .. " " .. tostring(lastName)
+		else
+			return firstName
+		end
+	else
+		return UnitNameUnmodified("player") .. "-" .. GetRealmName()
+	end
 end
 
 ---Helper
@@ -336,13 +345,10 @@ function utils:BuildPlayerUnitString()
         return ""
     end
 
-	local name = UnitName("player")
-	local realm = GetRealmName()
+    local fullName = utils:GetPlayerFullName()
     local _, classToken = UnitClass("player")
     local _, raceFile = UnitRace("player")
 	local gender = UnitSex("player")
-
-    local fullName = name .. "-" .. realm
 
 	local genderSuffix = "Male" -- fallback
     if gender == 3 then
@@ -373,16 +379,19 @@ end
 function utils:GetPlayerRaceIcon(raceFile, genderSuffix)
 	raceFile = string.lower(tostring(raceFile))
 	genderSuffix = string.lower(tostring(genderSuffix))
+
+	local suffix = ""
 	if raceFile == "harronir" then raceFile = "haranir" end -- bro cmon
 	if raceFile == "scourge" then raceFile = "undead" end -- bro cmon
+	if raceFile == "skyborne" then suffix = "-c60" end -- bro cmon
 
 	local raceIcon = ""
 
-	local info = utils.raceIconInfo["raceicon128-" .. raceFile .. "-" .. genderSuffix]
+	local info = utils.raceIconInfo["raceicon128-" .. raceFile .. "-" .. genderSuffix .. suffix]
 	if info then
 		raceIcon = string.format(
 			"|T%s:%d:%d:0:0:%d:%d:%d:%d:%d:%d|t",
-			enums.artPath.."CharacterCreateIcons",
+			enums.artPath.."CharacterCreateIcons"..suffix,
 			16, 16,
 			info[1], info[2],
 			info[3] * info[1],
@@ -398,6 +407,7 @@ end
 utils.raceIconInfo = {
 	-- https://www.townlong-yak.com/framexml/12.0.5/Helix/AtlasInfo.lua (change wow version in url)
 	-- find ["Interface/Glues/CharacterCreate/CharacterCreateIcons"],
+	-- -> or CSV of https://wago.tools/db2/uitextureatlasmember?build=1.60.1.70630&filter%5BCommittedName%5D=raceicon128&page=1
 	-- only the raceicon128 lines, and I use the CharacterCreateIcons.blp from retail (ExportInterfaceFiles art) that I copied into my addon
 
 	["raceicon128-bloodelf-female"]={128, 128, 0.0639648, 0.126465, 0.762695, 0.887695, false, false, nil},
@@ -456,4 +466,6 @@ utils.raceIconInfo = {
 	["raceicon128-earthen-male"]={128, 128, 0.190918, 0.253418, 0.635742, 0.760742, false, false, nil},
 	["raceicon128-haranir-female"]={128, 128, 0.254395, 0.316895, 0.381836, 0.506836, false, false, nil},
 	["raceicon128-haranir-male"]={128, 128, 0.254395, 0.316895, 0.508789, 0.633789, false, false, nil},
+	["raceicon128-skyborne-female-c60"]={256, 256, 0.000977, 0.250977, 0.001953, 0.501953, false, false, nil},
+	["raceicon128-skyborne-male-c60"]={256, 256, 0.252930, 0.502930, 0.001953, 0.501953, false, false, nil},
 }

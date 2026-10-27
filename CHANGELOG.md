@@ -1,3 +1,9 @@
+#### **7.5.5**
+
+- WoW Forever Fixes (add skyborne race icon, fix first name/last name shenanigans)
+- The button to switch tab states is now always shown, just like in clear view mode (so that we don't need a PhD to know that the feature exists :D)
+- Bump interface number (Midnight 12.1.7)
+
 #### **7.5.4**
 
 - WoW Forever Fixes
