@@ -49,7 +49,7 @@ local selectedTabBackdropOffsetX = -1
 local unselectedTabBackdropOffsetX = -1
 local selectedTabBackdropOffsetY = 4
 local unselectedTabBackdropOffsetY = 4
-local tabsOffsetY = WOW_PROJECT_CAMELOT ~= nil and -3 or 1
+local tabsOffsetY = (WOW_PROJECT_ID == WOW_PROJECT_CAMELOT) and -3 or 1
 
 if not utils:IsDF() then -- classic
 	overflowButtonSize = 30
@@ -266,7 +266,8 @@ function private:CalculateTabSize()
 	local scrollSize = scrollFrame:GetParent():GetWidth() -- the default scroll size we're considering to use is the width of the tdlFrame (without considering the overflowButtonFrame)
 	scrollSize = scrollSize - leftScrollFrameOffset - rightScrollFrameOffset
 
-	local hasGlobalData = dataManager:HasGlobalData()
+	-- local hasGlobalData = dataManager:HasGlobalData()
+	local hasGlobalData = true -- v7.5.5 always show the tab switch button
 	if hasGlobalData then
 		scrollSize = scrollSize - overflowButtonWidth + rightScrollFrameOffset -- '+ rightScrollFrameOffset' to zero the '- rightScrollFrameOffset' above
 	end
@@ -336,7 +337,8 @@ function private:RefreshSize()
 		overflowButtonFrame:SetShown(false)
 	end
 
-	local hasGlobalData = dataManager:HasGlobalData()
+	-- local hasGlobalData = dataManager:HasGlobalData()
+	local hasGlobalData = true -- v7.5.5 always show the tab switch button
 
 	if hasGlobalData then -- because the switch tabs state button will be shown
 		overflowButtonFrame:SetPoint("TOPRIGHT", mainFrame.tdlFrame, "BOTTOMRIGHT", -overflowButtonWidth-inBetweenButtonOffset, overflowButtonOffsetY)
@@ -700,6 +702,8 @@ function tabsFrame:UpdateTabSwitchButtonVisuals()
 		table.insert(s, s2)
 	else
 		table.insert(s, utils:ColorText(database.themes.red, L["No global data found"]))
+		table.insert(s, "")
+		table.insert(s, utils:SafeStringFormat(string.format("|cff%s%s|r", "AAAAAA", L["Type %s for more information"]), utils:ColorText(database.themes.theme2, NysTDL.chat.slashCommand..' '..string.lower(L["Tabs"]))))
 	end
 
 	if database.ctabstate() then
@@ -732,7 +736,8 @@ function tabsFrame:UpdateTabSwitchButtonVisuals()
 
 	switchStateButtonFrame.btn.tooltipText = s
 	switchStateButtonFrame.btn:RefreshTooltip()
-	switchStateButtonFrame:SetShown(dataManager:HasGlobalData())
+	-- switchStateButtonFrame:SetShown(dataManager:HasGlobalData())
+	switchStateButtonFrame:SetShown(true) -- v7.5.5 always show the tab switch button
 
 	mainFrame.tdlFrame.cvTabsSwitchState.tooltipText = s
 	mainFrame.tdlFrame.cvTabsSwitchState:RefreshTooltip()
@@ -912,6 +917,11 @@ function tabsFrame:CreateTabsFrame()
 
 	-- click
 	switchStateButtonFrame.btn:SetScript("OnClick", function()
+		-- if not dataManager:HasGlobalData() then -- nah nvm too much things to take care of
+		-- 	Settings.OpenToCategory(NysTDL.optionsManager.optionsFrameID)
+		-- 	AceGUITabGroup1Tab3:Click()
+		-- 	return
+		-- end
 		tabsFrame:SwitchState(nil) -- toggle
 	end)
 end

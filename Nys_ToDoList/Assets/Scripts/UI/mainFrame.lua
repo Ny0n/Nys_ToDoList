@@ -461,7 +461,7 @@ local onChangeView = function()
 			tdlFrame.ScrollFrame:SetPoint("LEFT", tdlFrame, "LEFT", 4, 0)
 		else
 			local scrollFrameOffsetY = -22
-			if WOW_PROJECT_CAMELOT ~= nil then scrollFrameOffsetY = -26 end
+			if WOW_PROJECT_ID == WOW_PROJECT_CAMELOT then scrollFrameOffsetY = -26 end
 			tdlFrame.ScrollFrame:SetPoint("TOPLEFT", tdlFrame, "TOPLEFT", 4, scrollFrameOffsetY)
 			tdlFrame.content.dummyScaleOrigin2:SetPoint("TOPLEFT", tdlFrame.scrollChild, 5, -3)
 		end
@@ -1423,7 +1423,7 @@ function mainFrame:CreateTDLFrame()
 
 	tdlFrame.ScrollFrame = CreateFrame("ScrollFrame", "NysTDL_tdlFrame.ScrollFrame", tdlFrame.clipFrame, utils:IsDF() and "ScrollFrameTemplate" or "UIPanelScrollFrameTemplate")
 	local scrollFrameOffsetY = 4
-	if WOW_PROJECT_CAMELOT ~= nil then scrollFrameOffsetY = 6 end
+	if WOW_PROJECT_ID == WOW_PROJECT_CAMELOT then scrollFrameOffsetY = 6 end
 	tdlFrame.ScrollFrame:SetPoint("BOTTOMRIGHT", tdlFrame, "BOTTOMRIGHT", -4 -sWidth, scrollFrameOffsetY) -- * same as clipframe
 	tdlFrame.ScrollFrame:SetScript("OnMouseWheel", mainFrame.Event_ScrollFrame_OnMouseWheel)
 	tdlFrame.ScrollFrame:SetClipsChildren(true)
